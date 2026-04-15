@@ -52,7 +52,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAmDwku4yiCtjL_zh9zEjP7EU8I37XlRZw',
-    appId: '1:1019034709236:android:ca669fd38a96c79e99c2a1',
+    appId: '1:1019034709236:android:7585f4efc82d47a599c2a1',
     messagingSenderId: '1019034709236',
     projectId: 'poker-scheduler-fd8c7',
     storageBucket: 'poker-scheduler-fd8c7.firebasestorage.app',
@@ -60,12 +60,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCS4jV1lN8snhdEY1Y6rkSSgaB6eAetDAs',
-    appId: '1:1019034709236:ios:ba143d2b5a9cbca099c2a1',
+    appId: '1:1019034709236:ios:36cbcc53231e3eb099c2a1',
     messagingSenderId: '1019034709236',
     projectId: 'poker-scheduler-fd8c7',
     storageBucket: 'poker-scheduler-fd8c7.firebasestorage.app',
-    iosClientId: '1019034709236-7835ot7gnt2cjr98m1s39cuja3re3bun.apps.googleusercontent.com',
-    iosBundleId: 'com.example.pokerScheduler',
+    iosClientId: '1019034709236-o17jdnh3fki8qugu89905emcsb170gcr.apps.googleusercontent.com',
+    iosBundleId: 'com.joetseng.pokertablereservation',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
