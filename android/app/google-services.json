@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1019034709236",
+    "project_id": "poker-scheduler-fd8c7",
+    "storage_bucket": "poker-scheduler-fd8c7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1019034709236:android:ca669fd38a96c79e99c2a1",
+        "android_client_info": {
+          "package_name": "com.example.poker_scheduler"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1019034709236-12j5sjdblp04fvthrvcnb1u8459lm171.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmDwku4yiCtjL_zh9zEjP7EU8I37XlRZw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1019034709236-12j5sjdblp04fvthrvcnb1u8459lm171.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1019034709236-7835ot7gnt2cjr98m1s39cuja3re3bun.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.pokerScheduler"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "poker-scheduler-fd8c7"
+  },
+  "targets": {
+    "poker-scheduler-fd8c7": {
+      "hosting": {
+        "tablescheduler": [
+          "tablescheduler"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

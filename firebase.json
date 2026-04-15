@@ -1,0 +1,34 @@
+{
+  "hosting": {
+    "target": "tablescheduler",
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/api/createHostCheckoutSession",
+        "function": "createHostCheckoutSession"
+      },
+      {
+        "source": "/api/createStatsCheckoutSession",
+        "function": "createStatsCheckoutSession"
+      }
+    ]
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ]
+    }
+  ]
+}
