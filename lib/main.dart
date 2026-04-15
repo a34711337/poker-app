@@ -22,7 +22,14 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const PokerReservationApp());
+
+  runApp(const MaterialApp(
+    home: Scaffold(
+      body: Center(
+        child: Text('App started'),
+      ),
+    ),
+  ));
 }
 
 class PokerReservationApp extends StatelessWidget {
