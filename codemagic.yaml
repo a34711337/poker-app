@@ -9,7 +9,7 @@ workflows:
       - flutter clean
       - flutter pub get
       - cd ios && pod install && cd ..
-      - flutter build ipa --release
+      - flutter build ios --release --no-codesign
 
     artifacts:
-      - build/ios/ipa/*.ipa
+      - build/ios/iphoneos/*.app
