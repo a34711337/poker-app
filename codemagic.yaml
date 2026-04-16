@@ -4,12 +4,13 @@ workflows:
 
     environment:
       flutter: stable
+      xcode: latest
 
     scripts:
       - flutter clean
       - flutter pub get
       - cd ios && pod install && cd ..
-      - flutter build ipa --release
+      - flutter build ipa --release --export-options-plist=ios/ExportOptions.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
