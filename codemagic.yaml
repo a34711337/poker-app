@@ -5,9 +5,14 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.joetseng.pokertablereservation
+
+      vars:
+        CM_PROVISIONING_PROFILE: app_store_profile
+        CM_CERTIFICATE: ios_distribution
 
     scripts:
       - flutter clean
