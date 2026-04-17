@@ -3,7 +3,7 @@ workflows:
     name: iOS Workflow
 
     integrations:
-      app_store_connect: YOUR_APP_STORE_CONNECT_INTEGRATION_NAME
+      app_store_connect: Developer Portal
 
     environment:
       flutter: stable
