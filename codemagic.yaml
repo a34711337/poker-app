@@ -3,7 +3,7 @@ workflows:
     name: iOS Workflow
 
     integrations:
-      app_store_connect: Developer Portal
+      app_store_connect: poker-app-codemagic
 
     environment:
       flutter: stable
