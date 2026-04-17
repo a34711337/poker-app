@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/services.dart';
 
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -4627,43 +4628,18 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
   Future<void> _startStripeCheckout() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user == null) {
-        _showSnack('Not logged in');
-        return;
-      }
-
-      final idToken = await user.getIdToken(true);
-
-      final response = await http.post(
-        Uri.parse('/api/createHostCheckoutSession'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-        },
-        body: jsonEncode({
-          'priceId': _hostProPriceId,
-        }),
+      final url = Uri.parse(
+        'https://buy.stripe.com/9B66oGcBv0fDfCMa4PfrW02',
       );
 
-      print('stripe checkout status: ${response.statusCode}');
-      print('stripe checkout body: ${response.body}');
+      final ok = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        _showSnack('Payment error: ${response.statusCode} ${response.body}');
-        return;
+      if (!ok) {
+        _showSnack('Cannot open payment page');
       }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final checkoutUrl = (data['url'] ?? '').toString().trim();
-
-      if (checkoutUrl.isEmpty) {
-        _showSnack('Checkout URL not found');
-        return;
-      }
-
-      html.window.location.assign(checkoutUrl);
     } catch (e) {
       print('startStripeCheckout error: $e');
       _showSnack('Failed to open payment page: $e');
@@ -4672,43 +4648,18 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
   Future<void> _startStatsCheckout() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user == null) {
-        _showSnack('Not logged in');
-        return;
-      }
-
-      final idToken = await user.getIdToken(true);
-
-      final response = await http.post(
-        Uri.parse('/api/createStatsCheckoutSession'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-        },
-        body: jsonEncode({
-          'priceId': _statsProPriceId,
-        }),
+      final url = Uri.parse(
+        'https://buy.stripe.com/cNi14m44Z2nL2Q05OzfrW01',
       );
 
-      print('stats checkout status: ${response.statusCode}');
-      print('stats checkout body: ${response.body}');
+      final ok = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        _showSnack('Payment error: ${response.statusCode} ${response.body}');
-        return;
+      if (!ok) {
+        _showSnack('Cannot open payment page');
       }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final checkoutUrl = (data['url'] ?? '').toString().trim();
-
-      if (checkoutUrl.isEmpty) {
-        _showSnack('Checkout URL not found');
-        return;
-      }
-
-      html.window.location.assign(checkoutUrl);
     } catch (e) {
       print('startStatsCheckout error: $e');
       _showSnack('Failed to open payment page: $e');
@@ -9057,11 +9008,6 @@ class _TableDetailPageState extends State<TableDetailPage> {
   }
 
   Future<void> _removeFromWaitingListAt(int index) async {
-    if (!canManageThisTable) {
-      _showSnack('Only the table creator can remove players from waiting list');
-      return;
-    }
-
     try {
       await _runTableTransaction<void>((tx, snap, data) async {
         final waitingList = List<dynamic>.from(data['waitingList'] ?? [])
@@ -9070,6 +9016,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
         if (index < 0 || index >= waitingList.length) {
           _txFail('Invalid waiting list index');
+        }
+
+        final entry = Map<String, dynamic>.from(waitingList[index]);
+
+        if (!_canCurrentUserRemoveWaitingEntry(entry)) {
+          _txFail('You can only remove yourself from waiting list');
         }
 
         waitingList.removeAt(index);
@@ -9279,6 +9231,21 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
     final entryUid = (entry['uid'] ?? '').toString().trim();
     return entryUid.isNotEmpty && entryUid == user.uid;
+  }
+
+  bool _canCurrentUserRemoveWaitingEntry(Map<String, dynamic> entry) {
+    if (canManageThisTable) return true;
+
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+
+    final entryUid = (entry['uid'] ?? '').toString().trim();
+
+    if (entryUid.isNotEmpty) {
+      return entryUid == user.uid;
+    }
+
+    return false;
   }
 
   bool _canCurrentUserToggleSeatArrived(Map<String, dynamic> seat) {
@@ -10519,10 +10486,14 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                   title: const Text('Move / swap seat'),
                                   onTap: () => Navigator.pop(context, 'move'),
                                 ),
-                              if (canManageThisTable)
+                              if (_canCurrentUserRemoveWaitingEntry(entry))
                                 ListTile(
                                   leading: const Icon(Icons.person_remove),
-                                  title: const Text('Remove from waiting list'),
+                                  title: Text(
+                                    canManageThisTable
+                                        ? 'Remove from waiting list'
+                                        : 'Leave waiting list',
+                                  ),
                                   onTap: () => Navigator.pop(context, 'remove'),
                                 ),
                               ListTile(
@@ -13061,55 +13032,24 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
   Future<void> _startStatsCheckout() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Not logged in')),
-        );
-        return;
-      }
-
-      final idToken = await user.getIdToken(true);
-
-      final response = await http.post(
-        Uri.parse('/api/createStatsCheckoutSession'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-        },
-        body: jsonEncode({
-          'priceId': _statsProPriceId,
-        }),
+      final url = Uri.parse(
+        'https://buy.stripe.com/cNi14m44Z2nL2Q05OzfrW01',
       );
 
-      print('stats checkout status: ${response.statusCode}');
-      print('stats checkout body: ${response.body}');
+      final ok = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
 
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (!ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Payment error: ${response.statusCode} ${response.body}'),
-          ),
+          const SnackBar(content: Text('Cannot open payment page')),
         );
-        return;
       }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
-      final checkoutUrl = (data['url'] ?? '').toString().trim();
-
-      if (checkoutUrl.isEmpty) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Checkout URL not found')),
-        );
-        return;
-      }
-
-      html.window.location.assign(checkoutUrl);
     } catch (e) {
       print('startStatsCheckout error: $e');
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to open payment page: $e')),
