@@ -1797,7 +1797,7 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
       final user = userCredential.user;
       if (user == null) {
-        _showSnack('Apple login failed');
+        _showSnack('Apple login failed: user is null');
         return;
       }
 
@@ -1840,13 +1840,19 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
           ),
         ),
       );
-    } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? 'Apple login failed');
-    } catch (e) {
-      _showSnack('Apple login failed');
+    } on FirebaseAuthException catch (e, st) {
+      debugPrint('APPLE FIREBASE AUTH ERROR');
+      debugPrint('code: ${e.code}');
+      debugPrint('message: ${e.message}');
+      debugPrintStack(stackTrace: st);
+      _showSnack('Apple login failed: ${e.code}');
+    } catch (e, st) {
+      debugPrint('APPLE LOGIN UNKNOWN ERROR: $e');
+      debugPrintStack(stackTrace: st);
+      _showSnack('Apple login failed: $e');
     }
   }
-
+  
   Future<void> _signInWithGoogle() async {
     try {
       UserCredential userCredential;
