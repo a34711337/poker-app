@@ -13,6 +13,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
@@ -1769,6 +1770,83 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
     }
   }
 
+  bool get _isApplePlatform {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
+  bool get _showGoogleLogin {
+    if (kIsWeb) return true;
+    return defaultTargetPlatform == TargetPlatform.android;
+  }
+
+  Future<void> _signInWithApple() async {
+    try {
+      if (!await SignInWithApple.isAvailable()) {
+        _showSnack('Apple Sign-In is not available on this device');
+        return;
+      }
+
+      final appleProvider = AppleAuthProvider();
+      appleProvider.addScope('email');
+      appleProvider.addScope('name');
+
+      final userCredential =
+          await FirebaseAuth.instance.signInWithProvider(appleProvider);
+
+      final user = userCredential.user;
+      if (user == null) {
+        _showSnack('Apple login failed');
+        return;
+      }
+
+      final userRef =
+          FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+      final userDoc = await userRef.get();
+      final data = userDoc.data();
+
+      if (data == null) {
+        if (!mounted) return;
+
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => GoogleFirstSetupPage(user: user),
+          ),
+        );
+        return;
+      }
+
+      await ensureUserProfile(user);
+
+      final name =
+          (data['displayName'] ?? user.displayName ?? user.email ?? 'User')
+              .toString();
+
+      final roleText = (data['role'] ?? 'player').toString();
+      final role = roleText == 'host' ? UserRole.host : UserRole.player;
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => TableListPage(
+            session: UserSession(
+              name: name,
+              shortName: (data['shortName'] ?? name).toString(),
+              role: role,
+            ),
+          ),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      _showSnack(e.message ?? 'Apple login failed');
+    } catch (e) {
+      _showSnack('Apple login failed');
+    }
+  }
+
   Future<void> _signInWithGoogle() async {
     try {
       UserCredential userCredential;
@@ -1922,23 +2000,43 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           ),
                         ),
                       const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _signInWithGoogle,
-                          icon: const Icon(Icons.login),
-                          label: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
-                            child: Text(
-                              'Login with Google',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                      if (_isApplePlatform)
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _signInWithApple,
+                            icon: const Icon(Icons.apple),
+                            label: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 14),
+                              child: Text(
+                                'Login with Apple',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
+
+                      if (_showGoogleLogin)
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _signInWithGoogle,
+                            icon: const Icon(Icons.login),
+                            label: const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 14),
+                              child: Text(
+                                'Login with Google',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
 
                       const Icon(Icons.sports_esports, size: 54),
                       const SizedBox(height: 14),
