@@ -10,7 +10,8 @@ workflows:
       xcode: latest
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.joetseng.pokertablereservation
+        bundle_identifier: com.joetseng.pokerscheduler
+        automatic_code_signing: true
 
     scripts:
       - flutter clean
