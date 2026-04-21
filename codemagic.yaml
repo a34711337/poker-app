@@ -10,7 +10,7 @@ workflows:
       xcode: latest
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.joetseng.pokerscheduler
+        bundle_identifier: com.joetseng.pokertablereservation
         automatic_code_signing: true
 
     scripts:
