@@ -17,7 +17,9 @@ workflows:
       - flutter pub get
       - cd ios && pod install && cd ..
       - name: Set up code signing settings on Xcode project
-        script: xcode-project use-profiles
+        script: |
+          xcode-project use-profiles
+          xcode-project build-settings set DEVELOPMENT_TEAM=XXXXXXX
 
       # 👇 關鍵改這裡
       - flutter build ios --release --no-codesign
