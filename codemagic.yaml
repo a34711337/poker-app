@@ -9,16 +9,14 @@ workflows:
       flutter: stable
       xcode: latest
       ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.joetseng.pokertablereservation
-        automatic_code_signing: true
+        provisioning_profiles:
+          - app_store_profile_v2
 
     scripts:
       - flutter clean
       - flutter pub get
       - cd ios && pod install && cd ..
 
-      # ✅ 正確寫法（這行很重要）
       - name: Set up code signing
         script: xcode-project use-profiles
 
