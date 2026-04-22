@@ -123,7 +123,7 @@ const Set<String> approvedHostEmails = {
   'yourmail2@gmail.com',
   'yourmail3@gmail.com',
 };
-const String appVersion = '2026-04-14-06';
+const String appVersion = '2026-04-21-01';
 
 const String kHostPaymentUrl =
     'https://buy.stripe.com/9B66oGcBv0fDfCMa4PfrW02';
@@ -1778,7 +1778,8 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
   bool get _showGoogleLogin {
     if (kIsWeb) return true;
-    return defaultTargetPlatform == TargetPlatform.android;
+    return defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS;
   }
 
   Future<void> _signInWithApple() async {
@@ -1852,7 +1853,7 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       _showSnack('Apple login failed: $e');
     }
   }
-  
+
   Future<void> _signInWithGoogle() async {
     try {
       UserCredential userCredential;
@@ -1936,8 +1937,6 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       _showSnack('Google login failed');
     }
   }
-
-
 
   void _showSnack(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -2025,6 +2024,9 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           ),
                         ),
 
+                      if (_isApplePlatform && _showGoogleLogin)
+                        const SizedBox(height: 12),
+
                       if (_showGoogleLogin)
                         SizedBox(
                           width: double.infinity,
@@ -2043,6 +2045,9 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                             ),
                           ),
                         ),
+
+                      if (_isApplePlatform || _showGoogleLogin)
+                        const SizedBox(height: 20),
 
                       const Icon(Icons.sports_esports, size: 54),
                       const SizedBox(height: 14),
@@ -4909,6 +4914,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               ],
             ),
           ),
+
           if (isHost)
             const PopupMenuItem<String>(
               value: 'grant_player_access',
