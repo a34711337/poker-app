@@ -46,8 +46,19 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-<key>ITSAppUsesNonExemptEncryption</key>
-<false/>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.1019034709236-o17jdnh3fki8qugu89905emcsb170gcr</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
