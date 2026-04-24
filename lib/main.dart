@@ -17,6 +17,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 
 
 Future<void> main() async {
@@ -133,6 +134,13 @@ const String kStatsPaymentUrl =
 
 const String kBundlePaymentUrl =
     'https://buy.stripe.com/9B6bJ07hb1jHduEb8TfrW00';
+
+const String kAppleHostProProductId =
+    'com.pokerscheduler.hostpro.monthly';
+
+const String kAppleStatsProProductId =
+    'com.pokerscheduler.statspro.monthly';
+
 
 mixin AppVersionChecker<T extends StatefulWidget> on State<T> {
 
@@ -902,6 +910,126 @@ Future<void> activateStatsSubscriptionForUserUid(
   }, SetOptions(merge: true));
 }
 
+enum ApplePurchaseType {
+  host,
+  stats,
+  bundle,
+}
+
+bool get isAppleIapPlatform {
+  if (kIsWeb) return false;
+  return defaultTargetPlatform == TargetPlatform.iOS;
+}
+
+class AppleIapService {
+  static Future<void> buy({
+    required String productId,
+    required ApplePurchaseType type,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('Please login again');
+    }
+
+    final iap = InAppPurchase.instance;
+    final available = await iap.isAvailable();
+
+    if (!available) {
+      throw Exception('In-App Purchase is not available');
+    }
+
+    final productResponse = await iap.queryProductDetails({productId});
+
+    if (productResponse.error != null) {
+      throw Exception(productResponse.error!.message);
+    }
+
+    if (productResponse.productDetails.isEmpty) {
+      throw Exception('Product not found: $productId');
+    }
+
+    final product = productResponse.productDetails.first;
+    final purchaseParam = PurchaseParam(productDetails: product);
+
+    final purchaseCompleter = Completer<void>();
+    late StreamSubscription<List<PurchaseDetails>> subscription;
+
+    subscription = iap.purchaseStream.listen(
+      (purchases) async {
+        for (final purchase in purchases) {
+          if (purchase.productID != productId) continue;
+
+          if (purchase.status == PurchaseStatus.pending) {
+            continue;
+          }
+
+          if (purchase.status == PurchaseStatus.error) {
+            if (!purchaseCompleter.isCompleted) {
+              purchaseCompleter.completeError(
+                Exception(purchase.error?.message ?? 'Purchase failed'),
+              );
+            }
+            continue;
+          }
+
+          if (purchase.status == PurchaseStatus.canceled) {
+            if (!purchaseCompleter.isCompleted) {
+              purchaseCompleter.completeError(
+                Exception('Purchase cancelled'),
+              );
+            }
+            continue;
+          }
+
+          if (purchase.status == PurchaseStatus.purchased ||
+              purchase.status == PurchaseStatus.restored) {
+            if (type == ApplePurchaseType.host) {
+              await activateHostSubscriptionForUserUid(user.uid);
+            } else if (type == ApplePurchaseType.stats) {
+              await activateStatsSubscriptionForUserUid(user.uid);
+            } else if (type == ApplePurchaseType.bundle) {
+              await activateHostSubscriptionForUserUid(user.uid);
+              await activateStatsSubscriptionForUserUid(user.uid);
+            }
+
+            if (purchase.pendingCompletePurchase) {
+              await iap.completePurchase(purchase);
+            }
+
+            if (!purchaseCompleter.isCompleted) {
+              purchaseCompleter.complete();
+            }
+          }
+        }
+      },
+      onError: (error) {
+        if (!purchaseCompleter.isCompleted) {
+          purchaseCompleter.completeError(error);
+        }
+      },
+    );
+
+    try {
+      final started = await iap.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
+
+      if (!started) {
+        throw Exception('Failed to start purchase');
+      }
+
+      await purchaseCompleter.future.timeout(
+        const Duration(minutes: 2),
+        onTimeout: () {
+          throw Exception('Purchase timeout');
+        },
+      );
+    } finally {
+      await subscription.cancel();
+    }
+  }
+}
 class SeatReservation {
   String? playerName;
   String? playerLastName;
@@ -1931,10 +2059,16 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
           ),
         ),
       );
-    } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? 'Google login failed');
-    } catch (e) {
-      _showSnack('Google login failed');
+    } on FirebaseAuthException catch (e, st) {
+      debugPrint('GOOGLE FIREBASE AUTH ERROR');
+      debugPrint('code: ${e.code}');
+      debugPrint('message: ${e.message}');
+      debugPrintStack(stackTrace: st);
+      _showSnack('Google login failed: ${e.code}');
+    } catch (e, st) {
+      debugPrint('GOOGLE LOGIN UNKNOWN ERROR: $e');
+      debugPrintStack(stackTrace: st);
+      _showSnack('Google login failed: $e');
     }
   }
 
@@ -4736,10 +4870,27 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       'price_1TMRxtCeafvLbyRiEAO05s2K';
 
   Future<void> _startStripeCheckout() async {
+    if (isAppleIapPlatform) {
+      try {
+        await AppleIapService.buy(
+          productId: kAppleHostProProductId,
+          type: ApplePurchaseType.host,
+        );
+
+        _showSnack('Host Pro activated');
+
+        if (mounted) {
+          setState(() {});
+        }
+      } catch (e) {
+        _showSnack(e.toString().replaceFirst('Exception: ', ''));
+      }
+
+      return;
+    }
+
     try {
-      final url = Uri.parse(
-        'https://buy.stripe.com/9B66oGcBv0fDfCMa4PfrW02',
-      );
+      final url = Uri.parse(kHostPaymentUrl);
 
       final ok = await launchUrl(
         url,
@@ -4756,10 +4907,27 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 
   Future<void> _startStatsCheckout() async {
+    if (isAppleIapPlatform) {
+      try {
+        await AppleIapService.buy(
+          productId: kAppleStatsProProductId,
+          type: ApplePurchaseType.stats,
+        );
+
+        _showSnack('Stats Pro activated');
+
+        if (mounted) {
+          setState(() {});
+        }
+      } catch (e) {
+        _showSnack(e.toString().replaceFirst('Exception: ', ''));
+      }
+
+      return;
+    }
+
     try {
-      final url = Uri.parse(
-        'https://buy.stripe.com/cNi14m44Z2nL2Q05OzfrW01',
-      );
+      final url = Uri.parse(kStatsPaymentUrl);
 
       final ok = await launchUrl(
         url,
@@ -13141,26 +13309,51 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
   }
 
   Future<void> _startStatsCheckout() async {
+    if (isAppleIapPlatform) {
+      try {
+        await AppleIapService.buy(
+          productId: kAppleStatsProProductId,
+          type: ApplePurchaseType.stats,
+        );
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Stats Pro activated')),
+        );
+
+        setState(() {});
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              e.toString().replaceFirst('Exception: ', ''),
+            ),
+          ),
+        );
+      }
+
+      return;
+    }
+
     try {
-      final url = Uri.parse(
-        'https://buy.stripe.com/cNi14m44Z2nL2Q05OzfrW01',
-      );
+      final url = Uri.parse(widget.paymentUrl);
 
       final ok = await launchUrl(
         url,
         mode: LaunchMode.externalApplication,
       );
 
-      if (!ok) {
-        if (!mounted) return;
+      if (!ok && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Cannot open payment page')),
         );
       }
     } catch (e) {
-      print('startStatsCheckout error: $e');
-
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to open payment page: $e')),
       );

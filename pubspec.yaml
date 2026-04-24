@@ -2,7 +2,7 @@ name: poker_scheduler
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.27+27
+version: 1.0.28+28
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -11,23 +11,23 @@ dependencies:
   flutter:
     sdk: flutter
 
-  firebase_core: ^3.3.0
-  firebase_auth: ^5.1.0
-  cloud_firestore: ^5.2.0
-  firebase_storage: ^12.1.0
-
-  google_sign_in: ^6.1.6
-  image_picker: ^1.0.7
-  http: ^1.2.1
-  url_launcher: ^6.2.5
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.5.2
+  cloud_firestore: ^5.6.6
+  firebase_storage: ^12.4.5
+  google_sign_in: ^6.3.0
+  image_picker: ^1.1.2
+  http: ^1.4.0
+  url_launcher: ^6.3.1
   universal_html: ^2.2.4
   sign_in_with_apple: ^7.0.1
-  flutter_launcher_icons: ^0.14.4
+  in_app_purchase: ^3.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true

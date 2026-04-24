@@ -50,6 +50,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "1019034709236-p2mp0187ie9ngqntp9lkf2jg0of7dv5f.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.poker_scheduler_clean",
+            "certificate_hash": "0a43d2d16e90c43cce5b9109dc9adacccf2a2786"
+          }
+        },
+        {
+          "client_id": "1019034709236-qlnh2to47vkf3caninecr4qboac1bp5g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.poker_scheduler_clean",
+            "certificate_hash": "c313c5af2f7aab38ae62856b8421e6d1749e2a25"
+          }
+        },
+        {
           "client_id": "1019034709236-12j5sjdblp04fvthrvcnb1u8459lm171.apps.googleusercontent.com",
           "client_type": 3
         }
