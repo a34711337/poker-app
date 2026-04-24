@@ -39,12 +39,10 @@ function getStripe() {
 }
 
 function getPriceIdForPlan(plan) {
-  const config = functions.config().stripe;
-
   const priceMap = {
-    host: config.host_price_id,
-    stats: config.stats_price_id,
-    bundle: config.bundle_price_id,
+    host: process.env.STRIPE_HOST_PRICE_ID || "",
+    stats: process.env.STRIPE_STATS_PRICE_ID || "",
+    bundle: process.env.STRIPE_BUNDLE_PRICE_ID || "",
   };
 
   const priceId = priceMap[plan];
