@@ -4967,7 +4967,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         builder: (_) => CashGameStatsPage(
           session: effectiveSession,
           hasPaidAccess: hasStatsAccess,
-          paymentUrl: kCreateStatsCheckoutUrl,
+          paymentUrl: '',
         ),
       ),
     );
@@ -13335,7 +13335,6 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
         );
 
         if (!mounted) return;
-
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Stats Pro activated')),
         );
@@ -13343,12 +13342,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
         setState(() {});
       } catch (e) {
         if (!mounted) return;
-
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              e.toString().replaceFirst('Exception: ', ''),
-            ),
+            content: Text(e.toString().replaceFirst('Exception: ', '')),
           ),
         );
       }
@@ -13356,22 +13352,51 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
       return;
     }
 
-    try {
-      final url = Uri.parse(widget.paymentUrl);
+    final user = FirebaseAuth.instance.currentUser;
 
-      final ok = await launchUrl(
-        url,
-        mode: LaunchMode.externalApplication,
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login again')),
+      );
+      return;
+    }
+
+    try {
+      final idToken = await user.getIdToken();
+
+      final response = await http.post(
+        Uri.parse(kCreateStatsCheckoutUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
       );
 
-      if (!ok && mounted) {
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cannot open payment page')),
+          SnackBar(content: Text('Failed to create checkout: ${response.body}')),
         );
+        return;
       }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final checkoutUrl = (data['url'] ?? '').toString();
+
+      if (checkoutUrl.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Checkout URL is empty')),
+        );
+        return;
+      }
+
+      await launchUrl(
+        Uri.parse(checkoutUrl),
+        mode: LaunchMode.externalApplication,
+      );
     } catch (e) {
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to open payment page: $e')),
       );
