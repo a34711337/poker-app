@@ -38,6 +38,24 @@ function getStripe() {
   });
 }
 
+function getPriceIdForPlan(plan) {
+  const config = functions.config().stripe;
+
+  const priceMap = {
+    host: config.host_price_id,
+    stats: config.stats_price_id,
+    bundle: config.bundle_price_id,
+  };
+
+  const priceId = priceMap[plan];
+
+  if (!priceId) {
+    throw new Error(`Missing Stripe price id for plan: ${plan}`);
+  }
+
+  return priceId;
+}
+
 function normalizeEmail(email) {
   return (email || "").toString().trim().toLowerCase();
 }
@@ -218,8 +236,16 @@ async function recomputeUserEntitlements(uid) {
 
   const updateData = {
     role: hasHost ? "host" : "player",
+
+    isHostPro: hasHost === true,
+    isStatsPro: hasStats === true,
+
+    hostProActive: hasHost === true,
+    statsProActive: hasStats === true,
+
     hostExpiresAt: hasHost ? toTimestampOrNull(hostExpiresAt) : null,
     statsExpiresAt: hasStats ? toTimestampOrNull(statsExpiresAt) : null,
+
     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
   };
 
@@ -293,11 +319,7 @@ exports.createHostCheckoutSession = functions.https.onRequest(async (req, res) =
     const uid = decodedToken.uid;
     const email = decodedToken.email || "";
 
-    const priceId = (req.body?.priceId || "").trim();
-
-    if (!priceId) {
-      return res.status(400).json({ error: "Missing priceId" });
-    }
+    const priceId = getPriceIdForPlan("host");
 
     const stripe = getStripe();
 
@@ -356,11 +378,7 @@ exports.createStatsCheckoutSession = functions.https.onRequest(async (req, res) 
     const uid = decodedToken.uid;
     const email = decodedToken.email || "";
 
-    const priceId = (req.body?.priceId || "").trim();
-
-    if (!priceId) {
-      return res.status(400).json({ error: "Missing priceId" });
-    }
+    const priceId = getPriceIdForPlan("stats");
 
     const stripe = getStripe();
 
@@ -386,6 +404,71 @@ exports.createStatsCheckoutSession = functions.https.onRequest(async (req, res) 
     return res.status(200).json({ url: session.url });
   } catch (error) {
     console.error("createStatsCheckoutSession error:", error);
+    return res.status(500).json({
+      error: error.message || "Internal Server Error",
+    });
+  }
+});
+
+exports.createBundleCheckoutSession = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).send("");
+  }
+
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
+
+    const authHeader = req.headers.authorization || "";
+    const idToken = authHeader.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : "";
+
+    if (!idToken) {
+      return res.status(401).json({ error: "Missing auth token" });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+    const email = decodedToken.email || "";
+
+    const priceId = getPriceIdForPlan("bundle");
+
+    const stripe = getStripe();
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "subscription",
+      payment_method_types: ["card"],
+      customer_email: email || undefined,
+      client_reference_id: uid,
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      subscription_data: {
+        metadata: {
+          uid,
+          planType: "bundle",
+        },
+      },
+      metadata: {
+        uid,
+        planType: "bundle",
+      },
+      success_url: "https://tablescheduler.web.app/?checkout=success",
+      cancel_url: "https://tablescheduler.web.app/?checkout=cancel",
+    });
+
+    return res.status(200).json({ url: session.url });
+  } catch (error) {
+    console.error("createBundleCheckoutSession error:", error);
     return res.status(500).json({
       error: error.message || "Internal Server Error",
     });

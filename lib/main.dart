@@ -126,14 +126,14 @@ const Set<String> approvedHostEmails = {
 };
 const String appVersion = '2026-04-21-01';
 
-const String kHostPaymentUrl =
-    'https://buy.stripe.com/9B66oGcBv0fDfCMa4PfrW02';
+const String kCreateHostCheckoutUrl =
+    'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createHostCheckoutSession';
 
-const String kStatsPaymentUrl =
-    'https://buy.stripe.com/cNi14m44Z2nL2Q05OzfrW01';
+const String kCreateStatsCheckoutUrl =
+    'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createStatsCheckoutSession';
 
-const String kBundlePaymentUrl =
-    'https://buy.stripe.com/9B6bJ07hb1jHduEb8TfrW00';
+const String kCreateBundleCheckoutUrl =
+    'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createBundleCheckoutSession';
 
 const String kAppleHostProProductId =
     'com.pokerscheduler.hostpro.monthly';
@@ -2077,6 +2077,8 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       SnackBar(content: Text(text)),
     );
   }
+
+
 
   @override
   void dispose() {
@@ -4861,13 +4863,57 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     );
   }
 
+  Future<void> _openStripeCheckoutFromFunction(String functionUrl) async {
+    final user = FirebaseAuth.instance.currentUser;
 
-  static const String _hostProPriceId =
-      'price_1TMRxCCeafvLbyRi48Sdib6B';
-  static const String _statsProPriceId =
-      'price_1TMRxVCeafvLbyRizC2lvERT';
-  static const String _bundlePriceId =
-      'price_1TMRxtCeafvLbyRiEAO05s2K';
+    if (user == null) {
+      _showSnack('Please login again');
+      return;
+    }
+
+    try {
+      final idToken = await user.getIdToken();
+
+      final response = await http.post(
+        Uri.parse(functionUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        _showSnack('Failed to create checkout: ${response.body}');
+        return;
+      }
+
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      final checkoutUrl = (data['url'] ?? '').toString();
+
+      if (checkoutUrl.isEmpty) {
+        _showSnack('Checkout URL is empty');
+        return;
+      }
+
+      final ok = await launchUrl(
+        Uri.parse(checkoutUrl),
+        mode: LaunchMode.externalApplication,
+      );
+
+      if (!ok) {
+        _showSnack('Cannot open payment page');
+      }
+    } catch (e) {
+      print('openStripeCheckoutFromFunction error: $e');
+      _showSnack('Failed to open payment page: $e');
+    }
+  }
+
+  static const String _createHostCheckoutUrl =
+      'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createHostCheckoutSession';
+
+  static const String _createStatsCheckoutUrl =
+      'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createStatsCheckoutSession';
 
   Future<void> _startStripeCheckout() async {
     if (isAppleIapPlatform) {
@@ -4889,21 +4935,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       return;
     }
 
-    try {
-      final url = Uri.parse(kHostPaymentUrl);
-
-      final ok = await launchUrl(
-        url,
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!ok) {
-        _showSnack('Cannot open payment page');
-      }
-    } catch (e) {
-      print('startStripeCheckout error: $e');
-      _showSnack('Failed to open payment page: $e');
-    }
+    await _openStripeCheckoutFromFunction(kCreateHostCheckoutUrl);
   }
 
   Future<void> _startStatsCheckout() async {
@@ -4926,21 +4958,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       return;
     }
 
-    try {
-      final url = Uri.parse(kStatsPaymentUrl);
-
-      final ok = await launchUrl(
-        url,
-        mode: LaunchMode.externalApplication,
-      );
-
-      if (!ok) {
-        _showSnack('Cannot open payment page');
-      }
-    } catch (e) {
-      print('startStatsCheckout error: $e');
-      _showSnack('Failed to open payment page: $e');
-    }
+    await _openStripeCheckoutFromFunction(kCreateStatsCheckoutUrl);
   }
 
   Future<void> _openCashStatsPage() async {
@@ -4949,7 +4967,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         builder: (_) => CashGameStatsPage(
           session: effectiveSession,
           hasPaidAccess: hasStatsAccess,
-          paymentUrl: kStatsPaymentUrl,
+          paymentUrl: kCreateStatsCheckoutUrl,
         ),
       ),
     );
