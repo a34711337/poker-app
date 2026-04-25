@@ -1,4 +1,4 @@
-package com.example.poker_scheduler_clean
+package com.joetseng.pokerscheduler
 
 import io.flutter.embedding.android.FlutterActivity
 

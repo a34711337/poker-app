@@ -7,62 +7,34 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1019034709236:android:ca669fd38a96c79e99c2a1",
+        "mobilesdk_app_id": "1:1019034709236:android:0f43d1d365ea42a199c2a1",
         "android_client_info": {
-          "package_name": "com.example.poker_scheduler"
+          "package_name": "com.joetseng.pokerscheduler"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1019034709236-12j5sjdblp04fvthrvcnb1u8459lm171.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyAmDwku4yiCtjL_zh9zEjP7EU8I37XlRZw"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "1019034709236-12j5sjdblp04fvthrvcnb1u8459lm171.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "1019034709236-7835ot7gnt2cjr98m1s39cuja3re3bun.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.pokerScheduler"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:1019034709236:android:7585f4efc82d47a599c2a1",
-        "android_client_info": {
-          "package_name": "com.example.poker_scheduler_clean"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "1019034709236-p2mp0187ie9ngqntp9lkf2jg0of7dv5f.apps.googleusercontent.com",
+          "client_id": "1019034709236-3pqicdooj1djhl25ug5033d71icsd5le.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.poker_scheduler_clean",
+            "package_name": "com.joetseng.pokerscheduler",
             "certificate_hash": "0a43d2d16e90c43cce5b9109dc9adacccf2a2786"
           }
         },
         {
-          "client_id": "1019034709236-qlnh2to47vkf3caninecr4qboac1bp5g.apps.googleusercontent.com",
+          "client_id": "1019034709236-al7eqc72hk7g1iud2a020fqq5b8ln1vr.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.example.poker_scheduler_clean",
+            "package_name": "com.joetseng.pokerscheduler",
             "certificate_hash": "c313c5af2f7aab38ae62856b8421e6d1749e2a25"
+          }
+        },
+        {
+          "client_id": "1019034709236-sqcvuobjd21do4vbdhbd6tivs4m18jnf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.joetseng.pokerscheduler",
+            "certificate_hash": "835ad100a3af6b45b1c50fa346cb2fb2d7c4ef6a"
           }
         },
         {

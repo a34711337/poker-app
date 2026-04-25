@@ -20,7 +20,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.example.poker_scheduler_clean"
+    namespace = "com.joetseng.pokerscheduler"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -43,7 +43,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.poker_scheduler_clean"
+        applicationId = "com.joetseng.pokerscheduler"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
