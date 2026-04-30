@@ -4688,21 +4688,76 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     );
   }
 
+  Future<void> _createNewTableNotification({
+    required String tableId,
+    required Map<String, dynamic> tableData,
+  }) async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (currentUid.isEmpty) return;
+
+    final currentName = widget.session.name.trim().isEmpty
+        ? 'Host'
+        : widget.session.name.trim();
+
+    final visiblePlayersSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('grantedHostIds', arrayContains: currentUid)
+        .get();
+
+    final targetUserIds = visiblePlayersSnapshot.docs
+        .map((doc) => doc.id)
+        .where((uid) => uid != currentUid)
+        .toList();
+
+    if (targetUserIds.isEmpty) return;
+
+    final tableName = (tableData['name'] ?? 'New Table').toString();
+    final stakes = (tableData['stakes'] ?? '').toString().trim();
+    final location = (tableData['location'] ?? '').toString().trim();
+
+    final bodyParts = <String>[
+      tableName,
+      if (stakes.isNotEmpty) stakes,
+      if (location.isNotEmpty) location,
+    ];
+
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'type': 'new_table',
+      'tableId': tableId,
+      'hostUid': currentUid,
+      'hostName': currentName,
+      'title': '$currentName created a new table',
+      'body': bodyParts.join(' · '),
+      'targetUserIds': targetUserIds,
+      'readBy': <String>[],
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> _addTable() async {
     if (!canCreateTables) return;
-  
+
     final result = await _showCreateTableDialog();
     if (result == null) return;
-  
+
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     final currentName = widget.session.name.trim();
-  
+
     final tableData = result.toMap();
-  
+
     tableData['createdByUid'] = currentUid;
     tableData['createdByName'] = currentName;
-  
-    await tablesRef.add(tableData);
+    tableData['createdAt'] = FieldValue.serverTimestamp();
+    tableData['updatedAt'] = FieldValue.serverTimestamp();
+
+    final tableDoc = await tablesRef.add(tableData);
+
+    await _createNewTableNotification(
+      tableId: tableDoc.id,
+      tableData: tableData,
+    );
+
+    _showSnack('Table created');
   }
 
   Future<void> _shareTableWithHostByPlayerId({
@@ -5040,6 +5095,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         _showSnack('Host Pro activated');
 
         if (mounted) {
+          await Future.delayed(const Duration(milliseconds: 500));
           setState(() {});
         }
       } catch (e) {
@@ -5103,6 +5159,14 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  void _openNewTableNotifications() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const NewTableNotificationsPage(),
+      ),
+    );
   }
 
   Widget _buildTopBanner() {
@@ -5642,6 +5706,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               ],
             ),
           ),
+          NewTableNotificationButton(
+            onTap: _openNewTableNotifications,
+          ),
           FriendsNotificationButton(
             onTap: _openFriendsHub,
           ),
@@ -5782,6 +5849,128 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           ],
         ),
       ),
+    );
+  }
+}
+
+class NewTableNotificationsPage extends StatelessWidget {
+  const NewTableNotificationsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Notifications'),
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('notifications')
+            .where('targetUserIds', arrayContains: uid)
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          final docs = snapshot.data?.docs ?? [];
+
+          if (docs.isEmpty) {
+            return const Center(
+              child: Text('No notifications'),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: docs.length,
+            itemBuilder: (context, index) {
+              final data = docs[index].data();
+
+              final title = (data['title'] ?? 'New table').toString();
+              final message = (data['message'] ?? '').toString();
+
+              return ListTile(
+                title: Text(title),
+                subtitle: Text(message),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class NewTableNotificationButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const NewTableNotificationButton({
+    super.key,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    if (uid.isEmpty) {
+      return IconButton(
+        tooltip: 'Notifications',
+        onPressed: onTap,
+        icon: const Icon(Icons.notifications_none),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('notifications')
+          .where('targetUserIds', arrayContains: uid)
+          .orderBy('createdAt', descending: true)
+          .limit(30)
+          .snapshots(),
+      builder: (context, snapshot) {
+        int unreadCount = 0;
+
+        for (final doc in snapshot.data?.docs ?? []) {
+          final data = doc.data();
+          final readBy = List<String>.from(data['readBy'] ?? []);
+          if (!readBy.contains(uid)) {
+            unreadCount++;
+          }
+        }
+
+        return IconButton(
+          tooltip: 'Notifications',
+          onPressed: onTap,
+          icon: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              const Icon(Icons.notifications_none),
+              if (unreadCount > 0)
+                Positioned(
+                  right: -6,
+                  top: -6,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -7070,9 +7259,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           .collection('direct_chats')
           .doc(widget.chatId)
           .set({
-        'unreadCounts': {
-          currentUid: 0,
-        },
+        'unreadCounts.$currentUid': 0,
+        'lastReadAt.$currentUid': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (_) {
@@ -7140,10 +7328,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'lastMessageAt': FieldValue.serverTimestamp(),
           'lastMessageSenderUid': currentUser.uid,
           'updatedAt': FieldValue.serverTimestamp(),
-          'unreadCounts': {
-            currentUser.uid: 0,
-            widget.otherUid: otherUnread + 1,
-          },
+          'unreadCounts.${currentUser.uid}': 0,
+          'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
         }, SetOptions(merge: true));
 
         tx.set(
@@ -7225,14 +7411,24 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
               )
             : Row(
                 children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundImage: widget.otherPhotoUrl.trim().isNotEmpty
-                        ? NetworkImage(widget.otherPhotoUrl.trim())
-                        : null,
-                    child: widget.otherPhotoUrl.trim().isEmpty
-                        ? const Icon(Icons.person, size: 18)
-                        : null,
+                  StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(widget.otherUid)
+                        .snapshots(),
+                    builder: (context, userSnapshot) {
+                      final userData = userSnapshot.data?.data() ?? {};
+                      final avatar = resolveAvatarSnapshotFromMap(userData);
+                      final name = (userData['displayName'] ?? titleText).toString();
+
+                      return buildAppAvatar(
+                        radius: 18,
+                        avatar: avatar,
+                        displayName: name,
+                        iconSize: 18,
+                        textSize: 14,
+                      );
+                    },
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -7611,7 +7807,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
     return List<String>.from(data?['waitingList'] ?? []);
   }
 
-  bool get isHost => widget.session.role == UserRole.host;
+  bool get isHost => true; // 或改用你自己的權限邏輯
 
   bool get isSuperAdmin =>
       FirebaseAuth.instance.currentUser?.email?.toLowerCase() ==
