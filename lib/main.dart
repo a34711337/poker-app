@@ -1486,10 +1486,8 @@ Future<void> acceptFriendRequest(Map<String, dynamic> requestData) async {
       'lastMessage': '',
       'lastMessageAt': FieldValue.serverTimestamp(),
       'lastMessageSenderUid': '',
-      'unreadCounts': {
-        fromUid: 0,
-        toUid: 0,
-      },
+      'unreadCounts.$toUid': 0,
+      'unreadCounts.$fromUid': 0,
     }, SetOptions(merge: true));
 
     tx.set(requestRef, {
@@ -7299,16 +7297,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
       final messageRef = chatRef.collection('messages').doc();
 
-      final chatSnap = await chatRef.get();
-      final chatData = chatSnap.data() ?? {};
-      final unreadCounts =
-          Map<String, dynamic>.from(chatData['unreadCounts'] ?? {});
-
-      final otherUnreadRaw = unreadCounts[widget.otherUid] ?? 0;
-      final otherUnread = otherUnreadRaw is int
-          ? otherUnreadRaw
-          : int.tryParse(otherUnreadRaw.toString()) ?? 0;
-
       await FirebaseFirestore.instance.runTransaction((tx) async {
         tx.set(messageRef, {
           'messageId': messageRef.id,
@@ -12406,6 +12394,14 @@ class _TableDetailPageState extends State<TableDetailPage> {
     }
   }
 
+  void _openNewTableNotifications() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const NewTableNotificationsPage(),
+      ),
+    );
+  }
+
   Future<void> _openDirectChatFromFriendship(
     Map<String, dynamic> friendshipData,
   ) async {
@@ -12676,6 +12672,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),                               
 
             actions: [
+              NewTableNotificationButton(
+                onTap: _openNewTableNotifications,
+              ),
               FriendsNotificationButton(
                 onTap: _openFriendsHub,
               ),
