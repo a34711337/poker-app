@@ -922,8 +922,131 @@ bool get isAppleIapPlatform {
 }
 
 class AppleIapService {
+  static bool _isBuying = false;
+
   static Future<void> buy({
     required String productId,
+    required ApplePurchaseType type,
+  }) async {
+    if (_isBuying) {
+      throw Exception('Purchase is already in progress. Please wait.');
+    }
+
+    _isBuying = true;
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      _isBuying = false;
+      throw Exception('Please login again');
+    }
+
+    final iap = InAppPurchase.instance;
+    StreamSubscription<List<PurchaseDetails>>? subscription;
+
+    try {
+      final available = await iap.isAvailable();
+
+      debugPrint('IAP available: $available');
+      debugPrint('IAP productId: $productId');
+
+      if (!available) {
+        throw Exception('In-App Purchase is not available on this device.');
+      }
+
+      final productResponse = await iap.queryProductDetails({productId});
+
+      debugPrint('IAP error: ${productResponse.error}');
+      debugPrint('IAP found products: ${productResponse.productDetails.map((e) => e.id).toList()}');
+      debugPrint('IAP not found ids: ${productResponse.notFoundIDs}');
+
+      if (productResponse.error != null) {
+        throw Exception(productResponse.error!.message);
+      }
+
+      if (productResponse.productDetails.isEmpty) {
+        throw Exception(
+          'Product not found. Please make sure this subscription is added to the app version and available in App Store Connect.',
+        );
+      }
+
+      final product = productResponse.productDetails.first;
+      final purchaseParam = PurchaseParam(productDetails: product);
+      final completer = Completer<void>();
+
+      subscription = iap.purchaseStream.listen(
+        (purchases) async {
+          for (final purchase in purchases) {
+            if (purchase.productID != productId) continue;
+
+            debugPrint('IAP purchase status: ${purchase.status}');
+            debugPrint('IAP pendingCompletePurchase: ${purchase.pendingCompletePurchase}');
+
+            if (purchase.status == PurchaseStatus.pending) {
+              continue;
+            }
+
+            if (purchase.status == PurchaseStatus.error) {
+              if (!completer.isCompleted) {
+                completer.completeError(
+                  Exception(purchase.error?.message ?? 'Purchase failed'),
+                );
+              }
+              continue;
+            }
+
+            if (purchase.status == PurchaseStatus.canceled) {
+              if (!completer.isCompleted) {
+                completer.completeError(Exception('Purchase cancelled'));
+              }
+              continue;
+            }
+
+            if (purchase.status == PurchaseStatus.purchased ||
+                purchase.status == PurchaseStatus.restored) {
+              await _activateEntitlement(
+                uid: user.uid,
+                type: type,
+              );
+
+              if (purchase.pendingCompletePurchase) {
+                await iap.completePurchase(purchase);
+              }
+
+              if (!completer.isCompleted) {
+                completer.complete();
+              }
+            }
+          }
+        },
+        onError: (error) {
+          if (!completer.isCompleted) {
+            completer.completeError(error);
+          }
+        },
+      );
+
+      final started = await iap.buyNonConsumable(
+        purchaseParam: purchaseParam,
+      );
+
+      if (!started) {
+        throw Exception('Failed to start purchase');
+      }
+
+      await completer.future.timeout(
+        const Duration(minutes: 3),
+        onTimeout: () {
+          throw Exception('Purchase timeout. Please try again.');
+        },
+      );
+    } finally {
+      await subscription?.cancel();
+      _isBuying = false;
+    }
+  }
+
+  static Future<void> restore({
     required ApplePurchaseType type,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
@@ -933,100 +1056,91 @@ class AppleIapService {
     }
 
     final iap = InAppPurchase.instance;
-    final available = await iap.isAvailable();
+    StreamSubscription<List<PurchaseDetails>>? subscription;
 
-    if (!available) {
-      throw Exception('In-App Purchase is not available');
-    }
+    try {
+      final available = await iap.isAvailable();
 
-    final productResponse = await iap.queryProductDetails({productId});
+      if (!available) {
+        throw Exception('In-App Purchase is not available on this device.');
+      }
 
-    if (productResponse.error != null) {
-      throw Exception(productResponse.error!.message);
-    }
+      final completer = Completer<void>();
+      bool restoredAny = false;
 
-    if (productResponse.productDetails.isEmpty) {
-      throw Exception('Product not found: $productId');
-    }
+      subscription = iap.purchaseStream.listen(
+        (purchases) async {
+          for (final purchase in purchases) {
+            if (purchase.status != PurchaseStatus.restored &&
+                purchase.status != PurchaseStatus.purchased) {
+              continue;
+            }
 
-    final product = productResponse.productDetails.first;
-    final purchaseParam = PurchaseParam(productDetails: product);
-
-    final purchaseCompleter = Completer<void>();
-    late StreamSubscription<List<PurchaseDetails>> subscription;
-
-    subscription = iap.purchaseStream.listen(
-      (purchases) async {
-        for (final purchase in purchases) {
-          if (purchase.productID != productId) continue;
-
-          if (purchase.status == PurchaseStatus.pending) {
-            continue;
-          }
-
-          if (purchase.status == PurchaseStatus.error) {
-            if (!purchaseCompleter.isCompleted) {
-              purchaseCompleter.completeError(
-                Exception(purchase.error?.message ?? 'Purchase failed'),
+            if (purchase.productID == kAppleHostProProductId) {
+              restoredAny = true;
+              await _activateEntitlement(
+                uid: user.uid,
+                type: ApplePurchaseType.host,
               );
             }
-            continue;
-          }
 
-          if (purchase.status == PurchaseStatus.canceled) {
-            if (!purchaseCompleter.isCompleted) {
-              purchaseCompleter.completeError(
-                Exception('Purchase cancelled'),
+            if (purchase.productID == kAppleStatsProProductId) {
+              restoredAny = true;
+              await _activateEntitlement(
+                uid: user.uid,
+                type: ApplePurchaseType.stats,
               );
-            }
-            continue;
-          }
-
-          if (purchase.status == PurchaseStatus.purchased ||
-              purchase.status == PurchaseStatus.restored) {
-            if (type == ApplePurchaseType.host) {
-              await activateHostSubscriptionForUserUid(user.uid);
-            } else if (type == ApplePurchaseType.stats) {
-              await activateStatsSubscriptionForUserUid(user.uid);
-            } else if (type == ApplePurchaseType.bundle) {
-              await activateHostSubscriptionForUserUid(user.uid);
-              await activateStatsSubscriptionForUserUid(user.uid);
             }
 
             if (purchase.pendingCompletePurchase) {
               await iap.completePurchase(purchase);
             }
-
-            if (!purchaseCompleter.isCompleted) {
-              purchaseCompleter.complete();
-            }
           }
-        }
-      },
-      onError: (error) {
-        if (!purchaseCompleter.isCompleted) {
-          purchaseCompleter.completeError(error);
-        }
-      },
-    );
 
-    try {
-      final started = await iap.buyNonConsumable(
-        purchaseParam: purchaseParam,
-      );
-
-      if (!started) {
-        throw Exception('Failed to start purchase');
-      }
-
-      await purchaseCompleter.future.timeout(
-        const Duration(minutes: 2),
-        onTimeout: () {
-          throw Exception('Purchase timeout');
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        },
+        onError: (error) {
+          if (!completer.isCompleted) {
+            completer.completeError(error);
+          }
         },
       );
+
+      await iap.restorePurchases();
+
+      await completer.future.timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {},
+      );
+
+      if (!restoredAny) {
+        throw Exception('No previous purchase found.');
+      }
     } finally {
-      await subscription.cancel();
+      await subscription?.cancel();
+    }
+  }
+
+  static Future<void> _activateEntitlement({
+    required String uid,
+    required ApplePurchaseType type,
+  }) async {
+    if (type == ApplePurchaseType.host) {
+      await activateHostSubscriptionForUserUid(uid);
+      return;
+    }
+
+    if (type == ApplePurchaseType.stats) {
+      await activateStatsSubscriptionForUserUid(uid);
+      return;
+    }
+
+    if (type == ApplePurchaseType.bundle) {
+      await activateHostSubscriptionForUserUid(uid);
+      await activateStatsSubscriptionForUserUid(uid);
+      return;
     }
   }
 }
@@ -5534,20 +5648,65 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           _buildProfileMenu(),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: isHost ? _handleAddTablePressed : _startStripeCheckout,
-        backgroundColor: isHost
-            ? const Color(0xFFB9F0A9)
-            : const Color(0xFFDBEAFE),
-        foregroundColor: isHost
-            ? const Color(0xFF163D2E)
-            : const Color(0xFF1D4ED8),
-        icon: Icon(isHost ? Icons.add : Icons.workspace_premium),
-        label: Text(
-          isHost ? 'Add Table' : 'Upgrade to Host',
-          style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ),
+      floatingActionButton: isHost
+          ? FloatingActionButton.extended(
+              onPressed: _handleAddTablePressed,
+              backgroundColor: const Color(0xFFB9F0A9),
+              foregroundColor: const Color(0xFF163D2E),
+              icon: const Icon(Icons.add),
+              label: const Text(
+                'Add Table',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (isAppleIapPlatform)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: TextButton(
+                      onPressed: () async {
+                        try {
+                          await AppleIapService.restore(
+                            type: ApplePurchaseType.host,
+                          );
+
+                          if (!mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Purchase restored')),
+                          );
+
+                          setState(() {});
+                        } catch (e) {
+                          if (!mounted) return;
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                e.toString().replaceFirst('Exception: ', ''),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: const Text('Restore Purchase'),
+                    ),
+                  ),
+                FloatingActionButton.extended(
+                  onPressed: _startStripeCheckout,
+                  backgroundColor: const Color(0xFFDBEAFE),
+                  foregroundColor: const Color(0xFF1D4ED8),
+                  icon: const Icon(Icons.workspace_premium),
+                  label: const Text(
+                    'Upgrade to Host',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ],
+            ),
       body: SafeArea(
         child: Column(
           children: [
@@ -13536,15 +13695,53 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                   ),
                 ),
               )
-            : FloatingActionButton.extended(
-                onPressed: _startStatsCheckout,
-                backgroundColor: const Color(0xFFDBEAFE),
-                foregroundColor: const Color(0xFF1D4ED8),
-                icon: const Icon(Icons.workspace_premium),
-                label: const Text(
-                  'Upgrade to Stats Pro',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (isAppleIapPlatform)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: TextButton(
+                        onPressed: () async {
+                          try {
+                            await AppleIapService.restore(
+                              type: ApplePurchaseType.stats,
+                            );
+
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Purchase restored')),
+                            );
+
+                            setState(() {});
+                          } catch (e) {
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  e.toString().replaceFirst('Exception: ', ''),
+                                ),
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Restore Purchase'),
+                      ),
+                    ),
+                  FloatingActionButton.extended(
+                    onPressed: _startStatsCheckout,
+                    backgroundColor: const Color(0xFFDBEAFE),
+                    foregroundColor: const Color(0xFF1D4ED8),
+                    icon: const Icon(Icons.workspace_premium),
+                    label: const Text(
+                      'Upgrade to Stats Pro',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                ],
               ),
         body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: FirebaseFirestore.instance
