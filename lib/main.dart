@@ -30,6 +30,12 @@ Future<void> setupPushNotifications() async {
     sound: true,
   );
 
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
   final token = await messaging.getToken();
   if (token == null || token.isEmpty) return;
 
@@ -77,6 +83,7 @@ class AuthGate extends StatelessWidget {
     if (user == null) return null;
   
     await ensureUserProfile(user);
+    await setupPushNotifications();
   
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
@@ -2494,6 +2501,8 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
         lastName: lastName,
         role: UserRole.player,
       );
+
+      await setupPushNotifications();
 
       if (!mounted) return;
 
@@ -7384,6 +7393,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
   @override
   void dispose() {
+    _markChatAsRead();
     messageController.dispose();
     chatSearchController.dispose();
     super.dispose();
