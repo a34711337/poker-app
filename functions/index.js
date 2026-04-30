@@ -1,4 +1,5 @@
 const functions = require("firebase-functions");
+const functionsV1 = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 const Stripe = require("stripe");
 
@@ -573,3 +574,120 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
     return res.status(500).send("Webhook handler failed");
   }
 });
+
+// =======================
+// 🔥 PUSH NOTIFICATION - 1st Gen
+// =======================
+
+async function getTokensForUserIds(userIds) {
+  const tokenSet = new Set();
+
+  for (const uid of userIds || []) {
+    if (!uid) continue;
+
+    const userSnap = await db.collection("users").doc(uid).get();
+    const userData = userSnap.data() || {};
+    const tokens = Array.isArray(userData.fcmTokens)
+      ? userData.fcmTokens
+      : [];
+
+    for (const token of tokens) {
+      if (typeof token === "string" && token.trim()) {
+        tokenSet.add(token.trim());
+      }
+    }
+  }
+
+  return [...tokenSet];
+}
+
+async function sendPush({ tokens, title, body, data }) {
+  if (!tokens || tokens.length === 0) {
+    console.log("No FCM tokens found");
+    return;
+  }
+
+  await admin.messaging().sendEachForMulticast({
+    tokens,
+    notification: {
+      title: title || "Poker Table Reservation",
+      body: body || "",
+    },
+    data: data || {},
+    apns: {
+      payload: {
+        aps: {
+          sound: "default",
+          badge: 1,
+        },
+      },
+    },
+    android: {
+      notification: {
+        sound: "default",
+      },
+    },
+  });
+}
+
+// 🔔 新桌子通知
+exports.sendNewTablePush = functionsV1.firestore
+  .document("notifications/{id}")
+  .onCreate(async (snap, context) => {
+    const data = snap.data() || {};
+
+    if (data.type !== "new_table") return null;
+
+    const tokens = await getTokensForUserIds(data.targetUserIds || []);
+
+    await sendPush({
+      tokens,
+      title: data.title || "New table",
+      body: data.body || "",
+      data: {
+        type: "new_table",
+        tableId: (data.tableId || "").toString(),
+      },
+    });
+
+    return null;
+  });
+
+// 💬 聊天通知
+exports.sendChatPush = functionsV1.firestore
+  .document("direct_chats/{chatId}/messages/{messageId}")
+  .onCreate(async (snap, context) => {
+    const msg = snap.data() || {};
+    const chatId = context.params.chatId;
+
+    const senderUid = (msg.senderUid || "").toString();
+    const text = (msg.text || "").toString();
+
+    if (!senderUid || !text.trim()) return null;
+
+    const chatDoc = await db.collection("direct_chats").doc(chatId).get();
+    const chatData = chatDoc.data() || {};
+    const members = Array.isArray(chatData.memberUids)
+      ? chatData.memberUids
+      : [];
+
+    const targets = members.filter((uid) => uid && uid !== senderUid);
+    const tokens = await getTokensForUserIds(targets);
+
+    const senderDoc = await db.collection("users").doc(senderUid).get();
+    const senderData = senderDoc.data() || {};
+    const senderName =
+      senderData.displayName || senderData.shortName || "New message";
+
+    await sendPush({
+      tokens,
+      title: senderName,
+      body: text.length > 80 ? `${text.substring(0, 80)}...` : text,
+      data: {
+        type: "chat",
+        chatId,
+      },
+    });
+
+    return null;
+  });

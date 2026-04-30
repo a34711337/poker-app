@@ -16,9 +16,31 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+
+Future<void> setupPushNotifications() async {
+  final messaging = FirebaseMessaging.instance;
+
+  await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  final token = await messaging.getToken();
+  if (token == null || token.isEmpty) return;
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+    'fcmTokens': FieldValue.arrayUnion([token]),
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1953,7 +1975,9 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       }
   
       await ensureUserProfile(user);
-  
+
+      await setupPushNotifications();
+
       final userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
@@ -2060,6 +2084,7 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       }
 
       await ensureUserProfile(user);
+      await setupPushNotifications();
 
       final name =
           (data['displayName'] ?? user.displayName ?? user.email ?? 'User')
@@ -2150,7 +2175,8 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       }
 
       await ensureUserProfile(user);
-
+      await setupPushNotifications();
+      
       final name =
           (data['displayName'] ?? user.displayName ?? user.email ?? 'User')
               .toString();
@@ -3924,6 +3950,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   @override
   void initState() {
     super.initState();
+    setupPushNotifications();   
     startVersionCheck();
     _listenToCurrentUserAccess();
   }
@@ -12417,10 +12444,23 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
     final myNickname = (nicknames[currentUser.uid] ?? '').toString().trim();
 
+    final chatId = (friendshipData['chatId'] ?? '').toString();
+
+    if (chatId.isNotEmpty) {
+      await FirebaseFirestore.instance
+          .collection('direct_chats')
+          .doc(chatId)
+          .set({
+        'unreadCounts.${currentUser.uid}': 0,
+        'lastReadAt.${currentUser.uid}': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChatRoomPage(
-          chatId: (friendshipData['chatId'] ?? '').toString(),
+          chatId: chatId,
           otherUid: (otherUser['uid'] ?? '').toString(),
           otherDisplayName: (otherUser['displayName'] ?? 'Chat').toString(),
           otherPhotoUrl: (otherUser['photoUrl'] ?? '').toString(),

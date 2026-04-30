@@ -22,6 +22,7 @@ dependencies:
   universal_html: ^2.2.4
   sign_in_with_apple: ^7.0.1
   in_app_purchase: ^3.2.1
+  firebase_messaging: ^15.2.10
 
 dev_dependencies:
   flutter_test:
