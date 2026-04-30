@@ -22,6 +22,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 
 Future<void> setupPushNotifications() async {
+  if (kIsWeb) return;
+
   final messaging = FirebaseMessaging.instance;
 
   await messaging.requestPermission(
@@ -30,11 +32,30 @@ Future<void> setupPushNotifications() async {
     sound: true,
   );
 
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+  await messaging.setForegroundNotificationPresentationOptions(
     alert: true,
     badge: true,
     sound: true,
   );
+
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    String? apnsToken;
+
+    for (int i = 0; i < 10; i++) {
+      apnsToken = await messaging.getAPNSToken();
+
+      if (apnsToken != null && apnsToken.isNotEmpty) {
+        break;
+      }
+
+      await Future.delayed(const Duration(seconds: 1));
+    }
+
+    if (apnsToken == null || apnsToken.isEmpty) {
+      debugPrint('APNS token still not available. Skip FCM token for now.');
+      return;
+    }
+  }
 
   final token = await messaging.getToken();
   if (token == null || token.isEmpty) return;
