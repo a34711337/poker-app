@@ -53,11 +53,12 @@ Future<void> setupPushNotifications() async {
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
       for (int i = 0; i < 60; i++) {
-
+        apnsToken = await messaging.getAPNSToken();
+      
         if (apnsToken != null && apnsToken.isNotEmpty) {
           break;
         }
-
+      
         await Future.delayed(const Duration(seconds: 1));
       }
 
