@@ -263,21 +263,117 @@ Future<void> setupPush() async {
   print("FCM TOKEN: $fcmToken");
 }
 
-class PokerReservationApp extends StatelessWidget {
+class PokerReservationApp extends StatefulWidget {
   const PokerReservationApp({super.key});
 
   @override
+  State<PokerReservationApp> createState() =>
+      _PokerReservationAppState();
+}
+
+class AppThemeController extends InheritedWidget {
+  final Function(bool isDark) updateTheme;
+
+  const AppThemeController({
+    super.key,
+    required this.updateTheme,
+    required super.child,
+  });
+
+  static AppThemeController of(BuildContext context) {
+    final result = context
+        .dependOnInheritedWidgetOfExactType<AppThemeController>();
+
+    return result!;
+  }
+
+  @override
+  bool updateShouldNotify(AppThemeController oldWidget) {
+    return true;
+  }
+}
+
+class _PokerReservationAppState
+    extends State<PokerReservationApp> {
+
+  ThemeMode _themeMode = ThemeMode.light;
+
+  StreamSubscription<User?>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        _loadTheme();
+      }
+    });
+  }
+
+  Future<void> _loadTheme() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final data = doc.data() ?? {};
+
+    final isDark = data['darkMode'] == true;
+
+    if (!mounted) return;
+
+    setState(() {
+      _themeMode =
+          isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  void updateTheme(bool isDark) {
+    setState(() {
+      _themeMode =
+          isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: appNavigatorKey,
-      title: 'Poker Table Reservation',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.green,
-        scaffoldBackgroundColor: const Color(0xFFF4F6F8),
+    return AppThemeController(
+      updateTheme: updateTheme,
+      child: MaterialApp(
+        navigatorKey: appNavigatorKey,
+        title: 'Poker Table Reservation',
+        debugShowCheckedModeBanner: false,
+
+        themeMode: _themeMode,
+
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.green,
+          scaffoldBackgroundColor: const Color(0xFFF4F6F8),
+          brightness: Brightness.light,
+        ),
+
+        darkTheme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.green,
+          brightness: Brightness.dark,
+          scaffoldBackgroundColor: const Color(0xFF111827),
+          cardColor: const Color(0xFF1F2937),
+        ),
+
+        home: const AuthGate(),
       ),
-      home: const AuthGate(),
     );
   }
 }
@@ -569,6 +665,17 @@ IconData virtualAvatarIconData(String key) {
     default:
       return Icons.person;
   }
+}
+
+Widget forceLightTheme(Widget child) {
+  return Theme(
+    data: ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.light,
+      colorSchemeSeed: Colors.green,
+    ),
+    child: child,
+  );
 }
 
 Widget buildAppAvatar({
@@ -4100,44 +4207,6 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 28),
-                              const Text(
-                                'Danger Zone',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              OutlinedButton.icon(
-                                onPressed: () async {
-                                  final confirmed = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      title: const Text('Delete Account'),
-                                      content: const Text(
-                                        'This will deactivate your account and remove your occupied seats. This cannot be undone.\n\nDo you want to continue?',
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed: () => Navigator.pop(context, false),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        FilledButton(
-                                          onPressed: () => Navigator.pop(context, true),
-                                          child: const Text('Delete'),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                              
-                                  if (confirmed == true) {
-                                    await _deactivateMyAccount();
-                                  }
-                                },
-                                icon: const Icon(Icons.delete_forever),
-                                label: const Text('Delete My Account'),
-                              ),
                             ],
                           ],
                         ),
@@ -4146,6 +4215,163 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                   ),
                 ),
               ),
+      ),
+    );
+  }
+}
+
+class SettingsPage extends StatelessWidget {
+  final UserSession session;
+
+  const SettingsPage({
+    super.key,
+    required this.session,
+  });
+
+  Future<void> _deactivateMyAccount(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login again')),
+      );
+      return;
+    }
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'isActive': false,
+      'deactivatedAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await FirebaseAuth.instance.signOut();
+
+    if (!context.mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+      (route) => false,
+    );
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Account'),
+        content: const Text(
+          'This will deactivate your account and remove your occupied seats. This cannot be undone.\n\nDo you want to continue?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      await _deactivateMyAccount(context);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        surfaceTintColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        elevation: 0,
+        title: const Text('Settings'),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          ListTile(
+            leading: const Icon(Icons.language),
+            title: const Text('Language'),
+            subtitle: const Text('English / 中文'),
+            onTap: () {},
+          ),
+          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser!.uid)
+                .get(),
+            builder: (context, snapshot) {
+              final data = snapshot.data?.data() ?? {};
+              final isDark = data['darkMode'] == true;
+
+              return SwitchListTile(
+                secondary: const Icon(Icons.dark_mode_outlined),
+                title: const Text('Dark Mode'),
+                subtitle: Text(isDark ? 'Dark' : 'Light'),
+                value: isDark,
+                onChanged: (value) async {
+                  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(uid)
+                      .set({
+                    'darkMode': value,
+                  }, SetOptions(merge: true));
+
+                  if (!context.mounted) return;
+
+                  AppThemeController.of(context).updateTheme(value);
+                },
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.home_outlined),
+            title: const Text('Home'),
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.privacy_tip_outlined),
+            title: const Text('Privacy Policy'),
+            onTap: () {
+              launchUrl(
+                Uri.parse(
+                  'https://tablescheduler.web.app/privacy.html',
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.description_outlined),
+            title: const Text('Terms of Service'),
+            onTap: () {
+              launchUrl(
+                Uri.parse(
+                  'https://tablescheduler.web.app/privacy.html',
+                ),
+              );
+            },
+          ),
+          const Divider(height: 32),
+          ListTile(
+            leading: const Icon(
+              Icons.delete_forever,
+              color: Colors.red,
+            ),
+            title: const Text(
+              'Delete Account',
+              style: TextStyle(color: Colors.red),
+            ),
+            onTap: () => _confirmDeleteAccount(context),
+          ),
+        ],
       ),
     );
   }
@@ -5465,137 +5691,217 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   Widget _buildProfileMenu() {
     return Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: PopupMenuButton<String>(
-        offset: const Offset(0, 50),
-        onSelected: (value) async {
-          if (value == 'edit_profile') {
-            await Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => ProfileEditPage(
-                  session: widget.session,
+      child: forceLightTheme(
+        PopupMenuButton<String>(
+          offset: const Offset(0, 50),
+          onSelected: (value) async {
+            if (value == 'edit_profile') {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ProfileEditPage(
+                    session: widget.session,
+                  ),
                 ),
-              ),
-            );
-          
-            if (mounted) {
-              setState(() {});
+              );
+
+            } else if (value == 'settings') {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SettingsPage(
+                    session: widget.session,
+                  ),
+                ),
+              );
+
+              if (mounted) {
+                setState(() {});
+              }
+
+            } else if (value == 'grant_player_access') {
+              await _showGrantPlayerAccessDialog();
+
+            } else if (value == 'logout') {
+              _logout();
             }
-          } else if (value == 'grant_player_access') {
-            await _showGrantPlayerAccessDialog();
-          } else if (value == 'logout') {
-            _logout();
-          }
-        },
-        itemBuilder: (context) => [
-          PopupMenuItem<String>(
-            value: 'user',
-            enabled: false,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.session.shortName,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  FirebaseAuth.instance.currentUser?.email ?? '',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          },
 
-          const PopupMenuDivider(),
-          const PopupMenuItem<String>(
-            value: 'edit_profile',
-            child: Row(
-              children: [
-                Icon(Icons.edit_outlined, size: 18),
-                SizedBox(width: 8),
-                Text('Edit Profile'),
-              ],
-            ),
-          ),
-
-          if (isHost)
-            const PopupMenuItem<String>(
-              value: 'grant_player_access',
-              child: Row(
+          itemBuilder: (context) => [
+            PopupMenuItem<String>(
+              value: 'user',
+              enabled: false,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.badge_outlined, size: 18),
-                  SizedBox(width: 8),
-                  Text('Add Player by ID'),
-                ],
-              ),
-            ),
-          const PopupMenuItem<String>(
-            value: 'logout',   
-            child: Row(
-              children: [
-                Icon(Icons.logout, size: 18),
-                SizedBox(width: 8),
-                Text('Logout'),
-              ],
-            ),
-          ),
-        ],
-        child: Builder(
-          builder: (context) {
-            final user = FirebaseAuth.instance.currentUser;
-            final displayName = widget.session.shortName;
-
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: Colors.black12),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                    future: FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user?.uid)
-                        .get(),
-                    builder: (context, snapshot) {
-                      final data = snapshot.data?.data() ?? {};
-                      return buildAppAvatar(
-                        radius: 16,
-                        avatar: resolveAvatarSnapshotFromMap({
-                          'photoUrl': (data['photoUrl'] ?? user?.photoURL)?.toString(),
-                          'avatarType': data['avatarType'],
-                          'avatarIcon': data['avatarIcon'],
-                          'avatarBgColor': data['avatarBgColor'],
-                        }),
-                        displayName: displayName,
-                        iconSize: 16,
-                        textSize: 12,
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 8),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 120),
-                    child: Text(
-                      displayName,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  Text(
+                    widget.session.shortName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.black,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.arrow_drop_down),
+                  const SizedBox(height: 4),
+                  Text(
+                    FirebaseAuth.instance.currentUser?.email ?? '',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
+                    ),
+                  ),
                 ],
               ),
-            );
-          },
+            ),
+
+            const PopupMenuDivider(),
+
+            const PopupMenuItem<String>(
+              value: 'edit_profile',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Colors.black,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Edit Profile',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ],
+              ),
+            ),
+
+            if (isHost)
+              const PopupMenuItem<String>(
+                value: 'grant_player_access',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.badge_outlined,
+                      size: 18,
+                      color: Colors.black,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      'Add Player by ID',
+                      style: TextStyle(color: Colors.black),
+                    ),
+                  ],
+                ),
+              ),
+
+            const PopupMenuItem<String>(
+              value: 'settings',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.settings_outlined,
+                    size: 18,
+                    color: Colors.black,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Settings',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ],
+              ),
+            ),
+
+            const PopupMenuItem<String>(
+              value: 'logout',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.logout,
+                    size: 18,
+                    color: Colors.black,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Logout',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          color: Colors.white,
+          surfaceTintColor: Colors.white,
+
+          child: Builder(
+            builder: (context) {
+              final user = FirebaseAuth.instance.currentUser;
+              final displayName = widget.session.shortName;
+
+              return Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: Colors.black12,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                      future: FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user?.uid)
+                          .get(),
+                      builder: (context, snapshot) {
+                        final data = snapshot.data?.data() ?? {};
+
+                        return buildAppAvatar(
+                          radius: 16,
+                          avatar: resolveAvatarSnapshotFromMap({
+                            'photoUrl':
+                                (data['photoUrl'] ?? user?.photoURL)
+                                    ?.toString(),
+                            'avatarType': data['avatarType'],
+                            'avatarIcon': data['avatarIcon'],
+                            'avatarBgColor': data['avatarBgColor'],
+                          }),
+                          displayName: displayName,
+                          iconSize: 16,
+                          textSize: 12,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxWidth: 120,
+                      ),
+                      child: Text(
+                        displayName,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 4),
+
+                    const Icon(
+                      Icons.arrow_drop_down,
+                      color: Colors.black,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -5909,6 +6215,8 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         centerTitle: true,
         title: Text(
           'Table List ($roleText)',
@@ -5947,9 +6255,6 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                   ),
               ],
             ),
-          ),
-          NewTableNotificationButton(
-            onTap: _openNewTableNotifications,
           ),
           FriendsNotificationButton(
             onTap: _openFriendsHub,
@@ -6080,7 +6385,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                   ],
                 ),
               ),
-              
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: _buildTopBanner(),
@@ -6715,77 +7020,91 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
   }
 
   Widget _buildSearchCard() {
-    return Card(
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: 'Search player',
-                hintText: 'Name / email / player ID',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
+    return forceLightTheme(
+      Card(
+        color: Colors.white,
+        surfaceTintColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              TextField(
+                controller: searchController,
+                style: const TextStyle(color: Colors.black87),
+                decoration: InputDecoration(
+                  labelText: 'Search player',
+                  hintText: 'Name / email / player ID',
+                  labelStyle: const TextStyle(color: Colors.black54),
+                  hintStyle: const TextStyle(color: Colors.black38),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  suffixIcon: IconButton(
+                    onPressed: isSearching ? null : _searchUsers,
+                    icon: const Icon(
+                      Icons.search,
+                      color: Colors.black54,
+                    ),
+                  ),
                 ),
-                suffixIcon: IconButton(
-                  onPressed: isSearching ? null : _searchUsers,
-                  icon: const Icon(Icons.search),
-                ),
+                onSubmitted: (_) => _searchUsers(),
               ),
-              onSubmitted: (_) => _searchUsers(),
-            ),
-            const SizedBox(height: 12),
-            if (isSearching)
-              const Padding(
-                padding: EdgeInsets.all(16),
-                child: CircularProgressIndicator(),
-              )
-            else if (searchResults.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(12),
-                child: Text(
-                  'No search results yet',
-                  style: TextStyle(color: Colors.black54),
-                ),
-              )
-            else
-              Column(
-                children: searchResults.map((user) {
-                  final imageProvider =
-                      (user.photoUrl != null && user.photoUrl!.trim().isNotEmpty)
-                          ? NetworkImage(user.photoUrl!)
-                          : null;
+              const SizedBox(height: 12),
+              if (isSearching)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                )
+              else if (searchResults.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Text(
+                    'No search results yet',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                )
+              else
+                Column(
+                  children: searchResults.map((user) {
+                    final imageProvider =
+                        (user.photoUrl != null &&
+                                user.photoUrl!.trim().isNotEmpty)
+                            ? NetworkImage(user.photoUrl!)
+                            : null;
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: CircleAvatar(
-                      backgroundImage: imageProvider,
-                      child: imageProvider == null
-                          ? const Icon(Icons.person)
-                          : null,
-                    ),
-                    title: Text(
-                      user.displayName,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
-                    subtitle: Text(
-                      '${user.email}\nID: ${user.playerId}',
-                    ),
-                    isThreeLine: true,
-                    trailing: FilledButton(
-                      onPressed: user.uid == currentUid
-                          ? null
-                          : () => _sendRequest(user),
-                      child: Text(
-                        user.uid == currentUid ? 'You' : 'Add',
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: CircleAvatar(
+                        backgroundImage: imageProvider,
+                        child: imageProvider == null
+                            ? const Icon(Icons.person)
+                            : null,
                       ),
-                    ),
-                  );
-                }).toList(),
-              ),
-          ],
+                      title: Text(
+                        user.displayName,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${user.email}\nID: ${user.playerId}',
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                      isThreeLine: true,
+                      trailing: FilledButton(
+                        onPressed: user.uid == currentUid
+                            ? null
+                            : () => _sendRequest(user),
+                        child: Text(
+                          user.uid == currentUid ? 'You' : 'Add',
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -6801,99 +7120,122 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
 
-        return Card(
-          color: Colors.white,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Incoming Requests',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (docs.isEmpty)
+        return forceLightTheme(
+          Card(
+            color: Colors.white,
+            surfaceTintColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   const Text(
-                    'No incoming requests',
-                    style: TextStyle(color: Colors.black54),
-                  )
-                else
-                  Column(
-                    children: docs.map((doc) {
-                      final data = doc.data();
-                      final status = (data['status'] ?? 'pending')
-                          .toString()
-                          .trim();
+                    'Incoming Requests',
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (docs.isEmpty)
+                    const Text(
+                      'No incoming requests',
+                      style: TextStyle(
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  else
+                    Column(
+                      children: docs.map((doc) {
+                        final data = doc.data();
+                        final status = (data['status'] ?? 'pending')
+                            .toString()
+                            .trim();
 
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundImage:
-                              ((data['fromPhotoUrl'] ?? '').toString().trim().isNotEmpty)
-                                  ? NetworkImage(
-                                      (data['fromPhotoUrl'] ?? '').toString().trim(),
-                                    )
-                                  : null,
-                          child: ((data['fromPhotoUrl'] ?? '').toString().trim().isEmpty)
-                              ? const Icon(Icons.person)
-                              : null,
-                        ),
-                        title: Text(
-                          (data['fromDisplayName'] ?? 'Unknown').toString(),
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        subtitle: Text(
-                          (data['fromShortName'] ?? '').toString(),
-                        ),
-                        trailing: Wrap(
-                          spacing: 8,
-                          children: [
-                            if (status == 'pending')
-                              TextButton(
+                        return ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: CircleAvatar(
+                            backgroundImage: ((data['fromPhotoUrl'] ?? '')
+                                    .toString()
+                                    .trim()
+                                    .isNotEmpty)
+                                ? NetworkImage(
+                                    (data['fromPhotoUrl'] ?? '')
+                                        .toString()
+                                        .trim(),
+                                  )
+                                : null,
+                            child: ((data['fromPhotoUrl'] ?? '')
+                                    .toString()
+                                    .trim()
+                                    .isEmpty)
+                                ? const Icon(Icons.person)
+                                : null,
+                          ),
+                          title: Text(
+                            (data['fromDisplayName'] ?? 'Unknown').toString(),
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          subtitle: Text(
+                            (data['fromShortName'] ?? '').toString(),
+                            style: const TextStyle(
+                              color: Colors.black54,
+                            ),
+                          ),
+                          trailing: Wrap(
+                            spacing: 8,
+                            children: [
+                              if (status == 'pending')
+                                TextButton(
+                                  onPressed: () async {
+                                    try {
+                                      await ignoreFriendRequest(data);
+                                    } catch (_) {}
+                                  },
+                                  child: const Text('Ignore'),
+                                ),
+                              OutlinedButton(
                                 onPressed: () async {
                                   try {
-                                    await ignoreFriendRequest(data);
+                                    await rejectFriendRequest(data);
                                   } catch (_) {}
                                 },
-                                child: const Text('Ignore'),
+                                child: const Text('Reject'),
                               ),
-                            OutlinedButton(
-                              onPressed: () async {
-                                try {
-                                  await rejectFriendRequest(data);
-                                } catch (_) {}
-                              },
-                              child: const Text('Reject'),
-                            ),
-                            FilledButton(
-                              onPressed: () async {
-                                try {
-                                  await acceptFriendRequest(data);
-                                } catch (e) {
-                                  if (!mounted) return;
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                        e.toString().replaceFirst('Exception: ', ''),
+                              FilledButton(
+                                onPressed: () async {
+                                  try {
+                                    await acceptFriendRequest(data);
+                                  } catch (e) {
+                                    if (!mounted) return;
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          e.toString().replaceFirst(
+                                                'Exception: ',
+                                                '',
+                                              ),
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                }
-                              },
-                              child: Text(
-                                status == 'ignored' ? 'Add' : 'Accept',
+                                    );
+                                  }
+                                },
+                                child: Text(
+                                  status == 'ignored' ? 'Add' : 'Accept',
+                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-              ],
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
             ),
           ),
         );
@@ -6902,262 +7244,283 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
   }
 
   Widget _buildFriendsList() {
-    return Card(
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(currentUid)
-              .snapshots(),
-          builder: (context, userSnapshot) {
-            final currentUserData = userSnapshot.data?.data() ?? {};
-            final blockedUids = List<String>.from(
-              currentUserData['blockedUids'] ?? [],
-            );
+    return forceLightTheme(
+      Card(
+        color: Colors.white,
+        surfaceTintColor: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(currentUid)
+                .snapshots(),
+            builder: (context, userSnapshot) {
+              final currentUserData = userSnapshot.data?.data() ?? {};
+              final blockedUids = List<String>.from(
+                currentUserData['blockedUids'] ?? [],
+              );
 
-            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('friendships')
-                  .where('memberUids', arrayContains: currentUid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                final docs = [...(snapshot.data?.docs ?? [])]
-                    .where((doc) {
-                      final data = doc.data();
+              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('friendships')
+                    .where('memberUids', arrayContains: currentUid)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  final docs = [...(snapshot.data?.docs ?? [])]
+                      .where((doc) {
+                        final data = doc.data();
 
-                      final userA =
-                          Map<String, dynamic>.from(data['userA'] ?? {});
-                      final userB =
-                          Map<String, dynamic>.from(data['userB'] ?? {});
+                        final userA =
+                            Map<String, dynamic>.from(data['userA'] ?? {});
+                        final userB =
+                            Map<String, dynamic>.from(data['userB'] ?? {});
 
-                      final otherUser =
-                          (userA['uid'] ?? '').toString() == currentUid
-                              ? userB
-                              : userA;
+                        final otherUser =
+                            (userA['uid'] ?? '').toString() == currentUid
+                                ? userB
+                                : userA;
 
-                      final otherUid =
-                          (otherUser['uid'] ?? '').toString().trim();
+                        final otherUid =
+                            (otherUser['uid'] ?? '').toString().trim();
 
-                      return !blockedUids.contains(otherUid);
-                    })
-                    .toList()
-                  ..sort((a, b) {
-                    final aData = a.data();
-                    final bData = b.data();
+                        return !blockedUids.contains(otherUid);
+                      })
+                      .toList()
+                    ..sort((a, b) {
+                      final aData = a.data();
+                      final bData = b.data();
 
-                    final aTime = aData['updatedAt'];
-                    final bTime = bData['updatedAt'];
+                      final aTime = aData['updatedAt'];
+                      final bTime = bData['updatedAt'];
 
-                    final aMillis =
-                        aTime is Timestamp ? aTime.millisecondsSinceEpoch : 0;
-                    final bMillis =
-                        bTime is Timestamp ? bTime.millisecondsSinceEpoch : 0;
+                      final aMillis =
+                          aTime is Timestamp ? aTime.millisecondsSinceEpoch : 0;
+                      final bMillis =
+                          bTime is Timestamp ? bTime.millisecondsSinceEpoch : 0;
 
-                    return bMillis.compareTo(aMillis);
-                  });
+                      return bMillis.compareTo(aMillis);
+                    });
 
-                if (docs.isEmpty) {
-                  return const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Text(
-                      'No friends yet',
-                      style: TextStyle(color: Colors.black54),
-                    ),
-                  );
-                }
-
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Friends',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                  if (docs.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(12),
+                      child: Text(
+                        'No friends yet',
+                        style: TextStyle(color: Colors.black54),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    ...docs.map((doc) {
-                      final data = doc.data();
+                    );
+                  }
 
-                      final userA =
-                          Map<String, dynamic>.from(data['userA'] ?? {});
-                      final userB =
-                          Map<String, dynamic>.from(data['userB'] ?? {});
-                      final nicknames =
-                          Map<String, dynamic>.from(data['nicknames'] ?? {});
-
-                      final otherUser =
-                          (userA['uid'] ?? '').toString() == currentUid
-                              ? userB
-                              : userA;
-
-                      final otherUid =
-                          (otherUser['uid'] ?? '').toString().trim();
-
-                      final nickname =
-                          (nicknames[currentUid] ?? '').toString().trim();
-
-                      final displayName = nickname.isNotEmpty
-                          ? nickname
-                          : (otherUser['displayName'] ?? 'Friend').toString();
-
-                      final subtitleName =
-                          (otherUser['displayName'] ?? '').toString().trim();
-
-                      final avatarData = resolveAvatarFieldsFromMap(otherUser);
-
-                      final imageUrl = avatarData['photoUrl'] as String;
-                      final avatarType = avatarData['avatarType'] as String;
-                      final avatarIcon = avatarData['avatarIcon'] as String;
-                      final avatarBgColor = avatarData['avatarBgColor'] as int;
-
-                      final chatId = (data['chatId'] ?? '').toString();
-
-                      return FutureBuilder<bool>(
-                        future: isBlockedEitherWay(
-                          currentUid: currentUid,
-                          otherUid: otherUid,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Friends',
+                        style: TextStyle(
+                          color: Colors.black87,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
                         ),
-                        builder: (context, blockedSnapshot) {
-                          if (blockedSnapshot.data == true) {
-                            return const SizedBox();
-                          }
+                      ),
+                      const SizedBox(height: 12),
+                      ...docs.map((doc) {
+                        final data = doc.data();
 
-                          return StreamBuilder<
-                              DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: FirebaseFirestore.instance
-                                .collection('direct_chats')
-                                .doc(chatId)
-                                .snapshots(),
-                            builder: (context, chatSnapshot) {
-                              final chatData = chatSnapshot.data?.data() ?? {};
-                              final unreadCounts = Map<String, dynamic>.from(
-                                chatData['unreadCounts'] ?? {},
-                              );
-                              final rawUnread = unreadCounts[currentUid] ?? 0;
+                        final userA =
+                            Map<String, dynamic>.from(data['userA'] ?? {});
+                        final userB =
+                            Map<String, dynamic>.from(data['userB'] ?? {});
+                        final nicknames =
+                            Map<String, dynamic>.from(data['nicknames'] ?? {});
 
-                              final unreadCount = rawUnread is int
-                                  ? rawUnread
-                                  : int.tryParse(rawUnread.toString()) ?? 0;
+                        final otherUser =
+                            (userA['uid'] ?? '').toString() == currentUid
+                                ? userB
+                                : userA;
 
-                              return ListTile(
-                                contentPadding: EdgeInsets.zero,
-                                onTap: () => _openChatFromFriendship(data),
+                        final otherUid =
+                            (otherUser['uid'] ?? '').toString().trim();
 
-                                leading: FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                                  future: FirebaseFirestore.instance
-                                      .collection('users')
-                                      .doc(otherUid)
-                                      .get(),
-                                  builder: (context, userSnap) {
-                                    final userData = userSnap.data?.data() ?? otherUser;
+                        final nickname =
+                            (nicknames[currentUid] ?? '').toString().trim();
 
-                                    final avatar = resolveAvatarSnapshotFromMap(userData);
+                        final displayName = nickname.isNotEmpty
+                            ? nickname
+                            : (otherUser['displayName'] ?? 'Friend').toString();
 
-                                    return buildAppAvatar(
-                                      radius: 20,
-                                      avatar: avatar,
-                                      displayName: displayName,
-                                      iconSize: 18,
-                                      textSize: 14,
-                                    );
-                                  },
-                                ),
+                        final subtitleName =
+                            (otherUser['displayName'] ?? '').toString().trim();
 
-                                title: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        displayName,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                    if (unreadCount > 0)
-                                      Container(
-                                        margin: const EdgeInsets.only(left: 8),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFDC2626),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        constraints: const BoxConstraints(
-                                          minWidth: 22,
-                                          minHeight: 22,
-                                        ),
+                        final chatId = (data['chatId'] ?? '').toString();
+
+                        return FutureBuilder<bool>(
+                          future: isBlockedEitherWay(
+                            currentUid: currentUid,
+                            otherUid: otherUid,
+                          ),
+                          builder: (context, blockedSnapshot) {
+                            if (blockedSnapshot.data == true) {
+                              return const SizedBox();
+                            }
+
+                            return StreamBuilder<
+                                DocumentSnapshot<Map<String, dynamic>>>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('direct_chats')
+                                  .doc(chatId)
+                                  .snapshots(),
+                              builder: (context, chatSnapshot) {
+                                final chatData = chatSnapshot.data?.data() ?? {};
+                                final unreadCounts = Map<String, dynamic>.from(
+                                  chatData['unreadCounts'] ?? {},
+                                );
+                                final rawUnread = unreadCounts[currentUid] ?? 0;
+
+                                final unreadCount = rawUnread is int
+                                    ? rawUnread
+                                    : int.tryParse(rawUnread.toString()) ?? 0;
+
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  onTap: () => _openChatFromFriendship(data),
+                                  leading: FutureBuilder<
+                                      DocumentSnapshot<Map<String, dynamic>>>(
+                                    future: FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(otherUid)
+                                        .get(),
+                                    builder: (context, userSnap) {
+                                      final userData =
+                                          userSnap.data?.data() ?? otherUser;
+
+                                      final avatar =
+                                          resolveAvatarSnapshotFromMap(userData);
+
+                                      return buildAppAvatar(
+                                        radius: 20,
+                                        avatar: avatar,
+                                        displayName: displayName,
+                                        iconSize: 18,
+                                        textSize: 14,
+                                      );
+                                    },
+                                  ),
+                                  title: Row(
+                                    children: [
+                                      Expanded(
                                         child: Text(
-                                          unreadCount > 99
-                                              ? '99+'
-                                              : unreadCount.toString(),
-                                          textAlign: TextAlign.center,
+                                          displayName,
                                           style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w800,
+                                            color: Colors.black87,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      if (unreadCount > 0)
+                                        Container(
+                                          margin: const EdgeInsets.only(left: 8),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDC2626),
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          constraints: const BoxConstraints(
+                                            minWidth: 22,
+                                            minHeight: 22,
+                                          ),
+                                          child: Text(
+                                            unreadCount > 99
+                                                ? '99+'
+                                                : unreadCount.toString(),
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w800,
+                                            ),
                                           ),
                                         ),
+                                    ],
+                                  ),
+                                  subtitle: subtitleName.isNotEmpty &&
+                                          subtitleName != displayName
+                                      ? Text(
+                                          subtitleName,
+                                          style: const TextStyle(
+                                            color: Colors.black54,
+                                          ),
+                                        )
+                                      : Text(
+                                          unreadCount > 0
+                                              ? '$unreadCount unread message${unreadCount > 1 ? 's' : ''}'
+                                              : 'Tap to open chat',
+                                          style: const TextStyle(
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                  trailing: PopupMenuButton<String>(
+                                    color: Colors.white,
+                                    surfaceTintColor: Colors.white,
+                                    onSelected: (value) async {
+                                      if (value == 'chat') {
+                                        await _openChatFromFriendship(data);
+                                      } else if (value == 'edit_name') {
+                                        await _editFriendNickname(data);
+                                      } else if (value == 'delete_friend') {
+                                        await _deleteFriendship(data);
+                                      } else if (value == 'block') {
+                                        await _blockFriend(data);
+                                      }
+                                    },
+                                    itemBuilder: (context) => const [
+                                      PopupMenuItem(
+                                        value: 'chat',
+                                        child: Text(
+                                          'Open chat',
+                                          style: TextStyle(color: Colors.black87),
+                                        ),
                                       ),
-                                  ],
-                                ),
-                                subtitle: subtitleName.isNotEmpty &&
-                                        subtitleName != displayName
-                                    ? Text(subtitleName)
-                                    : Text(
-                                        unreadCount > 0
-                                            ? '$unreadCount unread message${unreadCount > 1 ? 's' : ''}'
-                                            : 'Tap to open chat',
+                                      PopupMenuItem(
+                                        value: 'edit_name',
+                                        child: Text(
+                                          'Edit name',
+                                          style: TextStyle(color: Colors.black87),
+                                        ),
                                       ),
-                                trailing: PopupMenuButton<String>(
-                                  onSelected: (value) async {
-                                    if (value == 'chat') {
-                                      await _openChatFromFriendship(data);
-                                    } else if (value == 'edit_name') {
-                                      await _editFriendNickname(data);
-                                    } else if (value == 'delete_friend') {
-                                      await _deleteFriendship(data);
-                                    } else if (value == 'block') {
-                                      await _blockFriend(data);
-                                    }
-                                  },
-                                  itemBuilder: (context) => const [
-                                    PopupMenuItem(
-                                      value: 'chat',
-                                      child: Text('Open chat'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'edit_name',
-                                      child: Text('Edit name'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'delete_friend',
-                                      child: Text('Delete friend'),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'block',
-                                      child: Text('Blacklist'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
-                        },
-                      );
-                    }),
-                  ],
-                );
-              },
-            );
-          },
+                                      PopupMenuItem(
+                                        value: 'delete_friend',
+                                        child: Text(
+                                          'Delete friend',
+                                          style: TextStyle(color: Colors.black87),
+                                        ),
+                                      ),
+                                      PopupMenuItem(
+                                        value: 'block',
+                                        child: Text(
+                                          'Blacklist',
+                                          style: TextStyle(color: Colors.black87),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        );
+                      }),
+                    ],
+                  );
+                },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -7174,13 +7537,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               .doc(currentUid)
               .snapshots(),
           builder: (context, snapshot) {
-            final currentUserDocSnapshot = snapshot.connectionState ==
-                    ConnectionState.waiting
-                ? null
-                : null;
-
             final data = snapshot.data?.data() ?? {};
-            final blockedUids = List<String>.from(data['blockedUids'] ?? []);
+            final blockedUids = List<String>.from(
+              data['blockedUids'] ?? [],
+            );
 
             if (blockedUids.isEmpty) {
               return const SizedBox();
@@ -7192,54 +7552,120 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                 const Text(
                   'Blocked Users',
                   style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
                     color: Colors.red,
                   ),
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 14),
+
                 ...blockedUids.map((uid) {
-                  return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                  return FutureBuilder<
+                      DocumentSnapshot<Map<String, dynamic>>>(
                     future: FirebaseFirestore.instance
                         .collection('users')
                         .doc(uid)
                         .get(),
                     builder: (context, userSnapshot) {
-                      final userData = userSnapshot.data?.data() ?? {};
-                      final displayName =
-                          (userData['displayName'] ?? 'User').toString();
-                      final shortName =
-                          (userData['shortName'] ?? '').toString().trim();
-                      final photoUrl =
-                          (userData['photoUrl'] ?? '').toString().trim();
+                      final userData =
+                          userSnapshot.data?.data() ?? {};
 
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundImage: photoUrl.isNotEmpty
-                              ? NetworkImage(photoUrl)
-                              : null,
-                          child: photoUrl.isEmpty
-                              ? const Icon(Icons.block)
-                              : null,
+                      final displayName =
+                          (userData['displayName'] ?? 'User')
+                              .toString();
+
+                      final shortName =
+                          (userData['shortName'] ?? '')
+                              .toString()
+                              .trim();
+
+                      final photoUrl =
+                          (userData['photoUrl'] ?? '')
+                              .toString()
+                              .trim();
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 8,
                         ),
-                        title: Text(
-                          displayName,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w700,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF9FAFB),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: const Color(0xFFE5E7EB),
                           ),
                         ),
-                        subtitle: shortName.isNotEmpty
-                            ? Text(shortName)
-                            : null,
-                        trailing: TextButton(
-                          onPressed: () async {
-                            await unblockUser(
-                              currentUid: currentUid,
-                              targetUid: uid,
-                            );
-                          },
-                          child: const Text('Unblock'),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 22,
+                              backgroundImage: photoUrl.isNotEmpty
+                                  ? NetworkImage(photoUrl)
+                                  : null,
+                              backgroundColor:
+                                  const Color(0xFFE5E7EB),
+                              child: photoUrl.isEmpty
+                                  ? const Icon(
+                                      Icons.block,
+                                      color: Colors.black54,
+                                    )
+                                  : null,
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+
+                                  if (shortName.isNotEmpty)
+                                    Padding(
+                                      padding:
+                                          const EdgeInsets.only(
+                                        top: 2,
+                                      ),
+                                      child: Text(
+                                        shortName,
+                                        style: const TextStyle(
+                                          color: Colors.black54,
+                                          fontWeight:
+                                              FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+
+                            TextButton(
+                              onPressed: () async {
+                                await unblockUser(
+                                  currentUid: currentUid,
+                                  targetUid: uid,
+                                );
+                              },
+                              child: Text(
+                                'Unblock',
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },
@@ -7265,9 +7691,14 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         title: const Text(
           'Friends & Chat',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w900,
+          ),
         ),
       ),
       body: SafeArea(
@@ -7619,12 +8050,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         title: isSearchMode
             ? TextField(
                 controller: chatSearchController,
                 autofocus: true,
+                style: const TextStyle(color: Colors.black87),
                 decoration: InputDecoration(
                   hintText: 'Search chat history',
+                  hintStyle: const TextStyle(color: Colors.black54),
                   border: InputBorder.none,
                   suffixIcon: IconButton(
                     onPressed: () {
@@ -7667,7 +8102,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   Expanded(
                     child: Text(
                       titleText,
-                      style: const TextStyle(fontWeight: FontWeight.w800),
+                      style: const TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],
@@ -7749,9 +8187,21 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                             constraints: const BoxConstraints(maxWidth: 320),
                             decoration: BoxDecoration(
                               color: isMine
-                                  ? const Color(0xFFDCFCE7)
-                                  : const Color(0xFFF3F4F6),
+                                  ? const Color(0xFFDDF6E3)
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: isMine
+                                    ? const Color(0xFFBBE7C6)
+                                    : const Color(0xFFE5E7EB),
+                              ),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color(0x12000000),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -7770,7 +8220,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                   ),
                                 SelectableText(
                                   text,
-                                  style: const TextStyle(fontSize: 15),
+                                  style: const TextStyle(
+                                    color: Colors.black87,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ],
                             ),
@@ -7797,8 +8251,15 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       controller: messageController,
                       minLines: 1,
                       maxLines: 4,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
                       decoration: InputDecoration(
                         hintText: 'Type a message',
+                        hintStyle: const TextStyle(
+                          color: Colors.black38,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
@@ -7809,9 +8270,25 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  FilledButton(
-                    onPressed: isSending ? null : _sendMessage,
-                    child: Text(isSending ? '...' : 'Send'),
+                  SizedBox(
+                    height: 52,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 22),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      onPressed: isSending ? null : _sendMessage,
+                      child: Text(
+                        isSending ? '...' : 'Send',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -11118,35 +11595,45 @@ class _TableDetailPageState extends State<TableDetailPage> {
     required String value,
     required Color color,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Color.alphaBlend(
-          color.withValues(alpha:0.10),
-          Colors.white,
+    return forceLightTheme(
+      Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 9,
         ),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha:0.28)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 8),
-          Text(
-            '$label ',
-            style: TextStyle(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: color.withOpacity(0.28),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
               color: color,
-              fontWeight: FontWeight.w700,
             ),
-          ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.w800,
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w900,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -11277,145 +11764,190 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
 
   Widget _buildWaitingListCard(TableData table) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x12000000),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.groups_2_outlined),
-              SizedBox(width: 8),
-              Text(
-                'Waiting List',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
+    return forceLightTheme(
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE5E7EB)),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x12000000),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.groups_2_outlined,
+                  color: Colors.black87,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (table.waitingList.isEmpty)
-            const Text(
-              'Nobody is waiting yet.',
-              style: TextStyle(
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-              ),
-            )
-          else
-            Column(
-              children: List.generate(table.waitingList.length, (index) {
-                final entry = Map<String, dynamic>.from(table.waitingList[index]);
-                final label = buildWaitingLabel(entry, index);
-                final arrived = entry['arrived'] == true;
-          
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                    ),
+                SizedBox(width: 8),
+                Text(
+                  'Waiting List',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
-                  subtitle: Text(
-                    arrived ? 'Arrived' : 'Unarrived',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (table.waitingList.isEmpty)
+              const Text(
+                'Nobody is waiting yet.',
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            else
+              Column(
+                children: List.generate(table.waitingList.length, (index) {
+                  final entry =
+                      Map<String, dynamic>.from(table.waitingList[index]);
+                  final label = buildWaitingLabel(entry, index);
+                  final arrived = entry['arrived'] == true;
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      label,
+                      style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  onTap: () async {
-                    final canToggleMine =
-                        _canCurrentUserToggleWaitingArrived(entry);
+                    subtitle: Text(
+                      arrived ? 'Arrived' : 'Unarrived',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    onTap: () async {
+                      final canToggleMine =
+                          _canCurrentUserToggleWaitingArrived(entry);
 
-                    if (!canManageThisTable && !canToggleMine) return;
+                      if (!canManageThisTable && !canToggleMine) return;
 
-                    final action = await showModalBottomSheet<String>(
-                      context: context,
-                      showDragHandle: true,
-                      builder: (context) {
-                        return SafeArea(
-                          child: Wrap(
-                            children: [
-                              if (canToggleMine)
-                                ListTile(
-                                  leading: Icon(
-                                    arrived ? Icons.schedule : Icons.check_circle,
+                      final action = await showModalBottomSheet<String>(
+                        context: context,
+                        showDragHandle: true,
+                        builder: (context) {
+                          return forceLightTheme(
+                            SafeArea(
+                              child: Wrap(
+                                children: [
+                                  if (canToggleMine)
+                                    ListTile(
+                                      leading: Icon(
+                                        arrived
+                                            ? Icons.schedule
+                                            : Icons.check_circle,
+                                        color: Colors.black87,
+                                      ),
+                                      title: Text(
+                                        arrived
+                                            ? 'Mark as unarrived'
+                                            : 'Mark as arrived',
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      onTap: () =>
+                                          Navigator.pop(context, 'arrived'),
+                                    ),
+                                  if (canManageThisTable)
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.drive_file_move_outline,
+                                        color: Colors.black87,
+                                      ),
+                                      title: const Text(
+                                        'Move / swap seat',
+                                        style: TextStyle(
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      onTap: () =>
+                                          Navigator.pop(context, 'move'),
+                                    ),
+                                  if (_canCurrentUserRemoveWaitingEntry(entry))
+                                    ListTile(
+                                      leading: const Icon(
+                                        Icons.person_remove,
+                                        color: Colors.black87,
+                                      ),
+                                      title: Text(
+                                        canManageThisTable
+                                            ? 'Remove from waiting list'
+                                            : 'Leave waiting list',
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                        ),
+                                      ),
+                                      onTap: () =>
+                                          Navigator.pop(context, 'remove'),
+                                    ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.close,
+                                      color: Colors.black87,
+                                    ),
+                                    title: const Text(
+                                      'Cancel',
+                                      style: TextStyle(
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    onTap: () =>
+                                        Navigator.pop(context, 'cancel'),
                                   ),
-                                  title: Text(
-                                    arrived
-                                        ? 'Mark as unarrived'
-                                        : 'Mark as arrived',
-                                  ),
-                                  onTap: () => Navigator.pop(context, 'arrived'),
-                                ),
-                              if (canManageThisTable)
-                                ListTile(
-                                  leading: const Icon(Icons.drive_file_move_outline),
-                                  title: const Text('Move / swap seat'),
-                                  onTap: () => Navigator.pop(context, 'move'),
-                                ),
-                              if (_canCurrentUserRemoveWaitingEntry(entry))
-                                ListTile(
-                                  leading: const Icon(Icons.person_remove),
-                                  title: Text(
-                                    canManageThisTable
-                                        ? 'Remove from waiting list'
-                                        : 'Leave waiting list',
-                                  ),
-                                  onTap: () => Navigator.pop(context, 'remove'),
-                                ),
-                              ListTile(
-                                leading: const Icon(Icons.close),
-                                title: const Text('Cancel'),
-                                onTap: () => Navigator.pop(context, 'cancel'),
+                                ],
                               ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
+                            ),
+                          );
+                        },
+                      );
 
-                    if (!mounted || action == null || action == 'cancel') return;
+                      if (!mounted || action == null || action == 'cancel') {
+                        return;
+                      }
 
-                    if (action == 'arrived') {
-                      await _toggleWaitingArrived(index);
-                      return;
-                    }
+                      if (action == 'arrived') {
+                        await _toggleWaitingArrived(index);
+                        return;
+                      }
 
-                    if (action == 'move') {
-                      final targetSeatIndex = await _showPickOpenSeatDialog();
-                      if (!mounted) return;
-                      if (targetSeatIndex == null) return;
+                      if (action == 'move') {
+                        final targetSeatIndex =
+                            await _showPickOpenSeatDialog();
+                        if (!mounted) return;
+                        if (targetSeatIndex == null) return;
 
-                      await _moveWaitingToSeat(index, targetSeatIndex);
-                      return;
-                    }
+                        await _moveWaitingToSeat(index, targetSeatIndex);
+                        return;
+                      }
 
-                    if (action == 'remove') {
-                      await _removeFromWaitingListAt(index);
-                      return;
-                    }
-                  },
-                );
-              }),
-            )
-        ],
+                      if (action == 'remove') {
+                        await _removeFromWaitingListAt(index);
+                        return;
+                      }
+                    },
+                  );
+                }),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -12873,6 +13405,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
             appBar: AppBar(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
               title: const Text(
                 'Table Details',
                 style: TextStyle(fontWeight: FontWeight.w800),
@@ -12887,6 +13421,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
             appBar: AppBar(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
               title: const Text(
                 'Table Details',
                 style: TextStyle(fontWeight: FontWeight.w800),
@@ -12904,6 +13440,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
             appBar: AppBar(
               backgroundColor: Colors.white,
               surfaceTintColor: Colors.white,
+              foregroundColor: Colors.black,
+              elevation: 0,
               title: const Text(
                 'Table Details',
                 style: TextStyle(fontWeight: FontWeight.w800),
@@ -12924,15 +13462,14 @@ class _TableDetailPageState extends State<TableDetailPage> {
           appBar: AppBar(
             backgroundColor: Colors.white,
             surfaceTintColor: Colors.white,
+            foregroundColor: Colors.black,
+            elevation: 0,
             title: Text(
               table.name,
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),                               
 
             actions: [
-              NewTableNotificationButton(
-                onTap: _openNewTableNotifications,
-              ),
               FriendsNotificationButton(
                 onTap: _openFriendsHub,
               ),
@@ -12954,26 +13491,41 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 if (canManageThisTable)
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.black12),
-                      ),
-                      child: DropdownButton<int>(
-                        value: table.playerSeatCount,
-                        underline: const SizedBox(),
-                        borderRadius: BorderRadius.circular(14),
-                        items: const [
-                          DropdownMenuItem(value: 9, child: Text('9 Players')),
-                          DropdownMenuItem(value: 10, child: Text('10 Players')),
-                        ],
-                        onChanged: (value) async {
-                          if (value != null) {
-                            await _changeSeatCount(value);
-                          }
-                        },
+                    child: forceLightTheme(
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        child: DropdownButton<int>(
+                          value: table.playerSeatCount,
+                          underline: const SizedBox(),
+                          borderRadius: BorderRadius.circular(14),
+                          dropdownColor: Colors.white,
+                          style: const TextStyle(
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w800,
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: 9,
+                              child: Text('9 Players'),
+                            ),
+                            DropdownMenuItem(
+                              value: 10,
+                              child: Text('10 Players'),
+                            ),
+                          ],
+                          onChanged: (value) async {
+                            if (value != null) {
+                              await _changeSeatCount(value);
+                            }
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -13768,14 +14320,30 @@ class CashGameStatsLockedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Cash Game Stats',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          title: const Text(
+            'Cash Game Stats',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            labelColor: Color(0xFF2E7D32),
+            unselectedLabelColor: Colors.black54,
+            indicatorColor: Color(0xFF2E7D32),
+            tabs: [
+              Tab(text: 'All Games'),
+              Tab(text: 'Location Profits'),
+              Tab(text: 'Game Profits'),
+              Tab(text: 'Weekly Profits'),
+              Tab(text: 'Monthly Profits'),
+            ],
+          ),
         ),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -14034,33 +14602,37 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
     required String value,
     required Color color,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.black54,
-              fontWeight: FontWeight.w700,
-            ),
+    return forceLightTheme(
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFFE5E7EB),
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: color,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.black54,
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -14102,15 +14674,20 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
       length: 5,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
           title: const Text(
             'Cash Game Stats',
             style: TextStyle(fontWeight: FontWeight.w800),
           ),
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
           bottom: const TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
+            labelColor: Color(0xFF2E7D32),
+            unselectedLabelColor: Colors.black54,
+            indicatorColor: Color(0xFF2E7D32),
             tabs: [
               Tab(text: 'All Games'),
               Tab(text: 'Location Profits'),
@@ -14281,7 +14858,13 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
               if (entries.isEmpty) {
                 return const Center(
-                  child: Text('No data yet'),
+                  child: Text(
+                    'No data yet',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 );
               }
 
@@ -14295,57 +14878,62 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                   final hours = entry.value['hours'] ?? 0.0;
                   final hourly = hours <= 0 ? 0.0 : profit / hours;
 
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            entry.key,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w900,
+                  return forceLightTheme(
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              entry.key,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w900,
+                              ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              _moneyShortText(profit),
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                color: _profitColor(profit),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _profitColor(hourly),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                '\$/${_hourText(hourly)}/hr',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                _moneyShortText(profit),
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: _profitColor(profit),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      ],
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _profitColor(hourly),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '\$/${_hourText(hourly)}/hr',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -14387,156 +14975,180 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: const Color(0xFFE5E7EB)),
-                    ),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Win Rate',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
+                  forceLightTheme(
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Win Rate',
+                              style: TextStyle(
+                                color: Colors.black87,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
                           ),
-                        ),
-                        Text(
-                          '${winningCount}/${sessionsCount} '
-                          '(${sessionsCount == 0 ? 0 : ((winningCount / sessionsCount) * 100).round()}%)',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
+                          Text(
+                            '$winningCount/$sessionsCount '
+                            '(${sessionsCount == 0 ? 0 : ((winningCount / sessionsCount) * 100).round()}%)',
+                            style: const TextStyle(
+                              color: Colors.black87,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   if (items.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'No hand data yet',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
+                    forceLightTheme(
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'No hand data yet',
+                            style: TextStyle(
+                              color: Colors.black87,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
                     ),
                   for (final item in items) ...[
-                    Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: const Color(0xFFE5E7EB)),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => _openEditor(item: item),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.location.isEmpty
-                                        ? 'Unknown Location'
-                                        : _normalizeLocationForDisplay(item.location),
-                                    style: const TextStyle(
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${_hourText(item.hours)}h - ${item.gameLabel}',
-                                    style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _dateText(item.startedAt),
-                                    style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  if (item.isOngoing)
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
+                    forceLightTheme(
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: const Color(0xFFE5E7EB),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: InkWell(
+                                onTap: () => _openEditor(item: item),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.location.isEmpty
+                                          ? 'Unknown Location'
+                                          : _normalizeLocationForDisplay(item.location),
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
                                       ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFDBEAFE),
-                                        borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      '${_hourText(item.hours)}h - ${item.gameLabel}',
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w700,
                                       ),
-                                      child: const Text(
-                                        'Is Ongoing',
-                                        style: TextStyle(
-                                          color: Color(0xFF1D4ED8),
-                                          fontWeight: FontWeight.w800,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      _dateText(item.startedAt),
+                                      style: const TextStyle(
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    if (item.isOngoing)
+                                      Container(
+                                        margin: const EdgeInsets.only(top: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 10,
+                                          vertical: 5,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFDBEAFE),
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                        child: const Text(
+                                          'Is Ongoing',
+                                          style: TextStyle(
+                                            color: Color(0xFF1D4ED8),
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _moneyText(item.profit),
-                                style: TextStyle(
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w900,
-                                  color: _profitColor(item.profit),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 10),
-                              PopupMenuButton<String>(
-                                onSelected: (value) async {
-                                  if (value == 'edit') {
-                                    _openEditor(item: item);
-                                  } else if (value == 'delete') {
-                                    await _deleteSession(item.id);
-                                  }
-                                },
-                                itemBuilder: (context) => const [
-                                  PopupMenuItem<String>(
-                                    value: 'edit',
-                                    child: Text('Edit'),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  _moneyText(item.profit),
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                    color: _profitColor(item.profit),
                                   ),
-                                  PopupMenuItem<String>(
-                                    value: 'delete',
-                                    child: Text('Remove'),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
+                                ),
+                                const SizedBox(height: 10),
+                                PopupMenuButton<String>(
+                                  color: Colors.white,
+                                  surfaceTintColor: Colors.white,
+                                  onSelected: (value) async {
+                                    if (value == 'edit') {
+                                      _openEditor(item: item);
+                                    } else if (value == 'delete') {
+                                      await _deleteSession(item.id);
+                                    }
+                                  },
+                                  itemBuilder: (context) => const [
+                                    PopupMenuItem<String>(
+                                      value: 'edit',
+                                      child: Text(
+                                        'Edit',
+                                        style: TextStyle(color: Colors.black87),
+                                      ),
+                                    ),
+                                    PopupMenuItem<String>(
+                                      value: 'delete',
+                                      child: Text(
+                                        'Remove',
+                                        style: TextStyle(color: Colors.black87),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -14825,12 +15437,14 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
         title: Text(
           isEditing ? 'Edit Game' : 'Add Game',
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
         actions: [
           if (isEditing)
             IconButton(
