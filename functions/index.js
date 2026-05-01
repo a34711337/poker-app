@@ -635,21 +635,52 @@ async function sendPush({ tokens, title, body, data }) {
 
 // 🔔 新桌子通知
 exports.sendNewTablePush = functionsV1.firestore
-  .document("notifications/{id}")
+  .document("tables/{tableId}")
   .onCreate(async (snap, context) => {
-    const data = snap.data() || {};
+    const tableData = snap.data() || {};
+    const tableId = context.params.tableId;
 
-    if (data.type !== "new_table") return null;
+    const hostUid = (tableData.createdByUid || "").toString().trim();
+    const hostName = (tableData.createdByName || "Host").toString().trim();
 
-    const tokens = await getTokensForUserIds(data.targetUserIds || []);
+    if (!hostUid) {
+      console.log("No hostUid found for new table");
+      return null;
+    }
+
+    const usersSnap = await db
+      .collection("users")
+      .where("grantedHostIds", "array-contains", hostUid)
+      .get();
+
+    const targetUserIds = usersSnap.docs
+      .map((doc) => doc.id)
+      .filter((uid) => uid && uid !== hostUid);
+
+    if (targetUserIds.length === 0) {
+      console.log("No target users for new table:", tableId);
+      return null;
+    }
+
+    const tokens = await getTokensForUserIds(targetUserIds);
+
+    const tableName = (tableData.name || "New Table").toString();
+    const stakes = (tableData.stakes || "").toString().trim();
+    const location = (tableData.location || "").toString().trim();
+
+    const bodyParts = [
+      tableName,
+      ...(stakes ? [stakes] : []),
+      ...(location ? [location] : []),
+    ];
 
     await sendPush({
       tokens,
-      title: data.title || "New table",
-      body: data.body || "",
+      title: `${hostName} created a new table`,
+      body: bodyParts.join(" · "),
       data: {
         type: "new_table",
-        tableId: (data.tableId || "").toString(),
+        tableId: tableId.toString(),
       },
     });
 
