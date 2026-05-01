@@ -35,12 +35,8 @@ Future<void> setupPushNotifications() async {
       alert: true,
       badge: true,
       sound: true,
+      provisional: false,
     );
-
-    await userRef.set({
-      'fcmDebug_permission': settings.authorizationStatus.toString(),
-      'fcmDebug_updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
 
     await messaging.setForegroundNotificationPresentationOptions(
       alert: true,
@@ -48,10 +44,15 @@ Future<void> setupPushNotifications() async {
       sound: true,
     );
 
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      String? apnsToken;
+    await userRef.set({
+      'fcmDebug_permission': settings.authorizationStatus.toString(),
+      'fcmDebug_updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
 
-      for (int i = 0; i < 20; i++) {
+    String? apnsToken;
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      for (int i = 0; i < 30; i++) {
         apnsToken = await messaging.getAPNSToken();
 
         if (apnsToken != null && apnsToken.isNotEmpty) {
@@ -65,10 +66,6 @@ Future<void> setupPushNotifications() async {
         'apnsTokenDebug': apnsToken ?? 'NULL',
         'apnsTokenDebugUpdatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
-
-      if (apnsToken == null || apnsToken.isEmpty) {
-        return;
-      }
     }
 
     final token = await messaging.getToken();
@@ -76,14 +73,30 @@ Future<void> setupPushNotifications() async {
     await userRef.set({
       'fcmTokenDebug': token ?? 'NULL',
       'fcmTokenDebugUpdatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    if (token == null || token.isEmpty) return;
-
-    await userRef.set({
-      'fcmTokens': FieldValue.arrayUnion([token]),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+
+    if (token != null && token.isNotEmpty) {
+      await userRef.set({
+        'fcmTokens': FieldValue.arrayUnion([token]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
+    FirebaseMessaging.instance.onTokenRefresh.listen((newToken) async {
+      final refreshedUser = FirebaseAuth.instance.currentUser;
+      if (refreshedUser == null) return;
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(refreshedUser.uid)
+          .set({
+        'fcmTokenDebug': newToken,
+        'fcmTokenDebugUpdatedAt': FieldValue.serverTimestamp(),
+        'fcmTokens': FieldValue.arrayUnion([newToken]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    });
   } catch (e) {
     await userRef.set({
       'fcmDebugError': e.toString(),
