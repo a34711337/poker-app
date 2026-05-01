@@ -21,6 +21,112 @@ import 'firebase_options.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 
+final GlobalKey<NavigatorState> appNavigatorKey =
+    GlobalKey<NavigatorState>();
+
+UserSession? currentAppSession;
+
+void setupNotificationTapHandler() {
+  if (kIsWeb) return;
+
+  FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    handleNotificationTap(message.data);
+  });
+
+  FirebaseMessaging.instance.getInitialMessage().then((message) {
+    if (message == null) return;
+
+    Future.delayed(const Duration(seconds: 2), () {
+      handleNotificationTap(message.data);
+    });
+  });
+}
+
+Future<void> handleNotificationTap(Map<String, dynamic> data) async {
+  final type = (data['type'] ?? '').toString();
+  final tableId = (data['tableId'] ?? '').toString();
+  final chatId = (data['chatId'] ?? '').toString();
+
+  if (type == 'new_table' && tableId.isNotEmpty) {
+    await openTableFromNotification(tableId);
+    return;
+  }
+
+  if (type == 'chat' && chatId.isNotEmpty) {
+    await openChatFromNotification(chatId);
+    return;
+  }
+}
+
+Future<void> openTableFromNotification(String tableId) async {
+  final session = currentAppSession;
+  final navigator = appNavigatorKey.currentState;
+
+  if (session == null || navigator == null) return;
+
+  final tableSnap = await FirebaseFirestore.instance
+      .collection('tables')
+      .doc(tableId)
+      .get();
+
+  final tableData = tableSnap.data();
+  if (tableData == null) return;
+
+  navigator.push(
+    MaterialPageRoute(
+      builder: (_) => TableDetailPage(
+        session: session,
+        table: TableData.fromMap(tableData),
+        tableId: tableId,
+      ),
+    ),
+  );
+}
+
+Future<void> openChatFromNotification(String chatId) async {
+  final navigator = appNavigatorKey.currentState;
+  final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+  if (navigator == null || currentUid.isEmpty) return;
+
+  final chatSnap = await FirebaseFirestore.instance
+      .collection('direct_chats')
+      .doc(chatId)
+      .get();
+
+  final chatData = chatSnap.data();
+  if (chatData == null) return;
+
+  final memberUids = List<String>.from(chatData['memberUids'] ?? []);
+  final otherUid = memberUids.firstWhere(
+    (uid) => uid != currentUid,
+    orElse: () => '',
+  );
+
+  if (otherUid.isEmpty) return;
+
+  final otherUserSnap = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(otherUid)
+      .get();
+
+  final otherData = otherUserSnap.data() ?? {};
+
+  navigator.push(
+    MaterialPageRoute(
+      builder: (_) => ChatRoomPage(
+        chatId: chatId,
+        otherUid: otherUid,
+        otherDisplayName:
+            (otherData['displayName'] ?? 'Friend').toString(),
+        otherPhotoUrl:
+            (otherData['photoUrl'] ?? '').toString(),
+        otherNickname: null,
+      ),
+    ),
+  );
+}
+
 Future<void> setupPushNotifications() async {
   if (kIsWeb) return;
 
@@ -120,6 +226,7 @@ Future<void> main() async {
   // 🔥🔥🔥 加這一行（超重要）
   await Future.delayed(const Duration(seconds: 2));
   setupPushNotifications();
+  setupNotificationTapHandler();
 
   runApp(const PokerReservationApp());
 }
@@ -162,6 +269,7 @@ class PokerReservationApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       title: 'Poker Table Reservation',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -236,6 +344,7 @@ class AuthGate extends StatelessWidget {
               return const LoginPage();
             }
 
+            currentAppSession = sessionSnapshot.data!;
             return TableListPage(session: sessionSnapshot.data!);
           },
         );
