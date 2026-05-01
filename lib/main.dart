@@ -68,6 +68,11 @@ Future<void> setupPushNotifications() async {
       }, SetOptions(merge: true));
     }
 
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        (apnsToken == null || apnsToken.isEmpty)) {
+      return;
+    }
+
     final token = await messaging.getToken();
 
     await userRef.set({
