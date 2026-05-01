@@ -7331,18 +7331,18 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   Future<void> _markChatAsRead() async {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     if (currentUid.isEmpty) return;
-
+  
     try {
       await FirebaseFirestore.instance
           .collection('direct_chats')
           .doc(widget.chatId)
-          .set({
+          .update({
         'unreadCounts.$currentUid': 0,
         'lastReadAt.$currentUid': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    } catch (_) {
-      // ignore
+      });
+    } catch (e) {
+      print('mark read error: $e');
     }
   }
 
