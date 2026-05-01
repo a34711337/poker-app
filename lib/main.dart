@@ -24,49 +24,72 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 Future<void> setupPushNotifications() async {
   if (kIsWeb) return;
 
-  final messaging = FirebaseMessaging.instance;
-
-  await messaging.requestPermission(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  await messaging.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-
-  if (defaultTargetPlatform == TargetPlatform.iOS) {
-    String? apnsToken;
-
-    for (int i = 0; i < 10; i++) {
-      apnsToken = await messaging.getAPNSToken();
-
-      if (apnsToken != null && apnsToken.isNotEmpty) {
-        break;
-      }
-
-      await Future.delayed(const Duration(seconds: 1));
-    }
-
-    if (apnsToken == null || apnsToken.isEmpty) {
-      debugPrint('APNS token still not available. Skip FCM token for now.');
-      return;
-    }
-  }
-
-  final token = await messaging.getToken();
-  if (token == null || token.isEmpty) return;
-
   final user = FirebaseAuth.instance.currentUser;
   if (user == null) return;
 
-  await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-    'fcmTokens': FieldValue.arrayUnion([token]),
-    'updatedAt': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
+  final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+  final messaging = FirebaseMessaging.instance;
+
+  try {
+    final settings = await messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    await userRef.set({
+      'fcmDebug_permission': settings.authorizationStatus.toString(),
+      'fcmDebug_updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    await messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      String? apnsToken;
+
+      for (int i = 0; i < 20; i++) {
+        apnsToken = await messaging.getAPNSToken();
+
+        if (apnsToken != null && apnsToken.isNotEmpty) {
+          break;
+        }
+
+        await Future.delayed(const Duration(seconds: 1));
+      }
+
+      await userRef.set({
+        'apnsTokenDebug': apnsToken ?? 'NULL',
+        'apnsTokenDebugUpdatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      if (apnsToken == null || apnsToken.isEmpty) {
+        return;
+      }
+    }
+
+    final token = await messaging.getToken();
+
+    await userRef.set({
+      'fcmTokenDebug': token ?? 'NULL',
+      'fcmTokenDebugUpdatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    if (token == null || token.isEmpty) return;
+
+    await userRef.set({
+      'fcmTokens': FieldValue.arrayUnion([token]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  } catch (e) {
+    await userRef.set({
+      'fcmDebugError': e.toString(),
+      'fcmDebugErrorAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
 }
 
 Future<void> main() async {
