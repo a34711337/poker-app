@@ -615,6 +615,9 @@ async function sendPush({ tokens, title, body, data }) {
     },
     data: data || {},
     apns: {
+      headers: {
+        "apns-priority": "10",
+      },
       payload: {
         aps: {
           sound: "default",
@@ -686,6 +689,32 @@ exports.sendChatPush = functionsV1.firestore
       data: {
         type: "chat",
         chatId,
+      },
+    });
+
+    return null;
+  });
+
+exports.sendFriendRequestPush = functionsV1.firestore
+  .document("friend_requests/{requestId}")
+  .onCreate(async (snap, context) => {
+    const data = snap.data() || {};
+
+    const fromUid = (data.fromUid || "").toString();
+    const toUid = (data.toUid || "").toString();
+
+    if (!fromUid || !toUid) return null;
+
+    const tokens = await getTokensForUserIds([toUid]);
+
+    await sendPush({
+      tokens,
+      title: "New friend request",
+      body: `${data.fromShortName || data.fromDisplayName || "Someone"} sent you a friend request`,
+      data: {
+        type: "friend_request",
+        requestId: context.params.requestId,
+        fromUid,
       },
     });
 
