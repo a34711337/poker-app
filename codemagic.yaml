@@ -10,7 +10,7 @@ workflows:
       xcode: latest
       ios_signing:
         provisioning_profiles:
-          - app_store_profile_v2
+          - push_fix_final
 
     scripts:
       - flutter clean
