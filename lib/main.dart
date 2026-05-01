@@ -52,8 +52,7 @@ Future<void> setupPushNotifications() async {
     String? apnsToken;
 
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      for (int i = 0; i < 30; i++) {
-        apnsToken = await messaging.getAPNSToken();
+      for (int i = 0; i < 60; i++) {
 
         if (apnsToken != null && apnsToken.isNotEmpty) {
           break;
@@ -112,11 +111,48 @@ Future<void> setupPushNotifications() async {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // 🔥🔥🔥 加這一行（超重要）
+  await Future.delayed(const Duration(seconds: 2));
+  setupPushNotifications();
+
   runApp(const PokerReservationApp());
+}
+
+Future<void> setupPush() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  // 權限
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  print('Permission: ${settings.authorizationStatus}');
+
+  // 🔥🔥🔥 等 APNS token（關鍵）
+  String? apnsToken;
+
+  for (int i = 0; i < 30; i++) {
+    apnsToken = await messaging.getAPNSToken();
+
+    if (apnsToken != null && apnsToken.isNotEmpty) {
+      break;
+    }
+
+    await Future.delayed(const Duration(seconds: 1));
+  }
+
+  print("APNS TOKEN: $apnsToken");
+
+  // FCM token
+  final fcmToken = await messaging.getToken();
+  print("FCM TOKEN: $fcmToken");
 }
 
 class PokerReservationApp extends StatelessWidget {
