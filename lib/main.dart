@@ -6439,7 +6439,12 @@ class _SettingsPageState extends State<SettingsPage> {
                 bn: 'হোম',
               ),
             ),
-            onTap: () => Navigator.pop(context),
+            onTap: () async {
+              await launchUrl(
+                Uri.parse('https://pokerscheduler.web.app/'),
+                mode: LaunchMode.externalApplication,
+              );
+            },
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
