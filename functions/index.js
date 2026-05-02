@@ -674,15 +674,73 @@ exports.sendNewTablePush = functionsV1.firestore
       ...(location ? [location] : []),
     ];
 
-    await sendPush({
-      tokens,
-      title: `${hostName} created a new table`,
-      body: bodyParts.join(" · "),
-      data: {
-        type: "new_table",
-        tableId: tableId.toString(),
-      },
-    });
+    for (const userDoc of usersSnap.docs) {
+      const targetUid = userDoc.id;
+
+      if (!targetUid || targetUid === hostUid) {
+        continue;
+      }
+
+      const userData = userDoc.data() || {};
+
+      const tokens = Array.isArray(userData.fcmTokens)
+        ? userData.fcmTokens.filter((t) => typeof t === "string" && t.trim())
+        : [];
+
+      if (tokens.length === 0) {
+        continue;
+      }
+
+      const lang = (userData.languageCode || "en").toString();
+
+      let title = `${hostName} created a new table`;
+
+      if (lang === "zhTw") {
+        title = `${hostName} 建立了一個新牌桌`;
+      } else if (lang === "zhCn") {
+        title = `${hostName} 创建了一个新牌桌`;
+      } else if (lang === "ko") {
+        title = `${hostName} 님이 새 테이블을 만들었습니다`;
+      } else if (lang === "ja") {
+        title = `${hostName} さんが新しいテーブルを作成しました`;
+      } else if (lang === "de") {
+        title = `${hostName} hat einen neuen Tisch erstellt`;
+      } else if (lang === "fr") {
+        title = `${hostName} a créé une nouvelle table`;
+      } else if (lang === "ar") {
+        title = `${hostName} أنشأ طاولة جديدة`;
+      } else if (lang === "ru") {
+        title = `${hostName} создал новый стол`;
+      } else if (lang === "trk") {
+        title = `${hostName} yeni bir masa oluşturdu`;
+      } else if (lang === "es") {
+        title = `${hostName} creó una nueva mesa`;
+      } else if (lang === "it") {
+        title = `${hostName} ha creato un nuovo tavolo`;
+      } else if (lang === "pl") {
+        title = `${hostName} utworzył nowy stół`;
+      } else if (lang === "pt") {
+        title = `${hostName} criou uma nova mesa`;
+      } else if (lang === "th") {
+        title = `${hostName} ได้สร้างโต๊ะใหม่`;
+      } else if (lang === "id") {
+        title = `${hostName} membuat meja baru`;
+      } else if (lang === "hi") {
+        title = `${hostName} ने नई टेबल बनाई`;
+      } else if (lang === "bn") {
+        title = `${hostName} একটি নতুন টেবিল তৈরি করেছে`;
+      }
+
+      await sendPush({
+        tokens,
+        title,
+        body: bodyParts.join(" · "),
+        data: {
+          type: "new_table",
+          tableId: tableId.toString(),
+        },
+      });
+    }
 
     return null;
   });
