@@ -241,7 +241,7 @@ Future<void> setupPush() async {
     sound: true,
   );
 
-  print('Permission: ${settings.authorizationStatus}');
+  debugPrint('Permission: ${settings.authorizationStatus}');
 
   // 🔥🔥🔥 等 APNS token（關鍵）
   String? apnsToken;
@@ -256,11 +256,11 @@ Future<void> setupPush() async {
     await Future.delayed(const Duration(seconds: 1));
   }
 
-  print("APNS TOKEN: $apnsToken");
+  debugPrint('APNS TOKEN: $apnsToken');
 
   // FCM token
   final fcmToken = await messaging.getToken();
-  print("FCM TOKEN: $fcmToken");
+  debugPrint('FCM TOKEN: $fcmToken');
 }
 
 class PokerReservationApp extends StatefulWidget {
@@ -293,10 +293,141 @@ class AppThemeController extends InheritedWidget {
   }
 }
 
+class AppLanguageController extends InheritedWidget {
+  final String languageCode;
+  final Function(String languageCode) updateLanguage;
+
+  const AppLanguageController({
+    super.key,
+    required this.languageCode,
+    required this.updateLanguage,
+    required super.child,
+  });
+
+  static AppLanguageController of(BuildContext context) {
+    final result =
+        context.dependOnInheritedWidgetOfExactType<AppLanguageController>();
+    return result!;
+  }
+
+  @override
+  bool updateShouldNotify(AppLanguageController oldWidget) {
+    return oldWidget.languageCode != languageCode;
+  }
+}
+
+String tr(
+  BuildContext context,
+  String en, {
+  String zhTw = '',
+  String zhCn = '',
+  String ko = '',
+  String ja = '',
+  String de = '',
+  String fr = '',
+  String ar = '',
+  String ru = '',
+  String trk = '',
+  String es = '',
+  String it = '',
+  String pl = '',
+  String pt = '',
+  String th = '',
+  String id = '',
+  String hi = '',
+  String bn = '',
+}) {
+  final languageCode = AppLanguageController.of(context).languageCode;
+
+  switch (languageCode) {
+    case 'zh_tw':
+      return zhTw.isEmpty ? en : zhTw;
+    case 'zh_cn':
+      return zhCn.isEmpty ? en : zhCn;
+    case 'ko':
+      return ko.isEmpty ? en : ko;
+    case 'ja':
+      return ja.isEmpty ? en : ja;
+    case 'de':
+      return de.isEmpty ? en : de;
+    case 'fr':
+      return fr.isEmpty ? en : fr;
+    case 'ar':
+      return ar.isEmpty ? en : ar;
+    case 'ru':
+      return ru.isEmpty ? en : ru;
+    case 'tr':
+      return trk.isEmpty ? en : trk;
+    case 'es':
+      return es.isEmpty ? en : es;
+    case 'it':
+      return it.isEmpty ? en : it;
+    case 'pl':
+      return pl.isEmpty ? en : pl;
+    case 'pt':
+      return pt.isEmpty ? en : pt;
+    case 'th':
+      return th.isEmpty ? en : th;
+    case 'id':
+      return id.isEmpty ? en : id;
+    case 'hi':
+      return hi.isEmpty ? en : hi;
+    case 'bn':
+      return bn.isEmpty ? en : bn;
+    case 'en':
+    default:
+      return en;
+  }
+}
+
+String languageName(String code) {
+  switch (code) {
+    case 'zh_tw':
+      return '繁體中文';
+    case 'zh_cn':
+      return '简体中文';
+    case 'ko':
+      return '한국어';
+    case 'ja':
+      return '日本語';
+    case 'de':
+      return 'Deutsch';
+    case 'fr':
+      return 'Français';
+    case 'ar':
+      return 'العربية';
+    case 'ru':
+      return 'Русский';
+    case 'tr':
+      return 'Türkçe';
+    case 'es':
+      return 'Español';
+    case 'it':
+      return 'Italiano';
+    case 'pl':
+      return 'Polski';
+    case 'pt':
+      return 'Português';
+    case 'th':
+      return 'ไทย';
+    case 'id':
+      return 'Indonesia';
+    case 'hi':
+      return 'हिन्दी';
+    case 'bn':
+      return 'বাংলা';
+    case 'en':
+    default:
+      return 'English';
+  }
+}
+
 class _PokerReservationAppState
     extends State<PokerReservationApp> {
 
   ThemeMode _themeMode = ThemeMode.light;
+
+  String _languageCode = 'en';
 
   StreamSubscription<User?>? _authSub;
 
@@ -306,12 +437,12 @@ class _PokerReservationAppState
 
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
-        _loadTheme();
+        _loadSettings();
       }
     });
   }
 
-  Future<void> _loadTheme() async {
+  Future<void> _loadSettings() async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) return;
@@ -325,11 +456,16 @@ class _PokerReservationAppState
 
     final isDark = data['darkMode'] == true;
 
+    final languageCode =
+        (data['languageCode'] ?? 'en').toString();
+
     if (!mounted) return;
 
     setState(() {
       _themeMode =
           isDark ? ThemeMode.dark : ThemeMode.light;
+
+      _languageCode = languageCode;
     });
   }
 
@@ -337,6 +473,12 @@ class _PokerReservationAppState
     setState(() {
       _themeMode =
           isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  void updateLanguage(String languageCode) {
+    setState(() {
+      _languageCode = languageCode;
     });
   }
 
@@ -350,29 +492,33 @@ class _PokerReservationAppState
   Widget build(BuildContext context) {
     return AppThemeController(
       updateTheme: updateTheme,
-      child: MaterialApp(
-        navigatorKey: appNavigatorKey,
-        title: 'Poker Table Reservation',
-        debugShowCheckedModeBanner: false,
+      child: AppLanguageController(
+        languageCode: _languageCode,
+        updateLanguage: updateLanguage,
+        child: MaterialApp(
+          navigatorKey: appNavigatorKey,
+          title: 'Poker Table Reservation',
+          debugShowCheckedModeBanner: false,
 
-        themeMode: _themeMode,
+          themeMode: _themeMode,
 
-        theme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.green,
-          scaffoldBackgroundColor: const Color(0xFFF4F6F8),
-          brightness: Brightness.light,
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.green,
+            scaffoldBackgroundColor: const Color(0xFFF4F6F8),
+            brightness: Brightness.light,
+          ),
+
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.green,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF111827),
+            cardColor: const Color(0xFF1F2937),
+          ),
+
+          home: const AuthGate(),
         ),
-
-        darkTheme: ThemeData(
-          useMaterial3: true,
-          colorSchemeSeed: Colors.green,
-          brightness: Brightness.dark,
-          scaffoldBackgroundColor: const Color(0xFF111827),
-          cardColor: const Color(0xFF1F2937),
-        ),
-
-        home: const AuthGate(),
       ),
     );
   }
@@ -2280,7 +2426,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
     final password = passwordController.text.trim();
   
     if (email.isEmpty || password.isEmpty) {
-      _showSnack('Please enter email and password');
+      _showSnack(
+        tr(
+          context,
+          'Please enter email and password',
+          zhTw: '請輸入電子郵件和密碼',
+          zhCn: '请输入电子邮件和密码',
+          ko: '이메일과 비밀번호를 입력하세요',
+          ja: 'メールアドレスとパスワードを入力してください',
+          de: 'Bitte E-Mail und Passwort eingeben',
+          fr: 'Veuillez saisir votre e-mail et votre mot de passe',
+          ar: 'يرجى إدخال البريد الإلكتروني وكلمة المرور',
+          ru: 'Введите адрес электронной почты и пароль',
+          trk: 'Lütfen e-posta ve şifre girin',
+          es: 'Ingresa tu correo electrónico y contraseña',
+          it: 'Inserisci email e password',
+          pl: 'Wpisz e-mail i hasło',
+          pt: 'Digite o e-mail e a senha',
+          th: 'กรุณากรอกอีเมลและรหัสผ่าน',
+          id: 'Masukkan email dan kata sandi',
+          hi: 'कृपया ईमेल और पासवर्ड दर्ज करें',
+          bn: 'অনুগ্রহ করে ইমেইল এবং পাসওয়ার্ড লিখুন',
+        ),
+      );
       return;
     }
   
@@ -2292,7 +2460,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
   
       final user = cred.user;
       if (user == null) {
-        _showSnack('Login failed');
+        _showSnack(
+          tr(
+            context,
+            'Login failed',
+            zhTw: '登入失敗',
+            zhCn: '登录失败',
+            ko: '로그인 실패',
+            ja: 'ログインに失敗しました',
+            de: 'Anmeldung fehlgeschlagen',
+            fr: 'Échec de la connexion',
+            ar: 'فشل تسجيل الدخول',
+            ru: 'Ошибка входа',
+            trk: 'Giriş başarısız',
+            es: 'Error al iniciar sesión',
+            it: 'Accesso non riuscito',
+            pl: 'Logowanie nieudane',
+            pt: 'Falha ao entrar',
+            th: 'เข้าสู่ระบบไม่สำเร็จ',
+            id: 'Login gagal',
+            hi: 'लॉगिन विफल',
+            bn: 'লগইন ব্যর্থ হয়েছে',
+          ),
+        );
         return;
       }
   
@@ -2342,17 +2532,109 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
     final email = emailController.text.trim();
 
     if (email.isEmpty) {
-      _showSnack('Please enter your email first');
+      if (email.isEmpty) {
+        _showSnack(
+          tr(
+            context,
+            'Please enter your email first',
+            zhTw: '請先輸入電子郵件',
+            zhCn: '请先输入电子邮件',
+            ko: '먼저 이메일을 입력하세요',
+            ja: '先にメールアドレスを入力してください',
+            de: 'Bitte zuerst E-Mail eingeben',
+            fr: 'Veuillez d’abord saisir votre e-mail',
+            ar: 'يرجى إدخال بريدك الإلكتروني أولاً',
+            ru: 'Сначала введите адрес электронной почты',
+            trk: 'Lütfen önce e-posta adresinizi girin',
+            es: 'Primero ingresa tu correo electrónico',
+            it: 'Inserisci prima la tua email',
+            pl: 'Najpierw wpisz swój e-mail',
+            pt: 'Digite seu e-mail primeiro',
+            th: 'กรุณากรอกอีเมลก่อน',
+            id: 'Masukkan email terlebih dahulu',
+            hi: 'कृपया पहले अपना ईमेल दर्ज करें',
+            bn: 'অনুগ্রহ করে আগে আপনার ইমেইল লিখুন',
+          ),
+        );
+        return;
+      }
       return;
     }
 
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      _showSnack('Password reset email sent. Please check your inbox.');
+      _showSnack(
+        tr(
+          context,
+          'Password reset email sent. Please check your inbox.',
+          zhTw: '密碼重設郵件已寄出，請檢查信箱。',
+          zhCn: '密码重设邮件已发送，请检查邮箱。',
+          ko: '비밀번호 재설정 이메일이 전송되었습니다.',
+          ja: 'パスワード再設定メールを送信しました。',
+          de: 'E-Mail zum Zurücksetzen des Passworts gesendet.',
+          fr: 'E-mail de réinitialisation envoyé.',
+          ar: 'تم إرسال بريد إعادة تعيين كلمة المرور.',
+          ru: 'Письмо для сброса пароля отправлено.',
+          trk: 'Şifre sıfırlama e-postası gönderildi.',
+          es: 'Correo de restablecimiento enviado.',
+          it: 'Email di reimpostazione inviata.',
+          pl: 'Wysłano e-mail do resetowania hasła.',
+          pt: 'E-mail de redefinição enviado.',
+          th: 'ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว',
+          id: 'Email reset password telah dikirim.',
+          hi: 'पासवर्ड रीसेट ईमेल भेजा गया।',
+          bn: 'পাসওয়ার্ড রিসেট ইমেইল পাঠানো হয়েছে।',
+        ),
+      );
     } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? 'Failed to send reset email');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Failed to send reset email',
+              zhTw: '寄送重設郵件失敗',
+              zhCn: '发送重设邮件失败',
+              ko: '재설정 이메일 전송 실패',
+              ja: 'リセットメール送信失敗',
+              de: 'Fehler beim Senden der Reset-E-Mail',
+              fr: 'Échec de l’envoi du mail',
+              ar: 'فشل إرسال البريد',
+              ru: 'Не удалось отправить письмо',
+              trk: 'Sıfırlama e-postası gönderilemedi',
+              es: 'No se pudo enviar el correo',
+              it: 'Invio email non riuscito',
+              pl: 'Nie udało się wysłać e-maila',
+              pt: 'Falha ao enviar e-mail',
+              th: 'ส่งอีเมลไม่สำเร็จ',
+              id: 'Gagal mengirim email',
+              hi: 'ईमेल भेजने में विफल',
+              bn: 'ইমেইল পাঠাতে ব্যর্থ',
+            ),
+      );
     } catch (e) {
-      _showSnack('Failed to send reset email');
+      _showSnack(
+        tr(
+          context,
+          'Failed to send reset email',
+          zhTw: '寄送重設郵件失敗',
+          zhCn: '发送重设邮件失败',
+          ko: '재설정 이메일 전송 실패',
+          ja: 'リセットメール送信失敗',
+          de: 'Fehler beim Senden der Reset-E-Mail',
+          fr: 'Échec de l’envoi du mail',
+          ar: 'فشل إرسال البريد',
+          ru: 'Не удалось отправить письмо',
+          trk: 'Sıfırlama e-postası gönderilemedi',
+          es: 'No se pudo enviar el correo',
+          it: 'Invio email non riuscito',
+          pl: 'Nie udało się wysłać e-maila',
+          pt: 'Falha ao enviar e-mail',
+          th: 'ส่งอีเมลไม่สำเร็จ',
+          id: 'Gagal mengirim email',
+          hi: 'ईमेल भेजने में विफल',
+          bn: 'ইমেইল পাঠাতে ব্যর্থ',
+        ),
+      );
     }
   }
 
@@ -2455,7 +2737,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
         final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
   
         if (googleUser == null) {
-          _showSnack('Google sign-in cancelled');
+          _showSnack(
+            tr(
+              context,
+              'Google sign-in cancelled',
+              zhTw: '已取消 Google 登入',
+              zhCn: '已取消 Google 登录',
+              ko: 'Google 로그인이 취소되었습니다',
+              ja: 'Googleログインがキャンセルされました',
+              de: 'Google-Anmeldung abgebrochen',
+              fr: 'Connexion Google annulée',
+              ar: 'تم إلغاء تسجيل الدخول عبر Google',
+              ru: 'Вход через Google отменён',
+              trk: 'Google girişi iptal edildi',
+              es: 'Inicio de sesión con Google cancelado',
+              it: 'Accesso Google annullato',
+              pl: 'Logowanie Google anulowane',
+              pt: 'Login do Google cancelado',
+              th: 'ยกเลิกการเข้าสู่ระบบ Google',
+              id: 'Login Google dibatalkan',
+              hi: 'Google लॉगिन रद्द किया गया',
+              bn: 'Google লগইন বাতিল হয়েছে',
+            ),
+          );
           return;
         }
   
@@ -2474,7 +2778,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
   
       final user = userCredential.user;
       if (user == null) {
-        _showSnack('Google login failed');
+        _showSnack(
+          tr(
+            context,
+            'Google login failed',
+            zhTw: 'Google 登入失敗',
+            zhCn: 'Google 登录失败',
+            ko: 'Google 로그인 실패',
+            ja: 'Googleログインに失敗しました',
+            de: 'Google-Anmeldung fehlgeschlagen',
+            fr: 'Échec de la connexion Google',
+            ar: 'فشل تسجيل الدخول عبر Google',
+            ru: 'Ошибка входа через Google',
+            trk: 'Google girişi başarısız',
+            es: 'Error al iniciar sesión con Google',
+            it: 'Accesso Google non riuscito',
+            pl: 'Logowanie Google nieudane',
+            pt: 'Falha ao entrar com Google',
+            th: 'เข้าสู่ระบบ Google ไม่สำเร็จ',
+            id: 'Login Google gagal',
+            hi: 'Google लॉगिन विफल',
+            bn: 'Google লগইন ব্যর্থ হয়েছে',
+          ),
+        );
         return;
       }
 
@@ -2484,7 +2810,6 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       final userDoc = await userRef.get();
       final data = userDoc.data();
       
-      // 第一次 Google 登入：先去設定名字與角色
       if (data == null) {
         if (!mounted) return;
       
@@ -2524,11 +2849,57 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       debugPrint('code: ${e.code}');
       debugPrint('message: ${e.message}');
       debugPrintStack(stackTrace: st);
-      _showSnack('Google login failed: ${e.code}');
+
+      _showSnack(
+        '${tr(
+          context,
+          'Google login failed',
+          zhTw: 'Google 登入失敗',
+          zhCn: 'Google 登录失败',
+          ko: 'Google 로그인 실패',
+          ja: 'Googleログインに失敗しました',
+          de: 'Google-Anmeldung fehlgeschlagen',
+          fr: 'Échec de la connexion Google',
+          ar: 'فشل تسجيل الدخول عبر Google',
+          ru: 'Ошибка входа через Google',
+          trk: 'Google girişi başarısız',
+          es: 'Error al iniciar sesión con Google',
+          it: 'Accesso Google non riuscito',
+          pl: 'Logowanie Google nieudane',
+          pt: 'Falha ao entrar com Google',
+          th: 'เข้าสู่ระบบ Google ไม่สำเร็จ',
+          id: 'Login Google gagal',
+          hi: 'Google लॉगिन विफल',
+          bn: 'Google লগইন ব্যর্থ হয়েছে',
+        )}: ${e.code}',
+      );
     } catch (e, st) {
       debugPrint('GOOGLE LOGIN UNKNOWN ERROR: $e');
       debugPrintStack(stackTrace: st);
-      _showSnack('Google login failed: $e');
+
+      _showSnack(
+        '${tr(
+          context,
+          'Google login failed',
+          zhTw: 'Google 登入失敗',
+          zhCn: 'Google 登录失败',
+          ko: 'Google 로그인 실패',
+          ja: 'Googleログインに失敗しました',
+          de: 'Google-Anmeldung fehlgeschlagen',
+          fr: 'Échec de la connexion Google',
+          ar: 'فشل تسجيل الدخول عبر Google',
+          ru: 'Ошибка входа через Google',
+          trk: 'Google girişi başarısız',
+          es: 'Error al iniciar sesión con Google',
+          it: 'Accesso Google non riuscito',
+          pl: 'Logowanie Google nieudane',
+          pt: 'Falha ao entrar com Google',
+          th: 'เข้าสู่ระบบ Google ไม่สำเร็จ',
+          id: 'Login Google gagal',
+          hi: 'Google लॉगिन विफल',
+          bn: 'Google লগইন ব্যর্থ হয়েছে',
+        )}: $e',
+      );
     }
   }
 
@@ -2584,10 +2955,30 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           ),
                           child: Row(
                             children: [
-                              const Expanded(
+                              Expanded(
                                 child: Text(
-                                  'New version available. Tap Update.',
-                                  style: TextStyle(
+                                  tr(
+                                    context,
+                                    'New version available. Tap Update.',
+                                    zhTw: '有新版本可用，請點擊更新。',
+                                    zhCn: '有新版本可用，请点击更新。',
+                                    ko: '새 버전을 사용할 수 있습니다. 업데이트를 누르세요.',
+                                    ja: '新しいバージョンがあります。更新をタップしてください。',
+                                    de: 'Neue Version verfügbar. Tippe auf Aktualisieren.',
+                                    fr: 'Nouvelle version disponible. Appuyez sur Mettre à jour.',
+                                    ar: 'يتوفر إصدار جديد. اضغط على تحديث.',
+                                    ru: 'Доступна новая версия. Нажмите Обновить.',
+                                    trk: 'Yeni sürüm mevcut. Güncelle’ye dokunun.',
+                                    es: 'Nueva versión disponible. Toca Actualizar.',
+                                    it: 'Nuova versione disponibile. Tocca Aggiorna.',
+                                    pl: 'Dostępna jest nowa wersja. Dotknij Aktualizuj.',
+                                    pt: 'Nova versão disponível. Toque em Atualizar.',
+                                    th: 'มีเวอร์ชันใหม่ แตะอัปเดต',
+                                    id: 'Versi baru tersedia. Ketuk Perbarui.',
+                                    hi: 'नया संस्करण उपलब्ध है। अपडेट पर टैप करें।',
+                                    bn: 'নতুন সংস্করণ উপলভ্য। আপডেট চাপুন।',
+                                  ),
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF7A5D00),
                                   ),
@@ -2595,23 +2986,67 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                               ),
                               FilledButton(
                                 onPressed: forceRefreshWebPage,
-                                child: const Text('Update'),
+                                child: Text(
+                                  tr(
+                                    context,
+                                    'Update',
+                                    zhTw: '更新',
+                                    zhCn: '更新',
+                                    ko: '업데이트',
+                                    ja: '更新',
+                                    de: 'Aktualisieren',
+                                    fr: 'Mettre à jour',
+                                    ar: 'تحديث',
+                                    ru: 'Обновить',
+                                    trk: 'Güncelle',
+                                    es: 'Actualizar',
+                                    it: 'Aggiorna',
+                                    pl: 'Aktualizuj',
+                                    pt: 'Atualizar',
+                                    th: 'อัปเดต',
+                                    id: 'Perbarui',
+                                    hi: 'अपडेट',
+                                    bn: 'আপডেট',
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
+
                       const SizedBox(height: 12),
+
                       if (_isApplePlatform)
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: _signInWithApple,
                             icon: const Icon(Icons.apple),
-                            label: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 14),
+                            label: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               child: Text(
-                                'Login with Apple',
-                                style: TextStyle(
+                                tr(
+                                  context,
+                                  'Login with Apple',
+                                  zhTw: '使用 Apple 登入',
+                                  zhCn: '使用 Apple 登录',
+                                  ko: 'Apple로 로그인',
+                                  ja: 'Appleでログイン',
+                                  de: 'Mit Apple anmelden',
+                                  fr: 'Se connecter avec Apple',
+                                  ar: 'تسجيل الدخول باستخدام Apple',
+                                  ru: 'Войти через Apple',
+                                  trk: 'Apple ile giriş yap',
+                                  es: 'Iniciar sesión con Apple',
+                                  it: 'Accedi con Apple',
+                                  pl: 'Zaloguj się przez Apple',
+                                  pt: 'Entrar com Apple',
+                                  th: 'เข้าสู่ระบบด้วย Apple',
+                                  id: 'Masuk dengan Apple',
+                                  hi: 'Apple से लॉगिन करें',
+                                  bn: 'Apple দিয়ে লগইন করুন',
+                                ),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -2629,11 +3064,31 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           child: OutlinedButton.icon(
                             onPressed: _signInWithGoogle,
                             icon: const Icon(Icons.login),
-                            label: const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 14),
+                            label: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
                               child: Text(
-                                'Login with Google',
-                                style: TextStyle(
+                                tr(
+                                  context,
+                                  'Login with Google',
+                                  zhTw: '使用 Google 登入',
+                                  zhCn: '使用 Google 登录',
+                                  ko: 'Google로 로그인',
+                                  ja: 'Googleでログイン',
+                                  de: 'Mit Google anmelden',
+                                  fr: 'Se connecter avec Google',
+                                  ar: 'تسجيل الدخول باستخدام Google',
+                                  ru: 'Войти через Google',
+                                  trk: 'Google ile giriş yap',
+                                  es: 'Iniciar sesión con Google',
+                                  it: 'Accedi con Google',
+                                  pl: 'Zaloguj się przez Google',
+                                  pt: 'Entrar com Google',
+                                  th: 'เข้าสู่ระบบด้วย Google',
+                                  id: 'Masuk dengan Google',
+                                  hi: 'Google से लॉगिन करें',
+                                  bn: 'Google দিয়ে লগইন করুন',
+                                ),
+                                style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -2647,29 +3102,114 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
                       const Icon(Icons.sports_esports, size: 54),
                       const SizedBox(height: 14),
-                      const Text(
-                        'Poker Table Reservation',
-                        style: TextStyle(
+
+                      Text(
+                        tr(
+                          context,
+                          'Poker Table Reservation',
+                          zhTw: '撲克桌預約',
+                          zhCn: '扑克桌预约',
+                          ko: '포커 테이블 예약',
+                          ja: 'ポーカーテーブル予約',
+                          de: 'Poker-Tischreservierung',
+                          fr: 'Réservation de table de poker',
+                          ar: 'حجز طاولة البوكر',
+                          ru: 'Бронирование покерного стола',
+                          trk: 'Poker Masa Rezervasyonu',
+                          es: 'Reserva de mesa de póker',
+                          it: 'Prenotazione tavolo da poker',
+                          pl: 'Rezerwacja stołu pokerowego',
+                          pt: 'Reserva de mesa de pôquer',
+                          th: 'จองโต๊ะโป๊กเกอร์',
+                          id: 'Reservasi Meja Poker',
+                          hi: 'पोकर टेबल आरक्षण',
+                          bn: 'পোকার টেবিল রিজার্ভেশন',
+                        ),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                         ),
                         textAlign: TextAlign.center,
                       ),
+
                       const SizedBox(height: 8),
-                      const Text(
-                        'Sign in to continue',
+
+                      Text(
+                        tr(
+                          context,
+                          'Sign in to continue',
+                          zhTw: '登入以繼續',
+                          zhCn: '登录以继续',
+                          ko: '계속하려면 로그인하세요',
+                          ja: '続行するにはログインしてください',
+                          de: 'Zum Fortfahren anmelden',
+                          fr: 'Connectez-vous pour continuer',
+                          ar: 'سجّل الدخول للمتابعة',
+                          ru: 'Войдите, чтобы продолжить',
+                          trk: 'Devam etmek için giriş yapın',
+                          es: 'Inicia sesión para continuar',
+                          it: 'Accedi per continuare',
+                          pl: 'Zaloguj się, aby kontynuować',
+                          pt: 'Entre para continuar',
+                          th: 'เข้าสู่ระบบเพื่อดำเนินการต่อ',
+                          id: 'Masuk untuk melanjutkan',
+                          hi: 'जारी रखने के लिए लॉगिन करें',
+                          bn: 'চালিয়ে যেতে লগইন করুন',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.black54,
                           height: 1.4,
                         ),
                       ),
+
                       const SizedBox(height: 24),
+
                       TextField(
                         controller: emailController,
                         decoration: InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'Enter your email',
+                          labelText: tr(
+                            context,
+                            'Email',
+                            zhTw: '電子郵件',
+                            zhCn: '电子邮件',
+                            ko: '이메일',
+                            ja: 'メール',
+                            de: 'E-Mail',
+                            fr: 'E-mail',
+                            ar: 'البريد الإلكتروني',
+                            ru: 'Электронная почта',
+                            trk: 'E-posta',
+                            es: 'Correo electrónico',
+                            it: 'Email',
+                            pl: 'E-mail',
+                            pt: 'E-mail',
+                            th: 'อีเมล',
+                            id: 'Email',
+                            hi: 'ईमेल',
+                            bn: 'ইমেইল',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your email',
+                            zhTw: '輸入你的電子郵件',
+                            zhCn: '输入你的电子邮件',
+                            ko: '이메일을 입력하세요',
+                            ja: 'メールアドレスを入力してください',
+                            de: 'E-Mail eingeben',
+                            fr: 'Entrez votre e-mail',
+                            ar: 'أدخل بريدك الإلكتروني',
+                            ru: 'Введите email',
+                            trk: 'E-postanızı girin',
+                            es: 'Ingresa tu correo',
+                            it: 'Inserisci la tua email',
+                            pl: 'Wpisz swój e-mail',
+                            pt: 'Digite seu e-mail',
+                            th: 'กรอกอีเมลของคุณ',
+                            id: 'Masukkan email Anda',
+                            hi: 'अपना ईमेल दर्ज करें',
+                            bn: 'আপনার ইমেইল লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -2677,13 +3217,55 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       TextField(
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Enter your password',
+                          labelText: tr(
+                            context,
+                            'Password',
+                            zhTw: '密碼',
+                            zhCn: '密码',
+                            ko: '비밀번호',
+                            ja: 'パスワード',
+                            de: 'Passwort',
+                            fr: 'Mot de passe',
+                            ar: 'كلمة المرور',
+                            ru: 'Пароль',
+                            trk: 'Şifre',
+                            es: 'Contraseña',
+                            it: 'Password',
+                            pl: 'Hasło',
+                            pt: 'Senha',
+                            th: 'รหัสผ่าน',
+                            id: 'Kata sandi',
+                            hi: 'पासवर्ड',
+                            bn: 'পাসওয়ার্ড',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your password',
+                            zhTw: '輸入你的密碼',
+                            zhCn: '输入你的密码',
+                            ko: '비밀번호를 입력하세요',
+                            ja: 'パスワードを入力してください',
+                            de: 'Passwort eingeben',
+                            fr: 'Entrez votre mot de passe',
+                            ar: 'أدخل كلمة المرور',
+                            ru: 'Введите пароль',
+                            trk: 'Şifrenizi girin',
+                            es: 'Ingresa tu contraseña',
+                            it: 'Inserisci la password',
+                            pl: 'Wpisz hasło',
+                            pt: 'Digite sua senha',
+                            th: 'กรอกรหัสผ่านของคุณ',
+                            id: 'Masukkan kata sandi',
+                            hi: 'अपना पासवर्ड दर्ज करें',
+                            bn: 'আপনার পাসওয়ার্ড লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -2691,29 +3273,73 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
                           onPressed: _forgotPassword,
-                          child: const Text(
-                            'Forgot Password?',
-                            style: TextStyle(
+                          child: Text(
+                            tr(
+                              context,
+                              'Forgot Password?',
+                              zhTw: '忘記密碼？',
+                              zhCn: '忘记密码？',
+                              ko: '비밀번호를 잊으셨나요?',
+                              ja: 'パスワードをお忘れですか？',
+                              de: 'Passwort vergessen?',
+                              fr: 'Mot de passe oublié ?',
+                              ar: 'هل نسيت كلمة المرور؟',
+                              ru: 'Забыли пароль?',
+                              trk: 'Şifrenizi mi unuttunuz?',
+                              es: '¿Olvidaste tu contraseña?',
+                              it: 'Password dimenticata?',
+                              pl: 'Nie pamiętasz hasła?',
+                              pt: 'Esqueceu a senha?',
+                              th: 'ลืมรหัสผ่าน?',
+                              id: 'Lupa kata sandi?',
+                              hi: 'पासवर्ड भूल गए?',
+                              bn: 'পাসওয়ার্ড ভুলে গেছেন?',
+                            ),
+                            style: const TextStyle(
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 8),
+
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
                           onPressed: _loginWithEmail,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             child: Text(
-                              'Login with Email',
-                              style: TextStyle(
+                              tr(
+                                context,
+                                'Login with Email',
+                                zhTw: '使用電子郵件登入',
+                                zhCn: '使用电子邮件登录',
+                                ko: '이메일로 로그인',
+                                ja: 'メールでログイン',
+                                de: 'Mit E-Mail anmelden',
+                                fr: 'Se connecter avec e-mail',
+                                ar: 'تسجيل الدخول بالبريد الإلكتروني',
+                                ru: 'Войти через email',
+                                trk: 'E-posta ile giriş yap',
+                                es: 'Iniciar sesión con correo',
+                                it: 'Accedi con email',
+                                pl: 'Zaloguj się e-mailem',
+                                pt: 'Entrar com e-mail',
+                                th: 'เข้าสู่ระบบด้วยอีเมล',
+                                id: 'Masuk dengan email',
+                                hi: 'ईमेल से लॉगिन करें',
+                                bn: 'ইমেইল দিয়ে লগইন করুন',
+                              ),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -2721,7 +3347,9 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 12),
+
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
@@ -2732,11 +3360,31 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                               ),
                             );
                           },
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             child: Text(
-                              'Go to Register',
-                              style: TextStyle(
+                              tr(
+                                context,
+                                'Go to Register',
+                                zhTw: '前往註冊',
+                                zhCn: '前往注册',
+                                ko: '회원가입으로 이동',
+                                ja: '登録へ進む',
+                                de: 'Zur Registrierung',
+                                fr: 'Aller à l’inscription',
+                                ar: 'الانتقال إلى التسجيل',
+                                ru: 'Перейти к регистрации',
+                                trk: 'Kayıt sayfasına git',
+                                es: 'Ir a registrarse',
+                                it: 'Vai alla registrazione',
+                                pl: 'Przejdź do rejestracji',
+                                pt: 'Ir para cadastro',
+                                th: 'ไปสมัครสมาชิก',
+                                id: 'Pergi ke daftar',
+                                hi: 'रजिस्टर पर जाएँ',
+                                bn: 'রেজিস্টারে যান',
+                              ),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -2800,7 +3448,31 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
 
     if (displayName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter display name')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Please enter display name',
+              zhTw: '請輸入顯示名稱',
+              zhCn: '请输入显示名称',
+              ko: '표시 이름을 입력하세요',
+              ja: '表示名を入力してください',
+              de: 'Bitte Anzeigenamen eingeben',
+              fr: 'Veuillez saisir un nom d’affichage',
+              ar: 'يرجى إدخال اسم العرض',
+              ru: 'Введите отображаемое имя',
+              trk: 'Lütfen görünen adı girin',
+              es: 'Ingresa un nombre para mostrar',
+              it: 'Inserisci il nome visualizzato',
+              pl: 'Wpisz nazwę wyświetlaną',
+              pt: 'Digite o nome de exibição',
+              th: 'กรุณากรอกชื่อที่แสดง',
+              id: 'Masukkan nama tampilan',
+              hi: 'कृपया डिस्प्ले नाम दर्ज करें',
+              bn: 'অনুগ্রহ করে প্রদর্শন নাম লিখুন',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -2837,7 +3509,31 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save profile')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Failed to save profile',
+              zhTw: '儲存個人資料失敗',
+              zhCn: '保存个人资料失败',
+              ko: '프로필 저장 실패',
+              ja: 'プロフィールの保存に失敗しました',
+              de: 'Profil konnte nicht gespeichert werden',
+              fr: 'Échec de l’enregistrement du profil',
+              ar: 'فشل حفظ الملف الشخصي',
+              ru: 'Не удалось сохранить профиль',
+              trk: 'Profil kaydedilemedi',
+              es: 'No se pudo guardar el perfil',
+              it: 'Impossibile salvare il profilo',
+              pl: 'Nie udało się zapisać profilu',
+              pt: 'Falha ao salvar perfil',
+              th: 'บันทึกโปรไฟล์ไม่สำเร็จ',
+              id: 'Gagal menyimpan profil',
+              hi: 'प्रोफ़ाइल सहेजने में विफल',
+              bn: 'প্রোফাইল সংরক্ষণ ব্যর্থ হয়েছে',
+            ),
+          ),
+        ),
       );
 
       setState(() {
@@ -2861,9 +3557,29 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: const Text(
-          'Set Up Account',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          tr(
+            context,
+            'Set Up Account',
+            zhTw: '設定帳號',
+            zhCn: '设置账号',
+            ko: '계정 설정',
+            ja: 'アカウント設定',
+            de: 'Konto einrichten',
+            fr: 'Configurer le compte',
+            ar: 'إعداد الحساب',
+            ru: 'Настройка аккаунта',
+            trk: 'Hesabı Ayarla',
+            es: 'Configurar cuenta',
+            it: 'Configura account',
+            pl: 'Skonfiguruj konto',
+            pt: 'Configurar conta',
+            th: 'ตั้งค่าบัญชี',
+            id: 'Siapkan akun',
+            hi: 'खाता सेट करें',
+            bn: 'অ্যাকাউন্ট সেটআপ',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       body: SafeArea(
@@ -2883,16 +3599,40 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                   child: Column(
                     children: [
                       const Icon(Icons.account_circle, size: 56),
+
                       const SizedBox(height: 14),
-                      const Text(
-                        'First Google Sign-In',
-                        style: TextStyle(
+
+                      Text(
+                        tr(
+                          context,
+                          'First Google Sign-In',
+                          zhTw: '第一次 Google 登入',
+                          zhCn: '第一次 Google 登录',
+                          ko: '첫 Google 로그인',
+                          ja: '初回Googleログイン',
+                          de: 'Erste Google-Anmeldung',
+                          fr: 'Première connexion Google',
+                          ar: 'أول تسجيل دخول عبر Google',
+                          ru: 'Первый вход через Google',
+                          trk: 'İlk Google girişi',
+                          es: 'Primer inicio con Google',
+                          it: 'Primo accesso Google',
+                          pl: 'Pierwsze logowanie Google',
+                          pt: 'Primeiro login Google',
+                          th: 'เข้าสู่ระบบ Google ครั้งแรก',
+                          id: 'Login Google pertama',
+                          hi: 'पहला Google लॉगिन',
+                          bn: 'প্রথম Google লগইন',
+                        ),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                         ),
                         textAlign: TextAlign.center,
                       ),
+
                       const SizedBox(height: 8),
+
                       Text(
                         email,
                         textAlign: TextAlign.center,
@@ -2901,21 +3641,85 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                           height: 1.4,
                         ),
                       ),
+
                       const SizedBox(height: 8),
-                      const Text(
-                        'All new accounts start in Player mode. After payment, you can upgrade to Host.',
+
+                      Text(
+                        tr(
+                          context,
+                          'All new accounts start in Player mode. After payment, you can upgrade to Host.',
+                          zhTw: '所有新帳號一開始都是玩家模式。付款後可升級為房主。',
+                          zhCn: '所有新账号一开始都是玩家模式。付款后可升级为房主。',
+                          ko: '새 계정은 모두 플레이어 모드로 시작합니다. 결제 후 호스트로 업그레이드할 수 있습니다.',
+                          ja: '新規アカウントはプレイヤーモードで開始されます。支払い後にホストへアップグレードできます。',
+                          de: 'Neue Konten starten im Spielermodus. Nach der Zahlung kannst du Host werden.',
+                          fr: 'Tous les nouveaux comptes commencent en mode joueur. Après paiement, vous pouvez devenir hôte.',
+                          ar: 'تبدأ جميع الحسابات الجديدة في وضع اللاعب. بعد الدفع يمكنك الترقية إلى مضيف.',
+                          ru: 'Все новые аккаунты начинают как игрок. После оплаты можно стать хостом.',
+                          trk: 'Tüm yeni hesaplar Oyuncu modunda başlar. Ödeme sonrası Host olabilirsiniz.',
+                          es: 'Todas las cuentas nuevas comienzan en modo jugador. Después del pago puedes actualizar a Host.',
+                          it: 'Tutti i nuovi account iniziano in modalità giocatore. Dopo il pagamento puoi diventare Host.',
+                          pl: 'Nowe konta zaczynają jako Gracz. Po płatności możesz zostać Hostem.',
+                          pt: 'Todas as novas contas começam no modo jogador. Após o pagamento você pode virar Host.',
+                          th: 'บัญชีใหม่ทั้งหมดเริ่มต้นในโหมดผู้เล่น หลังชำระเงินสามารถอัปเกรดเป็นโฮสต์ได้',
+                          id: 'Semua akun baru dimulai sebagai pemain. Setelah pembayaran bisa upgrade menjadi Host.',
+                          hi: 'सभी नए अकाउंट प्लेयर मोड में शुरू होते हैं। भुगतान के बाद आप होस्ट बन सकते हैं।',
+                          bn: 'সব নতুন অ্যাকাউন্ট প্লেয়ার মোডে শুরু হয়। পেমেন্টের পরে আপনি হোস্ট হতে পারবেন।',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.black54,
                           height: 1.4,
                         ),
                       ),
+
                       const SizedBox(height: 24),
+
                       TextField(
                         controller: displayNameController,
                         decoration: InputDecoration(
-                          labelText: 'Display Name',
-                          hintText: 'Enter your display name',
+                          labelText: tr(
+                            context,
+                            'Display Name',
+                            zhTw: '顯示名稱',
+                            zhCn: '显示名称',
+                            ko: '표시 이름',
+                            ja: '表示名',
+                            de: 'Anzeigename',
+                            fr: 'Nom affiché',
+                            ar: 'اسم العرض',
+                            ru: 'Отображаемое имя',
+                            trk: 'Görünen ad',
+                            es: 'Nombre para mostrar',
+                            it: 'Nome visualizzato',
+                            pl: 'Nazwa wyświetlana',
+                            pt: 'Nome de exibição',
+                            th: 'ชื่อที่แสดง',
+                            id: 'Nama tampilan',
+                            hi: 'डिस्प्ले नाम',
+                            bn: 'প্রদর্শন নাম',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your display name',
+                            zhTw: '輸入你的顯示名稱',
+                            zhCn: '输入你的显示名称',
+                            ko: '표시 이름을 입력하세요',
+                            ja: '表示名を入力してください',
+                            de: 'Anzeigenamen eingeben',
+                            fr: 'Entrez votre nom affiché',
+                            ar: 'أدخل اسم العرض',
+                            ru: 'Введите отображаемое имя',
+                            trk: 'Görünen adınızı girin',
+                            es: 'Ingresa tu nombre',
+                            it: 'Inserisci il nome visualizzato',
+                            pl: 'Wpisz nazwę wyświetlaną',
+                            pt: 'Digite o nome de exibição',
+                            th: 'กรอกชื่อที่แสดง',
+                            id: 'Masukkan nama tampilan',
+                            hi: 'अपना डिस्प्ले नाम दर्ज करें',
+                            bn: 'আপনার প্রদর্শন নাম লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -2923,12 +3727,54 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       TextField(
                         controller: lastNameController,
                         decoration: InputDecoration(
-                          labelText: 'Last Name',
-                          hintText: 'Enter your last name',
+                          labelText: tr(
+                            context,
+                            'Last Name',
+                            zhTw: '姓氏',
+                            zhCn: '姓氏',
+                            ko: '성',
+                            ja: '姓',
+                            de: 'Nachname',
+                            fr: 'Nom',
+                            ar: 'اسم العائلة',
+                            ru: 'Фамилия',
+                            trk: 'Soyadı',
+                            es: 'Apellido',
+                            it: 'Cognome',
+                            pl: 'Nazwisko',
+                            pt: 'Sobrenome',
+                            th: 'นามสกุล',
+                            id: 'Nama belakang',
+                            hi: 'उपनाम',
+                            bn: 'শেষ নাম',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your last name',
+                            zhTw: '輸入你的姓氏',
+                            zhCn: '输入你的姓氏',
+                            ko: '성을 입력하세요',
+                            ja: '姓を入力してください',
+                            de: 'Nachnamen eingeben',
+                            fr: 'Entrez votre nom',
+                            ar: 'أدخل اسم العائلة',
+                            ru: 'Введите фамилию',
+                            trk: 'Soyadınızı girin',
+                            es: 'Ingresa tu apellido',
+                            it: 'Inserisci il cognome',
+                            pl: 'Wpisz nazwisko',
+                            pt: 'Digite seu sobrenome',
+                            th: 'กรอกนามสกุล',
+                            id: 'Masukkan nama belakang',
+                            hi: 'अपना उपनाम दर्ज करें',
+                            bn: 'আপনার শেষ নাম লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -2936,7 +3782,9 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 20),
+
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -2944,7 +3792,49 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             child: Text(
-                              isSaving ? 'Saving...' : 'Continue',
+                              isSaving
+                                  ? tr(
+                                      context,
+                                      'Saving...',
+                                      zhTw: '儲存中...',
+                                      zhCn: '保存中...',
+                                      ko: '저장 중...',
+                                      ja: '保存中...',
+                                      de: 'Speichern...',
+                                      fr: 'Enregistrement...',
+                                      ar: 'جارٍ الحفظ...',
+                                      ru: 'Сохранение...',
+                                      trk: 'Kaydediliyor...',
+                                      es: 'Guardando...',
+                                      it: 'Salvataggio...',
+                                      pl: 'Zapisywanie...',
+                                      pt: 'Salvando...',
+                                      th: 'กำลังบันทึก...',
+                                      id: 'Menyimpan...',
+                                      hi: 'सहेजा जा रहा है...',
+                                      bn: 'সংরক্ষণ করা হচ্ছে...',
+                                    )
+                                  : tr(
+                                      context,
+                                      'Continue',
+                                      zhTw: '繼續',
+                                      zhCn: '继续',
+                                      ko: '계속',
+                                      ja: '続行',
+                                      de: 'Weiter',
+                                      fr: 'Continuer',
+                                      ar: 'متابعة',
+                                      ru: 'Продолжить',
+                                      trk: 'Devam Et',
+                                      es: 'Continuar',
+                                      it: 'Continua',
+                                      pl: 'Kontynuuj',
+                                      pt: 'Continuar',
+                                      th: 'ดำเนินการต่อ',
+                                      id: 'Lanjutkan',
+                                      hi: 'जारी रखें',
+                                      bn: 'চালিয়ে যান',
+                                    ),
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
@@ -3055,9 +3945,29 @@ class _RegisterPageState extends State<RegisterPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: const Text(
-          'Register',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          tr(
+            context,
+            'Register',
+            zhTw: '註冊',
+            zhCn: '注册',
+            ko: '회원가입',
+            ja: '登録',
+            de: 'Registrieren',
+            fr: 'S’inscrire',
+            ar: 'إنشاء حساب',
+            ru: 'Регистрация',
+            trk: 'Kayıt Ol',
+            es: 'Registrarse',
+            it: 'Registrati',
+            pl: 'Rejestracja',
+            pt: 'Registrar',
+            th: 'สมัครสมาชิก',
+            id: 'Daftar',
+            hi: 'रजिस्टर',
+            bn: 'রেজিস্টার',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       body: SafeArea(
@@ -3077,30 +3987,116 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: Column(
                     children: [
                       const Icon(Icons.person_add_alt_1, size: 54),
+
                       const SizedBox(height: 14),
-                      const Text(
-                        'Create Account',
-                        style: TextStyle(
+
+                      Text(
+                        tr(
+                          context,
+                          'Create Account',
+                          zhTw: '建立帳號',
+                          zhCn: '创建账号',
+                          ko: '계정 만들기',
+                          ja: 'アカウント作成',
+                          de: 'Konto erstellen',
+                          fr: 'Créer un compte',
+                          ar: 'إنشاء حساب',
+                          ru: 'Создать аккаунт',
+                          trk: 'Hesap Oluştur',
+                          es: 'Crear cuenta',
+                          it: 'Crea account',
+                          pl: 'Utwórz konto',
+                          pt: 'Criar conta',
+                          th: 'สร้างบัญชี',
+                          id: 'Buat akun',
+                          hi: 'खाता बनाएँ',
+                          bn: 'অ্যাকাউন্ট তৈরি করুন',
+                        ),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                         ),
                         textAlign: TextAlign.center,
                       ),
+
                       const SizedBox(height: 8),
-                      const Text(
-                        'Create your player account',
+
+                      Text(
+                        tr(
+                          context,
+                          'Create your player account',
+                          zhTw: '建立你的玩家帳號',
+                          zhCn: '创建你的玩家账号',
+                          ko: '플레이어 계정을 생성하세요',
+                          ja: 'プレイヤーアカウントを作成',
+                          de: 'Erstelle dein Spielerkonto',
+                          fr: 'Créez votre compte joueur',
+                          ar: 'أنشئ حساب اللاعب الخاص بك',
+                          ru: 'Создайте аккаунт игрока',
+                          trk: 'Oyuncu hesabınızı oluşturun',
+                          es: 'Crea tu cuenta de jugador',
+                          it: 'Crea il tuo account giocatore',
+                          pl: 'Utwórz konto gracza',
+                          pt: 'Crie sua conta de jogador',
+                          th: 'สร้างบัญชีผู้เล่นของคุณ',
+                          id: 'Buat akun pemain Anda',
+                          hi: 'अपना प्लेयर अकाउंट बनाएं',
+                          bn: 'আপনার প্লেয়ার অ্যাকাউন্ট তৈরি করুন',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.black54,
                           height: 1.4,
                         ),
                       ),
+
                       const SizedBox(height: 24),
+
                       TextField(
                         controller: displayNameController,
                         decoration: InputDecoration(
-                          labelText: 'Display Name',
-                          hintText: 'Enter your display name',
+                          labelText: tr(
+                            context,
+                            'Display Name',
+                            zhTw: '顯示名稱',
+                            zhCn: '显示名称',
+                            ko: '표시 이름',
+                            ja: '表示名',
+                            de: 'Anzeigename',
+                            fr: 'Nom affiché',
+                            ar: 'اسم العرض',
+                            ru: 'Отображаемое имя',
+                            trk: 'Görünen ad',
+                            es: 'Nombre para mostrar',
+                            it: 'Nome visualizzato',
+                            pl: 'Nazwa wyświetlana',
+                            pt: 'Nome de exibição',
+                            th: 'ชื่อที่แสดง',
+                            id: 'Nama tampilan',
+                            hi: 'डिस्प्ले नाम',
+                            bn: 'প্রদর্শন নাম',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your display name',
+                            zhTw: '輸入你的顯示名稱',
+                            zhCn: '输入你的显示名称',
+                            ko: '표시 이름을 입력하세요',
+                            ja: '表示名を入力してください',
+                            de: 'Anzeigenamen eingeben',
+                            fr: 'Entrez votre nom affiché',
+                            ar: 'أدخل اسم العرض',
+                            ru: 'Введите отображаемое имя',
+                            trk: 'Görünen adınızı girin',
+                            es: 'Ingresa tu nombre',
+                            it: 'Inserisci il nome visualizzato',
+                            pl: 'Wpisz nazwę wyświetlaną',
+                            pt: 'Digite o nome de exibição',
+                            th: 'กรอกชื่อที่แสดง',
+                            id: 'Masukkan nama tampilan',
+                            hi: 'अपना डिस्प्ले नाम दर्ज करें',
+                            bn: 'আপনার প্রদর্শন নাম লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -3108,12 +4104,54 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       TextField(
                         controller: lastNameController,
                         decoration: InputDecoration(
-                          labelText: 'Last Name',
-                          hintText: 'Enter your last name (optional)',
+                          labelText: tr(
+                            context,
+                            'Last Name',
+                            zhTw: '姓氏',
+                            zhCn: '姓氏',
+                            ko: '성',
+                            ja: '姓',
+                            de: 'Nachname',
+                            fr: 'Nom',
+                            ar: 'اسم العائلة',
+                            ru: 'Фамилия',
+                            trk: 'Soyadı',
+                            es: 'Apellido',
+                            it: 'Cognome',
+                            pl: 'Nazwisko',
+                            pt: 'Sobrenome',
+                            th: 'นามสกุล',
+                            id: 'Nama belakang',
+                            hi: 'उपनाम',
+                            bn: 'শেষ নাম',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your last name (optional)',
+                            zhTw: '輸入你的姓氏（可選）',
+                            zhCn: '输入你的姓氏（可选）',
+                            ko: '성을 입력하세요 (선택 사항)',
+                            ja: '姓を入力してください（任意）',
+                            de: 'Nachnamen eingeben (optional)',
+                            fr: 'Entrez votre nom (facultatif)',
+                            ar: 'أدخل اسم العائلة (اختياري)',
+                            ru: 'Введите фамилию (необязательно)',
+                            trk: 'Soyadınızı girin (isteğe bağlı)',
+                            es: 'Ingresa tu apellido (opcional)',
+                            it: 'Inserisci il cognome (opzionale)',
+                            pl: 'Wpisz nazwisko (opcjonalnie)',
+                            pt: 'Digite seu sobrenome (opcional)',
+                            th: 'กรอกนามสกุล (ไม่บังคับ)',
+                            id: 'Masukkan nama belakang (opsional)',
+                            hi: 'अपना उपनाम दर्ज करें (वैकल्पिक)',
+                            bn: 'আপনার শেষ নাম লিখুন (ঐচ্ছিক)',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -3121,12 +4159,54 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       TextField(
                         controller: emailController,
                         decoration: InputDecoration(
-                          labelText: 'Email',
-                          hintText: 'Enter your email',
+                          labelText: tr(
+                            context,
+                            'Email',
+                            zhTw: '電子郵件',
+                            zhCn: '电子邮件',
+                            ko: '이메일',
+                            ja: 'メール',
+                            de: 'E-Mail',
+                            fr: 'E-mail',
+                            ar: 'البريد الإلكتروني',
+                            ru: 'Электронная почта',
+                            trk: 'E-posta',
+                            es: 'Correo electrónico',
+                            it: 'Email',
+                            pl: 'E-mail',
+                            pt: 'E-mail',
+                            th: 'อีเมล',
+                            id: 'Email',
+                            hi: 'ईमेल',
+                            bn: 'ইমেইল',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your email',
+                            zhTw: '輸入你的電子郵件',
+                            zhCn: '输入你的电子邮件',
+                            ko: '이메일을 입력하세요',
+                            ja: 'メールアドレスを入力してください',
+                            de: 'E-Mail eingeben',
+                            fr: 'Entrez votre e-mail',
+                            ar: 'أدخل بريدك الإلكتروني',
+                            ru: 'Введите email',
+                            trk: 'E-postanızı girin',
+                            es: 'Ingresa tu correo',
+                            it: 'Inserisci la tua email',
+                            pl: 'Wpisz swój e-mail',
+                            pt: 'Digite seu e-mail',
+                            th: 'กรอกอีเมลของคุณ',
+                            id: 'Masukkan email Anda',
+                            hi: 'अपना ईमेल दर्ज करें',
+                            bn: 'আপনার ইমেইল লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -3134,13 +4214,55 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       TextField(
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Enter your password',
+                          labelText: tr(
+                            context,
+                            'Password',
+                            zhTw: '密碼',
+                            zhCn: '密码',
+                            ko: '비밀번호',
+                            ja: 'パスワード',
+                            de: 'Passwort',
+                            fr: 'Mot de passe',
+                            ar: 'كلمة المرور',
+                            ru: 'Пароль',
+                            trk: 'Şifre',
+                            es: 'Contraseña',
+                            it: 'Password',
+                            pl: 'Hasło',
+                            pt: 'Senha',
+                            th: 'รหัสผ่าน',
+                            id: 'Kata sandi',
+                            hi: 'पासवर्ड',
+                            bn: 'পাসওয়ার্ড',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your password',
+                            zhTw: '輸入你的密碼',
+                            zhCn: '输入你的密码',
+                            ko: '비밀번호를 입력하세요',
+                            ja: 'パスワードを入力してください',
+                            de: 'Passwort eingeben',
+                            fr: 'Entrez votre mot de passe',
+                            ar: 'أدخل كلمة المرور',
+                            ru: 'Введите пароль',
+                            trk: 'Şifrenizi girin',
+                            es: 'Ingresa tu contraseña',
+                            it: 'Inserisci la password',
+                            pl: 'Wpisz hasło',
+                            pt: 'Digite sua senha',
+                            th: 'กรอกรหัสผ่านของคุณ',
+                            id: 'Masukkan kata sandi',
+                            hi: 'अपना पासवर्ड दर्ज करें',
+                            bn: 'আপনার পাসওয়ার্ড লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -3148,13 +4270,55 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 16),
+
                       TextField(
                         controller: confirmPasswordController,
                         obscureText: true,
                         decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          hintText: 'Enter your password again',
+                          labelText: tr(
+                            context,
+                            'Confirm Password',
+                            zhTw: '確認密碼',
+                            zhCn: '确认密码',
+                            ko: '비밀번호 확인',
+                            ja: 'パスワード確認',
+                            de: 'Passwort bestätigen',
+                            fr: 'Confirmer le mot de passe',
+                            ar: 'تأكيد كلمة المرور',
+                            ru: 'Подтвердите пароль',
+                            trk: 'Şifreyi Onayla',
+                            es: 'Confirmar contraseña',
+                            it: 'Conferma password',
+                            pl: 'Potwierdź hasło',
+                            pt: 'Confirmar senha',
+                            th: 'ยืนยันรหัสผ่าน',
+                            id: 'Konfirmasi kata sandi',
+                            hi: 'पासवर्ड की पुष्टि करें',
+                            bn: 'পাসওয়ার্ড নিশ্চিত করুন',
+                          ),
+                          hintText: tr(
+                            context,
+                            'Enter your password again',
+                            zhTw: '再次輸入你的密碼',
+                            zhCn: '再次输入你的密码',
+                            ko: '비밀번호를 다시 입력하세요',
+                            ja: 'もう一度パスワードを入力してください',
+                            de: 'Passwort erneut eingeben',
+                            fr: 'Entrez à nouveau votre mot de passe',
+                            ar: 'أدخل كلمة المرور مرة أخرى',
+                            ru: 'Введите пароль ещё раз',
+                            trk: 'Şifrenizi tekrar girin',
+                            es: 'Ingresa tu contraseña nuevamente',
+                            it: 'Inserisci nuovamente la password',
+                            pl: 'Wpisz ponownie hasło',
+                            pt: 'Digite sua senha novamente',
+                            th: 'กรอกรหัสผ่านอีกครั้ง',
+                            id: 'Masukkan kembali kata sandi',
+                            hi: 'अपना पासवर्ड फिर से दर्ज करें',
+                            bn: 'আবার আপনার পাসওয়ার্ড লিখুন',
+                          ),
                           filled: true,
                           fillColor: const Color(0xFFF9FAFB),
                           border: OutlineInputBorder(
@@ -3162,16 +4326,38 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         ),
                       ),
+
                       const SizedBox(height: 20),
+
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
                           onPressed: _registerWithEmail,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 14),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             child: Text(
-                              'Register',
-                              style: TextStyle(
+                              tr(
+                                context,
+                                'Register',
+                                zhTw: '註冊',
+                                zhCn: '注册',
+                                ko: '회원가입',
+                                ja: '登録',
+                                de: 'Registrieren',
+                                fr: 'S’inscrire',
+                                ar: 'إنشاء حساب',
+                                ru: 'Регистрация',
+                                trk: 'Kayıt Ol',
+                                es: 'Registrarse',
+                                it: 'Registrati',
+                                pl: 'Rejestracja',
+                                pt: 'Registrar',
+                                th: 'สมัครสมาชิก',
+                                id: 'Daftar',
+                                hi: 'रजिस्टर',
+                                bn: 'রেজিস্টার',
+                              ),
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -3733,7 +4919,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         return StatefulBuilder(
           builder: (context, setLocalState) {
             return AlertDialog(
-              title: const Text('Choose Virtual Avatar'),
+              title: Text(
+                tr(
+                  context,
+                  'Choose Virtual Avatar',
+                  zhTw: '選擇虛擬頭像',
+                  zhCn: '选择虚拟头像',
+                  ko: '가상 아바타 선택',
+                  ja: 'バーチャルアバターを選択',
+                  de: 'Virtuellen Avatar auswählen',
+                  fr: 'Choisir un avatar virtuel',
+                  ar: 'اختر صورة رمزية افتراضية',
+                  ru: 'Выберите виртуальный аватар',
+                  trk: 'Sanal avatar seç',
+                  es: 'Elegir avatar virtual',
+                  it: 'Scegli avatar virtuale',
+                  pl: 'Wybierz wirtualny awatar',
+                  pt: 'Escolher avatar virtual',
+                  th: 'เลือกอวาตาร์เสมือน',
+                  id: 'Pilih avatar virtual',
+                  hi: 'वर्चुअल अवतार चुनें',
+                  bn: 'ভার্চুয়াল অবতার নির্বাচন করুন',
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -3749,12 +4957,15 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                       displayName: displayNameController.text.trim(),
                       iconSize: 34,
                     ),
+
                     const SizedBox(height: 16),
+
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: kVirtualAvatarIcons.map((iconKey) {
                         final isSelected = tempIcon == iconKey;
+
                         return ChoiceChip(
                           label: Icon(
                             virtualAvatarIconData(iconKey),
@@ -3769,12 +4980,15 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                         );
                       }).toList(),
                     ),
+
                     const SizedBox(height: 16),
+
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: kVirtualAvatarColors.map((colorValue) {
                         final isSelected = tempColor == colorValue;
+
                         return GestureDetector(
                           onTap: () {
                             setLocalState(() {
@@ -3806,8 +5020,31 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
-                  child: const Text('Cancel'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                 ),
+
                 FilledButton(
                   onPressed: () {
                     Navigator.of(context).pop({
@@ -3815,7 +5052,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                       'avatarBgColor': tempColor,
                     });
                   },
-                  child: const Text('Save'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Save',
+                      zhTw: '儲存',
+                      zhCn: '保存',
+                      ko: '저장',
+                      ja: '保存',
+                      de: 'Speichern',
+                      fr: 'Enregistrer',
+                      ar: 'حفظ',
+                      ru: 'Сохранить',
+                      trk: 'Kaydet',
+                      es: 'Guardar',
+                      it: 'Salva',
+                      pl: 'Zapisz',
+                      pt: 'Salvar',
+                      th: 'บันทึก',
+                      id: 'Simpan',
+                      hi: 'सहेजें',
+                      bn: 'সংরক্ষণ করুন',
+                    ),
+                  ),
                 ),
               ],
             );
@@ -3828,7 +5087,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
     try {
       final nextAvatarIcon = result['avatarIcon'].toString();
-      final nextAvatarBgColor = result['avatarBgColor'] as int;
+
+      final nextAvatarBgColor =
+          result['avatarBgColor'] as int;
 
       await _updateCurrentUserDoc(
         user: user,
@@ -3852,15 +5113,63 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
       setState(() {
         avatarType = 'virtual';
-        avatarIcon = (result['avatarIcon'] ?? 'person').toString();
-        avatarBgColor = result['avatarBgColor'] is int
-            ? result['avatarBgColor'] as int
-            : 0xFF2563EB;
+
+        avatarIcon =
+            (result['avatarIcon'] ?? 'person').toString();
+
+        avatarBgColor =
+            result['avatarBgColor'] is int
+                ? result['avatarBgColor'] as int
+                : 0xFF2563EB;
       });
 
-      _showSnack('Virtual avatar updated');
+      _showSnack(
+        tr(
+          context,
+          'Virtual avatar updated',
+          zhTw: '虛擬頭像已更新',
+          zhCn: '虚拟头像已更新',
+          ko: '가상 아바타가 업데이트되었습니다',
+          ja: 'バーチャルアバターを更新しました',
+          de: 'Virtueller Avatar aktualisiert',
+          fr: 'Avatar virtuel mis à jour',
+          ar: 'تم تحديث الصورة الرمزية',
+          ru: 'Виртуальный аватар обновлён',
+          trk: 'Sanal avatar güncellendi',
+          es: 'Avatar virtual actualizado',
+          it: 'Avatar virtuale aggiornato',
+          pl: 'Zaktualizowano awatar',
+          pt: 'Avatar virtual atualizado',
+          th: 'อัปเดตอวาตาร์แล้ว',
+          id: 'Avatar virtual diperbarui',
+          hi: 'वर्चुअल अवतार अपडेट हुआ',
+          bn: 'ভার্চুয়াল অবতার আপডেট হয়েছে',
+        ),
+      );
     } catch (e) {
-      _showSnack('Failed to update virtual avatar');
+      _showSnack(
+        tr(
+          context,
+          'Failed to update virtual avatar',
+          zhTw: '更新虛擬頭像失敗',
+          zhCn: '更新虚拟头像失败',
+          ko: '가상 아바타 업데이트 실패',
+          ja: 'バーチャルアバター更新失敗',
+          de: 'Avatar konnte nicht aktualisiert werden',
+          fr: 'Échec de la mise à jour',
+          ar: 'فشل تحديث الصورة الرمزية',
+          ru: 'Не удалось обновить аватар',
+          trk: 'Avatar güncellenemedi',
+          es: 'No se pudo actualizar el avatar',
+          it: 'Impossibile aggiornare avatar',
+          pl: 'Nie udało się zaktualizować awatara',
+          pt: 'Falha ao atualizar avatar',
+          th: 'อัปเดตอวาตาร์ไม่สำเร็จ',
+          id: 'Gagal memperbarui avatar',
+          hi: 'अवतार अपडेट विफल',
+          bn: 'অবতার আপডেট ব্যর্থ হয়েছে',
+        ),
+      );
     }
   }
 
@@ -3961,14 +5270,33 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(fontWeight: FontWeight.w800),
+        title: Text(
+          tr(
+            context,
+            'Edit Profile',
+            zhTw: '編輯個人資料',
+            zhCn: '编辑个人资料',
+            ko: '프로필 수정',
+            ja: 'プロフィール編集',
+            de: 'Profil bearbeiten',
+            fr: 'Modifier le profil',
+            ar: 'تعديل الملف الشخصي',
+            ru: 'Редактировать профиль',
+            trk: 'Profili Düzenle',
+            es: 'Editar perfil',
+            it: 'Modifica profilo',
+            pl: 'Edytuj profil',
+            pt: 'Editar perfil',
+            th: 'แก้ไขโปรไฟล์',
+            id: 'Edit profil',
+            hi: 'प्रोफ़ाइल संपादित करें',
+            bn: 'প্রোফাইল সম্পাদনা',
+          ),
+          style: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       body: SafeArea(
@@ -4000,7 +5328,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                       avatarBgColor: avatarBgColor,
                                       photoUrl: photoUrl,
                                     ),
-                                    displayName: displayNameController.text.trim(),
+                                    displayName:
+                                        displayNameController.text.trim(),
                                     iconSize: 42,
                                     textSize: 28,
                                   ),
@@ -4017,23 +5346,106 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                         icon: const Icon(Icons.photo_camera),
                                         label: Text(
                                           isUploadingAvatar
-                                              ? 'Uploading...'
-                                              : 'Upload Avatar',
+                                              ? tr(
+                                                  context,
+                                                  'Uploading...',
+                                                  zhTw: '上傳中...',
+                                                  zhCn: '上传中...',
+                                                  ko: '업로드 중...',
+                                                  ja: 'アップロード中...',
+                                                  de: 'Wird hochgeladen...',
+                                                  fr: 'Téléchargement...',
+                                                  ar: 'جارٍ الرفع...',
+                                                  ru: 'Загрузка...',
+                                                  trk: 'Yükleniyor...',
+                                                  es: 'Subiendo...',
+                                                  it: 'Caricamento...',
+                                                  pl: 'Przesyłanie...',
+                                                  pt: 'Enviando...',
+                                                  th: 'กำลังอัปโหลด...',
+                                                  id: 'Mengunggah...',
+                                                  hi: 'अपलोड हो रहा है...',
+                                                  bn: 'আপলোড হচ্ছে...',
+                                                )
+                                              : tr(
+                                                  context,
+                                                  'Upload Avatar',
+                                                  zhTw: '上傳頭像',
+                                                  zhCn: '上传头像',
+                                                  ko: '아바타 업로드',
+                                                  ja: 'アバターをアップロード',
+                                                  de: 'Avatar hochladen',
+                                                  fr: 'Téléverser un avatar',
+                                                  ar: 'رفع الصورة الرمزية',
+                                                  ru: 'Загрузить аватар',
+                                                  trk: 'Avatar Yükle',
+                                                  es: 'Subir avatar',
+                                                  it: 'Carica avatar',
+                                                  pl: 'Prześlij awatar',
+                                                  pt: 'Enviar avatar',
+                                                  th: 'อัปโหลดอวาตาร์',
+                                                  id: 'Unggah avatar',
+                                                  hi: 'अवतार अपलोड करें',
+                                                  bn: 'অবতার আপলোড করুন',
+                                                ),
                                         ),
                                       ),
-
                                       OutlinedButton.icon(
                                         onPressed: _pickVirtualAvatar,
                                         icon: const Icon(Icons.auto_awesome),
-                                        label: const Text('Virtual Avatar'),
+                                        label: Text(
+                                          tr(
+                                            context,
+                                            'Virtual Avatar',
+                                            zhTw: '虛擬頭像',
+                                            zhCn: '虚拟头像',
+                                            ko: '가상 아바타',
+                                            ja: 'バーチャルアバター',
+                                            de: 'Virtueller Avatar',
+                                            fr: 'Avatar virtuel',
+                                            ar: 'الصورة الرمزية',
+                                            ru: 'Виртуальный аватар',
+                                            trk: 'Sanal Avatar',
+                                            es: 'Avatar virtual',
+                                            it: 'Avatar virtuale',
+                                            pl: 'Wirtualny awatar',
+                                            pt: 'Avatar virtual',
+                                            th: 'อวาตาร์เสมือน',
+                                            id: 'Avatar virtual',
+                                            hi: 'वर्चुअल अवतार',
+                                            bn: 'ভার্চুয়াল অবতার',
+                                          ),
+                                        ),
                                       ),
-
                                       if (photoUrl != null &&
                                           photoUrl!.trim().isNotEmpty)
                                         OutlinedButton.icon(
                                           onPressed: _removeAvatar,
-                                          icon: const Icon(Icons.delete_outline),
-                                          label: const Text('Remove Avatar'),
+                                          icon:
+                                              const Icon(Icons.delete_outline),
+                                          label: Text(
+                                            tr(
+                                              context,
+                                              'Remove Avatar',
+                                              zhTw: '移除頭像',
+                                              zhCn: '移除头像',
+                                              ko: '아바타 제거',
+                                              ja: 'アバター削除',
+                                              de: 'Avatar entfernen',
+                                              fr: 'Supprimer l’avatar',
+                                              ar: 'إزالة الصورة الرمزية',
+                                              ru: 'Удалить аватар',
+                                              trk: 'Avatarı Kaldır',
+                                              es: 'Eliminar avatar',
+                                              it: 'Rimuovi avatar',
+                                              pl: 'Usuń awatar',
+                                              pt: 'Remover avatar',
+                                              th: 'ลบอวาตาร์',
+                                              id: 'Hapus avatar',
+                                              hi: 'अवतार हटाएँ',
+                                              bn: 'অবতার মুছুন',
+                                            ),
+                                          ),
                                         ),
                                     ],
                                   ),
@@ -4057,9 +5469,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        const Text(
-                                          'Player ID',
-                                          style: TextStyle(
+                                        Text(
+                                          tr(
+                                            context,
+                                            'Player ID',
+                                            zhTw: '玩家 ID',
+                                            zhCn: '玩家 ID',
+                                            ko: '플레이어 ID',
+                                            ja: 'プレイヤー ID',
+                                            de: 'Spieler-ID',
+                                            fr: 'ID Joueur',
+                                            ar: 'معرّف اللاعب',
+                                            ru: 'ID игрока',
+                                            trk: 'Oyuncu Kimliği',
+                                            es: 'ID del jugador',
+                                            it: 'ID giocatore',
+                                            pl: 'ID gracza',
+                                            pt: 'ID do jogador',
+                                            th: 'รหัสผู้เล่น',
+                                            id: 'ID pemain',
+                                            hi: 'प्लेयर आईडी',
+                                            bn: 'প্লেয়ার আইডি',
+                                          ),
+                                          style: const TextStyle(
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
@@ -4073,9 +5505,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 6),
-                                        const Text(
-                                          'This ID is unique and cannot be changed.',
-                                          style: TextStyle(
+                                        Text(
+                                          tr(
+                                            context,
+                                            'This ID is unique and cannot be changed.',
+                                            zhTw: '這個 ID 是唯一的，無法更改。',
+                                            zhCn: '这个 ID 是唯一的，无法更改。',
+                                            ko: '이 ID는 고유하며 변경할 수 없습니다.',
+                                            ja: 'このIDは変更できません。',
+                                            de: 'Diese ID ist einzigartig und kann nicht geändert werden.',
+                                            fr: 'Cet ID est unique et ne peut pas être modifié.',
+                                            ar: 'هذا المعرف فريد ولا يمكن تغييره.',
+                                            ru: 'Этот ID уникален и не может быть изменён.',
+                                            trk: 'Bu kimlik benzersizdir ve değiştirilemez.',
+                                            es: 'Este ID es único y no se puede cambiar.',
+                                            it: 'Questo ID è unico e non può essere modificato.',
+                                            pl: 'Ten identyfikator jest unikalny i nie można go zmienić.',
+                                            pt: 'Este ID é único e não pode ser alterado.',
+                                            th: 'ID นี้ไม่สามารถเปลี่ยนได้',
+                                            id: 'ID ini unik dan tidak dapat diubah.',
+                                            hi: 'यह आईडी यूनिक है और बदली नहीं जा सकती।',
+                                            bn: 'এই আইডি ইউনিক এবং পরিবর্তন করা যাবে না।',
+                                          ),
+                                          style: const TextStyle(
                                             color: Colors.black54,
                                             fontSize: 12,
                                           ),
@@ -4087,9 +5539,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               ),
                             ),
                             const SizedBox(height: 28),
-                            const Text(
-                              'Basic Profile',
-                              style: TextStyle(
+                            Text(
+                              tr(
+                                context,
+                                'Basic Profile',
+                                zhTw: '基本資料',
+                                zhCn: '基本资料',
+                                ko: '기본 프로필',
+                                ja: '基本プロフィール',
+                                de: 'Grundprofil',
+                                fr: 'Profil de base',
+                                ar: 'الملف الأساسي',
+                                ru: 'Основной профиль',
+                                trk: 'Temel Profil',
+                                es: 'Perfil básico',
+                                it: 'Profilo base',
+                                pl: 'Podstawowy profil',
+                                pt: 'Perfil básico',
+                                th: 'โปรไฟล์พื้นฐาน',
+                                id: 'Profil dasar',
+                                hi: 'बेसिक प्रोफ़ाइल',
+                                bn: 'বেসিক প্রোফাইল',
+                              ),
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -4098,8 +5570,48 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                             TextField(
                               controller: displayNameController,
                               decoration: InputDecoration(
-                                labelText: 'Display Name',
-                                hintText: 'Enter your display name',
+                                labelText: tr(
+                                  context,
+                                  'Display Name',
+                                  zhTw: '顯示名稱',
+                                  zhCn: '显示名称',
+                                  ko: '표시 이름',
+                                  ja: '表示名',
+                                  de: 'Anzeigename',
+                                  fr: 'Nom affiché',
+                                  ar: 'اسم العرض',
+                                  ru: 'Отображаемое имя',
+                                  trk: 'Görünen ad',
+                                  es: 'Nombre para mostrar',
+                                  it: 'Nome visualizzato',
+                                  pl: 'Nazwa wyświetlana',
+                                  pt: 'Nome de exibição',
+                                  th: 'ชื่อที่แสดง',
+                                  id: 'Nama tampilan',
+                                  hi: 'डिस्प्ले नाम',
+                                  bn: 'প্রদর্শন নাম',
+                                ),
+                                hintText: tr(
+                                  context,
+                                  'Enter your display name',
+                                  zhTw: '輸入你的顯示名稱',
+                                  zhCn: '输入你的显示名称',
+                                  ko: '표시 이름을 입력하세요',
+                                  ja: '表示名を入力してください',
+                                  de: 'Anzeigenamen eingeben',
+                                  fr: 'Entrez votre nom affiché',
+                                  ar: 'أدخل اسم العرض',
+                                  ru: 'Введите отображаемое имя',
+                                  trk: 'Görünen adınızı girin',
+                                  es: 'Ingresa tu nombre',
+                                  it: 'Inserisci il nome visualizzato',
+                                  pl: 'Wpisz nazwę wyświetlaną',
+                                  pt: 'Digite o nome de exibição',
+                                  th: 'กรอกชื่อที่แสดง',
+                                  id: 'Masukkan nama tampilan',
+                                  hi: 'अपना डिस्प्ले नाम दर्ज करें',
+                                  bn: 'আপনার প্রদর্শন নাম লিখুন',
+                                ),
                                 filled: true,
                                 fillColor: const Color(0xFFF9FAFB),
                                 border: OutlineInputBorder(
@@ -4111,8 +5623,48 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                             TextField(
                               controller: lastNameController,
                               decoration: InputDecoration(
-                                labelText: 'Last Name',
-                                hintText: 'Enter your last name',
+                                labelText: tr(
+                                  context,
+                                  'Last Name',
+                                  zhTw: '姓氏',
+                                  zhCn: '姓氏',
+                                  ko: '성',
+                                  ja: '姓',
+                                  de: 'Nachname',
+                                  fr: 'Nom',
+                                  ar: 'اسم العائلة',
+                                  ru: 'Фамилия',
+                                  trk: 'Soyadı',
+                                  es: 'Apellido',
+                                  it: 'Cognome',
+                                  pl: 'Nazwisko',
+                                  pt: 'Sobrenome',
+                                  th: 'นามสกุล',
+                                  id: 'Nama belakang',
+                                  hi: 'उपनाम',
+                                  bn: 'শেষ নাম',
+                                ),
+                                hintText: tr(
+                                  context,
+                                  'Enter your last name',
+                                  zhTw: '輸入你的姓氏',
+                                  zhCn: '输入你的姓氏',
+                                  ko: '성을 입력하세요',
+                                  ja: '姓を入力してください',
+                                  de: 'Nachnamen eingeben',
+                                  fr: 'Entrez votre nom',
+                                  ar: 'أدخل اسم العائلة',
+                                  ru: 'Введите фамилию',
+                                  trk: 'Soyadınızı girin',
+                                  es: 'Ingresa tu apellido',
+                                  it: 'Inserisci il cognome',
+                                  pl: 'Wpisz nazwisko',
+                                  pt: 'Digite seu sobrenome',
+                                  th: 'กรอกนามสกุล',
+                                  id: 'Masukkan nama belakang',
+                                  hi: 'अपना उपनाम दर्ज करें',
+                                  bn: 'আপনার শেষ নাম লিখুন',
+                                ),
                                 filled: true,
                                 fillColor: const Color(0xFFF9FAFB),
                                 border: OutlineInputBorder(
@@ -4131,16 +5683,76 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                       const EdgeInsets.symmetric(vertical: 14),
                                   child: Text(
                                     isSavingName
-                                        ? 'Saving...'
-                                        : 'Save Profile',
+                                        ? tr(
+                                            context,
+                                            'Saving...',
+                                            zhTw: '儲存中...',
+                                            zhCn: '保存中...',
+                                            ko: '저장 중...',
+                                            ja: '保存中...',
+                                            de: 'Speichern...',
+                                            fr: 'Enregistrement...',
+                                            ar: 'جارٍ الحفظ...',
+                                            ru: 'Сохранение...',
+                                            trk: 'Kaydediliyor...',
+                                            es: 'Guardando...',
+                                            it: 'Salvataggio...',
+                                            pl: 'Zapisywanie...',
+                                            pt: 'Salvando...',
+                                            th: 'กำลังบันทึก...',
+                                            id: 'Menyimpan...',
+                                            hi: 'सहेजा जा रहा है...',
+                                            bn: 'সংরক্ষণ করা হচ্ছে...',
+                                          )
+                                        : tr(
+                                            context,
+                                            'Save Profile',
+                                            zhTw: '儲存個人資料',
+                                            zhCn: '保存个人资料',
+                                            ko: '프로필 저장',
+                                            ja: 'プロフィールを保存',
+                                            de: 'Profil speichern',
+                                            fr: 'Enregistrer le profil',
+                                            ar: 'حفظ الملف الشخصي',
+                                            ru: 'Сохранить профиль',
+                                            trk: 'Profili Kaydet',
+                                            es: 'Guardar perfil',
+                                            it: 'Salva profilo',
+                                            pl: 'Zapisz profil',
+                                            pt: 'Salvar perfil',
+                                            th: 'บันทึกโปรไฟล์',
+                                            id: 'Simpan profil',
+                                            hi: 'प्रोफ़ाइल सहेजें',
+                                            bn: 'প্রোফাইল সংরক্ষণ করুন',
+                                          ),
                                   ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 28),
-                            const Text(
-                              'Change Password',
-                              style: TextStyle(
+                            Text(
+                              tr(
+                                context,
+                                'Change Password',
+                                zhTw: '更改密碼',
+                                zhCn: '更改密码',
+                                ko: '비밀번호 변경',
+                                ja: 'パスワード変更',
+                                de: 'Passwort ändern',
+                                fr: 'Changer le mot de passe',
+                                ar: 'تغيير كلمة المرور',
+                                ru: 'Сменить пароль',
+                                trk: 'Şifre Değiştir',
+                                es: 'Cambiar contraseña',
+                                it: 'Cambia password',
+                                pl: 'Zmień hasło',
+                                pt: 'Alterar senha',
+                                th: 'เปลี่ยนรหัสผ่าน',
+                                id: 'Ubah kata sandi',
+                                hi: 'पासवर्ड बदलें',
+                                bn: 'পাসওয়ার্ড পরিবর্তন করুন',
+                              ),
+                              style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -4156,9 +5768,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     color: const Color(0xFFFFE082),
                                   ),
                                 ),
-                                child: const Text(
-                                  'This account uses Google login, so password cannot be changed here.',
-                                  style: TextStyle(
+                                child: Text(
+                                  tr(
+                                    context,
+                                    'This account uses Google login, so password cannot be changed here.',
+                                    zhTw: '此帳號使用 Google 登入，因此無法在這裡更改密碼。',
+                                    zhCn: '此账号使用 Google 登录，因此无法在这里更改密码。',
+                                    ko: '이 계정은 Google 로그인을 사용하므로 여기서 비밀번호를 변경할 수 없습니다.',
+                                    ja: 'このアカウントはGoogleログインを使用しているため、ここでパスワードを変更できません。',
+                                    de: 'Dieses Konto verwendet Google Login, daher kann das Passwort hier nicht geändert werden.',
+                                    fr: 'Ce compte utilise Google, le mot de passe ne peut donc pas être modifié ici.',
+                                    ar: 'يستخدم هذا الحساب تسجيل الدخول عبر Google، لذلك لا يمكن تغيير كلمة المرور هنا.',
+                                    ru: 'Этот аккаунт использует вход через Google, поэтому пароль нельзя изменить здесь.',
+                                    trk: 'Bu hesap Google girişi kullanıyor, bu yüzden şifre burada değiştirilemez.',
+                                    es: 'Esta cuenta usa Google, por eso no puedes cambiar la contraseña aquí.',
+                                    it: 'Questo account usa Google, quindi la password non può essere cambiata qui.',
+                                    pl: 'To konto używa logowania Google, więc hasła nie można tu zmienić.',
+                                    pt: 'Esta conta usa Google, então a senha não pode ser alterada aqui.',
+                                    th: 'บัญชีนี้ใช้ Google login จึงไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
+                                    id: 'Akun ini memakai login Google, jadi kata sandi tidak bisa diubah di sini.',
+                                    hi: 'यह अकाउंट Google लॉगिन का उपयोग करता है, इसलिए पासवर्ड यहाँ नहीं बदला जा सकता।',
+                                    bn: 'এই অ্যাকাউন্ট Google লগইন ব্যবহার করে, তাই এখানে পাসওয়ার্ড বদলানো যাবে না।',
+                                  ),
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -4168,7 +5800,27 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 controller: newPasswordController,
                                 obscureText: true,
                                 decoration: InputDecoration(
-                                  labelText: 'New Password',
+                                  labelText: tr(
+                                    context,
+                                    'New Password',
+                                    zhTw: '新密碼',
+                                    zhCn: '新密码',
+                                    ko: '새 비밀번호',
+                                    ja: '新しいパスワード',
+                                    de: 'Neues Passwort',
+                                    fr: 'Nouveau mot de passe',
+                                    ar: 'كلمة مرور جديدة',
+                                    ru: 'Новый пароль',
+                                    trk: 'Yeni Şifre',
+                                    es: 'Nueva contraseña',
+                                    it: 'Nuova password',
+                                    pl: 'Nowe hasło',
+                                    pt: 'Nova senha',
+                                    th: 'รหัสผ่านใหม่',
+                                    id: 'Kata sandi baru',
+                                    hi: 'नया पासवर्ड',
+                                    bn: 'নতুন পাসওয়ার্ড',
+                                  ),
                                   filled: true,
                                   fillColor: const Color(0xFFF9FAFB),
                                   border: OutlineInputBorder(
@@ -4181,7 +5833,27 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 controller: confirmPasswordController,
                                 obscureText: true,
                                 decoration: InputDecoration(
-                                  labelText: 'Confirm New Password',
+                                  labelText: tr(
+                                    context,
+                                    'Confirm New Password',
+                                    zhTw: '確認新密碼',
+                                    zhCn: '确认新密码',
+                                    ko: '새 비밀번호 확인',
+                                    ja: '新しいパスワード確認',
+                                    de: 'Neues Passwort bestätigen',
+                                    fr: 'Confirmer le nouveau mot de passe',
+                                    ar: 'تأكيد كلمة المرور الجديدة',
+                                    ru: 'Подтвердите новый пароль',
+                                    trk: 'Yeni Şifreyi Onayla',
+                                    es: 'Confirmar nueva contraseña',
+                                    it: 'Conferma nuova password',
+                                    pl: 'Potwierdź nowe hasło',
+                                    pt: 'Confirmar nova senha',
+                                    th: 'ยืนยันรหัสผ่านใหม่',
+                                    id: 'Konfirmasi kata sandi baru',
+                                    hi: 'नए पासवर्ड की पुष्टि करें',
+                                    bn: 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
+                                  ),
                                   filled: true,
                                   fillColor: const Color(0xFFF9FAFB),
                                   border: OutlineInputBorder(
@@ -4201,8 +5873,48 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                         const EdgeInsets.symmetric(vertical: 14),
                                     child: Text(
                                       isSavingPassword
-                                          ? 'Saving...'
-                                          : 'Change Password',
+                                          ? tr(
+                                              context,
+                                              'Saving...',
+                                              zhTw: '儲存中...',
+                                              zhCn: '保存中...',
+                                              ko: '저장 중...',
+                                              ja: '保存中...',
+                                              de: 'Speichern...',
+                                              fr: 'Enregistrement...',
+                                              ar: 'جارٍ الحفظ...',
+                                              ru: 'Сохранение...',
+                                              trk: 'Kaydediliyor...',
+                                              es: 'Guardando...',
+                                              it: 'Salvataggio...',
+                                              pl: 'Zapisywanie...',
+                                              pt: 'Salvando...',
+                                              th: 'กำลังบันทึก...',
+                                              id: 'Menyimpan...',
+                                              hi: 'सहेजा जा रहा है...',
+                                              bn: 'সংরক্ষণ করা হচ্ছে...',
+                                            )
+                                          : tr(
+                                              context,
+                                              'Change Password',
+                                              zhTw: '更改密碼',
+                                              zhCn: '更改密码',
+                                              ko: '비밀번호 변경',
+                                              ja: 'パスワード変更',
+                                              de: 'Passwort ändern',
+                                              fr: 'Changer le mot de passe',
+                                              ar: 'تغيير كلمة المرور',
+                                              ru: 'Сменить пароль',
+                                              trk: 'Şifre Değiştir',
+                                              es: 'Cambiar contraseña',
+                                              it: 'Cambia password',
+                                              pl: 'Zmień hasło',
+                                              pt: 'Alterar senha',
+                                              th: 'เปลี่ยนรหัสผ่าน',
+                                              id: 'Ubah kata sandi',
+                                              hi: 'पासवर्ड बदलें',
+                                              bn: 'পাসওয়ার্ড পরিবর্তন করুন',
+                                            ),
                                     ),
                                   ),
                                 ),
@@ -4220,7 +5932,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 }
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   final UserSession session;
 
   const SettingsPage({
@@ -4228,12 +5940,183 @@ class SettingsPage extends StatelessWidget {
     required this.session,
   });
 
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  Future<void> _saveLanguage(String languageCode) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+      'languageCode': languageCode,
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    if (!mounted) return;
+
+    AppLanguageController.of(context).updateLanguage(languageCode);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${languageName(languageCode)} selected'),
+      ),
+    );
+  }
+
+  Future<void> _showLanguageDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          tr(
+            context,
+            'Language',
+            zhTw: '語言',
+            zhCn: '语言',
+            ko: '언어',
+            ja: '言語',
+            de: 'Sprache',
+            fr: 'Langue',
+            ar: 'اللغة',
+            ru: 'Язык',
+            trk: 'Dil',
+            es: 'Idioma',
+            it: 'Lingua',
+            pl: 'Język',
+            pt: 'Idioma',
+            th: 'ภาษา',
+            id: 'Bahasa',
+            hi: 'भाषा',
+            bn: 'ভাষা',
+          ),
+        ),
+        content: SizedBox(
+          width: 360,
+          child: SingleChildScrollView(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildLanguageOption('en', 'English'),
+                _buildLanguageOption('ko', '한국어'),
+                _buildLanguageOption('ja', '日本語'),
+                _buildLanguageOption('zh_tw', '繁體中文'),
+                _buildLanguageOption('zh_cn', '简体中文'),
+                _buildLanguageOption('de', 'Deutsch'),
+                _buildLanguageOption('fr', 'Français'),
+                _buildLanguageOption('ar', 'العربية'),
+                _buildLanguageOption('ru', 'Русский'),
+                _buildLanguageOption('tr', 'Türkçe'),
+                _buildLanguageOption('es', 'Español'),
+                _buildLanguageOption('it', 'Italiano'),
+                _buildLanguageOption('pl', 'Polski'),
+                _buildLanguageOption('pt', 'Português'),
+                _buildLanguageOption('th', 'ไทย'),
+                _buildLanguageOption('id', 'Indonesia'),
+                _buildLanguageOption('hi', 'हिन्दी'),
+                _buildLanguageOption('bn', 'বাংলা'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLanguageOption(
+    String code,
+    String label,
+  ) {
+    final currentLanguage =
+        AppLanguageController.of(context).languageCode;
+
+    final isSelected = currentLanguage == code;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(14),
+      onTap: () async {
+        Navigator.pop(context);
+        await _saveLanguage(code);
+      },
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? const Color(0xFFE8F5E9)
+              : Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: isSelected
+                ? Colors.green
+                : Colors.grey.shade300,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              isSelected
+                  ? Icons.check_circle
+                  : Icons.circle_outlined,
+              color: isSelected
+                  ? Colors.green
+                  : Colors.grey,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isSelected
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _deactivateMyAccount(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login again')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해주세요',
+              ja: '再度ログインしてください',
+              de: 'Bitte erneut anmelden',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Por favor inicia sesión nuevamente',
+              it: 'Accedi di nuovo',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Faça login novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan login kembali',
+              hi: 'कृपया फिर से लॉगिन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -4258,18 +6141,104 @@ class SettingsPage extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Account'),
-        content: const Text(
-          'This will deactivate your account and remove your occupied seats. This cannot be undone.\n\nDo you want to continue?',
+        title: Text(
+          tr(
+            context,
+            'Delete Account',
+            zhTw: '刪除帳號',
+            zhCn: '删除账号',
+            ko: '계정 삭제',
+            ja: 'アカウント削除',
+            de: 'Konto löschen',
+            fr: 'Supprimer le compte',
+            ar: 'حذف الحساب',
+            ru: 'Удалить аккаунт',
+            trk: 'Hesabı Sil',
+            es: 'Eliminar cuenta',
+            it: 'Elimina account',
+            pl: 'Usuń konto',
+            pt: 'Excluir conta',
+            th: 'ลบบัญชี',
+            id: 'Hapus Akun',
+            hi: 'खाता हटाएँ',
+            bn: 'অ্যাকাউন্ট মুছুন',
+          ),
+        ),
+        content: Text(
+          tr(
+            context,
+            'This will deactivate your account and remove your occupied seats. This cannot be undone.\n\nDo you want to continue?',
+            zhTw: '這會停用你的帳號，並移除你目前坐的位置。這個動作無法復原。\n\n你確定要繼續嗎？',
+            zhCn: '这会停用你的账号，并移除你目前坐的位置。此操作无法恢复。\n\n你确定要继续吗？',
+            ko: '계정이 비활성화되며 현재 차지 중인 자리가 제거됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속하시겠습니까?',
+            ja: 'この操作を行うと、アカウントが無効化され、現在座っている席が削除されます。この操作は元に戻せません。\n\n続行しますか？',
+            de: 'Dadurch wird dein Konto deaktiviert und deine belegten Plätze werden entfernt. Dies kann nicht rückgängig gemacht werden.\n\nMöchtest du fortfahren?',
+            fr: 'Cela désactivera votre compte et supprimera vos sièges occupés. Cette action est irréversible.\n\nVoulez-vous continuer ?',
+            ar: 'سيؤدي هذا إلى تعطيل حسابك وإزالة مقاعدك الحالية. لا يمكن التراجع عن هذا الإجراء.\n\nهل تريد المتابعة؟',
+            ru: 'Это деактивирует ваш аккаунт и удалит занятые вами места. Это действие нельзя отменить.\n\nВы хотите продолжить?',
+            trk: 'Bu işlem hesabınızı devre dışı bırakacak ve oturduğunuz koltukları kaldıracaktır. Bu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?',
+            es: 'Esto desactivará tu cuenta y eliminará tus asientos ocupados. Esta acción no se puede deshacer.\n\n¿Deseas continuar?',
+            it: 'Questo disattiverà il tuo account e rimuoverà i posti occupati. Questa azione non può essere annullata.\n\nVuoi continuare?',
+            pl: 'Spowoduje to dezaktywację konta i usunięcie zajętych miejsc. Tego działania nie można cofnąć.\n\nCzy chcesz kontynuować?',
+            pt: 'Isso desativará sua conta e removerá seus assentos ocupados. Esta ação não pode ser desfeita.\n\nDeseja continuar?',
+            th: 'การดำเนินการนี้จะปิดใช้งานบัญชีของคุณและนำที่นั่งที่คุณใช้อยู่ออก การดำเนินการนี้ไม่สามารถย้อนกลับได้\n\nคุณต้องการดำเนินการต่อหรือไม่?',
+            id: 'Ini akan menonaktifkan akun Anda dan menghapus kursi yang sedang Anda tempati. Tindakan ini tidak dapat dibatalkan.\n\nApakah Anda ingin melanjutkan?',
+            hi: 'इससे आपका अकाउंट निष्क्रिय हो जाएगा और आपकी वर्तमान सीटें हट जाएंगी। यह कार्रवाई वापस नहीं की जा सकती।\n\nक्या आप जारी रखना चाहते हैं?',
+            bn: 'এটি আপনার অ্যাকাউন্ট নিষ্ক্রিয় করবে এবং আপনার বর্তমান সিট সরিয়ে দেবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি চালিয়ে যেতে চান?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(
+              tr(
+                context,
+                'Cancel',
+                zhTw: '取消',
+                zhCn: '取消',
+                ko: '취소',
+                ja: 'キャンセル',
+                de: 'Abbrechen',
+                fr: 'Annuler',
+                ar: 'إلغاء',
+                ru: 'Отмена',
+                trk: 'İptal',
+                es: 'Cancelar',
+                it: 'Annulla',
+                pl: 'Anuluj',
+                pt: 'Cancelar',
+                th: 'ยกเลิก',
+                id: 'Batal',
+                hi: 'रद्द करें',
+                bn: 'বাতিল',
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete'),
+            child: Text(
+              tr(
+                context,
+                'Delete',
+                zhTw: '刪除',
+                zhCn: '删除',
+                ko: '삭제',
+                ja: '削除',
+                de: 'Löschen',
+                fr: 'Supprimer',
+                ar: 'حذف',
+                ru: 'Удалить',
+                trk: 'Sil',
+                es: 'Eliminar',
+                it: 'Elimina',
+                pl: 'Usuń',
+                pt: 'Excluir',
+                th: 'ลบ',
+                id: 'Hapus',
+                hi: 'हटाएँ',
+                bn: 'মুছুন',
+              ),
+            ),
           ),
         ],
       ),
@@ -4282,45 +6251,160 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageCode =
+        AppLanguageController.of(context).languageCode;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         surfaceTintColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 0,
-        title: const Text('Settings'),
+        title: Text(
+          tr(
+            context,
+            'Settings',
+            zhTw: '設定',
+            zhCn: '设置',
+            ko: '설정',
+            ja: '設定',
+            de: 'Einstellungen',
+            fr: 'Paramètres',
+            ar: 'الإعدادات',
+            ru: 'Настройки',
+            trk: 'Ayarlar',
+            es: 'Configuración',
+            it: 'Impostazioni',
+            pl: 'Ustawienia',
+            pt: 'Configurações',
+            th: 'ตั้งค่า',
+            id: 'Pengaturan',
+            hi: 'सेटिंग्स',
+            bn: 'সেটিংস',
+          ),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           ListTile(
             leading: const Icon(Icons.language),
-            title: const Text('Language'),
-            subtitle: const Text('English / 中文'),
-            onTap: () {},
+            title: Text(
+              tr(
+                context,
+                'Language',
+                zhTw: '語言',
+                zhCn: '语言',
+                ko: '언어',
+                ja: '言語',
+                de: 'Sprache',
+                fr: 'Langue',
+                ar: 'اللغة',
+                ru: 'Язык',
+                trk: 'Dil',
+                es: 'Idioma',
+                it: 'Lingua',
+                pl: 'Język',
+                pt: 'Idioma',
+                th: 'ภาษา',
+                id: 'Bahasa',
+                hi: 'भाषा',
+                bn: 'ভাষা',
+              ),
+            ),
+            subtitle: Text(languageName(languageCode)),
+            onTap: _showLanguageDialog,
           ),
-          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            future: FirebaseFirestore.instance
+          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
                 .collection('users')
-                .doc(FirebaseAuth.instance.currentUser!.uid)
-                .get(),
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .snapshots(),
             builder: (context, snapshot) {
               final data = snapshot.data?.data() ?? {};
               final isDark = data['darkMode'] == true;
 
               return SwitchListTile(
                 secondary: const Icon(Icons.dark_mode_outlined),
-                title: const Text('Dark Mode'),
-                subtitle: Text(isDark ? 'Dark' : 'Light'),
+                title: Text(
+                  tr(
+                    context,
+                    'Dark Mode',
+                    zhTw: '深色模式',
+                    zhCn: '深色模式',
+                    ko: '다크 모드',
+                    ja: 'ダークモード',
+                    de: 'Dunkelmodus',
+                    fr: 'Mode sombre',
+                    ar: 'الوضع الداكن',
+                    ru: 'Тёмный режим',
+                    trk: 'Karanlık Mod',
+                    es: 'Modo oscuro',
+                    it: 'Modalità scura',
+                    pl: 'Tryb ciemny',
+                    pt: 'Modo escuro',
+                    th: 'โหมดมืด',
+                    id: 'Mode gelap',
+                    hi: 'डार्क मोड',
+                    bn: 'ডার্ক মোড',
+                  ),
+                ),
+                subtitle: Text(
+                  isDark
+                      ? tr(
+                          context,
+                          'Dark',
+                          zhTw: '深色',
+                          zhCn: '深色',
+                          ko: '어두움',
+                          ja: 'ダーク',
+                          de: 'Dunkel',
+                          fr: 'Sombre',
+                          ar: 'داكن',
+                          ru: 'Тёмный',
+                          trk: 'Karanlık',
+                          es: 'Oscuro',
+                          it: 'Scuro',
+                          pl: 'Ciemny',
+                          pt: 'Escuro',
+                          th: 'มืด',
+                          id: 'Gelap',
+                          hi: 'डार्क',
+                          bn: 'ডার্ক',
+                        )
+                      : tr(
+                          context,
+                          'Light',
+                          zhTw: '淺色',
+                          zhCn: '浅色',
+                          ko: '밝음',
+                          ja: 'ライト',
+                          de: 'Hell',
+                          fr: 'Clair',
+                          ar: 'فاتح',
+                          ru: 'Светлый',
+                          trk: 'Açık',
+                          es: 'Claro',
+                          it: 'Chiaro',
+                          pl: 'Jasny',
+                          pt: 'Claro',
+                          th: 'สว่าง',
+                          id: 'Terang',
+                          hi: 'लाइट',
+                          bn: 'লাইট',
+                        ),
+                ),
                 value: isDark,
                 onChanged: (value) async {
-                  final uid = FirebaseAuth.instance.currentUser!.uid;
+                  final user = FirebaseAuth.instance.currentUser;
+                  if (user == null) return;
 
                   await FirebaseFirestore.instance
                       .collection('users')
-                      .doc(uid)
+                      .doc(user.uid)
                       .set({
                     'darkMode': value,
+                    'updatedAt': FieldValue.serverTimestamp(),
                   }, SetOptions(merge: true));
 
                   if (!context.mounted) return;
@@ -4332,30 +6416,90 @@ class SettingsPage extends StatelessWidget {
           ),
           ListTile(
             leading: const Icon(Icons.home_outlined),
-            title: const Text('Home'),
-            onTap: () {
-              Navigator.of(context).pop();
-            },
+            title: Text(
+              tr(
+                context,
+                'Home',
+                zhTw: '首頁',
+                zhCn: '首页',
+                ko: '홈',
+                ja: 'ホーム',
+                de: 'Startseite',
+                fr: 'Accueil',
+                ar: 'الرئيسية',
+                ru: 'Главная',
+                trk: 'Ana Sayfa',
+                es: 'Inicio',
+                it: 'Home',
+                pl: 'Strona główna',
+                pt: 'Início',
+                th: 'หน้าแรก',
+                id: 'Beranda',
+                hi: 'होम',
+                bn: 'হোম',
+              ),
+            ),
+            onTap: () => Navigator.pop(context),
           ),
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
-            title: const Text('Privacy Policy'),
+            title: Text(
+              tr(
+                context,
+                'Privacy Policy',
+                zhTw: '隱私權政策',
+                zhCn: '隐私政策',
+                ko: '개인정보 처리방침',
+                ja: 'プライバシーポリシー',
+                de: 'Datenschutzrichtlinie',
+                fr: 'Politique de confidentialité',
+                ar: 'سياسة الخصوصية',
+                ru: 'Политика конфиденциальности',
+                trk: 'Gizlilik Politikası',
+                es: 'Política de privacidad',
+                it: 'Informativa sulla privacy',
+                pl: 'Polityka prywatności',
+                pt: 'Política de privacidade',
+                th: 'นโยบายความเป็นส่วนตัว',
+                id: 'Kebijakan Privasi',
+                hi: 'गोपनीयता नीति',
+                bn: 'গোপনীয়তা নীতি',
+              ),
+            ),
             onTap: () {
               launchUrl(
-                Uri.parse(
-                  'https://tablescheduler.web.app/privacy.html',
-                ),
+                Uri.parse('https://pokerscheduler.web.app/privacy.html'),
               );
             },
           ),
           ListTile(
             leading: const Icon(Icons.description_outlined),
-            title: const Text('Terms of Service'),
+            title: Text(
+              tr(
+                context,
+                'Terms of Service',
+                zhTw: '服務條款',
+                zhCn: '服务条款',
+                ko: '서비스 약관',
+                ja: '利用規約',
+                de: 'Nutzungsbedingungen',
+                fr: 'Conditions d’utilisation',
+                ar: 'شروط الخدمة',
+                ru: 'Условия обслуживания',
+                trk: 'Hizmet Şartları',
+                es: 'Términos de servicio',
+                it: 'Termini di servizio',
+                pl: 'Warunki korzystania',
+                pt: 'Termos de serviço',
+                th: 'ข้อกำหนดการให้บริการ',
+                id: 'Ketentuan Layanan',
+                hi: 'सेवा की शर्तें',
+                bn: 'সেবার শর্তাবলী',
+              ),
+            ),
             onTap: () {
               launchUrl(
-                Uri.parse(
-                  'https://tablescheduler.web.app/privacy.html',
-                ),
+                Uri.parse('https://pokerscheduler.web.app/terms.html'),
               );
             },
           ),
@@ -4365,9 +6509,29 @@ class SettingsPage extends StatelessWidget {
               Icons.delete_forever,
               color: Colors.red,
             ),
-            title: const Text(
-              'Delete Account',
-              style: TextStyle(color: Colors.red),
+            title: Text(
+              tr(
+                context,
+                'Delete Account',
+                zhTw: '刪除帳號',
+                zhCn: '删除账号',
+                ko: '계정 삭제',
+                ja: 'アカウント削除',
+                de: 'Konto löschen',
+                fr: 'Supprimer le compte',
+                ar: 'حذف الحساب',
+                ru: 'Удалить аккаунт',
+                trk: 'Hesabı Sil',
+                es: 'Eliminar cuenta',
+                it: 'Elimina account',
+                pl: 'Usuń konto',
+                pt: 'Excluir conta',
+                th: 'ลบบัญชี',
+                id: 'Hapus Akun',
+                hi: 'खाता हटाएँ',
+                bn: 'অ্যাকাউন্ট মুছুন',
+              ),
+              style: const TextStyle(color: Colors.red),
             ),
             onTap: () => _confirmDeleteAccount(context),
           ),
@@ -4455,20 +6619,84 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final graceEndsAt = _hostSubscriptionStatus.graceEndsAt;
 
     if (_hostSubscriptionStatus.isPaidActive && expiresAt != null) {
-      final remainingDays =
-          math.max(0, (expiresAt.difference(DateTime.now()).inHours / 24).ceil());
+      final remainingDays = math.max(
+        0,
+        (expiresAt.difference(DateTime.now()).inHours / 24).ceil(),
+      );
 
-      return 'Your Host plan expires in $remainingDays day(s). Please update payment before ${_formatHostExpiry(expiresAt)}.';
+      return tr(
+        context,
+        'Your Host plan expires in $remainingDays day(s). Please update payment before ${_formatHostExpiry(expiresAt)}.',
+        zhTw: '你的 Host 方案將在 $remainingDays 天後到期。請在 ${_formatHostExpiry(expiresAt)} 前更新付款。',
+        zhCn: '你的 Host 方案将在 $remainingDays 天后到期。请在 ${_formatHostExpiry(expiresAt)} 前更新付款。',
+        ko: 'Host 플랜이 $remainingDays일 후 만료됩니다. ${_formatHostExpiry(expiresAt)} 전에 결제를 업데이트하세요.',
+        ja: 'Hostプランは$remainingDays日後に期限切れになります。${_formatHostExpiry(expiresAt)} までに支払いを更新してください。',
+        de: 'Dein Host-Plan läuft in $remainingDays Tag(en) ab. Bitte aktualisiere die Zahlung vor ${_formatHostExpiry(expiresAt)}.',
+        fr: 'Votre forfait Host expire dans $remainingDays jour(s). Veuillez mettre à jour le paiement avant le ${_formatHostExpiry(expiresAt)}.',
+        ar: 'ستنتهي خطة Host خلال $remainingDays يوم. يرجى تحديث الدفع قبل ${_formatHostExpiry(expiresAt)}.',
+        ru: 'Ваш план Host истекает через $remainingDays дн. Обновите оплату до ${_formatHostExpiry(expiresAt)}.',
+        trk: 'Host planınız $remainingDays gün içinde sona erecek. Lütfen ödemeyi ${_formatHostExpiry(expiresAt)} tarihinden önce güncelleyin.',
+        es: 'Tu plan Host vence en $remainingDays día(s). Actualiza el pago antes de ${_formatHostExpiry(expiresAt)}.',
+        it: 'Il tuo piano Host scade tra $remainingDays giorno/i. Aggiorna il pagamento prima del ${_formatHostExpiry(expiresAt)}.',
+        pl: 'Twój plan Host wygaśnie za $remainingDays dni. Zaktualizuj płatność przed ${_formatHostExpiry(expiresAt)}.',
+        pt: 'Seu plano Host expira em $remainingDays dia(s). Atualize o pagamento antes de ${_formatHostExpiry(expiresAt)}.',
+        th: 'แพ็กเกจ Host ของคุณจะหมดอายุในอีก $remainingDays วัน โปรดอัปเดตการชำระเงินก่อน ${_formatHostExpiry(expiresAt)}',
+        id: 'Paket Host Anda berakhir dalam $remainingDays hari. Perbarui pembayaran sebelum ${_formatHostExpiry(expiresAt)}.',
+        hi: 'आपका Host प्लान $remainingDays दिन में समाप्त होगा। कृपया ${_formatHostExpiry(expiresAt)} से पहले भुगतान अपडेट करें।',
+        bn: 'আপনার Host প্ল্যান $remainingDays দিনের মধ্যে শেষ হবে। অনুগ্রহ করে ${_formatHostExpiry(expiresAt)} এর আগে পেমেন্ট আপডেট করুন।',
+      );
     }
 
     if (_hostSubscriptionStatus.isGracePeriod && graceEndsAt != null) {
-      final remainingDays =
-          math.max(0, (graceEndsAt.difference(DateTime.now()).inHours / 24).ceil());
+      final remainingDays = math.max(
+        0,
+        (graceEndsAt.difference(DateTime.now()).inHours / 24).ceil(),
+      );
 
-      return 'Your Host plan has expired. Update payment to create new tables. If unpaid for $remainingDays more day(s), your account will return to Player mode.';
+      return tr(
+        context,
+        'Your Host plan has expired. Update payment to create new tables. If unpaid for $remainingDays more day(s), your account will return to Player mode.',
+        zhTw: '你的 Host 方案已到期。請更新付款才能建立新桌子。如果再 $remainingDays 天未付款，你的帳號將回到玩家模式。',
+        zhCn: '你的 Host 方案已到期。请更新付款才能创建新桌子。如果再 $remainingDays 天未付款，你的账号将回到玩家模式。',
+        ko: 'Host 플랜이 만료되었습니다. 새 테이블을 만들려면 결제를 업데이트하세요. $remainingDays일 더 결제하지 않으면 계정이 플레이어 모드로 돌아갑니다.',
+        ja: 'Hostプランの期限が切れました。新しいテーブルを作成するには支払いを更新してください。あと$remainingDays日未払いの場合、アカウントはプレイヤーモードに戻ります。',
+        de: 'Dein Host-Plan ist abgelaufen. Aktualisiere die Zahlung, um neue Tische zu erstellen. Wenn du weitere $remainingDays Tag(e) nicht zahlst, wird dein Konto in den Player-Modus zurückgesetzt.',
+        fr: 'Votre forfait Host a expiré. Mettez à jour le paiement pour créer de nouvelles tables. Si le paiement n’est pas effectué pendant encore $remainingDays jour(s), votre compte reviendra en mode joueur.',
+        ar: 'انتهت خطة Host الخاصة بك. حدّث الدفع لإنشاء طاولات جديدة. إذا لم يتم الدفع لمدة $remainingDays يوم إضافي، فسيعود حسابك إلى وضع اللاعب.',
+        ru: 'Ваш план Host истёк. Обновите оплату, чтобы создавать новые столы. Если оплата не будет внесена ещё $remainingDays дн., аккаунт вернётся в режим игрока.',
+        trk: 'Host planınız sona erdi. Yeni masalar oluşturmak için ödemeyi güncelleyin. $remainingDays gün daha ödeme yapılmazsa hesabınız Oyuncu moduna döner.',
+        es: 'Tu plan Host ha vencido. Actualiza el pago para crear nuevas mesas. Si no pagas durante $remainingDays día(s) más, tu cuenta volverá al modo jugador.',
+        it: 'Il tuo piano Host è scaduto. Aggiorna il pagamento per creare nuovi tavoli. Se non paghi per altri $remainingDays giorno/i, il tuo account tornerà alla modalità giocatore.',
+        pl: 'Twój plan Host wygasł. Zaktualizuj płatność, aby tworzyć nowe stoły. Jeśli nie zapłacisz przez kolejne $remainingDays dni, konto wróci do trybu gracza.',
+        pt: 'Seu plano Host expirou. Atualize o pagamento para criar novas mesas. Se não pagar por mais $remainingDays dia(s), sua conta voltará ao modo jogador.',
+        th: 'แพ็กเกจ Host ของคุณหมดอายุแล้ว โปรดอัปเดตการชำระเงินเพื่อสร้างโต๊ะใหม่ หากยังไม่ชำระอีก $remainingDays วัน บัญชีของคุณจะกลับเป็นโหมดผู้เล่น',
+        id: 'Paket Host Anda telah berakhir. Perbarui pembayaran untuk membuat meja baru. Jika tidak dibayar selama $remainingDays hari lagi, akun Anda akan kembali ke mode pemain.',
+        hi: 'आपका Host प्लान समाप्त हो गया है। नई टेबल बनाने के लिए भुगतान अपडेट करें। अगर $remainingDays और दिन भुगतान नहीं हुआ, तो आपका अकाउंट Player मोड में वापस चला जाएगा।',
+        bn: 'আপনার Host প্ল্যান শেষ হয়েছে। নতুন টেবিল তৈরি করতে পেমেন্ট আপডেট করুন। আরও $remainingDays দিন পেমেন্ট না করলে আপনার অ্যাকাউন্ট Player মোডে ফিরে যাবে।',
+      );
     }
 
-    return 'Please update your Host payment.';
+    return tr(
+      context,
+      'Please update your Host payment.',
+      zhTw: '請更新你的 Host 付款。',
+      zhCn: '请更新你的 Host 付款。',
+      ko: 'Host 결제를 업데이트해 주세요.',
+      ja: 'Hostの支払いを更新してください。',
+      de: 'Bitte aktualisiere deine Host-Zahlung.',
+      fr: 'Veuillez mettre à jour votre paiement Host.',
+      ar: 'يرجى تحديث دفعة Host الخاصة بك.',
+      ru: 'Пожалуйста, обновите оплату Host.',
+      trk: 'Lütfen Host ödemenizi güncelleyin.',
+      es: 'Actualiza tu pago de Host.',
+      it: 'Aggiorna il pagamento Host.',
+      pl: 'Zaktualizuj płatność Host.',
+      pt: 'Atualize seu pagamento Host.',
+      th: 'โปรดอัปเดตการชำระเงิน Host ของคุณ',
+      id: 'Perbarui pembayaran Host Anda.',
+      hi: 'कृपया अपना Host भुगतान अपडेट करें।',
+      bn: 'অনুগ্রহ করে আপনার Host পেমেন্ট আপডেট করুন।',
+    );
   }
 
   Future<void> _activateHostPlanForCurrentUser({
@@ -4483,7 +6711,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     );
 
     if (!mounted) return;
-    _showSnack('Host payment updated successfully');
+    _showSnack(
+      tr(
+        context,
+        'Host payment updated successfully',
+        zhTw: 'Host 付款已成功更新',
+        zhCn: 'Host 付款已成功更新',
+        ko: 'Host 결제가 성공적으로 업데이트되었습니다',
+        ja: 'Hostの支払いが正常に更新されました',
+        de: 'Host-Zahlung erfolgreich aktualisiert',
+        fr: 'Paiement Host mis à jour avec succès',
+        ar: 'تم تحديث دفعة Host بنجاح',
+        ru: 'Оплата Host успешно обновлена',
+        trk: 'Host ödemesi başarıyla güncellendi',
+        es: 'Pago de Host actualizado correctamente',
+        it: 'Pagamento Host aggiornato correttamente',
+        pl: 'Płatność Host została pomyślnie zaktualizowana',
+        pt: 'Pagamento Host atualizado com sucesso',
+        th: 'อัปเดตการชำระเงิน Host สำเร็จ',
+        id: 'Pembayaran Host berhasil diperbarui',
+        hi: 'Host भुगतान सफलतापूर्वक अपडेट हो गया',
+        bn: 'Host পেমেন্ট সফলভাবে আপডেট হয়েছে',
+      ),
+    );
   }
 
   Future<void> _showUpdatePaymentDialog() async {
@@ -4491,23 +6741,129 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Update Payment'),
+          title: Text(
+            tr(
+              context,
+              'Update Payment',
+              zhTw: '更新付款',
+              zhCn: '更新付款',
+              ko: '결제 업데이트',
+              ja: '支払い更新',
+              de: 'Zahlung aktualisieren',
+              fr: 'Mettre à jour le paiement',
+              ar: 'تحديث الدفع',
+              ru: 'Обновить оплату',
+              trk: 'Ödemeyi Güncelle',
+              es: 'Actualizar pago',
+              it: 'Aggiorna pagamento',
+              pl: 'Zaktualizuj płatność',
+              pt: 'Atualizar pagamento',
+              th: 'อัปเดตการชำระเงิน',
+              id: 'Perbarui pembayaran',
+              hi: 'भुगतान अपडेट करें',
+              bn: 'পেমেন্ট আপডেট করুন',
+            ),
+          ),
           content: Text(
             _hostSubscriptionStatus.isGracePeriod
-                ? 'Your Host plan has expired. You can still edit your existing tables, but you cannot create a new table until payment is updated.'
-                : 'Your Host plan is close to expiring. Please update payment now so Table creation will not be interrupted.',
+                ? tr(
+                    context,
+                    'Your Host plan has expired. You can still edit your existing tables, but you cannot create a new table until payment is updated.',
+                    zhTw: '你的 Host 方案已過期。你仍然可以編輯現有桌子，但在更新付款前無法建立新桌子。',
+                    zhCn: '你的 Host 方案已过期。你仍然可以编辑现有桌子，但在更新付款前无法建立新桌子。',
+                    ko: 'Host 플랜이 만료되었습니다. 기존 테이블은 수정할 수 있지만 결제를 업데이트하기 전까지 새 테이블을 만들 수 없습니다.',
+                    ja: 'Hostプランの有効期限が切れました。既存のテーブルは編集できますが、支払いを更新するまで新しいテーブルは作成できません。',
+                    de: 'Dein Host-Plan ist abgelaufen. Du kannst bestehende Tische weiterhin bearbeiten, aber keine neuen Tische erstellen.',
+                    fr: 'Votre abonnement Host a expiré. Vous pouvez encore modifier vos tables existantes mais pas en créer de nouvelles.',
+                    ar: 'انتهت صلاحية خطة المضيف الخاصة بك. لا يزال بإمكانك تعديل الطاولات الحالية ولكن لا يمكنك إنشاء طاولة جديدة.',
+                    ru: 'Ваш план Host истёк. Вы можете редактировать существующие столы, но не можете создавать новые.',
+                    trk: 'Host planınızın süresi doldu. Mevcut masaları düzenleyebilirsiniz ancak yeni masa oluşturamazsınız.',
+                    es: 'Tu plan Host expiró. Aún puedes editar tus mesas existentes, pero no crear nuevas.',
+                    it: 'Il tuo piano Host è scaduto. Puoi ancora modificare i tavoli esistenti ma non crearne di nuovi.',
+                    pl: 'Twój plan Host wygasł. Nadal możesz edytować istniejące stoły, ale nie tworzyć nowych.',
+                    pt: 'Seu plano Host expirou. Você ainda pode editar mesas existentes, mas não criar novas.',
+                    th: 'แพ็กเกจ Host ของคุณหมดอายุแล้ว คุณยังแก้ไขโต๊ะเดิมได้ แต่ยังสร้างโต๊ะใหม่ไม่ได้',
+                    id: 'Paket Host Anda telah berakhir. Anda masih bisa mengedit meja yang ada tetapi tidak bisa membuat meja baru.',
+                    hi: 'आपका Host प्लान समाप्त हो गया है। आप मौजूदा टेबल संपादित कर सकते हैं लेकिन नई टेबल नहीं बना सकते।',
+                    bn: 'আপনার Host প্ল্যান শেষ হয়েছে। আপনি বর্তমান টেবিল এডিট করতে পারবেন কিন্তু নতুন টেবিল তৈরি করতে পারবেন না।',
+                  )
+                : tr(
+                    context,
+                    'Your Host plan is close to expiring. Please update payment now so Table creation will not be interrupted.',
+                    zhTw: '你的 Host 方案即將到期。請現在更新付款，以避免建立桌子功能中斷。',
+                    zhCn: '你的 Host 方案即将到期。请现在更新付款，以避免建立桌子功能中断。',
+                    ko: 'Host 플랜이 곧 만료됩니다. 새 테이블 생성이 중단되지 않도록 결제를 업데이트하세요.',
+                    ja: 'Hostプランの有効期限が近づいています。テーブル作成が中断されないよう支払いを更新してください。',
+                    de: 'Dein Host-Plan läuft bald ab. Bitte aktualisiere jetzt die Zahlung.',
+                    fr: 'Votre abonnement Host expire bientôt. Veuillez mettre à jour votre paiement.',
+                    ar: 'ستنتهي خطة المضيف قريبًا. يرجى تحديث الدفع الآن.',
+                    ru: 'Ваш план Host скоро истечёт. Пожалуйста, обновите оплату.',
+                    trk: 'Host planınızın süresi yakında dolacak. Lütfen ödemenizi güncelleyin.',
+                    es: 'Tu plan Host está por expirar. Actualiza el pago ahora.',
+                    it: 'Il tuo piano Host sta per scadere. Aggiorna il pagamento ora.',
+                    pl: 'Twój plan Host wkrótce wygaśnie. Zaktualizuj płatność.',
+                    pt: 'Seu plano Host está prestes a expirar. Atualize o pagamento.',
+                    th: 'แพ็กเกจ Host ของคุณใกล้หมดอายุ กรุณาอัปเดตการชำระเงิน',
+                    id: 'Paket Host Anda hampir habis. Perbarui pembayaran sekarang.',
+                    hi: 'आपका Host प्लान समाप्त होने वाला है। कृपया भुगतान अपडेट करें।',
+                    bn: 'আপনার Host প্ল্যান শীঘ্রই শেষ হবে। অনুগ্রহ করে পেমেন্ট আপডেট করুন।',
+                  ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Later'),
+              child: Text(
+                tr(
+                  context,
+                  'Later',
+                  zhTw: '稍後',
+                  zhCn: '稍后',
+                  ko: '나중에',
+                  ja: '後で',
+                  de: 'Später',
+                  fr: 'Plus tard',
+                  ar: 'لاحقًا',
+                  ru: 'Позже',
+                  trk: 'Daha Sonra',
+                  es: 'Más tarde',
+                  it: 'Più tardi',
+                  pl: 'Później',
+                  pt: 'Mais tarde',
+                  th: 'ภายหลัง',
+                  id: 'Nanti',
+                  hi: 'बाद में',
+                  bn: 'পরে',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () async {
                 Navigator.pop(context);
                 await _startStripeCheckout();
               },
-              child: const Text('Update Payment'),
+              child: Text(
+                tr(
+                  context,
+                  'Update Payment',
+                  zhTw: '更新付款',
+                  zhCn: '更新付款',
+                  ko: '결제 업데이트',
+                  ja: '支払い更新',
+                  de: 'Zahlung aktualisieren',
+                  fr: 'Mettre à jour le paiement',
+                  ar: 'تحديث الدفع',
+                  ru: 'Обновить оплату',
+                  trk: 'Ödemeyi Güncelle',
+                  es: 'Actualizar pago',
+                  it: 'Aggiorna pagamento',
+                  pl: 'Zaktualizuj płatność',
+                  pt: 'Atualizar pagamento',
+                  th: 'อัปเดตการชำระเงิน',
+                  id: 'Perbarui pembayaran',
+                  hi: 'भुगतान अपडेट करें',
+                  bn: 'পেমেন্ট আপডেট করুন',
+                ),
+              ),
             ),
           ],
         );
@@ -4528,12 +6884,34 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
   Future<void> _editTable(String tableId, TableData table) async {
     if (!isHost) return;
-  
+
     if (!_canManageTable(table)) {
-      _showSnack('You can only edit tables you created');
+      _showSnack(
+        tr(
+          context,
+          'You can only edit tables you created',
+          zhTw: '你只能編輯自己建立的桌子',
+          zhCn: '你只能编辑自己创建的桌子',
+          ko: '본인이 만든 테이블만 수정할 수 있습니다',
+          ja: '自分が作成したテーブルのみ編集できます',
+          de: 'Du kannst nur deine eigenen Tische bearbeiten',
+          fr: 'Vous pouvez seulement modifier vos propres tables',
+          ar: 'يمكنك تعديل الطاولات التي أنشأتها فقط',
+          ru: 'Вы можете редактировать только свои столы',
+          trk: 'Sadece oluşturduğunuz masaları düzenleyebilirsiniz',
+          es: 'Solo puedes editar mesas que creaste',
+          it: 'Puoi modificare solo i tavoli che hai creato',
+          pl: 'Możesz edytować tylko własne stoły',
+          pt: 'Você só pode editar mesas que criou',
+          th: 'คุณสามารถแก้ไขโต๊ะที่คุณสร้างได้เท่านั้น',
+          id: 'Anda hanya bisa mengedit meja yang Anda buat',
+          hi: 'आप केवल अपनी बनाई टेबल संपादित कर सकते हैं',
+          bn: 'আপনি শুধুমাত্র নিজের তৈরি টেবিল এডিট করতে পারবেন',
+        ),
+      );
       return;
     }
-  
+
     final tableNameController = TextEditingController(text: table.name);
     final locationController = TextEditingController(text: table.location);
     final stakesController = TextEditingController(text: table.stakes);
@@ -4547,41 +6925,235 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Edit Table'),
+              title: Text(
+                tr(
+                  context,
+                  'Edit Table',
+                  zhTw: '編輯桌子',
+                  zhCn: '编辑桌子',
+                  ko: '테이블 수정',
+                  ja: 'テーブル編集',
+                  de: 'Tisch bearbeiten',
+                  fr: 'Modifier la table',
+                  ar: 'تعديل الطاولة',
+                  ru: 'Редактировать стол',
+                  trk: 'Masayı Düzenle',
+                  es: 'Editar mesa',
+                  it: 'Modifica tavolo',
+                  pl: 'Edytuj stół',
+                  pt: 'Editar mesa',
+                  th: 'แก้ไขโต๊ะ',
+                  id: 'Edit meja',
+                  hi: 'टेबल संपादित करें',
+                  bn: 'টেবিল সম্পাদনা',
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: tableNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Table Name',
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        labelText: tr(
+                          context,
+                          'Table Name',
+                          zhTw: '桌子名稱',
+                          zhCn: '桌子名称',
+                          ko: '테이블 이름',
+                          ja: 'テーブル名',
+                          de: 'Tischname',
+                          fr: 'Nom de la table',
+                          ar: 'اسم الطاولة',
+                          ru: 'Название стола',
+                          trk: 'Masa Adı',
+                          es: 'Nombre de la mesa',
+                          it: 'Nome tavolo',
+                          pl: 'Nazwa stołu',
+                          pt: 'Nome da mesa',
+                          th: 'ชื่อโต๊ะ',
+                          id: 'Nama meja',
+                          hi: 'टेबल नाम',
+                          bn: 'টেবিলের নাম',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     TextField(
                       controller: locationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Location',
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        labelText: tr(
+                          context,
+                          'Location',
+                          zhTw: '地點',
+                          zhCn: '地点',
+                          ko: '위치',
+                          ja: '場所',
+                          de: 'Ort',
+                          fr: 'Lieu',
+                          ar: 'الموقع',
+                          ru: 'Место',
+                          trk: 'Konum',
+                          es: 'Ubicación',
+                          it: 'Posizione',
+                          pl: 'Lokalizacja',
+                          pt: 'Localização',
+                          th: 'สถานที่',
+                          id: 'Lokasi',
+                          hi: 'स्थान',
+                          bn: 'অবস্থান',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     TextField(
                       controller: stakesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Stakes',
-                        hintText: 'ex: 1/3 NLH',
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        labelText: tr(
+                          context,
+                          'Stakes',
+                          zhTw: '盲注',
+                          zhCn: '盲注',
+                          ko: '블라인드',
+                          ja: 'ブラインド',
+                          de: 'Blinds',
+                          fr: 'Blindes',
+                          ar: 'الرهانات',
+                          ru: 'Блайнды',
+                          trk: 'Bahis',
+                          es: 'Ciegas',
+                          it: 'Buio',
+                          pl: 'Stawki',
+                          pt: 'Blinds',
+                          th: 'บลายด์',
+                          id: 'Blind',
+                          hi: 'ब्लाइंड',
+                          bn: 'ব্লাইন্ড',
+                        ),
+                        hintText: tr(
+                          context,
+                          'ex: 1/3 NLH',
+                          zhTw: '例如：1/3 NLH',
+                          zhCn: '例如：1/3 NLH',
+                          ko: '예: 1/3 NLH',
+                          ja: '例：1/3 NLH',
+                          de: 'z. B.: 1/3 NLH',
+                          fr: 'ex. : 1/3 NLH',
+                          ar: 'مثال: 1/3 NLH',
+                          ru: 'например: 1/3 NLH',
+                          trk: 'örn: 1/3 NLH',
+                          es: 'ej.: 1/3 NLH',
+                          it: 'es: 1/3 NLH',
+                          pl: 'np.: 1/3 NLH',
+                          pt: 'ex.: 1/3 NLH',
+                          th: 'เช่น: 1/3 NLH',
+                          id: 'cth: 1/3 NLH',
+                          hi: 'उदा: 1/3 NLH',
+                          bn: 'যেমন: 1/3 NLH',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     DropdownButtonFormField<int>(
                       initialValue: selectedSeatCount,
-                      decoration: const InputDecoration(
-                        labelText: 'Player Seats',
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 16,
+                        ),
+                        labelText: tr(
+                          context,
+                          'Player Seats',
+                          zhTw: '玩家座位',
+                          zhCn: '玩家座位',
+                          ko: '플레이어 좌석',
+                          ja: 'プレイヤー席',
+                          de: 'Spielersitze',
+                          fr: 'Places des joueurs',
+                          ar: 'مقاعد اللاعبين',
+                          ru: 'Места игроков',
+                          trk: 'Oyuncu Koltukları',
+                          es: 'Asientos de jugadores',
+                          it: 'Posti giocatori',
+                          pl: 'Miejsca graczy',
+                          pt: 'Assentos dos jogadores',
+                          th: 'ที่นั่งผู้เล่น',
+                          id: 'Kursi pemain',
+                          hi: 'प्लेयर सीट्स',
+                          bn: 'প্লেয়ার সিট',
+                        ),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 9, child: Text('9 Players')),
-                        DropdownMenuItem(value: 10, child: Text('10 Players')),
+                      items: [
+                        DropdownMenuItem(
+                          value: 9,
+                          child: Text(
+                            tr(
+                              context,
+                              '9 Players',
+                              zhTw: '9人桌',
+                              zhCn: '9人桌',
+                              ko: '9인 테이블',
+                              ja: '9人テーブル',
+                              de: '9 Spieler',
+                              fr: '9 joueurs',
+                              ar: '9 لاعبين',
+                              ru: '9 игроков',
+                              trk: '9 Oyuncu',
+                              es: '9 jugadores',
+                              it: '9 giocatori',
+                              pl: '9 graczy',
+                              pt: '9 jogadores',
+                              th: 'ผู้เล่น 9 คน',
+                              id: '9 pemain',
+                              hi: '9 खिलाड़ी',
+                              bn: '9 জন খেলোয়াড়',
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 10,
+                          child: Text(
+                            tr(
+                              context,
+                              '10 Players',
+                              zhTw: '10人桌',
+                              zhCn: '10人桌',
+                              ko: '10인 테이블',
+                              ja: '10人テーブル',
+                              de: '10 Spieler',
+                              fr: '10 joueurs',
+                              ar: '10 لاعبين',
+                              ru: '10 игроков',
+                              trk: '10 Oyuncu',
+                              es: '10 jugadores',
+                              it: '10 giocatori',
+                              pl: '10 graczy',
+                              pt: '10 jogadores',
+                              th: 'ผู้เล่น 10 คน',
+                              id: '10 pemain',
+                              hi: '10 खिलाड़ी',
+                              bn: '10 জন খেলোয়াড়',
+                            ),
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -4591,10 +7163,34 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         }
                       },
                     ),
+
                     const SizedBox(height: 12),
+
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Date & Time'),
+                      title: Text(
+                        tr(
+                          context,
+                          'Date & Time',
+                          zhTw: '日期與時間',
+                          zhCn: '日期与时间',
+                          ko: '날짜 및 시간',
+                          ja: '日付と時間',
+                          de: 'Datum & Uhrzeit',
+                          fr: 'Date et heure',
+                          ar: 'التاريخ والوقت',
+                          ru: 'Дата и время',
+                          trk: 'Tarih ve Saat',
+                          es: 'Fecha y hora',
+                          it: 'Data e ora',
+                          pl: 'Data i godzina',
+                          pt: 'Data e hora',
+                          th: 'วันที่และเวลา',
+                          id: 'Tanggal & waktu',
+                          hi: 'तारीख और समय',
+                          bn: 'তারিখ ও সময়',
+                        ),
+                      ),
                       subtitle: Text(
                         '${selectedDateTime.year}/${selectedDateTime.month}/${selectedDateTime.day} '
                         '${selectedDateTime.hour}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
@@ -4638,11 +7234,55 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.pop(context, true),
-                  child: const Text('Save'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Save',
+                      zhTw: '儲存',
+                      zhCn: '保存',
+                      ko: '저장',
+                      ja: '保存',
+                      de: 'Speichern',
+                      fr: 'Enregistrer',
+                      ar: 'حفظ',
+                      ru: 'Сохранить',
+                      trk: 'Kaydet',
+                      es: 'Guardar',
+                      it: 'Salva',
+                      pl: 'Zapisz',
+                      pt: 'Salvar',
+                      th: 'บันทึก',
+                      id: 'Simpan',
+                      hi: 'सहेजें',
+                      bn: 'সংরক্ষণ করুন',
+                    ),
+                  ),
                 ),
               ],
             );
@@ -4652,27 +7292,51 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     );
 
     if (result != true) return;
-    
+
     try {
       final tableRef = tablesRef.doc(tableId);
-    
+
       await FirebaseFirestore.instance.runTransaction((tx) async {
         final snap = await tx.get(tableRef);
         final data = snap.data();
-    
+
         if (data == null) {
-          throw Exception('Table not found');
+          throw Exception(
+            tr(
+              context,
+              'Table not found',
+              zhTw: '找不到桌子',
+              zhCn: '找不到桌子',
+              ko: '테이블을 찾을 수 없습니다',
+              ja: 'テーブルが見つかりません',
+              de: 'Tisch nicht gefunden',
+              fr: 'Table introuvable',
+              ar: 'لم يتم العثور على الطاولة',
+              ru: 'Стол не найден',
+              trk: 'Masa bulunamadı',
+              es: 'Mesa no encontrada',
+              it: 'Tavolo non trovato',
+              pl: 'Nie znaleziono stołu',
+              pt: 'Mesa não encontrada',
+              th: 'ไม่พบโต๊ะ',
+              id: 'Meja tidak ditemukan',
+              hi: 'टेबल नहीं मिली',
+              bn: 'টেবিল পাওয়া যায়নি',
+            ),
+          );
         }
-    
+
         final rawSeats = List<dynamic>.from(data['seats'] ?? []);
-    
+
         final seatList = rawSeats.map((seat) {
           if (seat is Map<String, dynamic>) {
             return Map<String, dynamic>.from(seat);
           }
+
           if (seat is Map) {
             return Map<String, dynamic>.from(seat);
           }
+
           if (seat is String) {
             return <String, dynamic>{
               'playerName': seat,
@@ -4683,6 +7347,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               'playerId': null,
             };
           }
+
           return <String, dynamic>{
             'playerName': null,
             'playerLastName': null,
@@ -4692,15 +7357,17 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             'playerId': null,
           };
         }).toList();
-    
+
         bool isSeatEmpty(Map<String, dynamic> seat) {
           final playerName = (seat['playerName'] ?? '').toString().trim();
           final playerUid = (seat['playerUid'] ?? '').toString().trim();
           final playerId = (seat['playerId'] ?? '').toString().trim();
-    
-          return playerName.isEmpty && playerUid.isEmpty && playerId.isEmpty;
+
+          return playerName.isEmpty &&
+              playerUid.isEmpty &&
+              playerId.isEmpty;
         }
-    
+
         if (selectedSeatCount > seatList.length) {
           while (seatList.length < selectedSeatCount) {
             seatList.add({
@@ -4715,25 +7382,46 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         } else if (selectedSeatCount < seatList.length) {
           while (seatList.length > selectedSeatCount) {
             int removeIndex = -1;
-    
+
             for (int i = seatList.length - 1; i >= 0; i--) {
               final seat = Map<String, dynamic>.from(seatList[i]);
+
               if (isSeatEmpty(seat)) {
                 removeIndex = i;
                 break;
               }
             }
-    
+
             if (removeIndex == -1) {
               throw Exception(
-                'Cannot reduce seat count because there are no empty seats to remove',
+                tr(
+                  context,
+                  'Cannot reduce seat count because there are no empty seats to remove',
+                  zhTw: '沒有空位可以移除，因此無法減少座位數',
+                  zhCn: '没有空位可以移除，因此无法减少座位数',
+                  ko: '제거할 빈 좌석이 없어 좌석 수를 줄일 수 없습니다',
+                  ja: '削除できる空席がないため、座席数を減らせません',
+                  de: 'Die Sitzanzahl kann nicht reduziert werden, da keine leeren Sitze entfernt werden können',
+                  fr: 'Impossible de réduire le nombre de sièges, car aucun siège vide ne peut être supprimé',
+                  ar: 'لا يمكن تقليل عدد المقاعد لأنه لا توجد مقاعد فارغة لإزالتها',
+                  ru: 'Нельзя уменьшить количество мест, потому что нет пустых мест для удаления',
+                  trk: 'Kaldırılacak boş koltuk olmadığı için koltuk sayısı azaltılamaz',
+                  es: 'No se puede reducir el número de asientos porque no hay asientos vacíos para eliminar',
+                  it: 'Non è possibile ridurre il numero di posti perché non ci sono posti vuoti da rimuovere',
+                  pl: 'Nie można zmniejszyć liczby miejsc, ponieważ nie ma pustych miejsc do usunięcia',
+                  pt: 'Não é possível reduzir o número de assentos porque não há assentos vazios para remover',
+                  th: 'ไม่สามารถลดจำนวนที่นั่งได้ เพราะไม่มีที่นั่งว่างให้ลบ',
+                  id: 'Jumlah kursi tidak dapat dikurangi karena tidak ada kursi kosong untuk dihapus',
+                  hi: 'सीटों की संख्या कम नहीं की जा सकती क्योंकि हटाने के लिए कोई खाली सीट नहीं है',
+                  bn: 'সরানোর মতো কোনো খালি সিট নেই, তাই সিট সংখ্যা কমানো যাবে না',
+                ),
               );
             }
-    
+
             seatList.removeAt(removeIndex);
           }
         }
-    
+
         tx.update(tableRef, {
           'name': tableNameController.text.trim(),
           'location': locationController.text.trim(),
@@ -4744,8 +7432,30 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
-    
-      _showSnack('Table updated');
+
+      _showSnack(
+        tr(
+          context,
+          'Table updated',
+          zhTw: '桌子已更新',
+          zhCn: '桌子已更新',
+          ko: '테이블이 업데이트되었습니다',
+          ja: 'テーブルを更新しました',
+          de: 'Tisch aktualisiert',
+          fr: 'Table mise à jour',
+          ar: 'تم تحديث الطاولة',
+          ru: 'Стол обновлён',
+          trk: 'Masa güncellendi',
+          es: 'Mesa actualizada',
+          it: 'Tavolo aggiornato',
+          pl: 'Stół zaktualizowany',
+          pt: 'Mesa atualizada',
+          th: 'อัปเดตโต๊ะแล้ว',
+          id: 'Meja diperbarui',
+          hi: 'टेबल अपडेट हो गई',
+          bn: 'টেবিল আপডেট হয়েছে',
+        ),
+      );
     } catch (e) {
       _showSnack(
         e.toString().replaceFirst('Exception: ', ''),
@@ -4806,7 +7516,31 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final currentUid = currentUser?.uid ?? '';
 
     if (currentUid.isEmpty) {
-      return const Center(child: Text('Please login again'));
+      return Center(
+        child: Text(
+          tr(
+            context,
+            'Please login again',
+            zhTw: '請重新登入',
+            zhCn: '请重新登录',
+            ko: '다시 로그인해 주세요',
+            ja: 'もう一度ログインしてください',
+            de: 'Bitte melde dich erneut an',
+            fr: 'Veuillez vous reconnecter',
+            ar: 'يرجى تسجيل الدخول مرة أخرى',
+            ru: 'Пожалуйста, войдите снова',
+            trk: 'Lütfen tekrar giriş yapın',
+            es: 'Inicia sesión de nuevo',
+            it: 'Accedi di nuovo',
+            pl: 'Zaloguj się ponownie',
+            pt: 'Faça login novamente',
+            th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+            id: 'Silakan login lagi',
+            hi: 'कृपया फिर से लॉगिन करें',
+            bn: 'দয়া করে আবার লগইন করুন',
+          ),
+        ),
+      );
     }
 
     if (isSuperAdmin) {
@@ -4816,11 +7550,37 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
           if (snapshot.hasError) {
-            return const Center(child: Text('Failed to load tables'));
+            return Center(
+              child: Text(
+                tr(
+                  context,
+                  'Failed to load tables',
+                  zhTw: '載入桌子失敗',
+                  zhCn: '加载桌子失败',
+                  ko: '테이블을 불러오지 못했습니다',
+                  ja: 'テーブルの読み込みに失敗しました',
+                  de: 'Tische konnten nicht geladen werden',
+                  fr: 'Impossible de charger les tables',
+                  ar: 'فشل تحميل الطاولات',
+                  ru: 'Не удалось загрузить столы',
+                  trk: 'Masalar yüklenemedi',
+                  es: 'No se pudieron cargar las mesas',
+                  it: 'Impossibile caricare i tavoli',
+                  pl: 'Nie udało się załadować stołów',
+                  pt: 'Falha ao carregar as mesas',
+                  th: 'โหลดโต๊ะไม่สำเร็จ',
+                  id: 'Gagal memuat meja',
+                  hi: 'टेबल लोड नहीं हो सकीं',
+                  bn: 'টেবিল লোড করা যায়নি',
+                ),
+              ),
+            );
           }
 
           final docs = snapshot.data?.docs ?? [];
@@ -4857,11 +7617,37 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           .snapshots(),
       builder: (context, userSnapshot) {
         if (userSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
         }
 
         if (userSnapshot.hasError) {
-          return const Center(child: Text('Failed to load access'));
+          return Center(
+            child: Text(
+              tr(
+                context,
+                'Failed to load access',
+                zhTw: '載入權限失敗',
+                zhCn: '加载权限失败',
+                ko: '권한을 불러오지 못했습니다',
+                ja: 'アクセス権の読み込みに失敗しました',
+                de: 'Zugriff konnte nicht geladen werden',
+                fr: 'Impossible de charger les accès',
+                ar: 'فشل تحميل صلاحيات الوصول',
+                ru: 'Не удалось загрузить доступ',
+                trk: 'Erişim yüklenemedi',
+                es: 'No se pudo cargar el acceso',
+                it: 'Impossibile caricare l’accesso',
+                pl: 'Nie udało się załadować dostępu',
+                pt: 'Falha ao carregar acesso',
+                th: 'โหลดสิทธิ์การเข้าถึงไม่สำเร็จ',
+                id: 'Gagal memuat akses',
+                hi: 'एक्सेस लोड नहीं हो सका',
+                bn: 'অ্যাক্সেস লোড করা যায়নি',
+              ),
+            ),
+          );
         }
 
         final userData = userSnapshot.data?.data() ?? {};
@@ -4877,7 +7663,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
           if (grantedHostIds.isNotEmpty) {
             grantedTablesStream = tablesRef
-                .where('createdByUid', whereIn: grantedHostIds.take(10).toList())
+                .where(
+                  'createdByUid',
+                  whereIn: grantedHostIds.take(10).toList(),
+                )
                 .snapshots();
           }
 
@@ -4885,11 +7674,37 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             stream: createdByMeStream,
             builder: (context, mySnapshot) {
               if (mySnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
               }
 
               if (mySnapshot.hasError) {
-                return const Center(child: Text('Failed to load your tables'));
+                return Center(
+                  child: Text(
+                    tr(
+                      context,
+                      'Failed to load your tables',
+                      zhTw: '載入你的桌子失敗',
+                      zhCn: '加载你的桌子失败',
+                      ko: '내 테이블을 불러오지 못했습니다',
+                      ja: '自分のテーブルの読み込みに失敗しました',
+                      de: 'Deine Tische konnten nicht geladen werden',
+                      fr: 'Impossible de charger vos tables',
+                      ar: 'فشل تحميل طاولاتك',
+                      ru: 'Не удалось загрузить ваши столы',
+                      trk: 'Masaların yüklenemedi',
+                      es: 'No se pudieron cargar tus mesas',
+                      it: 'Impossibile caricare i tuoi tavoli',
+                      pl: 'Nie udało się załadować twoich stołów',
+                      pt: 'Falha ao carregar suas mesas',
+                      th: 'โหลดโต๊ะของคุณไม่สำเร็จ',
+                      id: 'Gagal memuat meja Anda',
+                      hi: 'आपकी टेबल लोड नहीं हो सकीं',
+                      bn: 'আপনার টেবিল লোড করা যায়নি',
+                    ),
+                  ),
+                );
               }
 
               if (grantedTablesStream == null) {
@@ -4921,15 +7736,43 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                 stream: grantedTablesStream,
                 builder: (context, grantedSnapshot) {
-                  if (grantedSnapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                  if (grantedSnapshot.connectionState ==
+                      ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
                   }
 
                   if (grantedSnapshot.hasError) {
-                    return const Center(child: Text('Failed to load granted tables'));
+                    return Center(
+                      child: Text(
+                        tr(
+                          context,
+                          'Failed to load granted tables',
+                          zhTw: '載入授權桌子失敗',
+                          zhCn: '加载授权桌子失败',
+                          ko: '공유된 테이블을 불러오지 못했습니다',
+                          ja: '共有テーブルの読み込みに失敗しました',
+                          de: 'Freigegebene Tische konnten nicht geladen werden',
+                          fr: 'Impossible de charger les tables autorisées',
+                          ar: 'فشل تحميل الطاولات المصرح بها',
+                          ru: 'Не удалось загрузить разрешённые столы',
+                          trk: 'İzin verilen masalar yüklenemedi',
+                          es: 'No se pudieron cargar las mesas autorizadas',
+                          it: 'Impossibile caricare i tavoli autorizzati',
+                          pl: 'Nie udało się załadować udostępnionych stołów',
+                          pt: 'Falha ao carregar mesas autorizadas',
+                          th: 'โหลดโต๊ะที่ได้รับสิทธิ์ไม่สำเร็จ',
+                          id: 'Gagal memuat meja yang diizinkan',
+                          hi: 'अनुमत टेबल लोड नहीं हो सकीं',
+                          bn: 'অনুমোদিত টেবিল লোড করা যায়নি',
+                        ),
+                      ),
+                    );
                   }
 
-                  final merged = <String, QueryDocumentSnapshot<Map<String, dynamic>>>{};
+                  final merged =
+                      <String, QueryDocumentSnapshot<Map<String, dynamic>>>{};
 
                   for (final doc in mySnapshot.data?.docs ?? []) {
                     merged[doc.id] = doc;
@@ -4944,7 +7787,8 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                       final aCreated = a.data()['createdAt'];
                       final bCreated = b.data()['createdAt'];
 
-                      if (aCreated is Timestamp && bCreated is Timestamp) {
+                      if (aCreated is Timestamp &&
+                          bCreated is Timestamp) {
                         return aCreated.compareTo(bCreated);
                       }
 
@@ -4984,16 +7828,43 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
         return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: tablesRef
-              .where('createdByUid', whereIn: grantedHostIds.take(10).toList())
+              .where(
+                'createdByUid',
+                whereIn: grantedHostIds.take(10).toList(),
+              )
               .snapshots(),
           builder: (context, tableSnapshot) {
             if (tableSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
             }
 
             if (tableSnapshot.hasError) {
               return Center(
-                child: Text('Failed to load tables: ${tableSnapshot.error}'),
+                child: Text(
+                  tr(
+                    context,
+                    'Failed to load tables',
+                    zhTw: '載入桌子失敗',
+                    zhCn: '加载桌子失败',
+                    ko: '테이블을 불러오지 못했습니다',
+                    ja: 'テーブルの読み込みに失敗しました',
+                    de: 'Tische konnten nicht geladen werden',
+                    fr: 'Impossible de charger les tables',
+                    ar: 'فشل تحميل الطاولات',
+                    ru: 'Не удалось загрузить столы',
+                    trk: 'Masalar yüklenemedi',
+                    es: 'No se pudieron cargar las mesas',
+                    it: 'Impossibile caricare i tavoli',
+                    pl: 'Nie udało się załadować stołów',
+                    pt: 'Falha ao carregar as mesas',
+                    th: 'โหลดโต๊ะไม่สำเร็จ',
+                    id: 'Gagal memuat meja',
+                    hi: 'टेबल लोड नहीं हो सकीं',
+                    bn: 'টেবিল লোড করা যায়নি',
+                  ),
+                ),
               );
             }
 
@@ -5028,13 +7899,35 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
   Future<void> _showGrantPlayerAccessDialog() async {
     if (!isHost) return;
-  
+
     final controller = TextEditingController();
-  
+
     final playerId = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Player by ID'),
+        title: Text(
+          tr(
+            context,
+            'Add Player by ID',
+            zhTw: '用玩家 ID 新增玩家',
+            zhCn: '用玩家 ID 添加玩家',
+            ko: '플레이어 ID로 추가',
+            ja: 'プレイヤーIDで追加',
+            de: 'Spieler per ID hinzufügen',
+            fr: 'Ajouter un joueur par ID',
+            ar: 'إضافة لاعب باستخدام المعرّف',
+            ru: 'Добавить игрока по ID',
+            trk: 'Oyuncu ID ile ekle',
+            es: 'Agregar jugador por ID',
+            it: 'Aggiungi giocatore tramite ID',
+            pl: 'Dodaj gracza przez ID',
+            pt: 'Adicionar jogador por ID',
+            th: 'เพิ่มผู้เล่นด้วย ID',
+            id: 'Tambah pemain dengan ID',
+            hi: 'Player ID से खिलाड़ी जोड़ें',
+            bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
+          ),
+        ),
         content: TextField(
           controller: controller,
           textCapitalization: TextCapitalization.characters,
@@ -5045,27 +7938,111 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             LengthLimitingTextInputFormatter(8),
             UpperCaseTextFormatter(),
           ],
-          decoration: const InputDecoration(
-            labelText: 'Player ID',
-            hintText: 'Enter 8-character Player ID',
+          decoration: InputDecoration(
+            labelText: tr(
+              context,
+              'Player ID',
+              zhTw: '玩家 ID',
+              zhCn: '玩家 ID',
+              ko: '플레이어 ID',
+              ja: 'プレイヤーID',
+              de: 'Spieler-ID',
+              fr: 'ID joueur',
+              ar: 'معرّف اللاعب',
+              ru: 'ID игрока',
+              trk: 'Oyuncu ID',
+              es: 'ID de jugador',
+              it: 'ID giocatore',
+              pl: 'ID gracza',
+              pt: 'ID do jogador',
+              th: 'ID ผู้เล่น',
+              id: 'ID pemain',
+              hi: 'Player ID',
+              bn: 'Player ID',
+            ),
+            hintText: tr(
+              context,
+              'Enter 8-character Player ID',
+              zhTw: '輸入 8 碼玩家 ID',
+              zhCn: '输入 8 位玩家 ID',
+              ko: '8자리 플레이어 ID를 입력하세요',
+              ja: '8文字のプレイヤーIDを入力してください',
+              de: '8-stellige Spieler-ID eingeben',
+              fr: 'Entrez l’ID joueur à 8 caractères',
+              ar: 'أدخل معرّف اللاعب المكوّن من 8 أحرف',
+              ru: 'Введите ID игрока из 8 символов',
+              trk: '8 karakterli Oyuncu ID girin',
+              es: 'Ingresa el ID de jugador de 8 caracteres',
+              it: 'Inserisci l’ID giocatore di 8 caratteri',
+              pl: 'Wpisz 8-znakowe ID gracza',
+              pt: 'Insira o ID do jogador com 8 caracteres',
+              th: 'กรอก ID ผู้เล่น 8 ตัวอักษร',
+              id: 'Masukkan ID pemain 8 karakter',
+              hi: '8 अक्षरों वाला Player ID दर्ज करें',
+              bn: '৮ অক্ষরের Player ID লিখুন',
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              tr(
+                context,
+                'Cancel',
+                zhTw: '取消',
+                zhCn: '取消',
+                ko: '취소',
+                ja: 'キャンセル',
+                de: 'Abbrechen',
+                fr: 'Annuler',
+                ar: 'إلغاء',
+                ru: 'Отмена',
+                trk: 'İptal',
+                es: 'Cancelar',
+                it: 'Annulla',
+                pl: 'Anuluj',
+                pt: 'Cancelar',
+                th: 'ยกเลิก',
+                id: 'Batal',
+                hi: 'रद्द करें',
+                bn: 'বাতিল',
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(context, controller.text.trim().toUpperCase()),
-            child: const Text('Add'),
+            child: Text(
+              tr(
+                context,
+                'Add',
+                zhTw: '新增',
+                zhCn: '添加',
+                ko: '추가',
+                ja: '追加',
+                de: 'Hinzufügen',
+                fr: 'Ajouter',
+                ar: 'إضافة',
+                ru: 'Добавить',
+                trk: 'Ekle',
+                es: 'Agregar',
+                it: 'Aggiungi',
+                pl: 'Dodaj',
+                pt: 'Adicionar',
+                th: 'เพิ่ม',
+                id: 'Tambah',
+                hi: 'जोड़ें',
+                bn: 'যোগ করুন',
+              ),
+            ),
           ),
         ],
       ),
     );
 
     if (playerId == null || playerId.isEmpty) return;
-  
+
     await _grantPlayerAccessByPlayerId(playerId);
   }
   
@@ -5076,7 +8053,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final cleanPlayerId = playerId.trim().toUpperCase();
 
     if (cleanPlayerId.isEmpty) {
-      _showSnack('Please enter Player ID');
+      _showSnack(
+        tr(
+          context,
+          'Please enter Player ID',
+          zhTw: '請輸入玩家 ID',
+          zhCn: '请输入玩家 ID',
+          ko: '플레이어 ID를 입력하세요',
+          ja: 'プレイヤーIDを入力してください',
+          de: 'Bitte Spieler-ID eingeben',
+          fr: 'Veuillez entrer l’ID joueur',
+          ar: 'يرجى إدخال معرّف اللاعب',
+          ru: 'Введите ID игрока',
+          trk: 'Lütfen Oyuncu ID girin',
+          es: 'Ingresa el ID de jugador',
+          it: 'Inserisci l’ID giocatore',
+          pl: 'Wpisz ID gracza',
+          pt: 'Insira o ID do jogador',
+          th: 'กรุณากรอก ID ผู้เล่น',
+          id: 'Masukkan ID pemain',
+          hi: 'कृपया Player ID दर्ज करें',
+          bn: 'দয়া করে Player ID লিখুন',
+        ),
+      );
       return;
     }
 
@@ -5096,7 +8095,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       }
 
       if (query.docs.isEmpty) {
-        _showSnack('Player ID not found');
+        _showSnack(
+          tr(
+            context,
+            'Player ID not found',
+            zhTw: '找不到玩家 ID',
+            zhCn: '找不到玩家 ID',
+            ko: '플레이어 ID를 찾을 수 없습니다',
+            ja: 'プレイヤーIDが見つかりません',
+            de: 'Spieler-ID nicht gefunden',
+            fr: 'ID joueur introuvable',
+            ar: 'لم يتم العثور على معرّف اللاعب',
+            ru: 'ID игрока не найден',
+            trk: 'Oyuncu ID bulunamadı',
+            es: 'No se encontró el ID de jugador',
+            it: 'ID giocatore non trovato',
+            pl: 'Nie znaleziono ID gracza',
+            pt: 'ID do jogador não encontrado',
+            th: 'ไม่พบ ID ผู้เล่น',
+            id: 'ID pemain tidak ditemukan',
+            hi: 'Player ID नहीं मिला',
+            bn: 'Player ID পাওয়া যায়নি',
+          ),
+        );
         return;
       }
 
@@ -5104,7 +8125,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       final playerData = playerDoc.data();
 
       if (playerDoc.id == hostUser.uid) {
-        _showSnack('You cannot add yourself');
+        _showSnack(
+          tr(
+            context,
+            'You cannot add yourself',
+            zhTw: '你不能新增自己',
+            zhCn: '你不能添加自己',
+            ko: '자기 자신은 추가할 수 없습니다',
+            ja: '自分自身を追加することはできません',
+            de: 'Du kannst dich nicht selbst hinzufügen',
+            fr: 'Vous ne pouvez pas vous ajouter vous-même',
+            ar: 'لا يمكنك إضافة نفسك',
+            ru: 'Вы не можете добавить себя',
+            trk: 'Kendinizi ekleyemezsiniz',
+            es: 'No puedes agregarte a ti mismo',
+            it: 'Non puoi aggiungere te stesso',
+            pl: 'Nie możesz dodać siebie',
+            pt: 'Você não pode adicionar você mesmo',
+            th: 'คุณไม่สามารถเพิ่มตัวเองได้',
+            id: 'Anda tidak dapat menambahkan diri sendiri',
+            hi: 'आप खुद को नहीं जोड़ सकते',
+            bn: 'আপনি নিজেকে যোগ করতে পারবেন না',
+          ),
+        );
         return;
       }
 
@@ -5112,7 +8155,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           List<String>.from(playerData['grantedHostIds'] ?? []);
 
       if (grantedHostIds.contains(hostUser.uid)) {
-        _showSnack('This player is already added');
+        _showSnack(
+          tr(
+            context,
+            'This player is already added',
+            zhTw: '這位玩家已經新增過了',
+            zhCn: '这位玩家已经添加过了',
+            ko: '이 플레이어는 이미 추가되었습니다',
+            ja: 'このプレイヤーはすでに追加されています',
+            de: 'Dieser Spieler wurde bereits hinzugefügt',
+            fr: 'Ce joueur a déjà été ajouté',
+            ar: 'تمت إضافة هذا اللاعب بالفعل',
+            ru: 'Этот игрок уже добавлен',
+            trk: 'Bu oyuncu zaten eklendi',
+            es: 'Este jugador ya fue agregado',
+            it: 'Questo giocatore è già stato aggiunto',
+            pl: 'Ten gracz został już dodany',
+            pt: 'Este jogador já foi adicionado',
+            th: 'เพิ่มผู้เล่นคนนี้แล้ว',
+            id: 'Pemain ini sudah ditambahkan',
+            hi: 'यह खिलाड़ी पहले से जोड़ा गया है',
+            bn: 'এই খেলোয়াড় ইতিমধ্যেই যোগ করা হয়েছে',
+          ),
+        );
         return;
       }
 
@@ -5133,11 +8198,78 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               .toString()
               .trim();
 
-      _showSnack('$addedName added successfully');
+      _showSnack(
+        tr(
+          context,
+          '$addedName added successfully',
+          zhTw: '$addedName 新增成功',
+          zhCn: '$addedName 添加成功',
+          ko: '$addedName 추가되었습니다',
+          ja: '$addedName を追加しました',
+          de: '$addedName wurde hinzugefügt',
+          fr: '$addedName ajouté avec succès',
+          ar: 'تمت إضافة $addedName بنجاح',
+          ru: '$addedName успешно добавлен',
+          trk: '$addedName başarıyla eklendi',
+          es: '$addedName agregado correctamente',
+          it: '$addedName aggiunto correttamente',
+          pl: '$addedName dodano pomyślnie',
+          pt: '$addedName adicionado com sucesso',
+          th: 'เพิ่ม $addedName สำเร็จ',
+          id: '$addedName berhasil ditambahkan',
+          hi: '$addedName सफलतापूर्वक जोड़ा गया',
+          bn: '$addedName সফলভাবে যোগ হয়েছে',
+        ),
+      );
     } on FirebaseException catch (e) {
-      _showSnack(e.message ?? 'Failed to add player');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Failed to add player',
+              zhTw: '新增玩家失敗',
+              zhCn: '添加玩家失败',
+              ko: '플레이어 추가에 실패했습니다',
+              ja: 'プレイヤーの追加に失敗しました',
+              de: 'Spieler konnte nicht hinzugefügt werden',
+              fr: 'Impossible d’ajouter le joueur',
+              ar: 'فشل إضافة اللاعب',
+              ru: 'Не удалось добавить игрока',
+              trk: 'Oyuncu eklenemedi',
+              es: 'No se pudo agregar el jugador',
+              it: 'Impossibile aggiungere il giocatore',
+              pl: 'Nie udało się dodać gracza',
+              pt: 'Falha ao adicionar jogador',
+              th: 'เพิ่มผู้เล่นไม่สำเร็จ',
+              id: 'Gagal menambahkan pemain',
+              hi: 'खिलाड़ी जोड़ने में विफल',
+              bn: 'খেলোয়াড় যোগ করা যায়নি',
+            ),
+      );
     } catch (e) {
-      _showSnack('Failed to add player: $e');
+      _showSnack(
+        '${tr(
+          context,
+          'Failed to add player',
+          zhTw: '新增玩家失敗',
+          zhCn: '添加玩家失败',
+          ko: '플레이어 추가에 실패했습니다',
+          ja: 'プレイヤーの追加に失敗しました',
+          de: 'Spieler konnte nicht hinzugefügt werden',
+          fr: 'Impossible d’ajouter le joueur',
+          ar: 'فشل إضافة اللاعب',
+          ru: 'Не удалось добавить игрока',
+          trk: 'Oyuncu eklenemedi',
+          es: 'No se pudo agregar el jugador',
+          it: 'Impossibile aggiungere il giocatore',
+          pl: 'Nie udało się dodać gracza',
+          pt: 'Falha ao adicionar jogador',
+          th: 'เพิ่มผู้เล่นไม่สำเร็จ',
+          id: 'Gagal menambahkan pemain',
+          hi: 'खिलाड़ी जोड़ने में विफल',
+          bn: 'খেলোয়াড় যোগ করা যায়নি',
+        )}: $e',
+      );
     }
   }
 
@@ -5164,7 +8296,27 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     if (currentUid.isEmpty) return;
 
     final currentName = widget.session.name.trim().isEmpty
-        ? 'Host'
+        ? tr(
+            context,
+            'Host',
+            zhTw: '房主',
+            zhCn: '房主',
+            ko: '호스트',
+            ja: 'ホスト',
+            de: 'Host',
+            fr: 'Hôte',
+            ar: 'المضيف',
+            ru: 'Хост',
+            trk: 'Sunucu',
+            es: 'Anfitrión',
+            it: 'Host',
+            pl: 'Host',
+            pt: 'Anfitrião',
+            th: 'โฮสต์',
+            id: 'Host',
+            hi: 'होस्ट',
+            bn: 'হোস্ট',
+          )
         : widget.session.name.trim();
 
     final visiblePlayersSnapshot = await FirebaseFirestore.instance
@@ -5179,7 +8331,28 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
     if (targetUserIds.isEmpty) return;
 
-    final tableName = (tableData['name'] ?? 'New Table').toString();
+    final tableName = (tableData['name'] ?? tr(
+      context,
+      'New Table',
+      zhTw: '新牌桌',
+      zhCn: '新牌桌',
+      ko: '새 테이블',
+      ja: '新しいテーブル',
+      de: 'Neuer Tisch',
+      fr: 'Nouvelle table',
+      ar: 'طاولة جديدة',
+      ru: 'Новый стол',
+      trk: 'Yeni Masa',
+      es: 'Nueva mesa',
+      it: 'Nuovo tavolo',
+      pl: 'Nowy stół',
+      pt: 'Nova mesa',
+      th: 'โต๊ะใหม่',
+      id: 'Meja Baru',
+      hi: 'नई टेबल',
+      bn: 'নতুন টেবিল',
+    )).toString();
+
     final stakes = (tableData['stakes'] ?? '').toString().trim();
     final location = (tableData['location'] ?? '').toString().trim();
 
@@ -5194,7 +8367,27 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       'tableId': tableId,
       'hostUid': currentUid,
       'hostName': currentName,
-      'title': '$currentName created a new table',
+      'title': tr(
+        context,
+        '$currentName created a new table',
+        zhTw: '$currentName 建立了一個新牌桌',
+        zhCn: '$currentName 创建了一个新牌桌',
+        ko: '$currentName 님이 새 테이블을 만들었습니다',
+        ja: '$currentName さんが新しいテーブルを作成しました',
+        de: '$currentName hat einen neuen Tisch erstellt',
+        fr: '$currentName a créé une nouvelle table',
+        ar: '$currentName أنشأ طاولة جديدة',
+        ru: '$currentName создал новый стол',
+        trk: '$currentName yeni bir masa oluşturdu',
+        es: '$currentName creó una nueva mesa',
+        it: '$currentName ha creato un nuovo tavolo',
+        pl: '$currentName utworzył nowy stół',
+        pt: '$currentName criou uma nova mesa',
+        th: '$currentName ได้สร้างโต๊ะใหม่',
+        id: '$currentName membuat meja baru',
+        hi: '$currentName ने नई टेबल बनाई',
+        bn: '$currentName একটি নতুন টেবিল তৈরি করেছে',
+      ),
       'body': bodyParts.join(' · '),
       'targetUserIds': targetUserIds,
       'readBy': <String>[],
@@ -5225,7 +8418,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       tableData: tableData,
     );
 
-    _showSnack('Table created');
+    _showSnack(
+      tr(
+        context,
+        'Table created',
+        zhTw: '牌桌已建立',
+        zhCn: '牌桌已创建',
+        ko: '테이블이 생성되었습니다',
+        ja: 'テーブルが作成されました',
+        de: 'Tisch erstellt',
+        fr: 'Table créée',
+        ar: 'تم إنشاء الطاولة',
+        ru: 'Стол создан',
+        trk: 'Masa oluşturuldu',
+        es: 'Mesa creada',
+        it: 'Tavolo creato',
+        pl: 'Stół utworzony',
+        pt: 'Mesa criada',
+        th: 'สร้างโต๊ะแล้ว',
+        id: 'Meja berhasil dibuat',
+        hi: 'टेबल बना दी गई',
+        bn: 'টেবিল তৈরি হয়েছে',
+      ),
+    );
   }
 
   Future<void> _shareTableWithHostByPlayerId({
@@ -5238,7 +8453,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final cleanHostPlayerId = hostPlayerId.trim().toUpperCase();
 
     if (cleanHostPlayerId.isEmpty) {
-      _showSnack('Please enter Host ID');
+      _showSnack(
+        tr(
+          context,
+          'Please enter Host ID',
+          zhTw: '請輸入房主 ID',
+          zhCn: '请输入房主 ID',
+          ko: '호스트 ID를 입력해주세요',
+          ja: 'ホストIDを入力してください',
+          de: 'Bitte Host-ID eingeben',
+          fr: 'Veuillez entrer l’ID de l’hôte',
+          ar: 'يرجى إدخال معرف المضيف',
+          ru: 'Пожалуйста, введите ID хоста',
+          trk: 'Lütfen Host ID girin',
+          es: 'Por favor ingresa el ID del anfitrión',
+          it: 'Inserisci l’ID host',
+          pl: 'Wprowadź ID hosta',
+          pt: 'Por favor insira o ID do anfitrião',
+          th: 'กรุณากรอก Host ID',
+          id: 'Silakan masukkan ID Host',
+          hi: 'कृपया होस्ट ID दर्ज करें',
+          bn: 'অনুগ্রহ করে হোস্ট ID লিখুন',
+        ),
+      );
       return;
     }
 
@@ -5262,7 +8499,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       }
 
       if (query.docs.isEmpty) {
-        _showSnack('Host ID not found');
+        _showSnack(
+          tr(
+            context,
+            'Host ID not found',
+            zhTw: '找不到房主 ID',
+            zhCn: '找不到房主 ID',
+            ko: '호스트 ID를 찾을 수 없습니다',
+            ja: 'ホストIDが見つかりません',
+            de: 'Host-ID nicht gefunden',
+            fr: 'ID de l’hôte introuvable',
+            ar: 'لم يتم العثور على معرف المضيف',
+            ru: 'ID хоста не найден',
+            trk: 'Host ID bulunamadı',
+            es: 'No se encontró el ID del anfitrión',
+            it: 'ID host non trovato',
+            pl: 'Nie znaleziono ID hosta',
+            pt: 'ID do anfitrião não encontrado',
+            th: 'ไม่พบ Host ID',
+            id: 'ID Host tidak ditemukan',
+            hi: 'होस्ट ID नहीं मिला',
+            bn: 'হোস্ট ID পাওয়া যায়নি',
+          ),
+        );
         return;
       }
 
@@ -5270,13 +8529,58 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       final targetData = targetDoc.data();
 
       if (targetDoc.id == currentUser.uid) {
-        _showSnack('You cannot share with yourself');
+        _showSnack(
+          tr(
+            context,
+            'You cannot share with yourself',
+            zhTw: '你不能分享給自己',
+            zhCn: '你不能分享给自己',
+            ko: '자신과 공유할 수 없습니다',
+            ja: '自分自身には共有できません',
+            de: 'Du kannst nicht mit dir selbst teilen',
+            fr: 'Vous ne pouvez pas partager avec vous-même',
+            ar: 'لا يمكنك المشاركة مع نفسك',
+            ru: 'Нельзя делиться с самим собой',
+            trk: 'Kendinizle paylaşamazsınız',
+            es: 'No puedes compartir contigo mismo',
+            it: 'Non puoi condividere con te stesso',
+            pl: 'Nie możesz udostępnić samemu sobie',
+            pt: 'Você não pode compartilhar consigo mesmo',
+            th: 'คุณไม่สามารถแชร์กับตัวเองได้',
+            id: 'Anda tidak dapat membagikan ke diri sendiri',
+            hi: 'आप खुद के साथ शेयर नहीं कर सकते',
+            bn: 'আপনি নিজের সাথে শেয়ার করতে পারবেন না',
+          ),
+        );
         return;
       }
 
       final targetRole = (targetData['role'] ?? 'player').toString().trim();
+
       if (targetRole != 'host') {
-        _showSnack('This ID does not belong to a host');
+        _showSnack(
+          tr(
+            context,
+            'This ID does not belong to a host',
+            zhTw: '這個 ID 不屬於房主',
+            zhCn: '这个 ID 不属于房主',
+            ko: '이 ID는 호스트 계정이 아닙니다',
+            ja: 'このIDはホストではありません',
+            de: 'Diese ID gehört keinem Host',
+            fr: 'Cet ID n’appartient pas à un hôte',
+            ar: 'هذا المعرف لا يخص مضيفًا',
+            ru: 'Этот ID не принадлежит хосту',
+            trk: 'Bu ID bir hosta ait değil',
+            es: 'Este ID no pertenece a un anfitrión',
+            it: 'Questo ID non appartiene a un host',
+            pl: 'To ID nie należy do hosta',
+            pt: 'Este ID não pertence a um anfitrião',
+            th: 'ID นี้ไม่ใช่ของโฮสต์',
+            id: 'ID ini bukan milik host',
+            hi: 'यह ID किसी होस्ट की नहीं है',
+            bn: 'এই ID কোনো হোস্টের নয়',
+          ),
+        );
         return;
       }
 
@@ -5285,14 +8589,58 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       final tableData = tableSnap.data();
 
       if (tableData == null) {
-        _showSnack('Table not found');
+        _showSnack(
+          tr(
+            context,
+            'Table not found',
+            zhTw: '找不到牌桌',
+            zhCn: '找不到牌桌',
+            ko: '테이블을 찾을 수 없습니다',
+            ja: 'テーブルが見つかりません',
+            de: 'Tisch nicht gefunden',
+            fr: 'Table introuvable',
+            ar: 'الطاولة غير موجودة',
+            ru: 'Стол не найден',
+            trk: 'Masa bulunamadı',
+            es: 'Mesa no encontrada',
+            it: 'Tavolo non trovato',
+            pl: 'Nie znaleziono stołu',
+            pt: 'Mesa não encontrada',
+            th: 'ไม่พบโต๊ะ',
+            id: 'Meja tidak ditemukan',
+            hi: 'टेबल नहीं मिली',
+            bn: 'টেবিল পাওয়া যায়নি',
+          ),
+        );
         return;
       }
 
       final table = TableData.fromMap(tableData);
 
       if (!_canManageTable(table)) {
-        _showSnack('You can only share tables you created');
+        _showSnack(
+          tr(
+            context,
+            'You can only share tables you created',
+            zhTw: '你只能分享自己建立的牌桌',
+            zhCn: '你只能分享自己创建的牌桌',
+            ko: '본인이 만든 테이블만 공유할 수 있습니다',
+            ja: '自分が作成したテーブルのみ共有できます',
+            de: 'Du kannst nur deine eigenen Tische teilen',
+            fr: 'Vous ne pouvez partager que les tables que vous avez créées',
+            ar: 'يمكنك فقط مشاركة الطاولات التي أنشأتها',
+            ru: 'Вы можете делиться только своими столами',
+            trk: 'Sadece oluşturduğunuz masaları paylaşabilirsiniz',
+            es: 'Solo puedes compartir mesas que creaste',
+            it: 'Puoi condividere solo i tavoli che hai creato',
+            pl: 'Możesz udostępniać tylko własne stoły',
+            pt: 'Você só pode compartilhar mesas que criou',
+            th: 'คุณสามารถแชร์ได้เฉพาะโต๊ะที่คุณสร้าง',
+            id: 'Anda hanya dapat membagikan meja yang Anda buat',
+            hi: 'आप केवल अपनी बनाई टेबल शेयर कर सकते हैं',
+            bn: 'আপনি শুধু নিজের তৈরি টেবিল শেয়ার করতে পারবেন',
+          ),
+        );
         return;
       }
 
@@ -5300,7 +8648,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           List<String>.from(tableData['sharedHostUids'] ?? []);
 
       if (sharedHostUids.contains(targetDoc.id)) {
-        _showSnack('This host already has access');
+        _showSnack(
+          tr(
+            context,
+            'This host already has access',
+            zhTw: '這位房主已經有權限',
+            zhCn: '这位房主已经有权限',
+            ko: '이 호스트는 이미 접근 권한이 있습니다',
+            ja: 'このホストはすでにアクセス権があります',
+            de: 'Dieser Host hat bereits Zugriff',
+            fr: 'Cet hôte a déjà accès',
+            ar: 'هذا المضيف لديه صلاحية بالفعل',
+            ru: 'У этого хоста уже есть доступ',
+            trk: 'Bu hostun zaten erişimi var',
+            es: 'Este anfitrión ya tiene acceso',
+            it: 'Questo host ha già accesso',
+            pl: 'Ten host ma już dostęp',
+            pt: 'Este anfitrião já tem acesso',
+            th: 'โฮสต์นี้มีสิทธิ์อยู่แล้ว',
+            id: 'Host ini sudah memiliki akses',
+            hi: 'इस होस्ट के पास पहले से एक्सेस है',
+            bn: 'এই হোস্টের আগে থেকেই অ্যাক্সেস আছে',
+          ),
+        );
         return;
       }
 
@@ -5310,15 +8680,102 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       });
 
       final addedName =
-          (targetData['shortName'] ?? targetData['displayName'] ?? 'Host')
+          (targetData['shortName'] ?? targetData['displayName'] ?? tr(
+            context,
+            'Host',
+            zhTw: '房主',
+            zhCn: '房主',
+            ko: '호스트',
+            ja: 'ホスト',
+            de: 'Host',
+            fr: 'Hôte',
+            ar: 'المضيف',
+            ru: 'Хост',
+            trk: 'Sunucu',
+            es: 'Anfitrión',
+            it: 'Host',
+            pl: 'Host',
+            pt: 'Anfitrião',
+            th: 'โฮสต์',
+            id: 'Host',
+            hi: 'होस्ट',
+            bn: 'হোস্ট',
+          ))
               .toString()
               .trim();
 
-      _showSnack('$addedName can now see this table');
+      _showSnack(
+        tr(
+          context,
+          '$addedName can now see this table',
+          zhTw: '$addedName 現在可以看到這張牌桌',
+          zhCn: '$addedName 现在可以看到这张牌桌',
+          ko: '$addedName 님이 이제 이 테이블을 볼 수 있습니다',
+          ja: '$addedName さんがこのテーブルを見られるようになりました',
+          de: '$addedName kann diesen Tisch jetzt sehen',
+          fr: '$addedName peut maintenant voir cette table',
+          ar: '$addedName يمكنه الآن رؤية هذه الطاولة',
+          ru: '$addedName теперь может видеть этот стол',
+          trk: '$addedName artık bu masayı görebilir',
+          es: '$addedName ahora puede ver esta mesa',
+          it: '$addedName ora può vedere questo tavolo',
+          pl: '$addedName może teraz zobaczyć ten stół',
+          pt: '$addedName agora pode ver esta mesa',
+          th: '$addedName สามารถเห็นโต๊ะนี้ได้แล้ว',
+          id: '$addedName sekarang dapat melihat meja ini',
+          hi: '$addedName अब इस टेबल को देख सकता है',
+          bn: '$addedName এখন এই টেবিল দেখতে পারবে',
+        ),
+      );
     } on FirebaseException catch (e) {
-      _showSnack(e.message ?? 'Failed to share table');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Failed to share table',
+              zhTw: '分享牌桌失敗',
+              zhCn: '分享牌桌失败',
+              ko: '테이블 공유 실패',
+              ja: 'テーブル共有に失敗しました',
+              de: 'Tisch konnte nicht geteilt werden',
+              fr: 'Échec du partage de la table',
+              ar: 'فشل في مشاركة الطاولة',
+              ru: 'Не удалось поделиться столом',
+              trk: 'Masa paylaşımı başarısız',
+              es: 'Error al compartir la mesa',
+              it: 'Condivisione tavolo fallita',
+              pl: 'Nie udało się udostępnić stołu',
+              pt: 'Falha ao compartilhar mesa',
+              th: 'แชร์โต๊ะล้มเหลว',
+              id: 'Gagal membagikan meja',
+              hi: 'टेबल शेयर करने में विफल',
+              bn: 'টেবিল শেয়ার ব্যর্থ হয়েছে',
+            ),
+      );
     } catch (e) {
-      _showSnack('Failed to share table: $e');
+      _showSnack(
+        '${tr(
+          context,
+          'Failed to share table',
+          zhTw: '分享牌桌失敗',
+          zhCn: '分享牌桌失败',
+          ko: '테이블 공유 실패',
+          ja: 'テーブル共有に失敗しました',
+          de: 'Tisch konnte nicht geteilt werden',
+          fr: 'Échec du partage de la table',
+          ar: 'فشل في مشاركة الطاولة',
+          ru: 'Не удалось поделиться столом',
+          trk: 'Masa paylaşımı başarısız',
+          es: 'Error al compartir la mesa',
+          it: 'Condivisione tavolo fallita',
+          pl: 'Nie udało się udostępnić stołu',
+          pt: 'Falha ao compartilhar mesa',
+          th: 'แชร์โต๊ะล้มเหลว',
+          id: 'Gagal membagikan meja',
+          hi: 'टेबल शेयर करने में विफल',
+          bn: 'টেবিল শেয়ার ব্যর্থ হয়েছে',
+        )}: $e',
+      );
     }
   }
 
@@ -5328,7 +8785,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final currentUser = FirebaseAuth.instance.currentUser;
     final currentUid = currentUser?.uid ?? '';
     final currentName = widget.session.name.trim();
-    
+
     final canManageThisTable =
         isSuperAdmin ||
         table.createdByUid == currentUid ||
@@ -5336,11 +8793,57 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             table.createdByName.trim() == currentName);
 
     if (!canManageThisTable) {
-      _showSnack('You can only delete tables you created');
+      _showSnack(
+        tr(
+          context,
+          'You can only delete tables you created',
+          zhTw: '你只能刪除自己建立的牌桌',
+          zhCn: '你只能删除自己创建的牌桌',
+          ko: '본인이 만든 테이블만 삭제할 수 있습니다',
+          ja: '自分が作成したテーブルのみ削除できます',
+          de: 'Du kannst nur deine eigenen Tische löschen',
+          fr: 'Vous ne pouvez supprimer que les tables que vous avez créées',
+          ar: 'يمكنك فقط حذف الطاولات التي أنشأتها',
+          ru: 'Вы можете удалять только свои столы',
+          trk: 'Sadece oluşturduğunuz masaları silebilirsiniz',
+          es: 'Solo puedes eliminar mesas que creaste',
+          it: 'Puoi eliminare solo i tavoli che hai creato',
+          pl: 'Możesz usuwać tylko własne stoły',
+          pt: 'Você só pode excluir mesas que criou',
+          th: 'คุณสามารถลบได้เฉพาะโต๊ะที่คุณสร้าง',
+          id: 'Anda hanya dapat menghapus meja yang Anda buat',
+          hi: 'आप केवल अपनी बनाई टेबल ही हटा सकते हैं',
+          bn: 'আপনি শুধুমাত্র নিজের তৈরি টেবিল মুছতে পারবেন',
+        ),
+      );
       return;
     }
 
     await tablesRef.doc(tableId).delete();
+
+    _showSnack(
+      tr(
+        context,
+        'Table deleted',
+        zhTw: '牌桌已刪除',
+        zhCn: '牌桌已删除',
+        ko: '테이블이 삭제되었습니다',
+        ja: 'テーブルが削除されました',
+        de: 'Tisch gelöscht',
+        fr: 'Table supprimée',
+        ar: 'تم حذف الطاولة',
+        ru: 'Стол удалён',
+        trk: 'Masa silindi',
+        es: 'Mesa eliminada',
+        it: 'Tavolo eliminato',
+        pl: 'Stół usunięty',
+        pt: 'Mesa excluída',
+        th: 'ลบโต๊ะแล้ว',
+        id: 'Meja berhasil dihapus',
+        hi: 'टेबल हटा दी गई',
+        bn: 'টেবিল মুছে ফেলা হয়েছে',
+      ),
+    );
   }
 
   void _openTable(String tableId, TableData table) async {
@@ -5369,41 +8872,219 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('Create Table'),
+              title: Text(
+                tr(
+                  context,
+                  'Create Table',
+                  zhTw: '建立桌子',
+                  zhCn: '创建桌子',
+                  ko: '테이블 생성',
+                  ja: 'テーブル作成',
+                  de: 'Tisch erstellen',
+                  fr: 'Créer une table',
+                  ar: 'إنشاء طاولة',
+                  ru: 'Создать стол',
+                  trk: 'Masa Oluştur',
+                  es: 'Crear mesa',
+                  it: 'Crea tavolo',
+                  pl: 'Utwórz stół',
+                  pt: 'Criar mesa',
+                  th: 'สร้างโต๊ะ',
+                  id: 'Buat meja',
+                  hi: 'टेबल बनाएं',
+                  bn: 'টেবিল তৈরি করুন',
+                ),
+              ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     TextField(
                       controller: tableNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Table Name',
+                      decoration: InputDecoration(
+                        labelText: tr(
+                          context,
+                          'Table Name',
+                          zhTw: '桌子名稱',
+                          zhCn: '桌子名称',
+                          ko: '테이블 이름',
+                          ja: 'テーブル名',
+                          de: 'Tischname',
+                          fr: 'Nom de la table',
+                          ar: 'اسم الطاولة',
+                          ru: 'Название стола',
+                          trk: 'Masa Adı',
+                          es: 'Nombre de la mesa',
+                          it: 'Nome tavolo',
+                          pl: 'Nazwa stołu',
+                          pt: 'Nome da mesa',
+                          th: 'ชื่อโต๊ะ',
+                          id: 'Nama meja',
+                          hi: 'टेबल नाम',
+                          bn: 'টেবিলের নাম',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     TextField(
                       controller: locationController,
-                      decoration: const InputDecoration(
-                        labelText: 'Location',
+                      decoration: InputDecoration(
+                        labelText: tr(
+                          context,
+                          'Location',
+                          zhTw: '地點',
+                          zhCn: '地点',
+                          ko: '위치',
+                          ja: '場所',
+                          de: 'Ort',
+                          fr: 'Lieu',
+                          ar: 'الموقع',
+                          ru: 'Место',
+                          trk: 'Konum',
+                          es: 'Ubicación',
+                          it: 'Posizione',
+                          pl: 'Lokalizacja',
+                          pt: 'Localização',
+                          th: 'สถานที่',
+                          id: 'Lokasi',
+                          hi: 'स्थान',
+                          bn: 'অবস্থান',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     TextField(
                       controller: stakesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Stakes',
-                        hintText: 'ex: 1/3 NLH',
+                      decoration: InputDecoration(
+                        labelText: tr(
+                          context,
+                          'Stakes',
+                          zhTw: '盲注',
+                          zhCn: '盲注',
+                          ko: '블라인드',
+                          ja: 'ブラインド',
+                          de: 'Blinds',
+                          fr: 'Blindes',
+                          ar: 'الرهانات',
+                          ru: 'Блайнды',
+                          trk: 'Bahis',
+                          es: 'Ciegas',
+                          it: 'Buio',
+                          pl: 'Stawki',
+                          pt: 'Blinds',
+                          th: 'บลายด์',
+                          id: 'Blind',
+                          hi: 'ब्लाइंड',
+                          bn: 'ব্লাইন্ড',
+                        ),
+                        hintText: tr(
+                          context,
+                          'ex: 1/3 NLH',
+                          zhTw: '例如：1/3 NLH',
+                          zhCn: '例如：1/3 NLH',
+                          ko: '예: 1/3 NLH',
+                          ja: '例：1/3 NLH',
+                          de: 'z. B.: 1/3 NLH',
+                          fr: 'ex. : 1/3 NLH',
+                          ar: 'مثال: 1/3 NLH',
+                          ru: 'например: 1/3 NLH',
+                          trk: 'örn: 1/3 NLH',
+                          es: 'ej.: 1/3 NLH',
+                          it: 'es: 1/3 NLH',
+                          pl: 'np.: 1/3 NLH',
+                          pt: 'ex.: 1/3 NLH',
+                          th: 'เช่น: 1/3 NLH',
+                          id: 'cth: 1/3 NLH',
+                          hi: 'उदा: 1/3 NLH',
+                          bn: 'যেমন: 1/3 NLH',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     DropdownButtonFormField<int>(
                       initialValue: selectedSeatCount,
-                      decoration: const InputDecoration(
-                        labelText: 'Player Seats',
+                      decoration: InputDecoration(
+                        labelText: tr(
+                          context,
+                          'Player Seats',
+                          zhTw: '玩家座位',
+                          zhCn: '玩家座位',
+                          ko: '플레이어 좌석',
+                          ja: 'プレイヤー席',
+                          de: 'Spielersitze',
+                          fr: 'Places des joueurs',
+                          ar: 'مقاعد اللاعبين',
+                          ru: 'Места игроков',
+                          trk: 'Oyuncu Koltukları',
+                          es: 'Asientos de jugadores',
+                          it: 'Posti giocatori',
+                          pl: 'Miejsca graczy',
+                          pt: 'Assentos dos jogadores',
+                          th: 'ที่นั่งผู้เล่น',
+                          id: 'Kursi pemain',
+                          hi: 'प्लेयर सीट्स',
+                          bn: 'প্লেয়ার সিট',
+                        ),
                       ),
-                      items: const [
-                        DropdownMenuItem(value: 9, child: Text('9 Players')),
-                        DropdownMenuItem(value: 10, child: Text('10 Players')),
+                      items: [
+                        DropdownMenuItem(
+                          value: 9,
+                          child: Text(
+                            tr(
+                              context,
+                              '9 Players',
+                              zhTw: '9人桌',
+                              zhCn: '9人桌',
+                              ko: '9인 테이블',
+                              ja: '9人テーブル',
+                              de: '9 Spieler',
+                              fr: '9 joueurs',
+                              ar: '9 لاعبين',
+                              ru: '9 игроков',
+                              trk: '9 Oyuncu',
+                              es: '9 jugadores',
+                              it: '9 giocatori',
+                              pl: '9 graczy',
+                              pt: '9 jogadores',
+                              th: 'ผู้เล่น 9 คน',
+                              id: '9 pemain',
+                              hi: '9 खिलाड़ी',
+                              bn: '9 জন খেলোয়াড়',
+                            ),
+                          ),
+                        ),
+                        DropdownMenuItem(
+                          value: 10,
+                          child: Text(
+                            tr(
+                              context,
+                              '10 Players',
+                              zhTw: '10人桌',
+                              zhCn: '10人桌',
+                              ko: '10인 테이블',
+                              ja: '10人テーブル',
+                              de: '10 Spieler',
+                              fr: '10 joueurs',
+                              ar: '10 لاعبين',
+                              ru: '10 игроков',
+                              trk: '10 Oyuncu',
+                              es: '10 jugadores',
+                              it: '10 giocatori',
+                              pl: '10 graczy',
+                              pt: '10 jogadores',
+                              th: 'ผู้เล่น 10 คน',
+                              id: '10 pemain',
+                              hi: '10 खिलाड़ी',
+                              bn: '10 জন খেলোয়াড়',
+                            ),
+                          ),
+                        ),
                       ],
                       onChanged: (value) {
                         if (value != null) {
@@ -5413,10 +9094,34 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         }
                       },
                     ),
+
                     const SizedBox(height: 12),
+
                     ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Date & Time'),
+                      title: Text(
+                        tr(
+                          context,
+                          'Date & Time',
+                          zhTw: '日期與時間',
+                          zhCn: '日期与时间',
+                          ko: '날짜 및 시간',
+                          ja: '日付と時間',
+                          de: 'Datum & Uhrzeit',
+                          fr: 'Date et heure',
+                          ar: 'التاريخ والوقت',
+                          ru: 'Дата и время',
+                          trk: 'Tarih ve Saat',
+                          es: 'Fecha y hora',
+                          it: 'Data e ora',
+                          pl: 'Data i godzina',
+                          pt: 'Data e hora',
+                          th: 'วันที่และเวลา',
+                          id: 'Tanggal & waktu',
+                          hi: 'तारीख और समय',
+                          bn: 'তারিখ ও সময়',
+                        ),
+                      ),
                       subtitle: Text(
                         '${selectedDateTime.year}/${selectedDateTime.month}/${selectedDateTime.day} '
                         '${selectedDateTime.hour}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
@@ -5460,12 +9165,35 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () {
                     final tableName = tableNameController.text.trim();
                     if (tableName.isEmpty) return;
+
                     Navigator.pop(
                       context,
                       TableData(
@@ -5484,7 +9212,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                       ),
                     );
                   },
-                  child: const Text('Create'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Create',
+                      zhTw: '建立',
+                      zhCn: '创建',
+                      ko: '생성',
+                      ja: '作成',
+                      de: 'Erstellen',
+                      fr: 'Créer',
+                      ar: 'إنشاء',
+                      ru: 'Создать',
+                      trk: 'Oluştur',
+                      es: 'Crear',
+                      it: 'Crea',
+                      pl: 'Utwórz',
+                      pt: 'Criar',
+                      th: 'สร้าง',
+                      id: 'Buat',
+                      hi: 'बनाएं',
+                      bn: 'তৈরি করুন',
+                    ),
+                  ),
                 ),
               ],
             );
@@ -5504,7 +9254,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      _showSnack('Please login again');
+      _showSnack(
+        tr(
+          context,
+          'Please login again',
+          zhTw: '請重新登入',
+          zhCn: '请重新登录',
+          ko: '다시 로그인해 주세요',
+          ja: 'もう一度ログインしてください',
+          de: 'Bitte melde dich erneut an',
+          fr: 'Veuillez vous reconnecter',
+          ar: 'يرجى تسجيل الدخول مرة أخرى',
+          ru: 'Пожалуйста, войдите снова',
+          trk: 'Lütfen tekrar giriş yapın',
+          es: 'Inicia sesión de nuevo',
+          it: 'Accedi di nuovo',
+          pl: 'Zaloguj się ponownie',
+          pt: 'Faça login novamente',
+          th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+          id: 'Silakan login lagi',
+          hi: 'कृपया फिर से लॉगिन करें',
+          bn: 'দয়া করে আবার লগইন করুন',
+        ),
+      );
       return;
     }
 
@@ -5520,7 +9292,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       );
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        _showSnack('Failed to create checkout: ${response.body}');
+        _showSnack(
+          '${tr(
+            context,
+            'Failed to create checkout',
+            zhTw: '建立付款頁面失敗',
+            zhCn: '创建付款页面失败',
+            ko: '결제 페이지 생성에 실패했습니다',
+            ja: '決済ページの作成に失敗しました',
+            de: 'Checkout konnte nicht erstellt werden',
+            fr: 'Impossible de créer le paiement',
+            ar: 'فشل إنشاء صفحة الدفع',
+            ru: 'Не удалось создать страницу оплаты',
+            trk: 'Ödeme sayfası oluşturulamadı',
+            es: 'No se pudo crear el pago',
+            it: 'Impossibile creare il checkout',
+            pl: 'Nie udało się utworzyć płatności',
+            pt: 'Falha ao criar checkout',
+            th: 'สร้างหน้าชำระเงินไม่สำเร็จ',
+            id: 'Gagal membuat checkout',
+            hi: 'चेकआउट बनाने में विफल',
+            bn: 'চেকআউট তৈরি করা যায়নি',
+          )}: ${response.body}',
+        );
         return;
       }
 
@@ -5528,7 +9322,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       final checkoutUrl = (data['url'] ?? '').toString();
 
       if (checkoutUrl.isEmpty) {
-        _showSnack('Checkout URL is empty');
+        _showSnack(
+          tr(
+            context,
+            'Checkout URL is empty',
+            zhTw: '付款網址是空的',
+            zhCn: '付款网址是空的',
+            ko: '결제 URL이 비어 있습니다',
+            ja: '決済URLが空です',
+            de: 'Checkout-URL ist leer',
+            fr: 'L’URL de paiement est vide',
+            ar: 'رابط الدفع فارغ',
+            ru: 'URL оплаты пустой',
+            trk: 'Ödeme URL boş',
+            es: 'La URL de pago está vacía',
+            it: 'L’URL di checkout è vuoto',
+            pl: 'Adres URL płatności jest pusty',
+            pt: 'A URL de checkout está vazia',
+            th: 'URL ชำระเงินว่างเปล่า',
+            id: 'URL checkout kosong',
+            hi: 'Checkout URL खाली है',
+            bn: 'Checkout URL খালি',
+          ),
+        );
         return;
       }
 
@@ -5538,11 +9354,55 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       );
 
       if (!ok) {
-        _showSnack('Cannot open payment page');
+        _showSnack(
+          tr(
+            context,
+            'Cannot open payment page',
+            zhTw: '無法開啟付款頁面',
+            zhCn: '无法打开付款页面',
+            ko: '결제 페이지를 열 수 없습니다',
+            ja: '支払いページを開けません',
+            de: 'Zahlungsseite kann nicht geöffnet werden',
+            fr: 'Impossible d’ouvrir la page de paiement',
+            ar: 'لا يمكن فتح صفحة الدفع',
+            ru: 'Не удаётся открыть страницу оплаты',
+            trk: 'Ödeme sayfası açılamıyor',
+            es: 'No se puede abrir la página de pago',
+            it: 'Impossibile aprire la pagina di pagamento',
+            pl: 'Nie można otworzyć strony płatności',
+            pt: 'Não foi possível abrir a página de pagamento',
+            th: 'ไม่สามารถเปิดหน้าชำระเงินได้',
+            id: 'Tidak dapat membuka halaman pembayaran',
+            hi: 'भुगतान पेज नहीं खुल सका',
+            bn: 'পেমেন্ট পেজ খোলা যায়নি',
+          ),
+        );
       }
     } catch (e) {
-      print('openStripeCheckoutFromFunction error: $e');
-      _showSnack('Failed to open payment page: $e');
+      debugPrint('openStripeCheckoutFromFunction error: $e');
+      _showSnack(
+        '${tr(
+          context,
+          'Failed to open payment page',
+          zhTw: '開啟付款頁面失敗',
+          zhCn: '打开付款页面失败',
+          ko: '결제 페이지를 여는 데 실패했습니다',
+          ja: '支払いページを開けませんでした',
+          de: 'Zahlungsseite konnte nicht geöffnet werden',
+          fr: 'Impossible d’ouvrir la page de paiement',
+          ar: 'فشل فتح صفحة الدفع',
+          ru: 'Не удалось открыть страницу оплаты',
+          trk: 'Ödeme sayfası açılamadı',
+          es: 'No se pudo abrir la página de pago',
+          it: 'Impossibile aprire la pagina di pagamento',
+          pl: 'Nie udało się otworzyć strony płatności',
+          pt: 'Falha ao abrir a página de pagamento',
+          th: 'เปิดหน้าชำระเงินไม่สำเร็จ',
+          id: 'Gagal membuka halaman pembayaran',
+          hi: 'भुगतान पेज खोलने में विफल',
+          bn: 'পেমেন্ট পেজ খোলা যায়নি',
+        )}: $e',
+      );
     }
   }
 
@@ -5560,7 +9420,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           type: ApplePurchaseType.host,
         );
 
-        _showSnack('Host Pro activated');
+        _showSnack(
+          tr(
+            context,
+            'Host Pro activated',
+            zhTw: 'Host Pro 已啟用',
+            zhCn: 'Host Pro 已启用',
+            ko: 'Host Pro가 활성화되었습니다',
+            ja: 'Host Pro が有効になりました',
+            de: 'Host Pro aktiviert',
+            fr: 'Host Pro activé',
+            ar: 'تم تفعيل Host Pro',
+            ru: 'Host Pro активирован',
+            trk: 'Host Pro etkinleştirildi',
+            es: 'Host Pro activado',
+            it: 'Host Pro attivato',
+            pl: 'Host Pro aktywowany',
+            pt: 'Host Pro ativado',
+            th: 'เปิดใช้งาน Host Pro แล้ว',
+            id: 'Host Pro diaktifkan',
+            hi: 'Host Pro सक्रिय हो गया',
+            bn: 'Host Pro চালু হয়েছে',
+          ),
+        );
 
         if (mounted) {
           await Future.delayed(const Duration(milliseconds: 500));
@@ -5584,7 +9466,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           type: ApplePurchaseType.stats,
         );
 
-        _showSnack('Stats Pro activated');
+        _showSnack(
+          tr(
+            context,
+            'Stats Pro activated',
+            zhTw: 'Stats Pro 已啟用',
+            zhCn: 'Stats Pro 已启用',
+            ko: 'Stats Pro가 활성화되었습니다',
+            ja: 'Stats Pro が有効になりました',
+            de: 'Stats Pro aktiviert',
+            fr: 'Stats Pro activé',
+            ar: 'تم تفعيل Stats Pro',
+            ru: 'Stats Pro активирован',
+            trk: 'Stats Pro etkinleştirildi',
+            es: 'Stats Pro activado',
+            it: 'Stats Pro attivato',
+            pl: 'Stats Pro aktywowany',
+            pt: 'Stats Pro ativado',
+            th: 'เปิดใช้งาน Stats Pro แล้ว',
+            id: 'Stats Pro diaktifkan',
+            hi: 'Stats Pro सक्रिय हो गया',
+            bn: 'Stats Pro চালু হয়েছে',
+          ),
+        );
 
         if (mounted) {
           setState(() {});
@@ -5664,7 +9568,49 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isHostView ? 'Host Dashboard' : 'Player Lobby',
+            isHostView
+                ? tr(
+                    context,
+                    'Host Dashboard',
+                    zhTw: '房主控制台',
+                    zhCn: '房主控制台',
+                    ko: '호스트 대시보드',
+                    ja: 'ホストダッシュボード',
+                    de: 'Host-Dashboard',
+                    fr: 'Tableau de bord hôte',
+                    ar: 'لوحة تحكم المضيف',
+                    ru: 'Панель хоста',
+                    trk: 'Host Paneli',
+                    es: 'Panel de anfitrión',
+                    it: 'Dashboard host',
+                    pl: 'Panel gospodarza',
+                    pt: 'Painel do anfitrião',
+                    th: 'แดชบอร์ดโฮสต์',
+                    id: 'Dasbor host',
+                    hi: 'Host डैशबोर्ड',
+                    bn: 'Host ড্যাশবোর্ড',
+                  )
+                : tr(
+                    context,
+                    'Player Lobby',
+                    zhTw: '玩家大廳',
+                    zhCn: '玩家大厅',
+                    ko: '플레이어 로비',
+                    ja: 'プレイヤーロビー',
+                    de: 'Spieler-Lobby',
+                    fr: 'Salon joueur',
+                    ar: 'ردهة اللاعبين',
+                    ru: 'Лобби игрока',
+                    trk: 'Oyuncu Lobisi',
+                    es: 'Lobby de jugadores',
+                    it: 'Lobby giocatore',
+                    pl: 'Lobby gracza',
+                    pt: 'Lobby do jogador',
+                    th: 'ล็อบบี้ผู้เล่น',
+                    id: 'Lobi pemain',
+                    hi: 'Player लॉबी',
+                    bn: 'Player লবি',
+                  ),
             style: const TextStyle(
               color: Colors.white,
               fontSize: 26,
@@ -5674,8 +9620,48 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           const SizedBox(height: 8),
           Text(
             isHostView
-                ? 'Create tables, manage reservations, and control table details.'
-                : 'Browse tables, join a seat, and track available games.',
+                ? tr(
+                    context,
+                    'Create tables, manage reservations, and control table details.',
+                    zhTw: '建立桌子、管理預約，並控制桌子細節。',
+                    zhCn: '创建桌子、管理预约，并控制桌子细节。',
+                    ko: '테이블을 만들고 예약을 관리하며 테이블 정보를 조정하세요.',
+                    ja: 'テーブルを作成し、予約を管理し、テーブル詳細を操作できます。',
+                    de: 'Erstelle Tische, verwalte Reservierungen und kontrolliere Tischdetails.',
+                    fr: 'Créez des tables, gérez les réservations et contrôlez les détails.',
+                    ar: 'أنشئ الطاولات، وأدر الحجوزات، وتحكم في تفاصيل الطاولة.',
+                    ru: 'Создавайте столы, управляйте бронями и настройками стола.',
+                    trk: 'Masalar oluşturun, rezervasyonları yönetin ve masa ayrıntılarını kontrol edin.',
+                    es: 'Crea mesas, administra reservas y controla los detalles de la mesa.',
+                    it: 'Crea tavoli, gestisci prenotazioni e controlla i dettagli.',
+                    pl: 'Twórz stoły, zarządzaj rezerwacjami i kontroluj szczegóły stołu.',
+                    pt: 'Crie mesas, gerencie reservas e controle os detalhes da mesa.',
+                    th: 'สร้างโต๊ะ จัดการการจอง และควบคุมรายละเอียดโต๊ะ',
+                    id: 'Buat meja, kelola reservasi, dan atur detail meja.',
+                    hi: 'टेबल बनाएं, रिज़र्वेशन मैनेज करें और टेबल की जानकारी नियंत्रित करें।',
+                    bn: 'টেবিল তৈরি করুন, রিজার্ভেশন পরিচালনা করুন এবং টেবিলের বিস্তারিত নিয়ন্ত্রণ করুন।',
+                  )
+                : tr(
+                    context,
+                    'Browse tables, join a seat, and track available games.',
+                    zhTw: '瀏覽桌子、加入座位，並追蹤可用牌局。',
+                    zhCn: '浏览桌子、加入座位，并追踪可用牌局。',
+                    ko: '테이블을 둘러보고 좌석에 참여하며 가능한 게임을 확인하세요.',
+                    ja: 'テーブルを閲覧し、席に参加して、利用可能なゲームを確認できます。',
+                    de: 'Durchsuche Tische, nimm einen Platz ein und verfolge verfügbare Spiele.',
+                    fr: 'Parcourez les tables, prenez une place et suivez les parties disponibles.',
+                    ar: 'تصفح الطاولات، وانضم إلى مقعد، وتابع الألعاب المتاحة.',
+                    ru: 'Просматривайте столы, занимайте места и отслеживайте доступные игры.',
+                    trk: 'Masalara göz atın, bir koltuğa katılın ve uygun oyunları takip edin.',
+                    es: 'Explora mesas, únete a un asiento y sigue los juegos disponibles.',
+                    it: 'Sfoglia i tavoli, prendi un posto e controlla le partite disponibili.',
+                    pl: 'Przeglądaj stoły, zajmuj miejsca i śledź dostępne gry.',
+                    pt: 'Veja mesas, entre em um assento e acompanhe jogos disponíveis.',
+                    th: 'ดูโต๊ะ เข้าร่วมที่นั่ง และติดตามเกมที่ว่าง',
+                    id: 'Jelajahi meja, pilih kursi, dan pantau game yang tersedia.',
+                    hi: 'टेबल देखें, सीट जॉइन करें और उपलब्ध गेम ट्रैक करें।',
+                    bn: 'টেবিল দেখুন, সিটে যোগ দিন এবং উপলব্ধ গেম ট্র্যাক করুন।',
+                  ),
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 14,
@@ -5753,74 +9739,170 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
             const PopupMenuDivider(),
 
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'edit_profile',
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.edit_outlined,
                     size: 18,
                     color: Colors.black,
                   ),
-                  SizedBox(width: 8),
+
+                  const SizedBox(width: 8),
+
                   Text(
-                    'Edit Profile',
-                    style: TextStyle(color: Colors.black),
+                    tr(
+                      context,
+                      'Edit Profile',
+                      zhTw: '編輯個人資料',
+                      zhCn: '编辑个人资料',
+                      ko: '프로필 수정',
+                      ja: 'プロフィール編集',
+                      de: 'Profil bearbeiten',
+                      fr: 'Modifier le profil',
+                      ar: 'تعديل الملف الشخصي',
+                      ru: 'Редактировать профиль',
+                      trk: 'Profili Düzenle',
+                      es: 'Editar perfil',
+                      it: 'Modifica profilo',
+                      pl: 'Edytuj profil',
+                      pt: 'Editar perfil',
+                      th: 'แก้ไขโปรไฟล์',
+                      id: 'Edit profil',
+                      hi: 'प्रोफ़ाइल संपादित करें',
+                      bn: 'প্রোফাইল সম্পাদনা',
+                    ),
+                    style: const TextStyle(
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),
             ),
 
             if (isHost)
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'grant_player_access',
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.badge_outlined,
                       size: 18,
                       color: Colors.black,
                     ),
-                    SizedBox(width: 8),
+
+                    const SizedBox(width: 8),
+
                     Text(
-                      'Add Player by ID',
-                      style: TextStyle(color: Colors.black),
+                      tr(
+                        context,
+                        'Add Player by ID',
+                        zhTw: '用玩家 ID 新增玩家',
+                        zhCn: '用玩家 ID 添加玩家',
+                        ko: '플레이어 ID로 추가',
+                        ja: 'プレイヤーIDで追加',
+                        de: 'Spieler per ID hinzufügen',
+                        fr: 'Ajouter un joueur par ID',
+                        ar: 'إضافة لاعب باستخدام المعرّف',
+                        ru: 'Добавить игрока по ID',
+                        trk: 'Oyuncu ID ile ekle',
+                        es: 'Agregar jugador por ID',
+                        it: 'Aggiungi giocatore tramite ID',
+                        pl: 'Dodaj gracza przez ID',
+                        pt: 'Adicionar jogador por ID',
+                        th: 'เพิ่มผู้เล่นด้วย ID',
+                        id: 'Tambah pemain dengan ID',
+                        hi: 'Player ID से खिलाड़ी जोड़ें',
+                        bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
+                      ),
+                      style: const TextStyle(
+                        color: Colors.black,
+                      ),
                     ),
                   ],
                 ),
               ),
 
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'settings',
               child: Row(
                 children: [
-                  Icon(
-                    Icons.settings_outlined,
+                  const Icon(
+                    Icons.settings,
                     size: 18,
                     color: Colors.black,
                   ),
-                  SizedBox(width: 8),
+
+                  const SizedBox(width: 8),
+
                   Text(
-                    'Settings',
-                    style: TextStyle(color: Colors.black),
+                    tr(
+                      context,
+                      'Settings',
+                      zhTw: '設定',
+                      zhCn: '设置',
+                      ko: '설정',
+                      ja: '設定',
+                      de: 'Einstellungen',
+                      fr: 'Paramètres',
+                      ar: 'الإعدادات',
+                      ru: 'Настройки',
+                      trk: 'Ayarlar',
+                      es: 'Configuración',
+                      it: 'Impostazioni',
+                      pl: 'Ustawienia',
+                      pt: 'Configurações',
+                      th: 'ตั้งค่า',
+                      id: 'Pengaturan',
+                      hi: 'सेटिंग्स',
+                      bn: 'সেটিংস',
+                    ),
+                    style: const TextStyle(
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),
             ),
 
-            const PopupMenuItem<String>(
+            PopupMenuItem<String>(
               value: 'logout',
               child: Row(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.logout,
                     size: 18,
                     color: Colors.black,
                   ),
-                  SizedBox(width: 8),
+
+                  const SizedBox(width: 8),
+
                   Text(
-                    'Logout',
-                    style: TextStyle(color: Colors.black),
+                    tr(
+                      context,
+                      'Logout',
+                      zhTw: '登出',
+                      zhCn: '登出',
+                      ko: '로그아웃',
+                      ja: 'ログアウト',
+                      de: 'Abmelden',
+                      fr: 'Déconnexion',
+                      ar: 'تسجيل الخروج',
+                      ru: 'Выйти',
+                      trk: 'Çıkış Yap',
+                      es: 'Cerrar sesión',
+                      it: 'Disconnetti',
+                      pl: 'Wyloguj',
+                      pt: 'Sair',
+                      th: 'ออกจากระบบ',
+                      id: 'Keluar',
+                      hi: 'लॉगआउट',
+                      bn: 'লগআউট',
+                    ),
+                    style: const TextStyle(
+                      color: Colors.black,
+                    ),
                   ),
                 ],
               ),
@@ -5951,10 +10033,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     required int index,
   }) {
     final bool isMyTable = _canManageTable(table);
-  
+
     final takenCount = table.seats.where((seat) => !seat.isOpen).length;
     final openCount = table.playerSeatCount - takenCount;
-  
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -6003,7 +10085,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         ),
                       ),
                     ),
+
                     const SizedBox(width: 16),
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -6016,7 +10100,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                               color: Color(0xFF111827),
                             ),
                           ),
+
                           const SizedBox(height: 12),
+
                           Wrap(
                             spacing: 8,
                             runSpacing: 8,
@@ -6026,27 +10112,92 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                 label: _formatDateText(table.dateTime),
                                 color: Colors.blue,
                               ),
+
                               if (table.stakes.isNotEmpty)
                                 _buildStatChip(
                                   icon: Icons.casino,
                                   label: table.stakes,
                                   color: Colors.orange,
                                 ),
+
                               _buildStatChip(
                                 icon: Icons.event_seat,
-                                label: '${table.playerSeatCount} seats',
+                                label: tr(
+                                  context,
+                                  '${table.playerSeatCount} seats',
+                                  zhTw: '${table.playerSeatCount} 個座位',
+                                  zhCn: '${table.playerSeatCount} 个座位',
+                                  ko: '${table.playerSeatCount} 좌석',
+                                  ja: '${table.playerSeatCount}席',
+                                  de: '${table.playerSeatCount} Sitze',
+                                  fr: '${table.playerSeatCount} places',
+                                  ar: '${table.playerSeatCount} مقاعد',
+                                  ru: '${table.playerSeatCount} мест',
+                                  trk: '${table.playerSeatCount} koltuk',
+                                  es: '${table.playerSeatCount} asientos',
+                                  it: '${table.playerSeatCount} posti',
+                                  pl: '${table.playerSeatCount} miejsc',
+                                  pt: '${table.playerSeatCount} assentos',
+                                  th: '${table.playerSeatCount} ที่นั่ง',
+                                  id: '${table.playerSeatCount} kursi',
+                                  hi: '${table.playerSeatCount} सीटें',
+                                  bn: '${table.playerSeatCount} সিট',
+                                ),
                                 color: Colors.black87,
                               ),
+
                               _buildStatChip(
                                 icon: Icons.check_circle,
-                                label: 'Open $openCount',
+                                label: tr(
+                                  context,
+                                  'Open $openCount',
+                                  zhTw: '空位 $openCount',
+                                  zhCn: '空位 $openCount',
+                                  ko: '빈자리 $openCount',
+                                  ja: '空席 $openCount',
+                                  de: '$openCount frei',
+                                  fr: '$openCount libres',
+                                  ar: '$openCount متاح',
+                                  ru: 'Свободно $openCount',
+                                  trk: '$openCount boş',
+                                  es: '$openCount libres',
+                                  it: '$openCount liberi',
+                                  pl: '$openCount wolne',
+                                  pt: '$openCount livres',
+                                  th: 'ว่าง $openCount',
+                                  id: '$openCount kosong',
+                                  hi: '$openCount खाली',
+                                  bn: '$openCount খালি',
+                                ),
                                 color: Colors.green,
                               ),
+
                               _buildStatChip(
                                 icon: Icons.person_remove_alt_1,
-                                label: 'Taken $takenCount',
+                                label: tr(
+                                  context,
+                                  'Taken $takenCount',
+                                  zhTw: '已坐 $takenCount',
+                                  zhCn: '已坐 $takenCount',
+                                  ko: '사용 중 $takenCount',
+                                  ja: '使用中 $takenCount',
+                                  de: '$takenCount besetzt',
+                                  fr: '$takenCount occupées',
+                                  ar: '$takenCount مشغول',
+                                  ru: 'Занято $takenCount',
+                                  trk: '$takenCount dolu',
+                                  es: '$takenCount ocupados',
+                                  it: '$takenCount occupati',
+                                  pl: '$takenCount zajęte',
+                                  pt: '$takenCount ocupados',
+                                  th: 'ถูกใช้ $takenCount',
+                                  id: '$takenCount terisi',
+                                  hi: '$takenCount भरी हुई',
+                                  bn: '$takenCount দখল হয়েছে',
+                                ),
                                 color: Colors.red,
                               ),
+
                               if (table.location.isNotEmpty)
                                 _buildStatChip(
                                   icon: Icons.location_on,
@@ -6055,11 +10206,53 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                 ),
                             ],
                           ),
+
                           const SizedBox(height: 12),
+
                           Text(
                             table.dealerName?.trim().isNotEmpty == true
-                                ? 'Dealer: ${table.dealerName}'
-                                : 'Dealer: Not set',
+                                ? tr(
+                                    context,
+                                    'Dealer: ${table.dealerName}',
+                                    zhTw: 'Dealer：${table.dealerName}',
+                                    zhCn: 'Dealer：${table.dealerName}',
+                                    ko: '딜러: ${table.dealerName}',
+                                    ja: 'ディーラー: ${table.dealerName}',
+                                    de: 'Dealer: ${table.dealerName}',
+                                    fr: 'Dealer : ${table.dealerName}',
+                                    ar: 'الموزع: ${table.dealerName}',
+                                    ru: 'Дилер: ${table.dealerName}',
+                                    trk: 'Dağıtıcı: ${table.dealerName}',
+                                    es: 'Dealer: ${table.dealerName}',
+                                    it: 'Dealer: ${table.dealerName}',
+                                    pl: 'Dealer: ${table.dealerName}',
+                                    pt: 'Dealer: ${table.dealerName}',
+                                    th: 'ดีลเลอร์: ${table.dealerName}',
+                                    id: 'Dealer: ${table.dealerName}',
+                                    hi: 'डीलर: ${table.dealerName}',
+                                    bn: 'ডিলার: ${table.dealerName}',
+                                  )
+                                : tr(
+                                    context,
+                                    'Dealer: Not set',
+                                    zhTw: 'Dealer：未設定',
+                                    zhCn: 'Dealer：未设置',
+                                    ko: '딜러: 설정 안 됨',
+                                    ja: 'ディーラー: 未設定',
+                                    de: 'Dealer: Nicht festgelegt',
+                                    fr: 'Dealer : Non défini',
+                                    ar: 'الموزع: غير محدد',
+                                    ru: 'Дилер: не назначен',
+                                    trk: 'Dağıtıcı: Ayarlanmadı',
+                                    es: 'Dealer: No establecido',
+                                    it: 'Dealer: Non impostato',
+                                    pl: 'Dealer: Nie ustawiono',
+                                    pt: 'Dealer: Não definido',
+                                    th: 'ดีลเลอร์: ยังไม่ได้ตั้งค่า',
+                                    id: 'Dealer: Belum diatur',
+                                    hi: 'डीलर: सेट नहीं',
+                                    bn: 'ডিলার: সেট করা হয়নি',
+                                  ),
                             style: const TextStyle(
                               color: Colors.black54,
                               fontWeight: FontWeight.w700,
@@ -6074,6 +10267,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             ),
             
             const SizedBox(width: 12),
+
             isHost
                 ? Builder(
                     builder: (menuContext) {
@@ -6082,14 +10276,18 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () async {
-                            final overlay =
-                                Overlay.of(menuContext).context.findRenderObject() as RenderBox;
+                            final overlay = Overlay.of(menuContext)
+                                .context
+                                .findRenderObject() as RenderBox;
                             final button =
                                 menuContext.findRenderObject() as RenderBox;
-            
+
                             final position = RelativeRect.fromRect(
                               Rect.fromPoints(
-                                button.localToGlobal(Offset.zero, ancestor: overlay),
+                                button.localToGlobal(
+                                  Offset.zero,
+                                  ancestor: overlay,
+                                ),
                                 button.localToGlobal(
                                   button.size.bottomRight(Offset.zero),
                                   ancestor: overlay,
@@ -6097,28 +10295,94 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                               ),
                               Offset.zero & overlay.size,
                             );
-            
+
                             final value = await showMenu<String>(
                               context: menuContext,
                               position: position,
                               items: [
-                                const PopupMenuItem<String>(
+                                PopupMenuItem<String>(
                                   value: 'open',
-                                  child: Text('Open Table'),
+                                  child: Text(
+                                    tr(
+                                      context,
+                                      'Open Table',
+                                      zhTw: '開啟桌子',
+                                      zhCn: '打开桌子',
+                                      ko: '테이블 열기',
+                                      ja: 'テーブルを開く',
+                                      de: 'Tisch öffnen',
+                                      fr: 'Ouvrir la table',
+                                      ar: 'فتح الطاولة',
+                                      ru: 'Открыть стол',
+                                      trk: 'Masayı Aç',
+                                      es: 'Abrir mesa',
+                                      it: 'Apri tavolo',
+                                      pl: 'Otwórz stół',
+                                      pt: 'Abrir mesa',
+                                      th: 'เปิดโต๊ะ',
+                                      id: 'Buka meja',
+                                      hi: 'टेबल खोलें',
+                                      bn: 'টেবিল খুলুন',
+                                    ),
+                                  ),
                                 ),
                                 if (isMyTable || isSuperAdmin)
-                                  const PopupMenuItem<String>(
+                                  PopupMenuItem<String>(
                                     value: 'edit',
-                                    child: Text('Edit Table'),
+                                    child: Text(
+                                      tr(
+                                        context,
+                                        'Edit Table',
+                                        zhTw: '編輯桌子',
+                                        zhCn: '编辑桌子',
+                                        ko: '테이블 수정',
+                                        ja: 'テーブル編集',
+                                        de: 'Tisch bearbeiten',
+                                        fr: 'Modifier la table',
+                                        ar: 'تعديل الطاولة',
+                                        ru: 'Редактировать стол',
+                                        trk: 'Masayı Düzenle',
+                                        es: 'Editar mesa',
+                                        it: 'Modifica tavolo',
+                                        pl: 'Edytuj stół',
+                                        pt: 'Editar mesa',
+                                        th: 'แก้ไขโต๊ะ',
+                                        id: 'Edit meja',
+                                        hi: 'टेबल संपादित करें',
+                                        bn: 'টেবিল সম্পাদনা',
+                                      ),
+                                    ),
                                   ),
                                 if (isMyTable || isSuperAdmin)
-                                  const PopupMenuItem<String>(
+                                  PopupMenuItem<String>(
                                     value: 'delete',
-                                    child: Text('Delete Table'),
+                                    child: Text(
+                                      tr(
+                                        context,
+                                        'Delete Table',
+                                        zhTw: '刪除桌子',
+                                        zhCn: '删除桌子',
+                                        ko: '테이블 삭제',
+                                        ja: 'テーブル削除',
+                                        de: 'Tisch löschen',
+                                        fr: 'Supprimer la table',
+                                        ar: 'حذف الطاولة',
+                                        ru: 'Удалить стол',
+                                        trk: 'Masayı Sil',
+                                        es: 'Eliminar mesa',
+                                        it: 'Elimina tavolo',
+                                        pl: 'Usuń stół',
+                                        pt: 'Excluir mesa',
+                                        th: 'ลบโต๊ะ',
+                                        id: 'Hapus meja',
+                                        hi: 'टेबल हटाएं',
+                                        bn: 'টেবিল মুছুন',
+                                      ),
+                                    ),
                                   ),
                               ],
                             );
-            
+
                             if (value == 'open') {
                               _openTable(tableId, table);
                             } else if (value == 'edit') {
@@ -6178,38 +10442,162 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               size: 72,
               color: Colors.black38,
             ),
+
             const SizedBox(height: 14),
-            const Text(
-              'No tables yet',
-              style: TextStyle(
+
+            Text(
+              tr(
+                context,
+                'No tables yet',
+                zhTw: '目前還沒有桌子',
+                zhCn: '目前还没有桌子',
+                ko: '아직 테이블이 없습니다',
+                ja: 'まだテーブルがありません',
+                de: 'Noch keine Tische',
+                fr: 'Aucune table pour le moment',
+                ar: 'لا توجد طاولات بعد',
+                ru: 'Столов пока нет',
+                trk: 'Henüz masa yok',
+                es: 'Aún no hay mesas',
+                it: 'Ancora nessun tavolo',
+                pl: 'Nie ma jeszcze stołów',
+                pt: 'Ainda não há mesas',
+                th: 'ยังไม่มีโต๊ะ',
+                id: 'Belum ada meja',
+                hi: 'अभी कोई टेबल नहीं है',
+                bn: 'এখনও কোনো টেবিল নেই',
+              ),
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
               ),
             ),
+
             const SizedBox(height: 8),
 
             Text(
               isHost
                   ? (canCreateTables
-                      ? 'Tap the Add Table button to create your first poker table.'
-                      : 'Update payment to create a new table. You can still open and edit your existing tables.')
-                  : 'No tables are available right now.',
-            
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.black54,
-                            height: 1.45,
-                          ),
-                        ),
-                      ],
+                      ? tr(
+                          context,
+                          'Tap the Add Table button to create your first poker table.',
+                          zhTw: '點擊新增桌子按鈕來建立你的第一張撲克牌桌。',
+                          zhCn: '点击添加桌子按钮来创建你的第一张扑克桌。',
+                          ko: '테이블 추가 버튼을 눌러 첫 포커 테이블을 만드세요.',
+                          ja: '「テーブル追加」ボタンをタップして、最初のポーカーテーブルを作成してください。',
+                          de: 'Tippe auf „Tisch hinzufügen“, um deinen ersten Pokertisch zu erstellen.',
+                          fr: 'Appuyez sur le bouton Ajouter une table pour créer votre première table de poker.',
+                          ar: 'اضغط على زر إضافة طاولة لإنشاء أول طاولة بوكر لك.',
+                          ru: 'Нажмите кнопку добавления стола, чтобы создать свой первый покерный стол.',
+                          trk: 'İlk poker masanızı oluşturmak için Masa Ekle düğmesine dokunun.',
+                          es: 'Toca el botón Agregar mesa para crear tu primera mesa de póker.',
+                          it: 'Tocca il pulsante Aggiungi tavolo per creare il tuo primo tavolo da poker.',
+                          pl: 'Stuknij przycisk Dodaj stół, aby utworzyć pierwszy stół pokerowy.',
+                          pt: 'Toque no botão Adicionar mesa para criar sua primeira mesa de pôquer.',
+                          th: 'แตะปุ่มเพิ่มโต๊ะเพื่อสร้างโต๊ะโป๊กเกอร์แรกของคุณ',
+                          id: 'Ketuk tombol Tambah Meja untuk membuat meja poker pertama Anda.',
+                          hi: 'अपनी पहली पोकर टेबल बनाने के लिए Add Table बटन दबाएँ।',
+                          bn: 'আপনার প্রথম পোকার টেবিল তৈরি করতে Add Table বোতামে চাপুন।',
+                        )
+                      : tr(
+                          context,
+                          'Update payment to create a new table. You can still open and edit your existing tables.',
+                          zhTw: '請更新付款才能建立新桌子。你仍然可以開啟並編輯現有桌子。',
+                          zhCn: '请更新付款才能创建新桌子。你仍然可以打开并编辑现有桌子。',
+                          ko: '새 테이블을 만들려면 결제를 업데이트하세요. 기존 테이블은 계속 열고 수정할 수 있습니다.',
+                          ja: '新しいテーブルを作成するには支払いを更新してください。既存のテーブルは引き続き開いて編集できます。',
+                          de: 'Aktualisiere die Zahlung, um einen neuen Tisch zu erstellen. Bestehende Tische kannst du weiterhin öffnen und bearbeiten.',
+                          fr: 'Mettez à jour le paiement pour créer une nouvelle table. Vous pouvez toujours ouvrir et modifier vos tables existantes.',
+                          ar: 'حدّث الدفع لإنشاء طاولة جديدة. لا يزال بإمكانك فتح وتعديل طاولاتك الحالية.',
+                          ru: 'Обновите оплату, чтобы создать новый стол. Вы всё ещё можете открывать и редактировать существующие столы.',
+                          trk: 'Yeni bir masa oluşturmak için ödemeyi güncelleyin. Mevcut masalarınızı hâlâ açıp düzenleyebilirsiniz.',
+                          es: 'Actualiza el pago para crear una nueva mesa. Aún puedes abrir y editar tus mesas existentes.',
+                          it: 'Aggiorna il pagamento per creare un nuovo tavolo. Puoi ancora aprire e modificare i tavoli esistenti.',
+                          pl: 'Zaktualizuj płatność, aby utworzyć nowy stół. Nadal możesz otwierać i edytować istniejące stoły.',
+                          pt: 'Atualize o pagamento para criar uma nova mesa. Você ainda pode abrir e editar suas mesas existentes.',
+                          th: 'โปรดอัปเดตการชำระเงินเพื่อสร้างโต๊ะใหม่ คุณยังสามารถเปิดและแก้ไขโต๊ะเดิมได้',
+                          id: 'Perbarui pembayaran untuk membuat meja baru. Anda masih dapat membuka dan mengedit meja yang sudah ada.',
+                          hi: 'नई टेबल बनाने के लिए भुगतान अपडेट करें। आप अभी भी अपनी मौजूदा टेबल खोल और संपादित कर सकते हैं।',
+                          bn: 'নতুন টেবিল তৈরি করতে পেমেন্ট আপডেট করুন। আপনি এখনও আপনার বর্তমান টেবিল খুলতে এবং সম্পাদনা করতে পারবেন।',
+                        ))
+                  : tr(
+                      context,
+                      'No tables are available right now.',
+                      zhTw: '目前沒有可用的桌子。',
+                      zhCn: '目前没有可用的桌子。',
+                      ko: '현재 이용 가능한 테이블이 없습니다.',
+                      ja: '現在利用できるテーブルはありません。',
+                      de: 'Derzeit sind keine Tische verfügbar.',
+                      fr: 'Aucune table n’est disponible pour le moment.',
+                      ar: 'لا توجد طاولات متاحة حالياً.',
+                      ru: 'Сейчас нет доступных столов.',
+                      trk: 'Şu anda uygun masa yok.',
+                      es: 'No hay mesas disponibles en este momento.',
+                      it: 'Al momento non ci sono tavoli disponibili.',
+                      pl: 'Obecnie nie ma dostępnych stołów.',
+                      pt: 'Não há mesas disponíveis no momento.',
+                      th: 'ขณะนี้ไม่มีโต๊ะที่พร้อมใช้งาน',
+                      id: 'Tidak ada meja yang tersedia saat ini.',
+                      hi: 'अभी कोई टेबल उपलब्ध नहीं है।',
+                      bn: 'এই মুহূর্তে কোনো টেবিল উপলব্ধ নেই।',
                     ),
-                  ),
-                );
-              }
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.black54,
+                height: 1.45,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final roleText = isHost ? 'Host' : 'Player';
+    final roleText = isHost
+        ? tr(
+            context,
+            'Host',
+            zhTw: '房主',
+            zhCn: '房主',
+            ko: '호스트',
+            ja: 'ホスト',
+            de: 'Host',
+            fr: 'Hôte',
+            ar: 'المضيف',
+            ru: 'Хост',
+            trk: 'Sunucu',
+            es: 'Anfitrión',
+            it: 'Host',
+            pl: 'Host',
+            pt: 'Anfitrião',
+            th: 'โฮสต์',
+            id: 'Host',
+            hi: 'होस्ट',
+            bn: 'হোস্ট',
+          )
+        : tr(
+            context,
+            'Player',
+            zhTw: '玩家',
+            zhCn: '玩家',
+            ko: '플레이어',
+            ja: 'プレイヤー',
+            de: 'Spieler',
+            fr: 'Joueur',
+            ar: 'لاعب',
+            ru: 'Игрок',
+            trk: 'Oyuncu',
+            es: 'Jugador',
+            it: 'Giocatore',
+            pl: 'Gracz',
+            pt: 'Jogador',
+            th: 'ผู้เล่น',
+            id: 'Pemain',
+            hi: 'खिलाड़ी',
+            bn: 'খেলোয়াড়',
+          );
 
     return Scaffold(
       appBar: AppBar(
@@ -6219,12 +10607,54 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          'Table List ($roleText)',
-          style: const TextStyle(fontWeight: FontWeight.w800),
+          tr(
+            context,
+            'Table List ($roleText)',
+            zhTw: '桌子列表 ($roleText)',
+            zhCn: '桌子列表 ($roleText)',
+            ko: '테이블 목록 ($roleText)',
+            ja: 'テーブル一覧 ($roleText)',
+            de: 'Tischliste ($roleText)',
+            fr: 'Liste des tables ($roleText)',
+            ar: 'قائمة الطاولات ($roleText)',
+            ru: 'Список столов ($roleText)',
+            trk: 'Masa Listesi ($roleText)',
+            es: 'Lista de mesas ($roleText)',
+            it: 'Elenco tavoli ($roleText)',
+            pl: 'Lista stołów ($roleText)',
+            pt: 'Lista de mesas ($roleText)',
+            th: 'รายการโต๊ะ ($roleText)',
+            id: 'Daftar meja ($roleText)',
+            hi: 'टेबल सूची ($roleText)',
+            bn: 'টেবিল তালিকা ($roleText)',
+          ),
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
         ),
         actions: [
           IconButton(
-            tooltip: 'Cash Game Stats',
+            tooltip: tr(
+              context,
+              'Cash Game Stats',
+              zhTw: '現金局統計',
+              zhCn: '现金局统计',
+              ko: '캐시 게임 통계',
+              ja: 'キャッシュゲーム統計',
+              de: 'Cashgame-Statistik',
+              fr: 'Statistiques Cash Game',
+              ar: 'إحصائيات الكاش',
+              ru: 'Статистика кэш-игр',
+              trk: 'Nakit Oyun İstatistikleri',
+              es: 'Estadísticas Cash Game',
+              it: 'Statistiche Cash Game',
+              pl: 'Statystyki Cash Game',
+              pt: 'Estatísticas Cash Game',
+              th: 'สถิติเกมเงินสด',
+              id: 'Statistik Cash Game',
+              hi: 'कैश गेम आँकड़े',
+              bn: 'ক্যাশ গেম পরিসংখ্যান',
+            ),
             onPressed: _openCashStatsPage,
             icon: Stack(
               clipBehavior: Clip.none,
@@ -6256,21 +10686,46 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               ],
             ),
           ),
+
           FriendsNotificationButton(
             onTap: _openFriendsHub,
           ),
+
           _buildProfileMenu(),
         ],
       ),
+
       floatingActionButton: isHost
           ? FloatingActionButton.extended(
               onPressed: _handleAddTablePressed,
               backgroundColor: const Color(0xFFB9F0A9),
               foregroundColor: const Color(0xFF163D2E),
               icon: const Icon(Icons.add),
-              label: const Text(
-                'Add Table',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              label: Text(
+                tr(
+                  context,
+                  'Add Table',
+                  zhTw: '新增桌子',
+                  zhCn: '新增桌子',
+                  ko: '테이블 추가',
+                  ja: 'テーブル追加',
+                  de: 'Tisch hinzufügen',
+                  fr: 'Ajouter une table',
+                  ar: 'إضافة طاولة',
+                  ru: 'Добавить стол',
+                  trk: 'Masa Ekle',
+                  es: 'Agregar mesa',
+                  it: 'Aggiungi tavolo',
+                  pl: 'Dodaj stół',
+                  pt: 'Adicionar mesa',
+                  th: 'เพิ่มโต๊ะ',
+                  id: 'Tambah meja',
+                  hi: 'टेबल जोड़ें',
+                  bn: 'টেবিল যোগ করুন',
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             )
           : Column(
@@ -6290,7 +10745,31 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           if (!mounted) return;
 
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Purchase restored')),
+                            SnackBar(
+                              content: Text(
+                                tr(
+                                  context,
+                                  'Purchase restored',
+                                  zhTw: '購買已恢復',
+                                  zhCn: '购买已恢复',
+                                  ko: '구매가 복원되었습니다',
+                                  ja: '購入が復元されました',
+                                  de: 'Kauf wiederhergestellt',
+                                  fr: 'Achat restauré',
+                                  ar: 'تمت استعادة الشراء',
+                                  ru: 'Покупка восстановлена',
+                                  trk: 'Satın alma geri yüklendi',
+                                  es: 'Compra restaurada',
+                                  it: 'Acquisto ripristinato',
+                                  pl: 'Zakup został przywrócony',
+                                  pt: 'Compra restaurada',
+                                  th: 'กู้คืนการซื้อแล้ว',
+                                  id: 'Pembelian dipulihkan',
+                                  hi: 'खरीदारी पुनर्स्थापित हुई',
+                                  bn: 'ক্রয় পুনরুদ্ধার হয়েছে',
+                                ),
+                              ),
+                            ),
                           );
 
                           setState(() {});
@@ -6306,21 +10785,67 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           );
                         }
                       },
-                      child: const Text('Restore Purchase'),
+                      child: Text(
+                        tr(
+                          context,
+                          'Restore Purchase',
+                          zhTw: '恢復購買',
+                          zhCn: '恢复购买',
+                          ko: '구매 복원',
+                          ja: '購入を復元',
+                          de: 'Kauf wiederherstellen',
+                          fr: 'Restaurer l’achat',
+                          ar: 'استعادة الشراء',
+                          ru: 'Восстановить покупку',
+                          trk: 'Satın Alımı Geri Yükle',
+                          es: 'Restaurar compra',
+                          it: 'Ripristina acquisto',
+                          pl: 'Przywróć zakup',
+                          pt: 'Restaurar compra',
+                          th: 'กู้คืนการซื้อ',
+                          id: 'Pulihkan pembelian',
+                          hi: 'खरीदारी पुनर्स्थापित करें',
+                          bn: 'ক্রয় পুনরুদ্ধার করুন',
+                        ),
+                      ),
                     ),
                   ),
+
                 FloatingActionButton.extended(
                   onPressed: _startStripeCheckout,
                   backgroundColor: const Color(0xFFDBEAFE),
                   foregroundColor: const Color(0xFF1D4ED8),
                   icon: const Icon(Icons.workspace_premium),
-                  label: const Text(
-                    'Upgrade to Host',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  label: Text(
+                    tr(
+                      context,
+                      'Upgrade to Host',
+                      zhTw: '升級為房主',
+                      zhCn: '升级为房主',
+                      ko: '호스트로 업그레이드',
+                      ja: 'ホストにアップグレード',
+                      de: 'Zum Host upgraden',
+                      fr: 'Passer en mode Hôte',
+                      ar: 'الترقية إلى مضيف',
+                      ru: 'Повысить до хоста',
+                      trk: 'Sunucuya Yükselt',
+                      es: 'Actualizar a Host',
+                      it: 'Passa a Host',
+                      pl: 'Ulepsz do Hosta',
+                      pt: 'Atualizar para Host',
+                      th: 'อัปเกรดเป็นโฮสต์',
+                      id: 'Upgrade ke Host',
+                      hi: 'होस्ट में अपग्रेड करें',
+                      bn: 'হোস্টে আপগ্রেড করুন',
+                    ),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
               ],
             ),
+
       body: SafeArea(
         child: Column(
           children: [
@@ -6328,26 +10853,74 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF3CD),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFFE08A)),
+                  border: Border.all(
+                    color: const Color(0xFFFFE08A),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'New version available. Tap Update.',
-                        style: TextStyle(
+                        tr(
+                          context,
+                          'New version available. Tap Update.',
+                          zhTw: '有新版本可用，請點擊更新。',
+                          zhCn: '有新版本可用，请点击更新。',
+                          ko: '새 버전을 사용할 수 있습니다. 업데이트를 눌러주세요.',
+                          ja: '新しいバージョンがあります。更新を押してください。',
+                          de: 'Neue Version verfügbar. Tippe auf Aktualisieren.',
+                          fr: 'Nouvelle version disponible. Appuyez sur Mettre à jour.',
+                          ar: 'يتوفر إصدار جديد. اضغط على تحديث.',
+                          ru: 'Доступна новая версия. Нажмите Обновить.',
+                          trk: 'Yeni sürüm mevcut. Güncelleye dokunun.',
+                          es: 'Nueva versión disponible. Toca Actualizar.',
+                          it: 'Nuova versione disponibile. Tocca Aggiorna.',
+                          pl: 'Dostępna nowa wersja. Kliknij Aktualizuj.',
+                          pt: 'Nova versão disponível. Toque em Atualizar.',
+                          th: 'มีเวอร์ชันใหม่ กรุณากดอัปเดต',
+                          id: 'Versi baru tersedia. Tekan Perbarui.',
+                          hi: 'नया संस्करण उपलब्ध है। अपडेट दबाएँ।',
+                          bn: 'নতুন ভার্সন উপলব্ধ। আপডেট চাপুন।',
+                        ),
+                        style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF7A5D00),
                         ),
                       ),
                     ),
+
                     FilledButton(
                       onPressed: forceRefreshWebPage,
-                      child: const Text('Update'),
+                      child: Text(
+                        tr(
+                          context,
+                          'Update',
+                          zhTw: '更新',
+                          zhCn: '更新',
+                          ko: '업데이트',
+                          ja: '更新',
+                          de: 'Aktualisieren',
+                          fr: 'Mettre à jour',
+                          ar: 'تحديث',
+                          ru: 'Обновить',
+                          trk: 'Güncelle',
+                          es: 'Actualizar',
+                          it: 'Aggiorna',
+                          pl: 'Aktualizuj',
+                          pt: 'Atualizar',
+                          th: 'อัปเดต',
+                          id: 'Perbarui',
+                          hi: 'अपडेट',
+                          bn: 'আপডেট',
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -6364,7 +10937,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF3CD),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFFFE08A)),
+                  border: Border.all(
+                    color: const Color(0xFFFFE08A),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -6377,10 +10952,34 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         ),
                       ),
                     ),
+
                     const SizedBox(width: 12),
+
                     FilledButton(
                       onPressed: _startStripeCheckout,
-                      child: const Text('Update Payment'),
+                      child: Text(
+                        tr(
+                          context,
+                          'Update Payment',
+                          zhTw: '更新付款',
+                          zhCn: '更新付款',
+                          ko: '결제 업데이트',
+                          ja: '支払いを更新',
+                          de: 'Zahlung aktualisieren',
+                          fr: 'Mettre à jour le paiement',
+                          ar: 'تحديث الدفع',
+                          ru: 'Обновить оплату',
+                          trk: 'Ödemeyi Güncelle',
+                          es: 'Actualizar pago',
+                          it: 'Aggiorna pagamento',
+                          pl: 'Zaktualizuj płatność',
+                          pt: 'Atualizar pagamento',
+                          th: 'อัปเดตการชำระเงิน',
+                          id: 'Perbarui pembayaran',
+                          hi: 'भुगतान अपडेट करें',
+                          bn: 'পেমেন্ট আপডেট করুন',
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -6390,6 +10989,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: _buildTopBanner(),
             ),
+
             Expanded(
               child: _buildTablesSection(),
             ),
@@ -6400,6 +11000,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 }
 
+
 class NewTableNotificationsPage extends StatelessWidget {
   const NewTableNotificationsPage({super.key});
 
@@ -6409,7 +11010,29 @@ class NewTableNotificationsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: Text(
+          tr(
+            context,
+            'Notifications',
+            zhTw: '通知',
+            zhCn: '通知',
+            ko: '알림',
+            ja: '通知',
+            de: 'Benachrichtigungen',
+            fr: 'Notifications',
+            ar: 'الإشعارات',
+            ru: 'Уведомления',
+            trk: 'Bildirimler',
+            es: 'Notificaciones',
+            it: 'Notifiche',
+            pl: 'Powiadomienia',
+            pt: 'Notificações',
+            th: 'การแจ้งเตือน',
+            id: 'Notifikasi',
+            hi: 'सूचनाएं',
+            bn: 'নোটিফিকেশন',
+          ),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
@@ -6421,8 +11044,30 @@ class NewTableNotificationsPage extends StatelessWidget {
           final docs = snapshot.data?.docs ?? [];
 
           if (docs.isEmpty) {
-            return const Center(
-              child: Text('No notifications'),
+            return Center(
+              child: Text(
+                tr(
+                  context,
+                  'No notifications',
+                  zhTw: '目前沒有通知',
+                  zhCn: '目前没有通知',
+                  ko: '알림이 없습니다',
+                  ja: '通知はありません',
+                  de: 'Keine Benachrichtigungen',
+                  fr: 'Aucune notification',
+                  ar: 'لا توجد إشعارات',
+                  ru: 'Нет уведомлений',
+                  trk: 'Bildirim yok',
+                  es: 'No hay notificaciones',
+                  it: 'Nessuna notifica',
+                  pl: 'Brak powiadomień',
+                  pt: 'Nenhuma notificação',
+                  th: 'ไม่มีการแจ้งเตือน',
+                  id: 'Tidak ada notifikasi',
+                  hi: 'कोई सूचना नहीं',
+                  bn: 'কোনো নোটিফিকেশন নেই',
+                ),
+              ),
             );
           }
 
@@ -6431,7 +11076,30 @@ class NewTableNotificationsPage extends StatelessWidget {
             itemBuilder: (context, index) {
               final data = docs[index].data();
 
-              final title = (data['title'] ?? 'New table').toString();
+              final title = (data['title'] ??
+                      tr(
+                        context,
+                        'New table',
+                        zhTw: '新桌子',
+                        zhCn: '新桌子',
+                        ko: '새 테이블',
+                        ja: '新しいテーブル',
+                        de: 'Neuer Tisch',
+                        fr: 'Nouvelle table',
+                        ar: 'طاولة جديدة',
+                        ru: 'Новый стол',
+                        trk: 'Yeni masa',
+                        es: 'Nueva mesa',
+                        it: 'Nuovo tavolo',
+                        pl: 'Nowy stół',
+                        pt: 'Nova mesa',
+                        th: 'โต๊ะใหม่',
+                        id: 'Meja baru',
+                        hi: 'नई टेबल',
+                        bn: 'নতুন টেবিল',
+                      ))
+                  .toString();
+
               final message = (data['message'] ?? '').toString();
 
               return ListTile(
@@ -6460,7 +11128,27 @@ class NewTableNotificationButton extends StatelessWidget {
 
     if (uid.isEmpty) {
       return IconButton(
-        tooltip: 'Notifications',
+        tooltip: tr(
+          context,
+          'Notifications',
+          zhTw: '通知',
+          zhCn: '通知',
+          ko: '알림',
+          ja: '通知',
+          de: 'Benachrichtigungen',
+          fr: 'Notifications',
+          ar: 'الإشعارات',
+          ru: 'Уведомления',
+          trk: 'Bildirimler',
+          es: 'Notificaciones',
+          it: 'Notifiche',
+          pl: 'Powiadomienia',
+          pt: 'Notificações',
+          th: 'การแจ้งเตือน',
+          id: 'Notifikasi',
+          hi: 'सूचनाएं',
+          bn: 'নোটিফিকেশন',
+        ),
         onPressed: onTap,
         icon: const Icon(Icons.notifications_none),
       );
@@ -6479,13 +11167,34 @@ class NewTableNotificationButton extends StatelessWidget {
         for (final doc in snapshot.data?.docs ?? []) {
           final data = doc.data();
           final readBy = List<String>.from(data['readBy'] ?? []);
+
           if (!readBy.contains(uid)) {
             unreadCount++;
           }
         }
 
         return IconButton(
-          tooltip: 'Notifications',
+          tooltip: tr(
+            context,
+            'Notifications',
+            zhTw: '通知',
+            zhCn: '通知',
+            ko: '알림',
+            ja: '通知',
+            de: 'Benachrichtigungen',
+            fr: 'Notifications',
+            ar: 'الإشعارات',
+            ru: 'Уведомления',
+            trk: 'Bildirimler',
+            es: 'Notificaciones',
+            it: 'Notifiche',
+            pl: 'Powiadomienia',
+            pt: 'Notificações',
+            th: 'การแจ้งเตือน',
+            id: 'Notifikasi',
+            hi: 'सूचनाएं',
+            bn: 'নোটিফিকেশন',
+          ),
           onPressed: onTap,
           icon: Stack(
             clipBehavior: Clip.none,
@@ -6537,7 +11246,27 @@ class FriendsNotificationButton extends StatelessWidget {
     if (currentUid.isEmpty) {
       return IconButton(
         onPressed: onTap,
-        tooltip: 'Friends & Chat',
+        tooltip: tr(
+          context,
+          'Friends & Chat',
+          zhTw: '好友與聊天',
+          zhCn: '好友与聊天',
+          ko: '친구 및 채팅',
+          ja: '友達とチャット',
+          de: 'Freunde & Chat',
+          fr: 'Amis et chat',
+          ar: 'الأصدقاء والدردشة',
+          ru: 'Друзья и чат',
+          trk: 'Arkadaşlar ve Sohbet',
+          es: 'Amigos y chat',
+          it: 'Amici e chat',
+          pl: 'Znajomi i czat',
+          pt: 'Amigos e chat',
+          th: 'เพื่อนและแชท',
+          id: 'Teman & Chat',
+          hi: 'दोस्त और चैट',
+          bn: 'বন্ধু ও চ্যাট',
+        ),
         icon: const Icon(Icons.people_alt_outlined),
       );
     }
@@ -6593,7 +11322,27 @@ class FriendsNotificationButton extends StatelessWidget {
                   children: [
                     IconButton(
                       onPressed: onTap,
-                      tooltip: 'Friends & Chat',
+                      tooltip: tr(
+                        context,
+                        'Friends & Chat',
+                        zhTw: '好友與聊天',
+                        zhCn: '好友与聊天',
+                        ko: '친구 및 채팅',
+                        ja: '友達とチャット',
+                        de: 'Freunde & Chat',
+                        fr: 'Amis et chat',
+                        ar: 'الأصدقاء والدردشة',
+                        ru: 'Друзья и чат',
+                        trk: 'Arkadaşlar ve Sohbet',
+                        es: 'Amigos y chat',
+                        it: 'Amici e chat',
+                        pl: 'Znajomi i czat',
+                        pt: 'Amigos e chat',
+                        th: 'เพื่อนและแชท',
+                        id: 'Teman & Chat',
+                        hi: 'दोस्त और चैट',
+                        bn: 'বন্ধু ও চ্যাট',
+                      ),
                       icon: const Icon(Icons.people_alt_outlined),
                     ),
                     if (totalBadgeCount > 0)
@@ -6771,7 +11520,31 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Search failed')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Search failed',
+              zhTw: '搜尋失敗',
+              zhCn: '搜索失败',
+              ko: '검색에 실패했습니다',
+              ja: '検索に失敗しました',
+              de: 'Suche fehlgeschlagen',
+              fr: 'Échec de la recherche',
+              ar: 'فشل البحث',
+              ru: 'Поиск не удался',
+              trk: 'Arama başarısız oldu',
+              es: 'La búsqueda falló',
+              it: 'Ricerca non riuscita',
+              pl: 'Wyszukiwanie nie powiodło się',
+              pt: 'Falha na pesquisa',
+              th: 'ค้นหาไม่สำเร็จ',
+              id: 'Pencarian gagal',
+              hi: 'खोज विफल रही',
+              bn: 'সার্চ ব্যর্থ হয়েছে',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -6782,12 +11555,38 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Friend request sent to ${user.displayName}')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Friend request sent to ${user.displayName}',
+              zhTw: '好友邀請已發送給 ${user.displayName}',
+              zhCn: '好友邀请已发送给 ${user.displayName}',
+              ko: '${user.displayName}님에게 친구 요청을 보냈습니다',
+              ja: '${user.displayName} に友達リクエストを送信しました',
+              de: 'Freundschaftsanfrage an ${user.displayName} gesendet',
+              fr: 'Demande d’ami envoyée à ${user.displayName}',
+              ar: 'تم إرسال طلب الصداقة إلى ${user.displayName}',
+              ru: 'Запрос в друзья отправлен ${user.displayName}',
+              trk: '${user.displayName} kullanıcısına arkadaşlık isteği gönderildi',
+              es: 'Solicitud de amistad enviada a ${user.displayName}',
+              it: 'Richiesta di amicizia inviata a ${user.displayName}',
+              pl: 'Wysłano zaproszenie do ${user.displayName}',
+              pt: 'Solicitação de amizade enviada para ${user.displayName}',
+              th: 'ส่งคำขอเป็นเพื่อนถึง ${user.displayName} แล้ว',
+              id: 'Permintaan pertemanan dikirim ke ${user.displayName}',
+              hi: '${user.displayName} को फ्रेंड रिक्वेस्ट भेजी गई',
+              bn: '${user.displayName}-কে ফ্রেন্ড রিকুয়েস্ট পাঠানো হয়েছে',
+            ),
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
       );
     }
   }
@@ -6801,22 +11600,133 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
     final otherUser =
         (userA['uid'] ?? '').toString() == currentUser.uid ? userB : userA;
 
+    final otherName =
+        (otherUser['displayName'] ?? '').toString().trim().isNotEmpty
+            ? (otherUser['displayName'] ?? '').toString()
+            : tr(
+                context,
+                'this friend',
+                zhTw: '這位好友',
+                zhCn: '这位好友',
+                ko: '이 친구',
+                ja: 'この友達',
+                de: 'diesen Freund',
+                fr: 'cet ami',
+                ar: 'هذا الصديق',
+                ru: 'этого друга',
+                trk: 'bu arkadaş',
+                es: 'este amigo',
+                it: 'questo amico',
+                pl: 'tego znajomego',
+                pt: 'este amigo',
+                th: 'เพื่อนคนนี้',
+                id: 'teman ini',
+                hi: 'इस दोस्त',
+                bn: 'এই বন্ধুকে',
+              );
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete friend'),
+          title: Text(
+            tr(
+              context,
+              'Delete friend',
+              zhTw: '刪除好友',
+              zhCn: '删除好友',
+              ko: '친구 삭제',
+              ja: '友達を削除',
+              de: 'Freund löschen',
+              fr: 'Supprimer l’ami',
+              ar: 'حذف الصديق',
+              ru: 'Удалить друга',
+              trk: 'Arkadaşı Sil',
+              es: 'Eliminar amigo',
+              it: 'Elimina amico',
+              pl: 'Usuń znajomego',
+              pt: 'Excluir amigo',
+              th: 'ลบเพื่อน',
+              id: 'Hapus teman',
+              hi: 'दोस्त हटाएं',
+              bn: 'বন্ধু মুছুন',
+            ),
+          ),
           content: Text(
-            'Remove ${(otherUser['displayName'] ?? 'this friend').toString()} from your friend list?',
+            tr(
+              context,
+              'Remove $otherName from your friend list?',
+              zhTw: '要把 $otherName 從好友列表中移除嗎？',
+              zhCn: '要把 $otherName 从好友列表中移除吗？',
+              ko: '$otherName님을 친구 목록에서 삭제하시겠습니까?',
+              ja: '$otherName を友達リストから削除しますか？',
+              de: '$otherName aus deiner Freundesliste entfernen?',
+              fr: 'Retirer $otherName de votre liste d’amis ?',
+              ar: 'هل تريد إزالة $otherName من قائمة أصدقائك؟',
+              ru: 'Удалить $otherName из списка друзей?',
+              trk: '$otherName arkadaş listenizden kaldırılsın mı?',
+              es: '¿Eliminar a $otherName de tu lista de amigos?',
+              it: 'Rimuovere $otherName dalla tua lista amici?',
+              pl: 'Usunąć $otherName z listy znajomych?',
+              pt: 'Remover $otherName da sua lista de amigos?',
+              th: 'ลบ $otherName ออกจากรายชื่อเพื่อนของคุณหรือไม่?',
+              id: 'Hapus $otherName dari daftar teman Anda?',
+              hi: '$otherName को अपनी दोस्त सूची से हटाएँ?',
+              bn: '$otherName-কে আপনার বন্ধু তালিকা থেকে সরাবেন?',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete'),
+              child: Text(
+                tr(
+                  context,
+                  'Delete',
+                  zhTw: '刪除',
+                  zhCn: '删除',
+                  ko: '삭제',
+                  ja: '削除',
+                  de: 'Löschen',
+                  fr: 'Supprimer',
+                  ar: 'حذف',
+                  ru: 'Удалить',
+                  trk: 'Sil',
+                  es: 'Eliminar',
+                  it: 'Elimina',
+                  pl: 'Usuń',
+                  pt: 'Excluir',
+                  th: 'ลบ',
+                  id: 'Hapus',
+                  hi: 'हटाएं',
+                  bn: 'মুছুন',
+                ),
+              ),
             ),
           ],
         );
@@ -6832,7 +11742,31 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Friend deleted')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Friend deleted',
+            zhTw: '好友已刪除',
+            zhCn: '好友已删除',
+            ko: '친구가 삭제되었습니다',
+            ja: '友達を削除しました',
+            de: 'Freund gelöscht',
+            fr: 'Ami supprimé',
+            ar: 'تم حذف الصديق',
+            ru: 'Друг удалён',
+            trk: 'Arkadaş silindi',
+            es: 'Amigo eliminado',
+            it: 'Amico eliminato',
+            pl: 'Znajomy usunięty',
+            pt: 'Amigo excluído',
+            th: 'ลบเพื่อนแล้ว',
+            id: 'Teman dihapus',
+            hi: 'दोस्त हटा दिया गया',
+            bn: 'বন্ধু মুছে ফেলা হয়েছে',
+          ),
+        ),
+      ),
     );
   }
 
@@ -6845,22 +11779,133 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
     final otherUser =
         (userA['uid'] ?? '').toString() == currentUser.uid ? userB : userA;
 
+    final otherName =
+        (otherUser['displayName'] ?? '').toString().trim().isNotEmpty
+            ? (otherUser['displayName'] ?? '').toString()
+            : tr(
+                context,
+                'this user',
+                zhTw: '這位使用者',
+                zhCn: '这位用户',
+                ko: '이 사용자',
+                ja: 'このユーザー',
+                de: 'diesen Nutzer',
+                fr: 'cet utilisateur',
+                ar: 'هذا المستخدم',
+                ru: 'этого пользователя',
+                trk: 'bu kullanıcı',
+                es: 'este usuario',
+                it: 'questo utente',
+                pl: 'tego użytkownika',
+                pt: 'este usuário',
+                th: 'ผู้ใช้นี้',
+                id: 'pengguna ini',
+                hi: 'इस यूज़र',
+                bn: 'এই ব্যবহারকারীকে',
+              );
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add to blacklist'),
+          title: Text(
+            tr(
+              context,
+              'Add to blacklist',
+              zhTw: '加入黑名單',
+              zhCn: '加入黑名单',
+              ko: '차단 목록에 추가',
+              ja: 'ブラックリストに追加',
+              de: 'Zur Blacklist hinzufügen',
+              fr: 'Ajouter à la liste noire',
+              ar: 'إضافة إلى القائمة السوداء',
+              ru: 'Добавить в чёрный список',
+              trk: 'Kara Listeye Ekle',
+              es: 'Agregar a la lista negra',
+              it: 'Aggiungi alla blacklist',
+              pl: 'Dodaj do czarnej listy',
+              pt: 'Adicionar à lista negra',
+              th: 'เพิ่มในบัญชีดำ',
+              id: 'Tambahkan ke daftar hitam',
+              hi: 'ब्लैकलिस्ट में जोड़ें',
+              bn: 'ব্ল্যাকলিস্টে যোগ করুন',
+            ),
+          ),
           content: Text(
-            'Block ${(otherUser['displayName'] ?? 'this user').toString()}? After blocking, this user will not appear in search.',
+            tr(
+              context,
+              'Block $otherName? After blocking, this user will not appear in search.',
+              zhTw: '要封鎖 $otherName 嗎？封鎖後，這位使用者將不會出現在搜尋中。',
+              zhCn: '要拉黑 $otherName 吗？拉黑后，这位用户将不会出现在搜索中。',
+              ko: '$otherName님을 차단하시겠습니까? 차단 후 이 사용자는 검색에 나타나지 않습니다.',
+              ja: '$otherName をブロックしますか？ブロック後、このユーザーは検索に表示されません。',
+              de: '$otherName blockieren? Nach dem Blockieren erscheint dieser Nutzer nicht mehr in der Suche.',
+              fr: 'Bloquer $otherName ? Après le blocage, cet utilisateur n’apparaîtra plus dans la recherche.',
+              ar: 'هل تريد حظر $otherName؟ بعد الحظر، لن يظهر هذا المستخدم في البحث.',
+              ru: 'Заблокировать $otherName? После блокировки этот пользователь не будет отображаться в поиске.',
+              trk: '$otherName engellensin mi? Engelledikten sonra bu kullanıcı aramada görünmez.',
+              es: '¿Bloquear a $otherName? Después de bloquearlo, este usuario no aparecerá en la búsqueda.',
+              it: 'Bloccare $otherName? Dopo il blocco, questo utente non apparirà nella ricerca.',
+              pl: 'Zablokować $otherName? Po zablokowaniu ten użytkownik nie będzie widoczny w wyszukiwaniu.',
+              pt: 'Bloquear $otherName? Depois de bloquear, este usuário não aparecerá na pesquisa.',
+              th: 'บล็อก $otherName หรือไม่? หลังจากบล็อกแล้ว ผู้ใช้นี้จะไม่แสดงในการค้นหา',
+              id: 'Blokir $otherName? Setelah diblokir, pengguna ini tidak akan muncul di pencarian.',
+              hi: '$otherName को ब्लॉक करें? ब्लॉक करने के बाद यह यूज़र खोज में नहीं दिखेगा।',
+              bn: '$otherName-কে ব্লক করবেন? ব্লক করার পরে এই ব্যবহারকারী সার্চে দেখা যাবে না।',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Block'),
+              child: Text(
+                tr(
+                  context,
+                  'Block',
+                  zhTw: '封鎖',
+                  zhCn: '拉黑',
+                  ko: '차단',
+                  ja: 'ブロック',
+                  de: 'Blockieren',
+                  fr: 'Bloquer',
+                  ar: 'حظر',
+                  ru: 'Заблокировать',
+                  trk: 'Engelle',
+                  es: 'Bloquear',
+                  it: 'Blocca',
+                  pl: 'Zablokuj',
+                  pt: 'Bloquear',
+                  th: 'บล็อก',
+                  id: 'Blokir',
+                  hi: 'ब्लॉक करें',
+                  bn: 'ব্লক করুন',
+                ),
+              ),
             ),
           ],
         );
@@ -6876,7 +11921,31 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('User added to blacklist')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'User added to blacklist',
+            zhTw: '使用者已加入黑名單',
+            zhCn: '用户已加入黑名单',
+            ko: '사용자가 차단 목록에 추가되었습니다',
+            ja: 'ユーザーをブラックリストに追加しました',
+            de: 'Nutzer zur Blacklist hinzugefügt',
+            fr: 'Utilisateur ajouté à la liste noire',
+            ar: 'تمت إضافة المستخدم إلى القائمة السوداء',
+            ru: 'Пользователь добавлен в чёрный список',
+            trk: 'Kullanıcı kara listeye eklendi',
+            es: 'Usuario agregado a la lista negra',
+            it: 'Utente aggiunto alla blacklist',
+            pl: 'Użytkownik dodany do czarnej listy',
+            pt: 'Usuário adicionado à lista negra',
+            th: 'เพิ่มผู้ใช้ในบัญชีดำแล้ว',
+            id: 'Pengguna ditambahkan ke daftar hitam',
+            hi: 'यूज़र को ब्लैकलिस्ट में जोड़ा गया',
+            bn: 'ব্যবহারকারীকে ব্ল্যাকলিস্টে যোগ করা হয়েছে',
+          ),
+        ),
+      ),
     );
   }
 
@@ -6888,18 +11957,104 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Remove from blacklist'),
+          title: Text(
+            tr(
+              context,
+              'Remove from blacklist',
+              zhTw: '從黑名單移除',
+              zhCn: '从黑名单移除',
+              ko: '차단 목록에서 제거',
+              ja: 'ブラックリストから削除',
+              de: 'Von der Blacklist entfernen',
+              fr: 'Retirer de la liste noire',
+              ar: 'إزالة من القائمة السوداء',
+              ru: 'Удалить из чёрного списка',
+              trk: 'Kara listeden çıkar',
+              es: 'Quitar de la lista negra',
+              it: 'Rimuovi dalla blacklist',
+              pl: 'Usuń z czarnej listy',
+              pt: 'Remover da lista negra',
+              th: 'นำออกจากบัญชีดำ',
+              id: 'Hapus dari daftar hitam',
+              hi: 'ब्लैकलिस्ट से हटाएं',
+              bn: 'ব্ল্যাকলিস্ট থেকে সরান',
+            ),
+          ),
           content: Text(
-            'Remove ${user.displayName} from blacklist?',
+            tr(
+              context,
+              'Remove ${user.displayName} from blacklist?',
+              zhTw: '要將 ${user.displayName} 從黑名單移除嗎？',
+              zhCn: '要将 ${user.displayName} 从黑名单移除吗？',
+              ko: '${user.displayName}님을 차단 목록에서 제거하시겠습니까?',
+              ja: '${user.displayName} をブラックリストから削除しますか？',
+              de: '${user.displayName} von der Blacklist entfernen?',
+              fr: 'Retirer ${user.displayName} de la liste noire ?',
+              ar: 'هل تريد إزالة ${user.displayName} من القائمة السوداء؟',
+              ru: 'Удалить ${user.displayName} из чёрного списка?',
+              trk: '${user.displayName} kara listeden çıkarılsın mı?',
+              es: '¿Quitar a ${user.displayName} de la lista negra?',
+              it: 'Rimuovere ${user.displayName} dalla blacklist?',
+              pl: 'Usunąć ${user.displayName} z czarnej listy?',
+              pt: 'Remover ${user.displayName} da lista negra?',
+              th: 'นำ ${user.displayName} ออกจากบัญชีดำหรือไม่?',
+              id: 'Hapus ${user.displayName} dari daftar hitam?',
+              hi: '${user.displayName} को ब्लैकलिस्ट से हटाएँ?',
+              bn: '${user.displayName}-কে ব্ল্যাকলিস্ট থেকে সরাবেন?',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Remove'),
+              child: Text(
+                tr(
+                  context,
+                  'Remove',
+                  zhTw: '移除',
+                  zhCn: '移除',
+                  ko: '제거',
+                  ja: '削除',
+                  de: 'Entfernen',
+                  fr: 'Retirer',
+                  ar: 'إزالة',
+                  ru: 'Удалить',
+                  trk: 'Kaldır',
+                  es: 'Quitar',
+                  it: 'Rimuovi',
+                  pl: 'Usuń',
+                  pt: 'Remover',
+                  th: 'นำออก',
+                  id: 'Hapus',
+                  hi: 'हटाएं',
+                  bn: 'সরান',
+                ),
+              ),
             ),
           ],
         );
@@ -6915,7 +12070,31 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Removed from blacklist')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Removed from blacklist',
+            zhTw: '已從黑名單移除',
+            zhCn: '已从黑名单移除',
+            ko: '차단 목록에서 제거되었습니다',
+            ja: 'ブラックリストから削除しました',
+            de: 'Von der Blacklist entfernt',
+            fr: 'Retiré de la liste noire',
+            ar: 'تمت الإزالة من القائمة السوداء',
+            ru: 'Удалено из чёрного списка',
+            trk: 'Kara listeden çıkarıldı',
+            es: 'Quitado de la lista negra',
+            it: 'Rimosso dalla blacklist',
+            pl: 'Usunięto z czarnej listy',
+            pt: 'Removido da lista negra',
+            th: 'นำออกจากบัญชีดำแล้ว',
+            id: 'Dihapus dari daftar hitam',
+            hi: 'ब्लैकलिस्ट से हटा दिया गया',
+            bn: 'ব্ল্যাকলিস্ট থেকে সরানো হয়েছে',
+          ),
+        ),
+      ),
     );
   }
 
@@ -6924,7 +12103,8 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
     if (currentUser == null) return;
 
     final chatId = (friendshipData['chatId'] ?? '').toString();
-    final nicknames = Map<String, dynamic>.from(friendshipData['nicknames'] ?? {});
+    final nicknames =
+        Map<String, dynamic>.from(friendshipData['nicknames'] ?? {});
     final initialNickname = (nicknames[currentUser.uid] ?? '').toString();
 
     final controller = TextEditingController(text: initialNickname);
@@ -6933,22 +12113,128 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Edit friend name'),
+          title: Text(
+            tr(
+              context,
+              'Edit friend name',
+              zhTw: '編輯好友名稱',
+              zhCn: '编辑好友名称',
+              ko: '친구 이름 수정',
+              ja: '友達の名前を編集',
+              de: 'Freundesnamen bearbeiten',
+              fr: 'Modifier le nom de l’ami',
+              ar: 'تعديل اسم الصديق',
+              ru: 'Изменить имя друга',
+              trk: 'Arkadaş adını düzenle',
+              es: 'Editar nombre del amigo',
+              it: 'Modifica nome amico',
+              pl: 'Edytuj nazwę znajomego',
+              pt: 'Editar nome do amigo',
+              th: 'แก้ไขชื่อเพื่อน',
+              id: 'Edit nama teman',
+              hi: 'दोस्त का नाम संपादित करें',
+              bn: 'বন্ধুর নাম সম্পাদনা',
+            ),
+          ),
           content: TextField(
             controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Nickname',
-              hintText: 'Enter a custom name',
+            decoration: InputDecoration(
+              labelText: tr(
+                context,
+                'Nickname',
+                zhTw: '暱稱',
+                zhCn: '昵称',
+                ko: '별명',
+                ja: 'ニックネーム',
+                de: 'Spitzname',
+                fr: 'Surnom',
+                ar: 'الاسم المستعار',
+                ru: 'Никнейм',
+                trk: 'Takma ad',
+                es: 'Apodo',
+                it: 'Soprannome',
+                pl: 'Pseudonim',
+                pt: 'Apelido',
+                th: 'ชื่อเล่น',
+                id: 'Nama panggilan',
+                hi: 'उपनाम',
+                bn: 'ডাকনাম',
+              ),
+              hintText: tr(
+                context,
+                'Enter a custom name',
+                zhTw: '輸入自訂名稱',
+                zhCn: '输入自定义名称',
+                ko: '사용자 지정 이름을 입력하세요',
+                ja: 'カスタム名を入力してください',
+                de: 'Benutzerdefinierten Namen eingeben',
+                fr: 'Entrez un nom personnalisé',
+                ar: 'أدخل اسماً مخصصاً',
+                ru: 'Введите пользовательское имя',
+                trk: 'Özel bir ad girin',
+                es: 'Ingresa un nombre personalizado',
+                it: 'Inserisci un nome personalizzato',
+                pl: 'Wpisz własną nazwę',
+                pt: 'Digite um nome personalizado',
+                th: 'กรอกชื่อที่กำหนดเอง',
+                id: 'Masukkan nama khusus',
+                hi: 'एक कस्टम नाम दर्ज करें',
+                bn: 'একটি কাস্টম নাম লিখুন',
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Save'),
+              child: Text(
+                tr(
+                  context,
+                  'Save',
+                  zhTw: '儲存',
+                  zhCn: '保存',
+                  ko: '저장',
+                  ja: '保存',
+                  de: 'Speichern',
+                  fr: 'Enregistrer',
+                  ar: 'حفظ',
+                  ru: 'Сохранить',
+                  trk: 'Kaydet',
+                  es: 'Guardar',
+                  it: 'Salva',
+                  pl: 'Zapisz',
+                  pt: 'Salvar',
+                  th: 'บันทึก',
+                  id: 'Simpan',
+                  hi: 'सहेजें',
+                  bn: 'সংরক্ষণ করুন',
+                ),
+              ),
             ),
           ],
         );
@@ -6965,7 +12251,31 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Friend name updated')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Friend name updated',
+            zhTw: '好友名稱已更新',
+            zhCn: '好友名称已更新',
+            ko: '친구 이름이 업데이트되었습니다',
+            ja: '友達の名前を更新しました',
+            de: 'Freundesname aktualisiert',
+            fr: 'Nom de l’ami mis à jour',
+            ar: 'تم تحديث اسم الصديق',
+            ru: 'Имя друга обновлено',
+            trk: 'Arkadaş adı güncellendi',
+            es: 'Nombre del amigo actualizado',
+            it: 'Nome amico aggiornato',
+            pl: 'Nazwa znajomego zaktualizowana',
+            pt: 'Nome do amigo atualizado',
+            th: 'อัปเดตชื่อเพื่อนแล้ว',
+            id: 'Nama teman diperbarui',
+            hi: 'दोस्त का नाम अपडेट हो गया',
+            bn: 'বন্ধুর নাম আপডেট হয়েছে',
+          ),
+        ),
+      ),
     );
   }
 
@@ -6995,8 +12305,30 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('This user is not available'),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'This user is not available',
+              zhTw: '這位使用者目前無法使用',
+              zhCn: '这位用户目前不可用',
+              ko: '이 사용자는 사용할 수 없습니다',
+              ja: 'このユーザーは利用できません',
+              de: 'Dieser Nutzer ist nicht verfügbar',
+              fr: 'Cet utilisateur n’est pas disponible',
+              ar: 'هذا المستخدم غير متاح',
+              ru: 'Этот пользователь недоступен',
+              trk: 'Bu kullanıcı kullanılamıyor',
+              es: 'Este usuario no está disponible',
+              it: 'Questo utente non è disponibile',
+              pl: 'Ten użytkownik jest niedostępny',
+              pt: 'Este usuário não está disponível',
+              th: 'ผู้ใช้นี้ไม่พร้อมใช้งาน',
+              id: 'Pengguna ini tidak tersedia',
+              hi: 'यह यूज़र उपलब्ध नहीं है',
+              bn: 'এই ব্যবহারকারী উপলব্ধ নয়',
+            ),
+          ),
         ),
       );
       return;
@@ -7011,7 +12343,29 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
         builder: (_) => ChatRoomPage(
           chatId: (friendshipData['chatId'] ?? '').toString(),
           otherUid: otherUid,
-          otherDisplayName: (otherUser['displayName'] ?? 'Chat').toString(),
+          otherDisplayName: (otherUser['displayName'] ??
+                  tr(
+                    context,
+                    'Chat',
+                    zhTw: '聊天',
+                    zhCn: '聊天',
+                    ko: '채팅',
+                    ja: 'チャット',
+                    de: 'Chat',
+                    fr: 'Chat',
+                    ar: 'الدردشة',
+                    ru: 'Чат',
+                    trk: 'Sohbet',
+                    es: 'Chat',
+                    it: 'Chat',
+                    pl: 'Czat',
+                    pt: 'Chat',
+                    th: 'แชท',
+                    id: 'Chat',
+                    hi: 'चैट',
+                    bn: 'চ্যাট',
+                  ))
+              .toString(),
           otherPhotoUrl: (otherUser['photoUrl'] ?? '').toString(),
           otherNickname: myNickname,
         ),
@@ -7032,8 +12386,48 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                 controller: searchController,
                 style: const TextStyle(color: Colors.black87),
                 decoration: InputDecoration(
-                  labelText: 'Search player',
-                  hintText: 'Name / email / player ID',
+                  labelText: tr(
+                    context,
+                    'Search player',
+                    zhTw: '搜尋玩家',
+                    zhCn: '搜索玩家',
+                    ko: '플레이어 검색',
+                    ja: 'プレイヤー検索',
+                    de: 'Spieler suchen',
+                    fr: 'Rechercher un joueur',
+                    ar: 'البحث عن لاعب',
+                    ru: 'Поиск игрока',
+                    trk: 'Oyuncu ara',
+                    es: 'Buscar jugador',
+                    it: 'Cerca giocatore',
+                    pl: 'Szukaj gracza',
+                    pt: 'Buscar jogador',
+                    th: 'ค้นหาผู้เล่น',
+                    id: 'Cari pemain',
+                    hi: 'खिलाड़ी खोजें',
+                    bn: 'খেলোয়াড় খুঁজুন',
+                  ),
+                  hintText: tr(
+                    context,
+                    'Name / email / player ID',
+                    zhTw: '名稱 / Email / 玩家 ID',
+                    zhCn: '名称 / Email / 玩家 ID',
+                    ko: '이름 / 이메일 / 플레이어 ID',
+                    ja: '名前 / メール / プレイヤーID',
+                    de: 'Name / E-Mail / Spieler-ID',
+                    fr: 'Nom / email / ID joueur',
+                    ar: 'الاسم / البريد / معرف اللاعب',
+                    ru: 'Имя / email / ID игрока',
+                    trk: 'Ad / e-posta / Oyuncu ID',
+                    es: 'Nombre / correo / ID de jugador',
+                    it: 'Nome / email / ID giocatore',
+                    pl: 'Nazwa / email / ID gracza',
+                    pt: 'Nome / email / ID do jogador',
+                    th: 'ชื่อ / อีเมล / ไอดีผู้เล่น',
+                    id: 'Nama / email / ID pemain',
+                    hi: 'नाम / ईमेल / प्लेयर ID',
+                    bn: 'নাম / ইমেইল / প্লেয়ার ID',
+                  ),
                   labelStyle: const TextStyle(color: Colors.black54),
                   hintStyle: const TextStyle(color: Colors.black38),
                   border: OutlineInputBorder(
@@ -7049,18 +12443,40 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                 ),
                 onSubmitted: (_) => _searchUsers(),
               ),
+
               const SizedBox(height: 12),
+
               if (isSearching)
                 const Padding(
                   padding: EdgeInsets.all(16),
                   child: CircularProgressIndicator(),
                 )
               else if (searchResults.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(12),
+                Padding(
+                  padding: const EdgeInsets.all(12),
                   child: Text(
-                    'No search results yet',
-                    style: TextStyle(color: Colors.black54),
+                    tr(
+                      context,
+                      'No search results yet',
+                      zhTw: '目前沒有搜尋結果',
+                      zhCn: '目前没有搜索结果',
+                      ko: '검색 결과가 없습니다',
+                      ja: '検索結果はありません',
+                      de: 'Noch keine Suchergebnisse',
+                      fr: 'Aucun résultat de recherche',
+                      ar: 'لا توجد نتائج بحث',
+                      ru: 'Пока нет результатов поиска',
+                      trk: 'Henüz arama sonucu yok',
+                      es: 'Aún no hay resultados',
+                      it: 'Nessun risultato di ricerca',
+                      pl: 'Brak wyników wyszukiwania',
+                      pt: 'Nenhum resultado encontrado',
+                      th: 'ยังไม่มีผลการค้นหา',
+                      id: 'Belum ada hasil pencarian',
+                      hi: 'अभी कोई खोज परिणाम नहीं',
+                      bn: 'এখনও কোনো সার্চ ফলাফল নেই',
+                    ),
+                    style: const TextStyle(color: Colors.black54),
                   ),
                 )
               else
@@ -7097,7 +12513,49 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                             ? null
                             : () => _sendRequest(user),
                         child: Text(
-                          user.uid == currentUid ? 'You' : 'Add',
+                          user.uid == currentUid
+                              ? tr(
+                                  context,
+                                  'You',
+                                  zhTw: '你',
+                                  zhCn: '你',
+                                  ko: '나',
+                                  ja: 'あなた',
+                                  de: 'Du',
+                                  fr: 'Vous',
+                                  ar: 'أنت',
+                                  ru: 'Вы',
+                                  trk: 'Sen',
+                                  es: 'Tú',
+                                  it: 'Tu',
+                                  pl: 'Ty',
+                                  pt: 'Você',
+                                  th: 'คุณ',
+                                  id: 'Anda',
+                                  hi: 'आप',
+                                  bn: 'আপনি',
+                                )
+                              : tr(
+                                  context,
+                                  'Add',
+                                  zhTw: '新增',
+                                  zhCn: '添加',
+                                  ko: '추가',
+                                  ja: '追加',
+                                  de: 'Hinzufügen',
+                                  fr: 'Ajouter',
+                                  ar: 'إضافة',
+                                  ru: 'Добавить',
+                                  trk: 'Ekle',
+                                  es: 'Agregar',
+                                  it: 'Aggiungi',
+                                  pl: 'Dodaj',
+                                  pt: 'Adicionar',
+                                  th: 'เพิ่ม',
+                                  id: 'Tambah',
+                                  hi: 'जोड़ें',
+                                  bn: 'যোগ করুন',
+                                ),
                         ),
                       ),
                     );
@@ -7129,19 +12587,61 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Incoming Requests',
-                    style: TextStyle(
+                  Text(
+                    tr(
+                      context,
+                      'Incoming Requests',
+                      zhTw: '收到的好友邀請',
+                      zhCn: '收到的好友邀请',
+                      ko: '받은 친구 요청',
+                      ja: '受信したリクエスト',
+                      de: 'Eingehende Anfragen',
+                      fr: 'Demandes reçues',
+                      ar: 'الطلبات الواردة',
+                      ru: 'Входящие запросы',
+                      trk: 'Gelen İstekler',
+                      es: 'Solicitudes recibidas',
+                      it: 'Richieste ricevute',
+                      pl: 'Przychodzące zaproszenia',
+                      pt: 'Solicitações recebidas',
+                      th: 'คำขอที่ได้รับ',
+                      id: 'Permintaan masuk',
+                      hi: 'आने वाले अनुरोध',
+                      bn: 'আসা অনুরোধ',
+                    ),
+                    style: const TextStyle(
                       color: Colors.black87,
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
+
                   const SizedBox(height: 12),
+
                   if (docs.isEmpty)
-                    const Text(
-                      'No incoming requests',
-                      style: TextStyle(
+                    Text(
+                      tr(
+                        context,
+                        'No incoming requests',
+                        zhTw: '目前沒有好友邀請',
+                        zhCn: '目前没有好友邀请',
+                        ko: '받은 친구 요청이 없습니다',
+                        ja: '受信したリクエストはありません',
+                        de: 'Keine eingehenden Anfragen',
+                        fr: 'Aucune demande reçue',
+                        ar: 'لا توجد طلبات واردة',
+                        ru: 'Нет входящих запросов',
+                        trk: 'Gelen istek yok',
+                        es: 'No hay solicitudes recibidas',
+                        it: 'Nessuna richiesta ricevuta',
+                        pl: 'Brak przychodzących zaproszeń',
+                        pt: 'Nenhuma solicitação recebida',
+                        th: 'ไม่มีคำขอที่ได้รับ',
+                        id: 'Tidak ada permintaan masuk',
+                        hi: 'कोई आने वाला अनुरोध नहीं',
+                        bn: 'কোনো আসা অনুরোধ নেই',
+                      ),
+                      style: const TextStyle(
                         color: Colors.black54,
                         fontWeight: FontWeight.w600,
                       ),
@@ -7197,22 +12697,69 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                       await ignoreFriendRequest(data);
                                     } catch (_) {}
                                   },
-                                  child: const Text('Ignore'),
+                                  child: Text(
+                                    tr(
+                                      context,
+                                      'Ignore',
+                                      zhTw: '忽略',
+                                      zhCn: '忽略',
+                                      ko: '무시',
+                                      ja: '無視',
+                                      de: 'Ignorieren',
+                                      fr: 'Ignorer',
+                                      ar: 'تجاهل',
+                                      ru: 'Игнорировать',
+                                      trk: 'Yoksay',
+                                      es: 'Ignorar',
+                                      it: 'Ignora',
+                                      pl: 'Ignoruj',
+                                      pt: 'Ignorar',
+                                      th: 'ไม่สนใจ',
+                                      id: 'Abaikan',
+                                      hi: 'नज़रअंदाज़',
+                                      bn: 'উপেক্ষা',
+                                    ),
+                                  ),
                                 ),
+
                               OutlinedButton(
                                 onPressed: () async {
                                   try {
                                     await rejectFriendRequest(data);
                                   } catch (_) {}
                                 },
-                                child: const Text('Reject'),
+                                child: Text(
+                                  tr(
+                                    context,
+                                    'Reject',
+                                    zhTw: '拒絕',
+                                    zhCn: '拒绝',
+                                    ko: '거절',
+                                    ja: '拒否',
+                                    de: 'Ablehnen',
+                                    fr: 'Refuser',
+                                    ar: 'رفض',
+                                    ru: 'Отклонить',
+                                    trk: 'Reddet',
+                                    es: 'Rechazar',
+                                    it: 'Rifiuta',
+                                    pl: 'Odrzuć',
+                                    pt: 'Recusar',
+                                    th: 'ปฏิเสธ',
+                                    id: 'Tolak',
+                                    hi: 'अस्वीकार',
+                                    bn: 'প্রত্যাখ্যান',
+                                  ),
+                                ),
                               ),
+
                               FilledButton(
                                 onPressed: () async {
                                   try {
                                     await acceptFriendRequest(data);
                                   } catch (e) {
                                     if (!mounted) return;
+
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -7226,7 +12773,49 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                   }
                                 },
                                 child: Text(
-                                  status == 'ignored' ? 'Add' : 'Accept',
+                                  status == 'ignored'
+                                      ? tr(
+                                          context,
+                                          'Add',
+                                          zhTw: '新增',
+                                          zhCn: '添加',
+                                          ko: '추가',
+                                          ja: '追加',
+                                          de: 'Hinzufügen',
+                                          fr: 'Ajouter',
+                                          ar: 'إضافة',
+                                          ru: 'Добавить',
+                                          trk: 'Ekle',
+                                          es: 'Agregar',
+                                          it: 'Aggiungi',
+                                          pl: 'Dodaj',
+                                          pt: 'Adicionar',
+                                          th: 'เพิ่ม',
+                                          id: 'Tambah',
+                                          hi: 'जोड़ें',
+                                          bn: 'যোগ করুন',
+                                        )
+                                      : tr(
+                                          context,
+                                          'Accept',
+                                          zhTw: '接受',
+                                          zhCn: '接受',
+                                          ko: '수락',
+                                          ja: '承認',
+                                          de: 'Akzeptieren',
+                                          fr: 'Accepter',
+                                          ar: 'قبول',
+                                          ru: 'Принять',
+                                          trk: 'Kabul Et',
+                                          es: 'Aceptar',
+                                          it: 'Accetta',
+                                          pl: 'Akceptuj',
+                                          pt: 'Aceitar',
+                                          th: 'ยอมรับ',
+                                          id: 'Terima',
+                                          hi: 'स्वीकार करें',
+                                          bn: 'গ্রহণ করুন',
+                                        ),
                                 ),
                               ),
                             ],
@@ -7303,11 +12892,31 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                     });
 
                   if (docs.isEmpty) {
-                    return const Padding(
-                      padding: EdgeInsets.all(12),
+                    return Padding(
+                      padding: const EdgeInsets.all(12),
                       child: Text(
-                        'No friends yet',
-                        style: TextStyle(color: Colors.black54),
+                        tr(
+                          context,
+                          'No friends yet',
+                          zhTw: '目前還沒有好友',
+                          zhCn: '目前还没有好友',
+                          ko: '아직 친구가 없습니다',
+                          ja: 'まだ友達がいません',
+                          de: 'Noch keine Freunde',
+                          fr: 'Aucun ami pour le moment',
+                          ar: 'لا يوجد أصدقاء بعد',
+                          ru: 'Пока нет друзей',
+                          trk: 'Henüz arkadaş yok',
+                          es: 'Aún no hay amigos',
+                          it: 'Ancora nessun amico',
+                          pl: 'Nie masz jeszcze znajomych',
+                          pt: 'Ainda não há amigos',
+                          th: 'ยังไม่มีเพื่อน',
+                          id: 'Belum ada teman',
+                          hi: 'अभी कोई दोस्त नहीं है',
+                          bn: 'এখনও কোনো বন্ধু নেই',
+                        ),
+                        style: const TextStyle(color: Colors.black54),
                       ),
                     );
                   }
@@ -7315,15 +12924,37 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Friends',
-                        style: TextStyle(
+                      Text(
+                        tr(
+                          context,
+                          'Friends',
+                          zhTw: '好友',
+                          zhCn: '好友',
+                          ko: '친구',
+                          ja: '友達',
+                          de: 'Freunde',
+                          fr: 'Amis',
+                          ar: 'الأصدقاء',
+                          ru: 'Друзья',
+                          trk: 'Arkadaşlar',
+                          es: 'Amigos',
+                          it: 'Amici',
+                          pl: 'Znajomi',
+                          pt: 'Amigos',
+                          th: 'เพื่อน',
+                          id: 'Teman',
+                          hi: 'दोस्त',
+                          bn: 'বন্ধু',
+                        ),
+                        style: const TextStyle(
                           color: Colors.black87,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
+
                       const SizedBox(height: 12),
+
                       ...docs.map((doc) {
                         final data = doc.data();
 
@@ -7347,10 +12978,34 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
                         final displayName = nickname.isNotEmpty
                             ? nickname
-                            : (otherUser['displayName'] ?? 'Friend').toString();
+                            : (otherUser['displayName'] ??
+                                    tr(
+                                      context,
+                                      'Friend',
+                                      zhTw: '好友',
+                                      zhCn: '好友',
+                                      ko: '친구',
+                                      ja: '友達',
+                                      de: 'Freund',
+                                      fr: 'Ami',
+                                      ar: 'صديق',
+                                      ru: 'Друг',
+                                      trk: 'Arkadaş',
+                                      es: 'Amigo',
+                                      it: 'Amico',
+                                      pl: 'Znajomy',
+                                      pt: 'Amigo',
+                                      th: 'เพื่อน',
+                                      id: 'Teman',
+                                      hi: 'दोस्त',
+                                      bn: 'বন্ধু',
+                                    ))
+                                .toString();
 
                         final subtitleName =
-                            (otherUser['displayName'] ?? '').toString().trim();
+                            (otherUser['displayName'] ?? '')
+                                .toString()
+                                .trim();
 
                         final chatId = (data['chatId'] ?? '').toString();
 
@@ -7375,7 +13030,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                 final unreadCounts = Map<String, dynamic>.from(
                                   chatData['unreadCounts'] ?? {},
                                 );
-                                final rawUnread = unreadCounts[currentUid] ?? 0;
+
+                                final rawUnread =
+                                    unreadCounts[currentUid] ?? 0;
 
                                 final unreadCount = rawUnread is int
                                     ? rawUnread
@@ -7395,7 +13052,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                           userSnap.data?.data() ?? otherUser;
 
                                       final avatar =
-                                          resolveAvatarSnapshotFromMap(userData);
+                                          resolveAvatarSnapshotFromMap(
+                                        userData,
+                                      );
 
                                       return buildAppAvatar(
                                         radius: 20,
@@ -7420,8 +13079,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                       ),
                                       if (unreadCount > 0)
                                         Container(
-                                          margin: const EdgeInsets.only(left: 8),
-                                          padding: const EdgeInsets.symmetric(
+                                          margin:
+                                              const EdgeInsets.only(left: 8),
+                                          padding:
+                                              const EdgeInsets.symmetric(
                                             horizontal: 8,
                                             vertical: 3,
                                           ),
@@ -7458,8 +13119,65 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                         )
                                       : Text(
                                           unreadCount > 0
-                                              ? '$unreadCount unread message${unreadCount > 1 ? 's' : ''}'
-                                              : 'Tap to open chat',
+                                              ? tr(
+                                                  context,
+                                                  '$unreadCount unread message${unreadCount > 1 ? 's' : ''}',
+                                                  zhTw:
+                                                      '$unreadCount 則未讀訊息',
+                                                  zhCn:
+                                                      '$unreadCount 条未读消息',
+                                                  ko:
+                                                      '읽지 않은 메시지 $unreadCount개',
+                                                  ja:
+                                                      '未読メッセージ $unreadCount 件',
+                                                  de:
+                                                      '$unreadCount ungelesene Nachricht${unreadCount > 1 ? 'en' : ''}',
+                                                  fr:
+                                                      '$unreadCount message${unreadCount > 1 ? 's' : ''} non lu${unreadCount > 1 ? 's' : ''}',
+                                                  ar:
+                                                      '$unreadCount رسالة غير مقروءة',
+                                                  ru:
+                                                      '$unreadCount непрочитанных сообщений',
+                                                  trk:
+                                                      '$unreadCount okunmamış mesaj',
+                                                  es:
+                                                      '$unreadCount mensaje${unreadCount > 1 ? 's' : ''} sin leer',
+                                                  it:
+                                                      '$unreadCount messagg${unreadCount > 1 ? 'i' : 'io'} non lett${unreadCount > 1 ? 'i' : 'o'}',
+                                                  pl:
+                                                      '$unreadCount nieprzeczytanych wiadomości',
+                                                  pt:
+                                                      '$unreadCount mensagem${unreadCount > 1 ? 'ens' : ''} não lida${unreadCount > 1 ? 's' : ''}',
+                                                  th:
+                                                      '$unreadCount ข้อความที่ยังไม่ได้อ่าน',
+                                                  id:
+                                                      '$unreadCount pesan belum dibaca',
+                                                  hi:
+                                                      '$unreadCount अपठित संदेश',
+                                                  bn:
+                                                      '$unreadCount টি অপঠিত বার্তা',
+                                                )
+                                              : tr(
+                                                  context,
+                                                  'Tap to open chat',
+                                                  zhTw: '點擊開啟聊天',
+                                                  zhCn: '点击打开聊天',
+                                                  ko: '눌러서 채팅 열기',
+                                                  ja: 'タップしてチャットを開く',
+                                                  de: 'Tippen zum Öffnen des Chats',
+                                                  fr: 'Touchez pour ouvrir le chat',
+                                                  ar: 'اضغط لفتح الدردشة',
+                                                  ru: 'Нажмите, чтобы открыть чат',
+                                                  trk: 'Sohbeti açmak için dokun',
+                                                  es: 'Toca para abrir el chat',
+                                                  it: 'Tocca per aprire la chat',
+                                                  pl: 'Kliknij, aby otworzyć czat',
+                                                  pt: 'Toque para abrir o chat',
+                                                  th: 'แตะเพื่อเปิดแชท',
+                                                  id: 'Ketuk untuk membuka chat',
+                                                  hi: 'चैट खोलने के लिए टैप करें',
+                                                  bn: 'চ্যাট খুলতে চাপুন',
+                                                ),
                                           style: const TextStyle(
                                             color: Colors.black54,
                                           ),
@@ -7478,33 +13196,121 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                         await _blockFriend(data);
                                       }
                                     },
-                                    itemBuilder: (context) => const [
+                                    itemBuilder: (context) => [
                                       PopupMenuItem(
                                         value: 'chat',
                                         child: Text(
-                                          'Open chat',
-                                          style: TextStyle(color: Colors.black87),
+                                          tr(
+                                            context,
+                                            'Open chat',
+                                            zhTw: '開啟聊天',
+                                            zhCn: '打开聊天',
+                                            ko: '채팅 열기',
+                                            ja: 'チャットを開く',
+                                            de: 'Chat öffnen',
+                                            fr: 'Ouvrir le chat',
+                                            ar: 'فتح الدردشة',
+                                            ru: 'Открыть чат',
+                                            trk: 'Sohbeti Aç',
+                                            es: 'Abrir chat',
+                                            it: 'Apri chat',
+                                            pl: 'Otwórz czat',
+                                            pt: 'Abrir chat',
+                                            th: 'เปิดแชท',
+                                            id: 'Buka chat',
+                                            hi: 'चैट खोलें',
+                                            bn: 'চ্যাট খুলুন',
+                                          ),
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                          ),
                                         ),
                                       ),
                                       PopupMenuItem(
                                         value: 'edit_name',
                                         child: Text(
-                                          'Edit name',
-                                          style: TextStyle(color: Colors.black87),
+                                          tr(
+                                            context,
+                                            'Edit name',
+                                            zhTw: '編輯名稱',
+                                            zhCn: '编辑名称',
+                                            ko: '이름 수정',
+                                            ja: '名前を編集',
+                                            de: 'Namen bearbeiten',
+                                            fr: 'Modifier le nom',
+                                            ar: 'تعديل الاسم',
+                                            ru: 'Изменить имя',
+                                            trk: 'Adı Düzenle',
+                                            es: 'Editar nombre',
+                                            it: 'Modifica nome',
+                                            pl: 'Edytuj nazwę',
+                                            pt: 'Editar nome',
+                                            th: 'แก้ไขชื่อ',
+                                            id: 'Edit nama',
+                                            hi: 'नाम संपादित करें',
+                                            bn: 'নাম সম্পাদনা',
+                                          ),
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                          ),
                                         ),
                                       ),
                                       PopupMenuItem(
                                         value: 'delete_friend',
                                         child: Text(
-                                          'Delete friend',
-                                          style: TextStyle(color: Colors.black87),
+                                          tr(
+                                            context,
+                                            'Delete friend',
+                                            zhTw: '刪除好友',
+                                            zhCn: '删除好友',
+                                            ko: '친구 삭제',
+                                            ja: '友達を削除',
+                                            de: 'Freund löschen',
+                                            fr: 'Supprimer l’ami',
+                                            ar: 'حذف الصديق',
+                                            ru: 'Удалить друга',
+                                            trk: 'Arkadaşı Sil',
+                                            es: 'Eliminar amigo',
+                                            it: 'Elimina amico',
+                                            pl: 'Usuń znajomego',
+                                            pt: 'Excluir amigo',
+                                            th: 'ลบเพื่อน',
+                                            id: 'Hapus teman',
+                                            hi: 'दोस्त हटाएं',
+                                            bn: 'বন্ধু মুছুন',
+                                          ),
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                          ),
                                         ),
                                       ),
                                       PopupMenuItem(
                                         value: 'block',
                                         child: Text(
-                                          'Blacklist',
-                                          style: TextStyle(color: Colors.black87),
+                                          tr(
+                                            context,
+                                            'Blacklist',
+                                            zhTw: '加入黑名單',
+                                            zhCn: '加入黑名单',
+                                            ko: '차단 목록',
+                                            ja: 'ブラックリスト',
+                                            de: 'Blacklist',
+                                            fr: 'Liste noire',
+                                            ar: 'القائمة السوداء',
+                                            ru: 'Чёрный список',
+                                            trk: 'Kara Liste',
+                                            es: 'Lista negra',
+                                            it: 'Blacklist',
+                                            pl: 'Czarna lista',
+                                            pt: 'Lista negra',
+                                            th: 'บัญชีดำ',
+                                            id: 'Daftar hitam',
+                                            hi: 'ब्लैकलिस्ट',
+                                            bn: 'ব্ল্যাকলিস্ট',
+                                          ),
+                                          style: const TextStyle(
+                                            color: Colors.black87,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -7549,9 +13355,29 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Blocked Users',
-                  style: TextStyle(
+                Text(
+                  tr(
+                    context,
+                    'Blocked Users',
+                    zhTw: '黑名單使用者',
+                    zhCn: '黑名单用户',
+                    ko: '차단된 사용자',
+                    ja: 'ブロックしたユーザー',
+                    de: 'Blockierte Benutzer',
+                    fr: 'Utilisateurs bloqués',
+                    ar: 'المستخدمون المحظورون',
+                    ru: 'Заблокированные пользователи',
+                    trk: 'Engellenen Kullanıcılar',
+                    es: 'Usuarios bloqueados',
+                    it: 'Utenti bloccati',
+                    pl: 'Zablokowani użytkownicy',
+                    pt: 'Usuários bloqueados',
+                    th: 'ผู้ใช้ที่ถูกบล็อก',
+                    id: 'Pengguna diblokir',
+                    hi: 'ब्लॉक किए गए उपयोगकर्ता',
+                    bn: 'ব্লক করা ব্যবহারকারী',
+                  ),
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w900,
                     color: Colors.red,
@@ -7572,7 +13398,28 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                           userSnapshot.data?.data() ?? {};
 
                       final displayName =
-                          (userData['displayName'] ?? 'User')
+                          (userData['displayName'] ??
+                                  tr(
+                                    context,
+                                    'User',
+                                    zhTw: '使用者',
+                                    zhCn: '用户',
+                                    ko: '사용자',
+                                    ja: 'ユーザー',
+                                    de: 'Benutzer',
+                                    fr: 'Utilisateur',
+                                    ar: 'مستخدم',
+                                    ru: 'Пользователь',
+                                    trk: 'Kullanıcı',
+                                    es: 'Usuario',
+                                    it: 'Utente',
+                                    pl: 'Użytkownik',
+                                    pt: 'Usuário',
+                                    th: 'ผู้ใช้',
+                                    id: 'Pengguna',
+                                    hi: 'उपयोगकर्ता',
+                                    bn: 'ব্যবহারকারী',
+                                  ))
                               .toString();
 
                       final shortName =
@@ -7658,7 +13505,27 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                 );
                               },
                               child: Text(
-                                'Unblock',
+                                tr(
+                                  context,
+                                  'Unblock',
+                                  zhTw: '解除封鎖',
+                                  zhCn: '解除拉黑',
+                                  ko: '차단 해제',
+                                  ja: 'ブロック解除',
+                                  de: 'Entsperren',
+                                  fr: 'Débloquer',
+                                  ar: 'إلغاء الحظر',
+                                  ru: 'Разблокировать',
+                                  trk: 'Engeli Kaldır',
+                                  es: 'Desbloquear',
+                                  it: 'Sblocca',
+                                  pl: 'Odblokuj',
+                                  pt: 'Desbloquear',
+                                  th: 'เลิกบล็อก',
+                                  id: 'Buka blokir',
+                                  hi: 'अनब्लॉक करें',
+                                  bn: 'আনব্লক করুন',
+                                ),
                                 style: TextStyle(
                                   color: Colors.red.shade700,
                                   fontWeight: FontWeight.w800,
@@ -7693,9 +13560,29 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
         surfaceTintColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        title: const Text(
-          'Friends & Chat',
-          style: TextStyle(
+        title: Text(
+          tr(
+            context,
+            'Friends & Chat',
+            zhTw: '好友與聊天',
+            zhCn: '好友与聊天',
+            ko: '친구 및 채팅',
+            ja: '友達とチャット',
+            de: 'Freunde & Chat',
+            fr: 'Amis et chat',
+            ar: 'الأصدقاء والدردشة',
+            ru: 'Друзья и чат',
+            trk: 'Arkadaşlar ve Sohbet',
+            es: 'Amigos y chat',
+            it: 'Amici e chat',
+            pl: 'Znajomi i czat',
+            pt: 'Amigos e chat',
+            th: 'เพื่อนและแชท',
+            id: 'Teman & Chat',
+            hi: 'दोस्त और चैट',
+            bn: 'বন্ধু ও চ্যাট',
+          ),
+          style: const TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w900,
           ),
@@ -7734,7 +13621,27 @@ class UnreadChatIconButton extends StatelessWidget {
     if (currentUid.isEmpty) {
       return IconButton(
         onPressed: onTap,
-        tooltip: 'Friends & Chat',
+        tooltip: tr(
+          context,
+          'Friends & Chat',
+          zhTw: '好友與聊天',
+          zhCn: '好友与聊天',
+          ko: '친구 및 채팅',
+          ja: '友達とチャット',
+          de: 'Freunde & Chat',
+          fr: 'Amis et chat',
+          ar: 'الأصدقاء والدردشة',
+          ru: 'Друзья и чат',
+          trk: 'Arkadaşlar ve Sohbet',
+          es: 'Amigos y chat',
+          it: 'Amici e chat',
+          pl: 'Znajomi i czat',
+          pt: 'Amigos e chat',
+          th: 'เพื่อนและแชท',
+          id: 'Teman & Chat',
+          hi: 'दोस्त और चैट',
+          bn: 'বন্ধু ও চ্যাট',
+        ),
         icon: const Icon(Icons.people_alt_outlined),
       );
     }
@@ -7747,10 +13654,14 @@ class UnreadChatIconButton extends StatelessWidget {
       builder: (context, snapshot) {
         int unreadTotal = 0;
 
-        for (final doc in snapshot.data?.docs ?? <QueryDocumentSnapshot<Map<String, dynamic>>>[]) {
+        for (final doc
+            in snapshot.data?.docs ??
+                <QueryDocumentSnapshot<Map<String, dynamic>>>[]) {
           final data = doc.data();
+
           final unreadCounts =
               Map<String, dynamic>.from(data['unreadCounts'] ?? {});
+
           final count = (unreadCounts[currentUid] ?? 0);
 
           if (count is int) {
@@ -7765,9 +13676,30 @@ class UnreadChatIconButton extends StatelessWidget {
           children: [
             IconButton(
               onPressed: onTap,
-              tooltip: 'Friends & Chat',
+              tooltip: tr(
+                context,
+                'Friends & Chat',
+                zhTw: '好友與聊天',
+                zhCn: '好友与聊天',
+                ko: '친구 및 채팅',
+                ja: '友達とチャット',
+                de: 'Freunde & Chat',
+                fr: 'Amis et chat',
+                ar: 'الأ朋友 والدردشة',
+                ru: 'Друзья и чат',
+                trk: 'Arkadaşlar ve Sohbet',
+                es: 'Amigos y chat',
+                it: 'Amici e chat',
+                pl: 'Znajomi i czat',
+                pt: 'Amigos e chat',
+                th: 'เพื่อนและแชท',
+                id: 'Teman & Chat',
+                hi: 'दोस्त और चैट',
+                bn: 'বন্ধু ও চ্যাট',
+              ),
               icon: const Icon(Icons.people_alt_outlined),
             ),
+
             if (unreadTotal > 0)
               Positioned(
                 right: 6,
@@ -7786,7 +13718,9 @@ class UnreadChatIconButton extends StatelessWidget {
                     minHeight: 18,
                   ),
                   child: Text(
-                    unreadTotal > 99 ? '99+' : unreadTotal.toString(),
+                    unreadTotal > 99
+                        ? '99+'
+                        : unreadTotal.toString(),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
@@ -7821,7 +13755,29 @@ class FriendChatButton extends StatelessWidget {
       return FilledButton.icon(
         onPressed: onTap,
         icon: const Icon(Icons.chat_bubble_outline),
-        label: const Text('Chat'),
+        label: Text(
+          tr(
+            context,
+            'Chat',
+            zhTw: '聊天',
+            zhCn: '聊天',
+            ko: '채팅',
+            ja: 'チャット',
+            de: 'Chat',
+            fr: 'Chat',
+            ar: 'الدردشة',
+            ru: 'Чат',
+            trk: 'Sohbet',
+            es: 'Chat',
+            it: 'Chat',
+            pl: 'Czat',
+            pt: 'Chat',
+            th: 'แชท',
+            id: 'Chat',
+            hi: 'चैट',
+            bn: 'চ্যাট',
+          ),
+        ),
       );
     }
 
@@ -7852,7 +13808,51 @@ class FriendChatButton extends StatelessWidget {
             FilledButton.icon(
               onPressed: onTap,
               icon: const Icon(Icons.chat_bubble_outline),
-              label: Text(unreadCount > 0 ? 'Chat ($unreadCount)' : 'Chat'),
+              label: Text(
+                unreadCount > 0
+                    ? '${tr(
+                        context,
+                        'Chat',
+                        zhTw: '聊天',
+                        zhCn: '聊天',
+                        ko: '채팅',
+                        ja: 'チャット',
+                        de: 'Chat',
+                        fr: 'Chat',
+                        ar: 'الدردشة',
+                        ru: 'Чат',
+                        trk: 'Sohbet',
+                        es: 'Chat',
+                        it: 'Chat',
+                        pl: 'Czat',
+                        pt: 'Chat',
+                        th: 'แชท',
+                        id: 'Chat',
+                        hi: 'चैट',
+                        bn: 'চ্যাট',
+                      )} ($unreadCount)'
+                    : tr(
+                        context,
+                        'Chat',
+                        zhTw: '聊天',
+                        zhCn: '聊天',
+                        ko: '채팅',
+                        ja: 'チャット',
+                        de: 'Chat',
+                        fr: 'Chat',
+                        ar: 'الدردشة',
+                        ru: 'Чат',
+                        trk: 'Sohbet',
+                        es: 'Chat',
+                        it: 'Chat',
+                        pl: 'Czat',
+                        pt: 'Chat',
+                        th: 'แชท',
+                        id: 'Chat',
+                        hi: 'चैट',
+                        bn: 'চ্যাট',
+                      ),
+              ),
             ),
             if (unreadCount > 0)
               Positioned(
@@ -7926,7 +13926,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   Future<void> _markChatAsRead() async {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     if (currentUid.isEmpty) return;
-  
+
     try {
       await FirebaseFirestore.instance
           .collection('direct_chats')
@@ -7937,7 +13937,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         'updatedAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('mark read error: $e');
+      debugPrint('mark read error: $e');
     }
   }
 
@@ -7960,7 +13960,29 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
       final currentData = currentUserDoc.data() ?? {};
       final senderName =
-          (currentData['displayName'] ?? currentUser.displayName ?? 'User')
+          (currentData['displayName'] ??
+                  currentUser.displayName ??
+                  tr(
+                    context,
+                    'User',
+                    zhTw: '使用者',
+                    zhCn: '用户',
+                    ko: '사용자',
+                    ja: 'ユーザー',
+                    de: 'Benutzer',
+                    fr: 'Utilisateur',
+                    ar: 'مستخدم',
+                    ru: 'Пользователь',
+                    trk: 'Kullanıcı',
+                    es: 'Usuario',
+                    it: 'Utente',
+                    pl: 'Użytkownik',
+                    pt: 'Usuário',
+                    th: 'ผู้ใช้',
+                    id: 'Pengguna',
+                    hi: 'उपयोगकर्ता',
+                    bn: 'ব্যবহারকারী',
+                  ))
               .toString();
 
       final senderPhotoUrl =
@@ -8009,8 +14031,33 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       await _markChatAsRead();
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to send message')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Failed to send message',
+              zhTw: '發送訊息失敗',
+              zhCn: '发送消息失败',
+              ko: '메시지 전송에 실패했습니다',
+              ja: 'メッセージの送信に失敗しました',
+              de: 'Nachricht konnte nicht gesendet werden',
+              fr: 'Impossible d’envoyer le message',
+              ar: 'فشل إرسال الرسالة',
+              ru: 'Не удалось отправить сообщение',
+              trk: 'Mesaj gönderilemedi',
+              es: 'No se pudo enviar el mensaje',
+              it: 'Impossibile inviare il messaggio',
+              pl: 'Nie udało się wysłać wiadomości',
+              pt: 'Falha ao enviar mensagem',
+              th: 'ส่งข้อความไม่สำเร็จ',
+              id: 'Gagal mengirim pesan',
+              hi: 'संदेश भेजने में विफल',
+              bn: 'বার্তা পাঠানো যায়নি',
+            ),
+          ),
+        ),
       );
     }
 
@@ -8025,8 +14072,33 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     await Clipboard.setData(ClipboardData(text: text));
 
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message copied')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Message copied',
+            zhTw: '訊息已複製',
+            zhCn: '消息已复制',
+            ko: '메시지가 복사되었습니다',
+            ja: 'メッセージをコピーしました',
+            de: 'Nachricht kopiert',
+            fr: 'Message copié',
+            ar: 'تم نسخ الرسالة',
+            ru: 'Сообщение скопировано',
+            trk: 'Mesaj kopyalandı',
+            es: 'Mensaje copiado',
+            it: 'Messaggio copiato',
+            pl: 'Wiadomość skopiowana',
+            pt: 'Mensagem copiada',
+            th: 'คัดลอกข้อความแล้ว',
+            id: 'Pesan disalin',
+            hi: 'संदेश कॉपी किया गया',
+            bn: 'বার্তা কপি হয়েছে',
+          ),
+        ),
+      ),
     );
   }
 
@@ -8041,6 +14113,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   @override
   Widget build(BuildContext context) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
     final titleText =
         (widget.otherNickname ?? '').trim().isNotEmpty
             ? widget.otherNickname!.trim()
@@ -8058,12 +14131,35 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 autofocus: true,
                 style: const TextStyle(color: Colors.black87),
                 decoration: InputDecoration(
-                  hintText: 'Search chat history',
-                  hintStyle: const TextStyle(color: Colors.black54),
+                  hintText: tr(
+                    context,
+                    'Search chat history',
+                    zhTw: '搜尋聊天紀錄',
+                    zhCn: '搜索聊天记录',
+                    ko: '채팅 기록 검색',
+                    ja: 'チャット履歴を検索',
+                    de: 'Chatverlauf durchsuchen',
+                    fr: 'Rechercher dans le chat',
+                    ar: 'البحث في سجل الدردشة',
+                    ru: 'Поиск по истории чата',
+                    trk: 'Sohbet geçmişini ara',
+                    es: 'Buscar historial del chat',
+                    it: 'Cerca nella cronologia chat',
+                    pl: 'Szukaj w historii czatu',
+                    pt: 'Pesquisar histórico do chat',
+                    th: 'ค้นหาประวัติแชท',
+                    id: 'Cari riwayat chat',
+                    hi: 'चैट इतिहास खोजें',
+                    bn: 'চ্যাট ইতিহাস খুঁজুন',
+                  ),
+                  hintStyle: const TextStyle(
+                    color: Colors.black54,
+                  ),
                   border: InputBorder.none,
                   suffixIcon: IconButton(
                     onPressed: () {
                       chatSearchController.clear();
+
                       setState(() {
                         chatKeyword = '';
                       });
@@ -8086,8 +14182,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         .snapshots(),
                     builder: (context, userSnapshot) {
                       final userData = userSnapshot.data?.data() ?? {};
-                      final avatar = resolveAvatarSnapshotFromMap(userData);
-                      final name = (userData['displayName'] ?? titleText).toString();
+
+                      final avatar =
+                          resolveAvatarSnapshotFromMap(userData);
+
+                      final name =
+                          (userData['displayName'] ?? titleText)
+                              .toString();
 
                       return buildAppAvatar(
                         radius: 18,
@@ -8098,7 +14199,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       );
                     },
                   ),
+
                   const SizedBox(width: 10),
+
                   Expanded(
                     child: Text(
                       titleText,
@@ -8115,6 +14218,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             onPressed: () {
               setState(() {
                 isSearchMode = !isSearchMode;
+
                 if (!isSearchMode) {
                   chatSearchController.clear();
                   chatKeyword = '';
@@ -8145,9 +14249,16 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     if (chatKeyword.isEmpty) return true;
 
                     final data = doc.data();
-                    final text = (data['text'] ?? '').toString().toLowerCase();
+
+                    final text =
+                        (data['text'] ?? '')
+                            .toString()
+                            .toLowerCase();
+
                     final senderName =
-                        (data['senderName'] ?? '').toString().toLowerCase();
+                        (data['senderName'] ?? '')
+                            .toString()
+                            .toLowerCase();
 
                     return text.contains(chatKeyword) ||
                         senderName.contains(chatKeyword);
@@ -8157,9 +14268,51 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     return Center(
                       child: Text(
                         chatKeyword.isEmpty
-                            ? 'No messages yet'
-                            : 'No matching messages',
-                        style: const TextStyle(color: Colors.black54),
+                            ? tr(
+                                context,
+                                'No messages yet',
+                                zhTw: '目前還沒有訊息',
+                                zhCn: '目前还没有消息',
+                                ko: '아직 메시지가 없습니다',
+                                ja: 'まだメッセージがありません',
+                                de: 'Noch keine Nachrichten',
+                                fr: 'Aucun message',
+                                ar: 'لا توجد رسائل بعد',
+                                ru: 'Пока нет сообщений',
+                                trk: 'Henüz mesaj yok',
+                                es: 'Aún no hay mensajes',
+                                it: 'Ancora nessun messaggio',
+                                pl: 'Brak wiadomości',
+                                pt: 'Ainda não há mensagens',
+                                th: 'ยังไม่มีข้อความ',
+                                id: 'Belum ada pesan',
+                                hi: 'अभी कोई संदेश नहीं',
+                                bn: 'এখনও কোনো বার্তা নেই',
+                              )
+                            : tr(
+                                context,
+                                'No matching messages',
+                                zhTw: '沒有符合的訊息',
+                                zhCn: '没有匹配的消息',
+                                ko: '일치하는 메시지가 없습니다',
+                                ja: '一致するメッセージがありません',
+                                de: 'Keine passenden Nachrichten',
+                                fr: 'Aucun message correspondant',
+                                ar: 'لا توجد رسائل مطابقة',
+                                ru: 'Нет совпадающих сообщений',
+                                trk: 'Eşleşen mesaj yok',
+                                es: 'No hay mensajes coincidentes',
+                                it: 'Nessun messaggio corrispondente',
+                                pl: 'Brak pasujących wiadomości',
+                                pt: 'Nenhuma mensagem correspondente',
+                                th: 'ไม่พบข้อความที่ตรงกัน',
+                                id: 'Tidak ada pesan yang cocok',
+                                hi: 'कोई मेल खाता संदेश नहीं',
+                                bn: 'কোনো মিলযুক্ত বার্তা নেই',
+                              ),
+                        style: const TextStyle(
+                          color: Colors.black54,
+                        ),
                       ),
                     );
                   }
@@ -8169,27 +14322,37 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final data = docs[index].data();
+
                       final isMine =
-                          (data['senderUid'] ?? '').toString() == currentUid;
-                      final text = (data['text'] ?? '').toString();
+                          (data['senderUid'] ?? '').toString() ==
+                              currentUid;
+
+                      final text =
+                          (data['text'] ?? '').toString();
 
                       return Align(
-                        alignment:
-                            isMine ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMine
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
                         child: GestureDetector(
                           onLongPress: () => _copyMessage(text),
                           child: Container(
-                            margin: const EdgeInsets.only(bottom: 10),
+                            margin: const EdgeInsets.only(
+                              bottom: 10,
+                            ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 10,
                             ),
-                            constraints: const BoxConstraints(maxWidth: 320),
+                            constraints: const BoxConstraints(
+                              maxWidth: 320,
+                            ),
                             decoration: BoxDecoration(
                               color: isMine
                                   ? const Color(0xFFDDF6E3)
                                   : Colors.white,
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius:
+                                  BorderRadius.circular(16),
                               border: Border.all(
                                 color: isMine
                                     ? const Color(0xFFBBE7C6)
@@ -8204,26 +14367,34 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                               ],
                             ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                               children: [
                                 if (!isMine)
                                   Padding(
-                                    padding: const EdgeInsets.only(bottom: 4),
+                                    padding:
+                                        const EdgeInsets.only(
+                                      bottom: 4,
+                                    ),
                                     child: Text(
-                                      (data['senderName'] ?? '').toString(),
+                                      (data['senderName'] ?? '')
+                                          .toString(),
                                       style: const TextStyle(
                                         fontSize: 12,
-                                        fontWeight: FontWeight.w700,
+                                        fontWeight:
+                                            FontWeight.w700,
                                         color: Colors.black54,
                                       ),
                                     ),
                                   ),
+
                                 SelectableText(
                                   text,
                                   style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w500,
+                                    fontWeight:
+                                        FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -8236,12 +14407,20 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 },
               ),
             ),
+
             Container(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              padding: const EdgeInsets.fromLTRB(
+                12,
+                8,
+                12,
+                12,
+              ),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 border: Border(
-                  top: BorderSide(color: Color(0xFFE5E7EB)),
+                  top: BorderSide(
+                    color: Color(0xFFE5E7EB),
+                  ),
                 ),
               ),
               child: Row(
@@ -8256,34 +14435,86 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                         fontWeight: FontWeight.w500,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Type a message',
+                        hintText: tr(
+                          context,
+                          'Type a message',
+                          zhTw: '輸入訊息',
+                          zhCn: '输入消息',
+                          ko: '메시지를 입력하세요',
+                          ja: 'メッセージを入力',
+                          de: 'Nachricht eingeben',
+                          fr: 'Tapez un message',
+                          ar: 'اكتب رسالة',
+                          ru: 'Введите сообщение',
+                          trk: 'Mesaj yaz',
+                          es: 'Escribe un mensaje',
+                          it: 'Scrivi un messaggio',
+                          pl: 'Wpisz wiadomość',
+                          pt: 'Digite uma mensagem',
+                          th: 'พิมพ์ข้อความ',
+                          id: 'Ketik pesan',
+                          hi: 'संदेश लिखें',
+                          bn: 'বার্তা লিখুন',
+                        ),
                         hintStyle: const TextStyle(
                           color: Colors.black38,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius:
+                              BorderRadius.circular(16),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
+                        fillColor:
+                            const Color(0xFFF9FAFB),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
+
                   const SizedBox(width: 8),
+
                   SizedBox(
                     height: 52,
                     child: FilledButton(
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFF16A34A),
+                        backgroundColor:
+                            const Color(0xFF16A34A),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 22),
+                        padding:
+                            const EdgeInsets.symmetric(
+                          horizontal: 22,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius:
+                              BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: isSending ? null : _sendMessage,
+                      onPressed:
+                          isSending ? null : _sendMessage,
                       child: Text(
-                        isSending ? '...' : 'Send',
+                        isSending
+                            ? '...'
+                            : tr(
+                                context,
+                                'Send',
+                                zhTw: '發送',
+                                zhCn: '发送',
+                                ko: '전송',
+                                ja: '送信',
+                                de: 'Senden',
+                                fr: 'Envoyer',
+                                ar: 'إرسال',
+                                ru: 'Отправить',
+                                trk: 'Gönder',
+                                es: 'Enviar',
+                                it: 'Invia',
+                                pl: 'Wyślij',
+                                pt: 'Enviar',
+                                th: 'ส่ง',
+                                id: 'Kirim',
+                                hi: 'भेजें',
+                                bn: 'পাঠান',
+                              ),
                         style: const TextStyle(
                           fontWeight: FontWeight.w800,
                         ),
@@ -8361,12 +14592,56 @@ class _TableDetailPageState extends State<TableDetailPage> {
       final snap = await tx.get(tableDocRef);
 
       if (!snap.exists) {
-        throw Exception('Table not found');
+        throw Exception(
+          tr(
+            context,
+            'Table not found',
+            zhTw: '找不到桌子',
+            zhCn: '找不到桌子',
+            ko: '테이블을 찾을 수 없습니다',
+            ja: 'テーブルが見つかりません',
+            de: 'Tisch nicht gefunden',
+            fr: 'Table introuvable',
+            ar: 'لم يتم العثور على الطاولة',
+            ru: 'Стол не найден',
+            trk: 'Masa bulunamadı',
+            es: 'Mesa no encontrada',
+            it: 'Tavolo non trovato',
+            pl: 'Nie znaleziono stołu',
+            pt: 'Mesa não encontrada',
+            th: 'ไม่พบโต๊ะ',
+            id: 'Meja tidak ditemukan',
+            hi: 'टेबल नहीं मिली',
+            bn: 'টেবিল পাওয়া যায়নি',
+          ),
+        );
       }
 
       final data = snap.data();
       if (data == null) {
-        throw Exception('Table data missing');
+        throw Exception(
+          tr(
+            context,
+            'Table data missing',
+            zhTw: '桌子資料遺失',
+            zhCn: '桌子资料缺失',
+            ko: '테이블 데이터가 없습니다',
+            ja: 'テーブルデータがありません',
+            de: 'Tischdaten fehlen',
+            fr: 'Données de table manquantes',
+            ar: 'بيانات الطاولة مفقودة',
+            ru: 'Данные стола отсутствуют',
+            trk: 'Masa verileri eksik',
+            es: 'Faltan datos de la mesa',
+            it: 'Dati del tavolo mancanti',
+            pl: 'Brakuje danych stołu',
+            pt: 'Dados da mesa ausentes',
+            th: 'ข้อมูลโต๊ะหายไป',
+            id: 'Data meja hilang',
+            hi: 'टेबल डेटा नहीं मिला',
+            bn: 'টেবিল ডেটা নেই',
+          ),
+        );
       }
 
       return action(tx, snap, data);
@@ -8399,24 +14674,133 @@ class _TableDetailPageState extends State<TableDetailPage> {
     _isShowingSeatSwapDialog = true;
 
     final requesterName =
-        (pendingSwap['requesterName'] ?? 'Another player').toString().trim();
+        (pendingSwap['requesterName'] ??
+                tr(
+                  context,
+                  'Another player',
+                  zhTw: '另一位玩家',
+                  zhCn: '另一位玩家',
+                  ko: '다른 플레이어',
+                  ja: '他のプレイヤー',
+                  de: 'Ein anderer Spieler',
+                  fr: 'Un autre joueur',
+                  ar: 'لاعب آخر',
+                  ru: 'Другой игрок',
+                  trk: 'Başka bir oyuncu',
+                  es: 'Otro jugador',
+                  it: 'Un altro giocatore',
+                  pl: 'Inny gracz',
+                  pt: 'Outro jogador',
+                  th: 'ผู้เล่นคนอื่น',
+                  id: 'Pemain lain',
+                  hi: 'दूसरा खिलाड़ी',
+                  bn: 'অন্য একজন খেলোয়াড়',
+                ))
+            .toString()
+            .trim();
 
     final approved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('Seat Swap Request'),
+        title: Text(
+          tr(
+            context,
+            'Seat Swap Request',
+            zhTw: '換座位請求',
+            zhCn: '换座位请求',
+            ko: '좌석 교환 요청',
+            ja: '座席交換リクエスト',
+            de: 'Sitztausch-Anfrage',
+            fr: 'Demande d’échange de siège',
+            ar: 'طلب تبديل المقاعد',
+            ru: 'Запрос на обмен местами',
+            trk: 'Koltuk Değiştirme İsteği',
+            es: 'Solicitud de cambio de asiento',
+            it: 'Richiesta cambio posto',
+            pl: 'Prośba o zamianę miejsc',
+            pt: 'Solicitação de troca de assento',
+            th: 'คำขอแลกที่นั่ง',
+            id: 'Permintaan tukar kursi',
+            hi: 'सीट बदलने का अनुरोध',
+            bn: 'সিট বদলের অনুরোধ',
+          ),
+        ),
         content: Text(
-          '$requesterName wants to swap seats with you.\n\nDo you agree?',
+          tr(
+            context,
+            '$requesterName wants to swap seats with you.\n\nDo you agree?',
+            zhTw: '$requesterName 想和你交換座位。\n\n你同意嗎？',
+            zhCn: '$requesterName 想和你交换座位。\n\n你同意吗？',
+            ko: '$requesterName님이 당신과 좌석을 바꾸고 싶어합니다.\n\n동의하시나요?',
+            ja: '$requesterName があなたと席を交換したいと言っています。\n\n同意しますか？',
+            de: '$requesterName möchte mit dir die Plätze tauschen.\n\nStimmst du zu?',
+            fr: '$requesterName souhaite échanger de siège avec vous.\n\nÊtes-vous d’accord ?',
+            ar: 'يريد $requesterName تبديل المقاعد معك.\n\nهل توافق؟',
+            ru: '$requesterName хочет поменяться с вами местами.\n\nВы согласны?',
+            trk: '$requesterName sizinle koltuk değiştirmek istiyor.\n\nKabul ediyor musunuz?',
+            es: '$requesterName quiere cambiar de asiento contigo.\n\n¿Aceptas?',
+            it: '$requesterName vuole scambiare posto con te.\n\nAccetti?',
+            pl: '$requesterName chce zamienić się z Tobą miejscami.\n\nZgadzasz się?',
+            pt: '$requesterName quer trocar de assento com você.\n\nVocê concorda?',
+            th: '$requesterName ต้องการแลกที่นั่งกับคุณ\n\nคุณยอมรับหรือไม่?',
+            id: '$requesterName ingin bertukar kursi dengan Anda.\n\nApakah Anda setuju?',
+            hi: '$requesterName आपके साथ सीट बदलना चाहता है।\n\nक्या आप सहमत हैं?',
+            bn: '$requesterName আপনার সাথে সিট বদলাতে চায়।\n\nআপনি কি রাজি?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Decline'),
+            child: Text(
+              tr(
+                context,
+                'Decline',
+                zhTw: '拒絕',
+                zhCn: '拒绝',
+                ko: '거절',
+                ja: '拒否',
+                de: 'Ablehnen',
+                fr: 'Refuser',
+                ar: 'رفض',
+                ru: 'Отклонить',
+                trk: 'Reddet',
+                es: 'Rechazar',
+                it: 'Rifiuta',
+                pl: 'Odrzuć',
+                pt: 'Recusar',
+                th: 'ปฏิเสธ',
+                id: 'Tolak',
+                hi: 'अस्वीकार',
+                bn: 'প্রত্যাখ্যান',
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Agree'),
+            child: Text(
+              tr(
+                context,
+                'Agree',
+                zhTw: '同意',
+                zhCn: '同意',
+                ko: '동의',
+                ja: '同意',
+                de: 'Zustimmen',
+                fr: 'Accepter',
+                ar: 'موافق',
+                ru: 'Согласен',
+                trk: 'Kabul Et',
+                es: 'Aceptar',
+                it: 'Accetta',
+                pl: 'Zgadzam się',
+                pt: 'Concordar',
+                th: 'ยอมรับ',
+                id: 'Setuju',
+                hi: 'सहमत',
+                bn: 'রাজি',
+              ),
+            ),
           ),
         ],
       ),
@@ -8455,7 +14839,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
         if (_isShowingWaitingLeaveSnack) return;
 
         _isShowingWaitingLeaveSnack = true;
-        _showSnack('$name left the waiting list');
+
+        _showSnack(
+          tr(
+            context,
+            '$name left the waiting list',
+            zhTw: '$name 已離開等待名單',
+            zhCn: '$name 已离开等待名单',
+            ko: '$name님이 대기자 명단을 떠났습니다',
+            ja: '$name がウェイティングリストから退出しました',
+            de: '$name hat die Warteliste verlassen',
+            fr: '$name a quitté la liste d’attente',
+            ar: 'غادر $name قائمة الانتظار',
+            ru: '$name покинул список ожидания',
+            trk: '$name bekleme listesinden ayrıldı',
+            es: '$name salió de la lista de espera',
+            it: '$name ha lasciato la lista d’attesa',
+            pl: '$name opuścił listę oczekujących',
+            pt: '$name saiu da lista de espera',
+            th: '$name ออกจากรายชื่อรอแล้ว',
+            id: '$name keluar dari daftar tunggu',
+            hi: '$name प्रतीक्षा सूची से निकल गया',
+            bn: '$name অপেক্ষমাণ তালিকা থেকে বের হয়েছে',
+          ),
+        );
 
         Future.delayed(const Duration(seconds: 2), () {
           if (!mounted) return;
@@ -8532,23 +14939,71 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
   bool _isCurrentUserInTableFromTable(TableData table) {
     final myName = widget.session.name.trim();
-    return table.seats.any((seat) => (seat.playerName ?? '').trim() == myName);
+
+    return table.seats.any(
+      (seat) => (seat.playerName ?? '').trim() == myName,
+    );
   }
 
   Future<void> _startMovePlayer(int seatIndex) async {
     if (!canManageThisTable) {
-      _showSnack('Only the table creator can move players');
+      _showSnack(
+        tr(
+          context,
+          'Only the table creator can move players',
+          zhTw: '只有桌主可以移動玩家',
+          zhCn: '只有桌主可以移动玩家',
+          ko: '테이블 생성자만 플레이어를 이동할 수 있습니다',
+          ja: 'テーブル作成者のみプレイヤーを移動できます',
+          de: 'Nur der Tischersteller kann Spieler verschieben',
+          fr: 'Seul le créateur de la table peut déplacer les joueurs',
+          ar: 'يمكن فقط لمنشئ الطاولة نقل اللاعبين',
+          ru: 'Только создатель стола может перемещать игроков',
+          trk: 'Yalnızca masa sahibi oyuncuları taşıyabilir',
+          es: 'Solo el creador de la mesa puede mover jugadores',
+          it: 'Solo il creatore del tavolo può spostare i giocatori',
+          pl: 'Tylko twórca stołu może przenosić graczy',
+          pt: 'Somente o criador da mesa pode mover jogadores',
+          th: 'เฉพาะเจ้าของโต๊ะเท่านั้นที่สามารถย้ายผู้เล่นได้',
+          id: 'Hanya pembuat meja yang dapat memindahkan pemain',
+          hi: 'केवल टेबल बनाने वाला खिलाड़ी खिलाड़ियों को हिला सकता है',
+          bn: 'শুধুমাত্র টেবিল নির্মাতা খেলোয়াড় সরাতে পারে',
+        ),
+      );
       return;
     }
 
     final seatNames = await _getSeatNamesFromFirestore();
 
     if (seatIndex < 0 || seatIndex >= seatNames.length) {
-      _showSnack('Invalid seat');
+      _showSnack(
+        tr(
+          context,
+          'Invalid seat',
+          zhTw: '無效座位',
+          zhCn: '无效座位',
+          ko: '잘못된 좌석입니다',
+          ja: '無効な座席です',
+          de: 'Ungültiger Sitz',
+          fr: 'Siège invalide',
+          ar: 'مقعد غير صالح',
+          ru: 'Недопустимое место',
+          trk: 'Geçersiz koltuk',
+          es: 'Asiento inválido',
+          it: 'Posto non valido',
+          pl: 'Nieprawidłowe miejsce',
+          pt: 'Assento inválido',
+          th: 'ที่นั่งไม่ถูกต้อง',
+          id: 'Kursi tidak valid',
+          hi: 'अमान्य सीट',
+          bn: 'অবৈধ সিট',
+        ),
+      );
       return;
     }
 
     final playerName = seatNames[seatIndex];
+
     if (playerName == null) return;
 
     setState(() {
@@ -8556,7 +15011,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
       movingPlayerName = playerName;
     });
 
-    _showSnack('Tap another seat to move or swap');
+    _showSnack(
+      tr(
+        context,
+        'Tap another seat to move or swap',
+        zhTw: '點擊另一個座位來移動或交換',
+        zhCn: '点击另一个座位来移动或交换',
+        ko: '다른 좌석을 눌러 이동 또는 교환하세요',
+        ja: '別の席をタップして移動または交換してください',
+        de: 'Tippe auf einen anderen Sitz zum Verschieben oder Tauschen',
+        fr: 'Touchez un autre siège pour déplacer ou échanger',
+        ar: 'اضغط على مقعد آخر للنقل أو التبديل',
+        ru: 'Нажмите на другое место, чтобы переместить или обменять',
+        trk: 'Taşımak veya değiştirmek için başka bir koltuğa dokunun',
+        es: 'Toca otro asiento para mover o intercambiar',
+        it: 'Tocca un altro posto per spostare o scambiare',
+        pl: 'Dotknij innego miejsca, aby przenieść lub zamienić',
+        pt: 'Toque em outro assento para mover ou trocar',
+        th: 'แตะที่นั่งอื่นเพื่อย้ายหรือสลับ',
+        id: 'Ketuk kursi lain untuk memindahkan atau menukar',
+        hi: 'स्थानांतरित या बदलने के लिए दूसरी सीट टैप करें',
+        bn: 'সরানো বা অদলবদল করতে অন্য সিটে চাপুন',
+      ),
+    );
   }
 
   Future<Map<String, dynamic>?> _showSelectPlayerDialog() async {
@@ -8589,6 +15066,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
         }
 
         final uid = (seat['playerUid'] ?? '').toString().trim();
+
         final playerId =
             (seat['playerId'] ?? '').toString().trim().toLowerCase();
 
@@ -8601,6 +15079,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
         }
 
         final identityKey = _seatIdentityKey(seat);
+
         if (identityKey.isNotEmpty) {
           seatedNames.add(identityKey);
         }
@@ -8617,16 +15096,24 @@ class _TableDetailPageState extends State<TableDetailPage> {
           .where('isActive', isEqualTo: true);
 
       if (currentUid.isNotEmpty) {
-        query = query.where('grantedHostIds', arrayContains: currentUid);
+        query = query.where(
+          'grantedHostIds',
+          arrayContains: currentUid,
+        );
       }
 
       final snapshot = await query.limit(200).get();
 
       int sortScore(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
         final data = doc.data();
+
         final selectedCount = (data['hostPickCount'] ?? 0) is int
             ? (data['hostPickCount'] ?? 0) as int
-            : int.tryParse((data['hostPickCount'] ?? '0').toString()) ?? 0;
+            : int.tryParse(
+                    (data['hostPickCount'] ?? '0').toString(),
+                  ) ??
+                0;
+
         return selectedCount;
       }
 
@@ -8634,10 +15121,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final data = doc.data();
 
         final uid = doc.id.trim();
+
         final displayName =
             (data['displayName'] ?? '').toString().trim();
+
         final shortName =
             (data['shortName'] ?? '').toString().trim();
+
         final playerId =
             (data['playerId'] ?? '').toString().trim().toLowerCase();
 
@@ -8653,7 +15143,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
           return false;
         }
 
-        if (playerId.isNotEmpty && seatedPlayerIds.contains(playerId)) {
+        if (playerId.isNotEmpty &&
+            seatedPlayerIds.contains(playerId)) {
           return false;
         }
 
@@ -8664,11 +15155,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
           shortName.toLowerCase(),
         ].where((e) => e.isNotEmpty).join('|');
 
-        if (identityKey.isNotEmpty && seatedNames.contains(identityKey)) {
+        if (identityKey.isNotEmpty &&
+            seatedNames.contains(identityKey)) {
           return false;
         }
 
-        if (identityKey.isNotEmpty && waitingIdentityKeys.contains(identityKey)) {
+        if (identityKey.isNotEmpty &&
+            waitingIdentityKeys.contains(identityKey)) {
           return false;
         }
 
@@ -8686,31 +15179,62 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final tsA = a.data()['lastHostPickedAt'];
         final tsB = b.data()['lastHostPickedAt'];
 
-        final timeA = tsA is Timestamp ? tsA.millisecondsSinceEpoch : 0;
-        final timeB = tsB is Timestamp ? tsB.millisecondsSinceEpoch : 0;
+        final timeA =
+            tsA is Timestamp ? tsA.millisecondsSinceEpoch : 0;
+
+        final timeB =
+            tsB is Timestamp ? tsB.millisecondsSinceEpoch : 0;
 
         if (timeA != timeB) {
           return timeB.compareTo(timeA);
         }
 
         final nameA =
-            ((a.data()['shortName'] ?? a.data()['displayName'] ?? '')
+            ((a.data()['shortName'] ??
+                        a.data()['displayName'] ??
+                        '')
                     .toString())
                 .toLowerCase();
 
         final nameB =
-            ((b.data()['shortName'] ?? b.data()['displayName'] ?? '')
+            ((b.data()['shortName'] ??
+                        b.data()['displayName'] ??
+                        '')
                     .toString())
                 .toLowerCase();
 
         return nameA.compareTo(nameB);
       });
 
-      filteredPlayers = List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
+      filteredPlayers =
+          List<QueryDocumentSnapshot<Map<String, dynamic>>>.from(
         allPlayers,
       );
     } catch (e) {
-      _showSnack('Failed to load players');
+      _showSnack(
+        tr(
+          context,
+          'Failed to load players',
+          zhTw: '載入玩家失敗',
+          zhCn: '加载玩家失败',
+          ko: '플레이어를 불러오지 못했습니다',
+          ja: 'プレイヤーの読み込みに失敗しました',
+          de: 'Spieler konnten nicht geladen werden',
+          fr: 'Impossible de charger les joueurs',
+          ar: 'فشل تحميل اللاعبين',
+          ru: 'Не удалось загрузить игроков',
+          trk: 'Oyuncular yüklenemedi',
+          es: 'No se pudieron cargar los jugadores',
+          it: 'Impossibile caricare i giocatori',
+          pl: 'Nie udało się załadować graczy',
+          pt: 'Falha ao carregar jogadores',
+          th: 'โหลดผู้เล่นไม่สำเร็จ',
+          id: 'Gagal memuat pemain',
+          hi: 'खिलाड़ियों को लोड करने में विफल',
+          bn: 'খেলোয়াড় লোড করা যায়নি',
+        ),
+      );
+
       return null;
     }
 
@@ -8730,15 +15254,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 final data = doc.data();
 
                 final displayName =
-                    (data['displayName'] ?? '').toString().toLowerCase();
+                    (data['displayName'] ?? '')
+                        .toString()
+                        .toLowerCase();
+
                 final lastName =
-                    (data['lastName'] ?? '').toString().toLowerCase();
+                    (data['lastName'] ?? '')
+                        .toString()
+                        .toLowerCase();
+
                 final shortName =
-                    (data['shortName'] ?? '').toString().toLowerCase();
+                    (data['shortName'] ?? '')
+                        .toString()
+                        .toLowerCase();
+
                 final playerId =
-                    (data['playerId'] ?? '').toString().toLowerCase();
+                    (data['playerId'] ?? '')
+                        .toString()
+                        .toLowerCase();
+
                 final email =
-                    (data['email'] ?? '').toString().toLowerCase();
+                    (data['email'] ?? '')
+                        .toString()
+                        .toLowerCase();
 
                 if (keyword.isEmpty) {
                   return true;
@@ -8752,19 +15290,25 @@ class _TableDetailPageState extends State<TableDetailPage> {
               }).toList();
 
               result.sort((a, b) {
-                final scoreA = ((a.data()['hostPickCount'] ?? 0) is int)
-                    ? (a.data()['hostPickCount'] ?? 0) as int
-                    : int.tryParse(
-                            (a.data()['hostPickCount'] ?? '0').toString(),
-                          ) ??
-                        0;
+                final scoreA =
+                    ((a.data()['hostPickCount'] ?? 0) is int)
+                        ? (a.data()['hostPickCount'] ?? 0)
+                            as int
+                        : int.tryParse(
+                              (a.data()['hostPickCount'] ?? '0')
+                                  .toString(),
+                            ) ??
+                            0;
 
-                final scoreB = ((b.data()['hostPickCount'] ?? 0) is int)
-                    ? (b.data()['hostPickCount'] ?? 0) as int
-                    : int.tryParse(
-                            (b.data()['hostPickCount'] ?? '0').toString(),
-                          ) ??
-                        0;
+                final scoreB =
+                    ((b.data()['hostPickCount'] ?? 0) is int)
+                        ? (b.data()['hostPickCount'] ?? 0)
+                            as int
+                        : int.tryParse(
+                              (b.data()['hostPickCount'] ?? '0')
+                                  .toString(),
+                            ) ??
+                            0;
 
                 if (scoreA != scoreB) {
                   return scoreB.compareTo(scoreA);
@@ -8774,21 +15318,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 final tsB = b.data()['lastHostPickedAt'];
 
                 final timeA =
-                    tsA is Timestamp ? tsA.millisecondsSinceEpoch : 0;
+                    tsA is Timestamp
+                        ? tsA.millisecondsSinceEpoch
+                        : 0;
+
                 final timeB =
-                    tsB is Timestamp ? tsB.millisecondsSinceEpoch : 0;
+                    tsB is Timestamp
+                        ? tsB.millisecondsSinceEpoch
+                        : 0;
 
                 if (timeA != timeB) {
                   return timeB.compareTo(timeA);
                 }
 
                 final nameA =
-                    ((a.data()['shortName'] ?? a.data()['displayName'] ?? '')
+                    ((a.data()['shortName'] ??
+                                a.data()['displayName'] ??
+                                '')
                             .toString())
                         .toLowerCase();
 
                 final nameB =
-                    ((b.data()['shortName'] ?? b.data()['displayName'] ?? '')
+                    ((b.data()['shortName'] ??
+                                b.data()['displayName'] ??
+                                '')
                             .toString())
                         .toLowerCase();
 
@@ -8801,7 +15354,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
             }
 
             return AlertDialog(
-              title: const Text('Select Player'),
+              title: Text(
+                tr(
+                  context,
+                  'Select Player',
+                  zhTw: '選擇玩家',
+                  zhCn: '选择玩家',
+                  ko: '플레이어 선택',
+                  ja: 'プレイヤーを選択',
+                  de: 'Spieler auswählen',
+                  fr: 'Sélectionner un joueur',
+                  ar: 'اختر لاعباً',
+                  ru: 'Выберите игрока',
+                  trk: 'Oyuncu Seç',
+                  es: 'Seleccionar jugador',
+                  it: 'Seleziona giocatore',
+                  pl: 'Wybierz gracza',
+                  pt: 'Selecionar jogador',
+                  th: 'เลือกผู้เล่น',
+                  id: 'Pilih pemain',
+                  hi: 'खिलाड़ी चुनें',
+                  bn: 'খেলোয়াড় নির্বাচন করুন',
+                ),
+              ),
               content: SizedBox(
                 width: 420,
                 height: 500,
@@ -8810,59 +15385,141 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     TextField(
                       controller: searchController,
                       onChanged: runFilter,
-                      decoration: const InputDecoration(
-                        prefixIcon: Icon(Icons.search),
-                        labelText: 'Search player',
-                        hintText: 'Name or email',
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        labelText: tr(
+                          context,
+                          'Search player',
+                          zhTw: '搜尋玩家',
+                          zhCn: '搜索玩家',
+                          ko: '플레이어 검색',
+                          ja: 'プレイヤー検索',
+                          de: 'Spieler suchen',
+                          fr: 'Rechercher un joueur',
+                          ar: 'البحث عن لاعب',
+                          ru: 'Поиск игрока',
+                          trk: 'Oyuncu ara',
+                          es: 'Buscar jugador',
+                          it: 'Cerca giocatore',
+                          pl: 'Szukaj gracza',
+                          pt: 'Buscar jogador',
+                          th: 'ค้นหาผู้เล่น',
+                          id: 'Cari pemain',
+                          hi: 'खिलाड़ी खोजें',
+                          bn: 'খেলোয়াড় খুঁজুন',
+                        ),
+                        hintText: tr(
+                          context,
+                          'Name or email',
+                          zhTw: '名稱或 Email',
+                          zhCn: '名称或 Email',
+                          ko: '이름 또는 이메일',
+                          ja: '名前またはメール',
+                          de: 'Name oder E-Mail',
+                          fr: 'Nom ou email',
+                          ar: 'الاسم أو البريد الإلكتروني',
+                          ru: 'Имя или email',
+                          trk: 'Ad veya e-posta',
+                          es: 'Nombre o correo',
+                          it: 'Nome o email',
+                          pl: 'Nazwa lub email',
+                          pt: 'Nome ou email',
+                          th: 'ชื่อหรืออีเมล',
+                          id: 'Nama atau email',
+                          hi: 'नाम या ईमेल',
+                          bn: 'নাম বা ইমেইল',
+                        ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     Expanded(
                       child: filteredPlayers.isEmpty
-                          ? const Center(
-                              child: Text('No available players found'),
+                          ? Center(
+                              child: Text(
+                                tr(
+                                  context,
+                                  'No available players found',
+                                  zhTw: '找不到可用玩家',
+                                  zhCn: '找不到可用玩家',
+                                  ko: '사용 가능한 플레이어가 없습니다',
+                                  ja: '利用可能なプレイヤーが見つかりません',
+                                  de: 'Keine verfügbaren Spieler gefunden',
+                                  fr: 'Aucun joueur disponible trouvé',
+                                  ar: 'لم يتم العثور على لاعبين متاحين',
+                                  ru: 'Доступные игроки не найдены',
+                                  trk: 'Uygun oyuncu bulunamadı',
+                                  es: 'No se encontraron jugadores disponibles',
+                                  it: 'Nessun giocatore disponibile trovato',
+                                  pl: 'Nie znaleziono dostępnych graczy',
+                                  pt: 'Nenhum jogador disponível encontrado',
+                                  th: 'ไม่พบผู้เล่นที่พร้อมใช้งาน',
+                                  id: 'Tidak ada pemain tersedia',
+                                  hi: 'कोई उपलब्ध खिलाड़ी नहीं मिला',
+                                  bn: 'কোনো উপলব্ধ খেলোয়াড় পাওয়া যায়নি',
+                                ),
+                              ),
                             )
                           : ListView.separated(
                               itemCount: filteredPlayers.length,
                               separatorBuilder: (_, __) =>
                                   const Divider(height: 1),
                               itemBuilder: (context, index) {
-                                final player = filteredPlayers[index];
+                                final player =
+                                    filteredPlayers[index];
+
                                 final data =
-                                    Map<String, dynamic>.from(player.data());
+                                    Map<String, dynamic>.from(
+                                  player.data(),
+                                );
 
                                 final name =
-                                    (data['displayName'] ?? '').toString().trim();
+                                    (data['displayName'] ?? '')
+                                        .toString()
+                                        .trim();
 
                                 return ListTile(
                                   title: Text(name),
                                   onTap: () {
                                     Navigator.pop(context, {
                                       'uid': player.id,
-                                      'displayName': (data['displayName'] ?? '')
-                                          .toString()
-                                          .trim(),
-                                      'lastName': (data['lastName'] ?? '')
-                                          .toString()
-                                          .trim(),
-                                      'shortName': (data['shortName'] ?? '')
-                                          .toString()
-                                          .trim(),
-                                      'photoUrl': (data['photoUrl'] ?? '')
-                                          .toString()
-                                          .trim(),
-                                      'playerId': (data['playerId'] ?? '')
-                                          .toString()
-                                          .trim(),
-                                      'avatarType': (data['avatarType'] ?? 'photo')
-                                          .toString()
-                                          .trim(),
-                                      'avatarIcon': (data['avatarIcon'] ?? 'person')
-                                          .toString()
-                                          .trim(),
-                                      'avatarBgColor': data['avatarBgColor'] is int
-                                          ? data['avatarBgColor'] as int
-                                          : 0xFF2563EB,
+                                      'displayName':
+                                          (data['displayName'] ?? '')
+                                              .toString()
+                                              .trim(),
+                                      'lastName':
+                                          (data['lastName'] ?? '')
+                                              .toString()
+                                              .trim(),
+                                      'shortName':
+                                          (data['shortName'] ?? '')
+                                              .toString()
+                                              .trim(),
+                                      'photoUrl':
+                                          (data['photoUrl'] ?? '')
+                                              .toString()
+                                              .trim(),
+                                      'playerId':
+                                          (data['playerId'] ?? '')
+                                              .toString()
+                                              .trim(),
+                                      'avatarType':
+                                          (data['avatarType'] ??
+                                                  'photo')
+                                              .toString()
+                                              .trim(),
+                                      'avatarIcon':
+                                          (data['avatarIcon'] ??
+                                                  'person')
+                                              .toString()
+                                              .trim(),
+                                      'avatarBgColor':
+                                          data['avatarBgColor']
+                                                  is int
+                                              ? data['avatarBgColor']
+                                                  as int
+                                              : 0xFF2563EB,
                                     });
                                   },
                                 );
@@ -8875,7 +15532,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                 ),
               ],
             );
@@ -8890,7 +15569,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
   ) async {
     final firstNameController = TextEditingController();
     final lastInitialController = TextEditingController();
-  
+
     return showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
@@ -8901,63 +15580,213 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
             final hasDuplicate = normalizedFirst.isNotEmpty &&
                 seats.any((s) {
-                  final playerName = _extractFirstName((s.playerName ?? '').trim());
-                  final playerShortName = _extractFirstName((s.playerShortName ?? '').trim());
-                  final reservedName = _extractFirstName((s.reservedForName ?? '').trim());
+                  final playerName =
+                      _extractFirstName((s.playerName ?? '').trim());
+                  final playerShortName =
+                      _extractFirstName((s.playerShortName ?? '').trim());
+                  final reservedName =
+                      _extractFirstName((s.reservedForName ?? '').trim());
                   final reservedShortName =
                       _extractFirstName((s.reservedForShortName ?? '').trim());
-            
+
                   return playerName == normalizedFirst ||
                       playerShortName == normalizedFirst ||
                       reservedName == normalizedFirst ||
                       reservedShortName == normalizedFirst;
                 });
-  
-            final lastInitial = lastInitialController.text.trim().toUpperCase();
-  
+
+            final lastInitial =
+                lastInitialController.text.trim().toUpperCase();
+
             final canReserve = firstName.isNotEmpty &&
                 (!hasDuplicate || lastInitial.isNotEmpty);
-  
+
             return AlertDialog(
-              title: const Text('Reserve Seat'),
+              title: Text(
+                tr(
+                  context,
+                  'Reserve Seat',
+                  zhTw: '預留座位',
+                  zhCn: '预留座位',
+                  ko: '좌석 예약',
+                  ja: '席を予約',
+                  de: 'Sitz reservieren',
+                  fr: 'Réserver une place',
+                  ar: 'حجز مقعد',
+                  ru: 'Зарезервировать место',
+                  trk: 'Koltuk Ayır',
+                  es: 'Reservar asiento',
+                  it: 'Prenota posto',
+                  pl: 'Zarezerwuj miejsce',
+                  pt: 'Reservar assento',
+                  th: 'จองที่นั่ง',
+                  id: 'Reservasi kursi',
+                  hi: 'सीट रिज़र्व करें',
+                  bn: 'সিট রিজার্ভ করুন',
+                ),
+              ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: firstNameController,
                     onChanged: (_) => setLocalState(() {}),
-                    decoration: const InputDecoration(
-                      labelText: 'First name',
-                      hintText: 'Enter first name',
+                    decoration: InputDecoration(
+                      labelText: tr(
+                        context,
+                        'First name',
+                        zhTw: '名字',
+                        zhCn: '名字',
+                        ko: '이름',
+                        ja: '名',
+                        de: 'Vorname',
+                        fr: 'Prénom',
+                        ar: 'الاسم الأول',
+                        ru: 'Имя',
+                        trk: 'Ad',
+                        es: 'Nombre',
+                        it: 'Nome',
+                        pl: 'Imię',
+                        pt: 'Nome',
+                        th: 'ชื่อ',
+                        id: 'Nama depan',
+                        hi: 'पहला नाम',
+                        bn: 'নামের প্রথম অংশ',
+                      ),
+                      hintText: tr(
+                        context,
+                        'Enter first name',
+                        zhTw: '輸入名字',
+                        zhCn: '输入名字',
+                        ko: '이름을 입력하세요',
+                        ja: '名を入力してください',
+                        de: 'Vornamen eingeben',
+                        fr: 'Entrez le prénom',
+                        ar: 'أدخل الاسم الأول',
+                        ru: 'Введите имя',
+                        trk: 'Adı girin',
+                        es: 'Ingresa el nombre',
+                        it: 'Inserisci il nome',
+                        pl: 'Wpisz imię',
+                        pt: 'Digite o nome',
+                        th: 'กรอกชื่อ',
+                        id: 'Masukkan nama depan',
+                        hi: 'पहला नाम दर्ज करें',
+                        bn: 'নামের প্রথম অংশ লিখুন',
+                      ),
                     ),
                   ),
+
                   const SizedBox(height: 12),
+
                   if (hasDuplicate) ...[
                     TextField(
                       controller: lastInitialController,
                       onChanged: (_) => setLocalState(() {}),
                       textCapitalization: TextCapitalization.characters,
                       maxLength: 1,
-                      decoration: const InputDecoration(
-                        labelText: 'Last initial',
-                        hintText: 'Example: A',
+                      decoration: InputDecoration(
+                        labelText: tr(
+                          context,
+                          'Last initial',
+                          zhTw: '姓氏縮寫',
+                          zhCn: '姓氏首字母',
+                          ko: '성 이니셜',
+                          ja: '姓のイニシャル',
+                          de: 'Nachnamen-Initiale',
+                          fr: 'Initiale du nom',
+                          ar: 'الحرف الأول من اسم العائلة',
+                          ru: 'Инициал фамилии',
+                          trk: 'Soyadı baş harfi',
+                          es: 'Inicial del apellido',
+                          it: 'Iniziale del cognome',
+                          pl: 'Inicjał nazwiska',
+                          pt: 'Inicial do sobrenome',
+                          th: 'อักษรย่อนามสกุล',
+                          id: 'Inisial nama belakang',
+                          hi: 'अंतिम नाम का पहला अक्षर',
+                          bn: 'পদবির প্রথম অক্ষর',
+                        ),
+                        hintText: tr(
+                          context,
+                          'Example: A',
+                          zhTw: '例如：A',
+                          zhCn: '例如：A',
+                          ko: '예: A',
+                          ja: '例：A',
+                          de: 'Beispiel: A',
+                          fr: 'Exemple : A',
+                          ar: 'مثال: A',
+                          ru: 'Пример: A',
+                          trk: 'Örnek: A',
+                          es: 'Ejemplo: A',
+                          it: 'Esempio: A',
+                          pl: 'Przykład: A',
+                          pt: 'Exemplo: A',
+                          th: 'ตัวอย่าง: A',
+                          id: 'Contoh: A',
+                          hi: 'उदाहरण: A',
+                          bn: 'উদাহরণ: A',
+                        ),
                         counterText: '',
                       ),
                     ),
+
                     const SizedBox(height: 8),
-                    const Text(
-                      'This name already exists at the table. Please add last initial, like Joe A or Joe B.',
-                      style: TextStyle(
+
+                    Text(
+                      tr(
+                        context,
+                        'This name already exists at the table. Please add last initial, like Joe A or Joe B.',
+                        zhTw: '這個名字已經在桌上。請加上姓氏縮寫，例如 Joe A 或 Joe B。',
+                        zhCn: '这个名字已经在桌上。请加上姓氏首字母，例如 Joe A 或 Joe B。',
+                        ko: '이 이름은 이미 테이블에 있습니다. Joe A 또는 Joe B처럼 성 이니셜을 추가해 주세요.',
+                        ja: 'この名前はすでにテーブルにあります。Joe A や Joe B のように姓のイニシャルを追加してください。',
+                        de: 'Dieser Name ist bereits am Tisch. Bitte füge die Nachnamen-Initiale hinzu, z. B. Joe A oder Joe B.',
+                        fr: 'Ce nom existe déjà à la table. Veuillez ajouter l’initiale du nom, comme Joe A ou Joe B.',
+                        ar: 'هذا الاسم موجود بالفعل على الطاولة. يرجى إضافة الحرف الأول من اسم العائلة، مثل Joe A أو Joe B.',
+                        ru: 'Это имя уже есть за столом. Добавьте инициал фамилии, например Joe A или Joe B.',
+                        trk: 'Bu isim masada zaten var. Lütfen Joe A veya Joe B gibi soyadı baş harfi ekleyin.',
+                        es: 'Este nombre ya existe en la mesa. Agrega la inicial del apellido, como Joe A o Joe B.',
+                        it: 'Questo nome esiste già al tavolo. Aggiungi l’iniziale del cognome, come Joe A o Joe B.',
+                        pl: 'To imię już jest przy stole. Dodaj inicjał nazwiska, np. Joe A lub Joe B.',
+                        pt: 'Este nome já existe na mesa. Adicione a inicial do sobrenome, como Joe A ou Joe B.',
+                        th: 'ชื่อนี้มีอยู่ที่โต๊ะแล้ว กรุณาเพิ่มอักษรย่อนามสกุล เช่น Joe A หรือ Joe B',
+                        id: 'Nama ini sudah ada di meja. Tambahkan inisial nama belakang, seperti Joe A atau Joe B.',
+                        hi: 'यह नाम पहले से टेबल पर मौजूद है। कृपया अंतिम नाम का पहला अक्षर जोड़ें, जैसे Joe A या Joe B.',
+                        bn: 'এই নামটি টেবিলে আগে থেকেই আছে। অনুগ্রহ করে পদবির প্রথম অক্ষর যোগ করুন, যেমন Joe A বা Joe B.',
+                      ),
+                      style: const TextStyle(
                         fontSize: 12,
                         color: Colors.black54,
                       ),
                     ),
                   ] else ...[
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
-                        'No duplicate name at this table.',
-                        style: TextStyle(
+                        tr(
+                          context,
+                          'No duplicate name at this table.',
+                          zhTw: '這張桌子沒有重複名字。',
+                          zhCn: '这张桌子没有重复名字。',
+                          ko: '이 테이블에는 중복된 이름이 없습니다.',
+                          ja: 'このテーブルには重複した名前はありません。',
+                          de: 'Kein doppelter Name an diesem Tisch.',
+                          fr: 'Aucun nom en double à cette table.',
+                          ar: 'لا يوجد اسم مكرر على هذه الطاولة.',
+                          ru: 'За этим столом нет повторяющегося имени.',
+                          trk: 'Bu masada aynı isim yok.',
+                          es: 'No hay nombres duplicados en esta mesa.',
+                          it: 'Nessun nome duplicato a questo tavolo.',
+                          pl: 'Brak duplikatu imienia przy tym stole.',
+                          pt: 'Não há nome duplicado nesta mesa.',
+                          th: 'ไม่มีชื่อซ้ำที่โต๊ะนี้',
+                          id: 'Tidak ada nama duplikat di meja ini.',
+                          hi: 'इस टेबल पर कोई डुप्लिकेट नाम नहीं है।',
+                          bn: 'এই টেবিলে কোনো একই নাম নেই।',
+                        ),
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.black54,
                         ),
@@ -8969,19 +15798,45 @@ class _TableDetailPageState extends State<TableDetailPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                 ),
                 FilledButton(
                   onPressed: canReserve
                       ? () {
-                          final cleanFirst = firstNameController.text.trim();
+                          final cleanFirst =
+                              firstNameController.text.trim();
+
                           final cleanLastInitial =
-                              lastInitialController.text.trim().toUpperCase();
-  
+                              lastInitialController.text
+                                  .trim()
+                                  .toUpperCase();
+
                           final shortName = cleanLastInitial.isNotEmpty
                               ? '$cleanFirst $cleanLastInitial'
                               : cleanFirst;
-  
+
                           Navigator.pop(context, {
                             'reservedForName': cleanFirst,
                             'reservedForShortName': shortName,
@@ -8991,7 +15846,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           });
                         }
                       : null,
-                  child: const Text('Reserve'),
+                  child: Text(
+                    tr(
+                      context,
+                      'Reserve',
+                      zhTw: '預留',
+                      zhCn: '预留',
+                      ko: '예약',
+                      ja: '予約',
+                      de: 'Reservieren',
+                      fr: 'Réserver',
+                      ar: 'حجز',
+                      ru: 'Забронировать',
+                      trk: 'Ayır',
+                      es: 'Reservar',
+                      it: 'Prenota',
+                      pl: 'Zarezerwuj',
+                      pt: 'Reservar',
+                      th: 'จอง',
+                      id: 'Reservasi',
+                      hi: 'रिज़र्व करें',
+                      bn: 'রিজার্ভ করুন',
+                    ),
+                  ),
                 ),
               ],
             );
@@ -9003,7 +15880,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
   Future<void> _reserveSeatForGuest(int seatIndex) async {
     if (!canManageThisTable) {
-      _showSnack('Only the table creator can reserve seats');
+      _showSnack(
+        tr(
+          context,
+          'Only the table creator can reserve seats',
+          zhTw: '只有桌主可以預留座位',
+          zhCn: '只有桌主可以预留座位',
+          ko: '테이블 생성자만 좌석을 예약할 수 있습니다',
+          ja: 'テーブル作成者のみ席を予約できます',
+          de: 'Nur der Tischersteller kann Plätze reservieren',
+          fr: 'Seul le créateur de la table peut réserver des places',
+          ar: 'يمكن فقط لمنشئ الطاولة حجز المقاعد',
+          ru: 'Только создатель стола может резервировать места',
+          trk: 'Sadece masa sahibi koltuk ayırabilir',
+          es: 'Solo el creador de la mesa puede reservar asientos',
+          it: 'Solo il creatore del tavolo può prenotare posti',
+          pl: 'Tylko twórca stołu może rezerwować miejsca',
+          pt: 'Somente o criador da mesa pode reservar assentos',
+          th: 'เฉพาะเจ้าของโต๊ะเท่านั้นที่สามารถจองที่นั่งได้',
+          id: 'Hanya pembuat meja yang dapat memesan kursi',
+          hi: 'केवल टेबल बनाने वाला सीट रिज़र्व कर सकता है',
+          bn: 'শুধুমাত্র টেবিল নির্মাতা সিট রিজার্ভ করতে পারে',
+        ),
+      );
       return;
     }
 
@@ -9012,38 +15911,152 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
     try {
       final previewSnap = await tableRef.get();
+
       if (!previewSnap.exists) {
-        _showSnack('Table not found');
+        _showSnack(
+          tr(
+            context,
+            'Table not found',
+            zhTw: '找不到桌子',
+            zhCn: '找不到桌子',
+            ko: '테이블을 찾을 수 없습니다',
+            ja: 'テーブルが見つかりません',
+            de: 'Tisch nicht gefunden',
+            fr: 'Table introuvable',
+            ar: 'لم يتم العثور على الطاولة',
+            ru: 'Стол не найден',
+            trk: 'Masa bulunamadı',
+            es: 'Mesa no encontrada',
+            it: 'Tavolo non trovato',
+            pl: 'Nie znaleziono stołu',
+            pt: 'Mesa não encontrada',
+            th: 'ไม่พบโต๊ะ',
+            id: 'Meja tidak ditemukan',
+            hi: 'टेबल नहीं मिली',
+            bn: 'টেবিল পাওয়া যায়নি',
+          ),
+        );
         return;
       }
 
       final previewData = previewSnap.data() as Map<String, dynamic>;
       final previewTable = TableData.fromMap(previewData);
 
-      final result = await _showReserveGuestDialog(previewTable.seats);
+      final result =
+          await _showReserveGuestDialog(previewTable.seats);
+
       if (result == null) return;
 
       await FirebaseFirestore.instance.runTransaction((tx) async {
         final snap = await tx.get(tableRef);
+
         if (!snap.exists) {
-          throw Exception('Table not found');
+          throw Exception(
+            tr(
+              context,
+              'Table not found',
+              zhTw: '找不到桌子',
+              zhCn: '找不到桌子',
+              ko: '테이블을 찾을 수 없습니다',
+              ja: 'テーブルが見つかりません',
+              de: 'Tisch nicht gefunden',
+              fr: 'Table introuvable',
+              ar: 'لم يتم العثور على الطاولة',
+              ru: 'Стол не найден',
+              trk: 'Masa bulunamadı',
+              es: 'Mesa no encontrada',
+              it: 'Tavolo non trovato',
+              pl: 'Nie znaleziono stołu',
+              pt: 'Mesa não encontrada',
+              th: 'ไม่พบโต๊ะ',
+              id: 'Meja tidak ditemukan',
+              hi: 'टेबल नहीं मिली',
+              bn: 'টেবিল পাওয়া যায়নি',
+            ),
+          );
         }
 
         final data = snap.data() as Map<String, dynamic>;
         final table = TableData.fromMap(data);
 
         if (seatIndex < 0 || seatIndex >= table.seats.length) {
-          throw Exception('Invalid seat');
+          throw Exception(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な座席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недопустимое место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অবৈধ সিট',
+            ),
+          );
         }
 
         final seat = table.seats[seatIndex];
 
         if (seat.isOccupied) {
-          throw Exception('Seat is already occupied');
+          throw Exception(
+            tr(
+              context,
+              'Seat is already occupied',
+              zhTw: '座位已被佔用',
+              zhCn: '座位已被占用',
+              ko: '좌석이 이미 사용 중입니다',
+              ja: '席はすでに使用されています',
+              de: 'Sitz ist bereits besetzt',
+              fr: 'Le siège est déjà occupé',
+              ar: 'المقعد مشغول بالفعل',
+              ru: 'Место уже занято',
+              trk: 'Koltuk zaten dolu',
+              es: 'El asiento ya está ocupado',
+              it: 'Il posto è già occupato',
+              pl: 'Miejsce jest już zajęte',
+              pt: 'O assento já está ocupado',
+              th: 'ที่นั่งถูกใช้งานแล้ว',
+              id: 'Kursi sudah ditempati',
+              hi: 'सीट पहले से भरी हुई है',
+              bn: 'সিট ইতিমধ্যে দখল করা হয়েছে',
+            ),
+          );
         }
 
         if (seat.isReserved) {
-          throw Exception('Seat is already reserved');
+          throw Exception(
+            tr(
+              context,
+              'Seat is already reserved',
+              zhTw: '座位已被預留',
+              zhCn: '座位已被预留',
+              ko: '좌석이 이미 예약되었습니다',
+              ja: '席はすでに予約されています',
+              de: 'Sitz ist bereits reserviert',
+              fr: 'Le siège est déjà réservé',
+              ar: 'المقعد محجوز بالفعل',
+              ru: 'Место уже зарезервировано',
+              trk: 'Koltuk zaten ayrılmış',
+              es: 'El asiento ya está reservado',
+              it: 'Il posto è già prenotato',
+              pl: 'Miejsce jest już zarezerwowane',
+              pt: 'O assento já está reservado',
+              th: 'ที่นั่งถูกจองแล้ว',
+              id: 'Kursi sudah dipesan',
+              hi: 'सीट पहले से रिज़र्व है',
+              bn: 'সিট ইতিমধ্যে রিজার্ভ করা হয়েছে',
+            ),
+          );
         }
 
         seat.playerName = null;
@@ -9055,10 +16068,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
         seat.reservedForName =
             (result['reservedForName'] ?? '').toString().trim();
+
         seat.reservedForShortName =
             (result['reservedForShortName'] ?? '').toString().trim();
+
         seat.reservedForUid =
             (result['reservedForUid'] ?? '').toString().trim();
+
         seat.reservedForPlayerId =
             (result['reservedForPlayerId'] ?? '').toString().trim();
 
@@ -9072,17 +16088,65 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Seat reserved');
+
+      _showSnack(
+        tr(
+          context,
+          'Seat reserved',
+          zhTw: '座位已預留',
+          zhCn: '座位已预留',
+          ko: '좌석이 예약되었습니다',
+          ja: '席を予約しました',
+          de: 'Sitz reserviert',
+          fr: 'Place réservée',
+          ar: 'تم حجز المقعد',
+          ru: 'Место зарезервировано',
+          trk: 'Koltuk ayrıldı',
+          es: 'Asiento reservado',
+          it: 'Posto prenotato',
+          pl: 'Miejsce zarezerwowane',
+          pt: 'Assento reservado',
+          th: 'จองที่นั่งแล้ว',
+          id: 'Kursi berhasil dipesan',
+          hi: 'सीट रिज़र्व हो गई',
+          bn: 'সিট রিজার্ভ করা হয়েছে',
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      _showSnack(e.toString().replaceFirst('Exception: ', ''));
+
+      _showSnack(
+        e.toString().replaceFirst('Exception: ', ''),
+      );
     }
   }
 
   Future<void> _claimReservedSeat(int seatIndex) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      _showSnack('Please login first');
+      _showSnack(
+        tr(
+          context,
+          'Please login first',
+          zhTw: '請先登入',
+          zhCn: '请先登录',
+          ko: '먼저 로그인해 주세요',
+          ja: '先にログインしてください',
+          de: 'Bitte zuerst anmelden',
+          fr: 'Veuillez d’abord vous connecter',
+          ar: 'يرجى تسجيل الدخول أولاً',
+          ru: 'Сначала войдите в систему',
+          trk: 'Lütfen önce giriş yapın',
+          es: 'Primero inicia sesión',
+          it: 'Accedi prima',
+          pl: 'Najpierw się zaloguj',
+          pt: 'Faça login primeiro',
+          th: 'กรุณาเข้าสู่ระบบก่อน',
+          id: 'Silakan login terlebih dahulu',
+          hi: 'कृपया पहले लॉगिन करें',
+          bn: 'অনুগ্রহ করে আগে লগইন করুন',
+        ),
+      );
       return;
     }
 
@@ -9128,28 +16192,94 @@ class _TableDetailPageState extends State<TableDetailPage> {
           ? userData['avatarBgColor'] as int
           : 0xFF2563EB;
 
-      final seatPhotoUrl =
-          avatarType == 'virtual'
-              ? null
-              : (rawPhotoUrl.isEmpty ? null : rawPhotoUrl);
+      final seatPhotoUrl = avatarType == 'virtual'
+          ? null
+          : (rawPhotoUrl.isEmpty ? null : rawPhotoUrl);
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(tableRef);
         final data = snapshot.data();
+
         if (data == null) {
-          throw Exception('Table not found');
+          throw Exception(
+            tr(
+              context,
+              'Table not found',
+              zhTw: '找不到桌子',
+              zhCn: '找不到桌子',
+              ko: '테이블을 찾을 수 없습니다',
+              ja: 'テーブルが見つかりません',
+              de: 'Tisch nicht gefunden',
+              fr: 'Table introuvable',
+              ar: 'لم يتم العثور على الطاولة',
+              ru: 'Стол не найден',
+              trk: 'Masa bulunamadı',
+              es: 'Mesa no encontrada',
+              it: 'Tavolo non trovato',
+              pl: 'Nie znaleziono stołu',
+              pt: 'Mesa não encontrada',
+              th: 'ไม่พบโต๊ะ',
+              id: 'Meja tidak ditemukan',
+              hi: 'टेबल नहीं मिली',
+              bn: 'টেবিল পাওয়া যায়নি',
+            ),
+          );
         }
 
         final table = TableData.fromMap(data);
 
         if (seatIndex < 0 || seatIndex >= table.seats.length) {
-          throw Exception('Invalid seat');
+          throw Exception(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な座席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недопустимое место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অবৈধ সিট',
+            ),
+          );
         }
 
         final seat = table.seats[seatIndex];
 
         if (!seat.isReserved) {
-          throw Exception('This seat is no longer reserved');
+          throw Exception(
+            tr(
+              context,
+              'This seat is no longer reserved',
+              zhTw: '這個座位已不再是預留座位',
+              zhCn: '这个座位已不再是预留座位',
+              ko: '이 좌석은 더 이상 예약되어 있지 않습니다',
+              ja: 'この席はもう予約されていません',
+              de: 'Dieser Sitz ist nicht mehr reserviert',
+              fr: 'Ce siège n’est plus réservé',
+              ar: 'هذا المقعد لم يعد محجوزاً',
+              ru: 'Это место больше не зарезервировано',
+              trk: 'Bu koltuk artık ayrılmış değil',
+              es: 'Este asiento ya no está reservado',
+              it: 'Questo posto non è più prenotato',
+              pl: 'To miejsce nie jest już zarezerwowane',
+              pt: 'Este assento não está mais reservado',
+              th: 'ที่นั่งนี้ไม่ได้ถูกจองแล้ว',
+              id: 'Kursi ini tidak lagi dipesan',
+              hi: 'यह सीट अब रिज़र्व नहीं है',
+              bn: 'এই সিট আর রিজার্ভ নেই',
+            ),
+          );
         }
 
         final reservedForMe =
@@ -9163,7 +16293,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     displayName.toLowerCase());
 
         if (!reservedForMe) {
-          throw Exception('This reserved seat is not for you');
+          throw Exception(
+            tr(
+              context,
+              'This reserved seat is not for you',
+              zhTw: '這個預留座位不是給你的',
+              zhCn: '这个预留座位不是给你的',
+              ko: '이 예약 좌석은 당신을 위한 것이 아닙니다',
+              ja: 'この予約席はあなたのものではありません',
+              de: 'Dieser reservierte Sitz ist nicht für dich',
+              fr: 'Ce siège réservé n’est pas pour vous',
+              ar: 'هذا المقعد المحجوز ليس لك',
+              ru: 'Это зарезервированное место не для вас',
+              trk: 'Bu ayrılmış koltuk sizin için değil',
+              es: 'Este asiento reservado no es para ti',
+              it: 'Questo posto prenotato non è per te',
+              pl: 'To zarezerwowane miejsce nie jest dla Ciebie',
+              pt: 'Este assento reservado não é para você',
+              th: 'ที่นั่งที่จองนี้ไม่ใช่ของคุณ',
+              id: 'Kursi yang dipesan ini bukan untuk Anda',
+              hi: 'यह रिज़र्व सीट आपके लिए नहीं है',
+              bn: 'এই রিজার্ভ সিট আপনার জন্য নয়',
+            ),
+          );
         }
 
         final alreadySeated = table.seats.asMap().entries.any((entry) {
@@ -9178,7 +16330,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
 
         if (alreadySeated) {
-          throw Exception('You already joined this table');
+          throw Exception(
+            tr(
+              context,
+              'You already joined this table',
+              zhTw: '你已經加入這張桌子了',
+              zhCn: '你已经加入这张桌子了',
+              ko: '이미 이 테이블에 참여했습니다',
+              ja: 'すでにこのテーブルに参加しています',
+              de: 'Du bist bereits an diesem Tisch',
+              fr: 'Vous avez déjà rejoint cette table',
+              ar: 'لقد انضممت بالفعل إلى هذه الطاولة',
+              ru: 'Вы уже присоединились к этому столу',
+              trk: 'Bu masaya zaten katıldınız',
+              es: 'Ya te uniste a esta mesa',
+              it: 'Hai già partecipato a questo tavolo',
+              pl: 'Już dołączyłeś do tego stołu',
+              pt: 'Você já entrou nesta mesa',
+              th: 'คุณเข้าร่วมโต๊ะนี้แล้ว',
+              id: 'Anda sudah bergabung di meja ini',
+              hi: 'आप पहले ही इस टेबल में शामिल हो चुके हैं',
+              bn: 'আপনি ইতিমধ্যে এই টেবিলে যোগ দিয়েছেন',
+            ),
+          );
         }
 
         table.seats[seatIndex] = SeatReservation.fromMap(
@@ -9202,7 +16376,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
       });
 
-      _showSnack('Seat claimed');
+      _showSnack(
+        tr(
+          context,
+          'Seat claimed',
+          zhTw: '座位已認領',
+          zhCn: '座位已认领',
+          ko: '좌석을 가져왔습니다',
+          ja: '席を確保しました',
+          de: 'Sitz übernommen',
+          fr: 'Siège réclamé',
+          ar: 'تم استلام المقعد',
+          ru: 'Место занято',
+          trk: 'Koltuk alındı',
+          es: 'Asiento reclamado',
+          it: 'Posto preso',
+          pl: 'Miejsce zajęte',
+          pt: 'Assento reivindicado',
+          th: 'รับที่นั่งแล้ว',
+          id: 'Kursi diklaim',
+          hi: 'सीट ले ली गई',
+          bn: 'সিট নেওয়া হয়েছে',
+        ),
+      );
     } catch (e) {
       _showSnack(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -9211,21 +16407,69 @@ class _TableDetailPageState extends State<TableDetailPage> {
   Future<void> _assignSelectedPlayerToSeat(int seatIndex) async {
     final selectedPlayer = await _showSelectPlayerDialog();
     if (selectedPlayer == null) return;
-  
+
     final tableRef =
         FirebaseFirestore.instance.collection('tables').doc(widget.tableId);
-  
+
     try {
       await FirebaseFirestore.instance.runTransaction((transaction) async {
         final snapshot = await transaction.get(tableRef);
         final data = snapshot.data();
-        if (data == null) return;
-  
+
+        if (data == null) {
+          throw Exception(
+            tr(
+              context,
+              'Table not found',
+              zhTw: '找不到桌子',
+              zhCn: '找不到桌子',
+              ko: '테이블을 찾을 수 없습니다',
+              ja: 'テーブルが見つかりません',
+              de: 'Tisch nicht gefunden',
+              fr: 'Table introuvable',
+              ar: 'لم يتم العثور على الطاولة',
+              ru: 'Стол не найден',
+              trk: 'Masa bulunamadı',
+              es: 'Mesa no encontrada',
+              it: 'Tavolo non trovato',
+              pl: 'Nie znaleziono stołu',
+              pt: 'Mesa não encontrada',
+              th: 'ไม่พบโต๊ะ',
+              id: 'Meja tidak ditemukan',
+              hi: 'टेबल नहीं मिली',
+              bn: 'টেবিল পাওয়া যায়নি',
+            ),
+          );
+        }
+
         final table = TableData.fromMap(data);
-        if (seatIndex < 0 || seatIndex >= table.seats.length) return;
-  
-        final seat = table.seats[seatIndex];
-  
+
+        if (seatIndex < 0 || seatIndex >= table.seats.length) {
+          throw Exception(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な座席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недопустимое место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অবৈধ সিট',
+            ),
+          );
+        }
+
         final selectedAvatarType =
             (selectedPlayer['avatarType'] ?? 'photo').toString().trim().isEmpty
                 ? 'photo'
@@ -9236,36 +16480,37 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 ? 'person'
                 : (selectedPlayer['avatarIcon'] ?? 'person').toString().trim();
 
-        final selectedAvatarBgColor =
-            selectedPlayer['avatarBgColor'] is int
-                ? selectedPlayer['avatarBgColor'] as int
-                : 0xFF2563EB;
+        final selectedAvatarBgColor = selectedPlayer['avatarBgColor'] is int
+            ? selectedPlayer['avatarBgColor'] as int
+            : 0xFF2563EB;
 
         table.seats[seatIndex] = SeatReservation.fromMap(
           buildOccupiedSeatMap(
             playerName: (selectedPlayer['displayName'] ?? '').toString().trim(),
-            playerShortName: (selectedPlayer['shortName'] ?? '').toString().trim(),
+            playerShortName:
+                (selectedPlayer['shortName'] ?? '').toString().trim(),
             playerUid: (selectedPlayer['uid'] ?? '').toString().trim(),
             playerId: (selectedPlayer['playerId'] ?? '').toString().trim(),
             playerPhotoUrl: selectedAvatarType == 'virtual'
                 ? null
                 : (selectedPlayer['photoUrl'] ?? '').toString().trim(),
-            playerLastName: (selectedPlayer['lastName'] ?? '').toString().trim(),
+            playerLastName:
+                (selectedPlayer['lastName'] ?? '').toString().trim(),
             playerAvatarType: selectedAvatarType,
             playerAvatarIcon: selectedAvatarIcon,
             playerAvatarBgColor: selectedAvatarBgColor,
             arrived: false,
           ),
         );
-  
+
         transaction.update(tableRef, {
           'seats': table.seats.map((e) => e.toMap()).toList(),
-          'updatedAt': FieldValue.serverTimestamp(),
+          ..._buildMetaUpdate(),
         });
       });
-  
+
       final selectedUid = (selectedPlayer['uid'] ?? '').toString().trim();
-  
+
       if (selectedUid.isNotEmpty) {
         await FirebaseFirestore.instance
             .collection('users')
@@ -9275,10 +16520,54 @@ class _TableDetailPageState extends State<TableDetailPage> {
           'lastHostPickedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
       }
-  
-      _showSnack('Player assigned to seat');
+
+      _showSnack(
+        tr(
+          context,
+          'Player assigned to seat',
+          zhTw: '玩家已安排到座位',
+          zhCn: '玩家已安排到座位',
+          ko: '플레이어가 좌석에 배정되었습니다',
+          ja: 'プレイヤーを席に割り当てました',
+          de: 'Spieler dem Sitz zugewiesen',
+          fr: 'Joueur assigné au siège',
+          ar: 'تم تعيين اللاعب إلى المقعد',
+          ru: 'Игрок назначен на место',
+          trk: 'Oyuncu koltuğa atandı',
+          es: 'Jugador asignado al asiento',
+          it: 'Giocatore assegnato al posto',
+          pl: 'Gracz przypisany do miejsca',
+          pt: 'Jogador atribuído ao assento',
+          th: 'กำหนดผู้เล่นไปยังที่นั่งแล้ว',
+          id: 'Pemain ditetapkan ke kursi',
+          hi: 'खिलाड़ी को सीट पर असाइन किया गया',
+          bn: 'খেলোয়াড়কে সিটে বসানো হয়েছে',
+        ),
+      );
     } catch (e) {
-      _showSnack('Failed to assign player');
+      _showSnack(
+        tr(
+          context,
+          'Failed to assign player',
+          zhTw: '安排玩家失敗',
+          zhCn: '安排玩家失败',
+          ko: '플레이어 배정에 실패했습니다',
+          ja: 'プレイヤーの割り当てに失敗しました',
+          de: 'Spieler konnte nicht zugewiesen werden',
+          fr: 'Impossible d’assigner le joueur',
+          ar: 'فشل تعيين اللاعب',
+          ru: 'Не удалось назначить игрока',
+          trk: 'Oyuncu atanamadı',
+          es: 'No se pudo asignar el jugador',
+          it: 'Impossibile assegnare il giocatore',
+          pl: 'Nie udało się przypisać gracza',
+          pt: 'Falha ao atribuir jogador',
+          th: 'กำหนดผู้เล่นไม่สำเร็จ',
+          id: 'Gagal menetapkan pemain',
+          hi: 'खिलाड़ी असाइन करने में विफल',
+          bn: 'খেলোয়াড় বসানো যায়নি',
+        ),
+      );
     }
   }
 
@@ -9316,14 +16605,62 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Player removed from seat');
+
+      _showSnack(
+        tr(
+          context,
+          'Player removed from seat',
+          zhTw: '玩家已從座位移除',
+          zhCn: '玩家已从座位移除',
+          ko: '플레이어가 좌석에서 제거되었습니다',
+          ja: 'プレイヤーが席から削除されました',
+          de: 'Spieler wurde vom Sitz entfernt',
+          fr: 'Le joueur a été retiré du siège',
+          ar: 'تمت إزالة اللاعب من المقعد',
+          ru: 'Игрок удалён с места',
+          trk: 'Oyuncu koltuktan kaldırıldı',
+          es: 'Jugador eliminado del asiento',
+          it: 'Giocatore rimosso dal posto',
+          pl: 'Gracz został usunięty z miejsca',
+          pt: 'Jogador removido do assento',
+          th: 'นำผู้เล่นออกจากที่นั่งแล้ว',
+          id: 'Pemain dihapus dari kursi',
+          hi: 'खिलाड़ी को सीट से हटा दिया गया',
+          bn: 'খেলোয়াড়কে সিট থেকে সরানো হয়েছে',
+        ),
+      );
 
       await Future.delayed(const Duration(milliseconds: 150));
+
       if (!mounted) return;
+
       await _promptFillSeatFromWaitingList(seatIndex);
     } catch (e) {
       if (!mounted) return;
-      _showSnack('Failed to remove player');
+
+      _showSnack(
+        tr(
+          context,
+          'Failed to remove player',
+          zhTw: '移除玩家失敗',
+          zhCn: '移除玩家失败',
+          ko: '플레이어 제거 실패',
+          ja: 'プレイヤーの削除に失敗しました',
+          de: 'Spieler konnte nicht entfernt werden',
+          fr: 'Échec de la suppression du joueur',
+          ar: 'فشل في إزالة اللاعب',
+          ru: 'Не удалось удалить игрока',
+          trk: 'Oyuncu kaldırılamadı',
+          es: 'Error al eliminar al jugador',
+          it: 'Impossibile rimuovere il giocatore',
+          pl: 'Nie udało się usunąć gracza',
+          pt: 'Falha ao remover jogador',
+          th: 'ลบผู้เล่นไม่สำเร็จ',
+          id: 'Gagal menghapus pemain',
+          hi: 'खिलाड़ी को हटाने में विफल',
+          bn: 'খেলোয়াড় সরাতে ব্যর্থ হয়েছে',
+        ),
+      );
     }
   }
 
@@ -9354,9 +16691,53 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
       });
 
-      _showSnack('Reservation removed');
+      _showSnack(
+        tr(
+          context,
+          'Reservation removed',
+          zhTw: '預約已移除',
+          zhCn: '预约已移除',
+          ko: '예약이 제거되었습니다',
+          ja: '予約が削除されました',
+          de: 'Reservierung entfernt',
+          fr: 'Réservation supprimée',
+          ar: 'تمت إزالة الحجز',
+          ru: 'Бронь удалена',
+          trk: 'Rezervasyon kaldırıldı',
+          es: 'Reserva eliminada',
+          it: 'Prenotazione rimossa',
+          pl: 'Rezerwacja usunięta',
+          pt: 'Reserva removida',
+          th: 'ลบการจองแล้ว',
+          id: 'Reservasi dihapus',
+          hi: 'रिजर्वेशन हटा दिया गया',
+          bn: 'রিজার্ভেশন সরানো হয়েছে',
+        ),
+      );
     } catch (e) {
-      _showSnack('Failed to remove reservation');
+      _showSnack(
+        tr(
+          context,
+          'Failed to remove reservation',
+          zhTw: '移除預約失敗',
+          zhCn: '移除预约失败',
+          ko: '예약 제거 실패',
+          ja: '予約の削除に失敗しました',
+          de: 'Reservierung konnte nicht entfernt werden',
+          fr: 'Échec de la suppression de la réservation',
+          ar: 'فشل في إزالة الحجز',
+          ru: 'Не удалось удалить бронь',
+          trk: 'Rezervasyon kaldırılamadı',
+          es: 'Error al eliminar la reserva',
+          it: 'Impossibile rimuovere la prenotazione',
+          pl: 'Nie udało się usunąć rezerwacji',
+          pt: 'Falha ao remover reserva',
+          th: 'ลบการจองไม่สำเร็จ',
+          id: 'Gagal menghapus reservasi',
+          hi: 'रिजर्वेशन हटाने में विफल',
+          bn: 'রিজার্ভেশন সরাতে ব্যর্থ হয়েছে',
+        ),
+      );
     }
   }
 
@@ -9370,107 +16751,273 @@ class _TableDetailPageState extends State<TableDetailPage> {
   Future<void> _completeMovePlayer(int targetSeatIndex) async {
     if (!canManageThisTable) return;
     if (movingSeatIndex == null) return;
-  
+
     final fromIndex = movingSeatIndex!;
-  
+
     try {
       bool targetWasOpen = false;
       bool sourceWasReserved = false;
-  
+
       await _runTableTransaction<void>((tx, snap, data) async {
         final seatList = normalizeSeatMaps(data['seats']);
-  
+
         if (fromIndex < 0 || fromIndex >= seatList.length) {
-          _txFail('Invalid source seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid source seat',
+              zhTw: '無效的來源座位',
+              zhCn: '无效的来源座位',
+              ko: '잘못된 출발 좌석입니다',
+              ja: '無効な元の席です',
+              de: 'Ungültiger Ausgangssitz',
+              fr: 'Siège source invalide',
+              ar: 'مقعد المصدر غير صالح',
+              ru: 'Недопустимое исходное место',
+              trk: 'Geçersiz kaynak koltuk',
+              es: 'Asiento de origen inválido',
+              it: 'Posto di origine non valido',
+              pl: 'Nieprawidłowe miejsce źródłowe',
+              pt: 'Assento de origem inválido',
+              th: 'ที่นั่งต้นทางไม่ถูกต้อง',
+              id: 'Kursi asal tidak valid',
+              hi: 'अमान्य स्रोत सीट',
+              bn: 'অবৈধ উৎস সিট',
+            ),
+          );
         }
-  
+
         if (targetSeatIndex < 0 || targetSeatIndex >= seatList.length) {
-          _txFail('Invalid target seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid target seat',
+              zhTw: '無效的目標座位',
+              zhCn: '无效的目标座位',
+              ko: '잘못된 대상 좌석입니다',
+              ja: '無効な対象席です',
+              de: 'Ungültiger Zielsitz',
+              fr: 'Siège cible invalide',
+              ar: 'مقعد الهدف غير صالح',
+              ru: 'Недопустимое целевое место',
+              trk: 'Geçersiz hedef koltuk',
+              es: 'Asiento de destino inválido',
+              it: 'Posto di destinazione non valido',
+              pl: 'Nieprawidłowe miejsce docelowe',
+              pt: 'Assento de destino inválido',
+              th: 'ที่นั่งปลายทางไม่ถูกต้อง',
+              id: 'Kursi tujuan tidak valid',
+              hi: 'अमान्य लक्ष्य सीट',
+              bn: 'অবৈধ লক্ষ্য সিট',
+            ),
+          );
         }
-  
+
         if (fromIndex == targetSeatIndex) {
           return;
         }
-  
+
         final fromSeat = Map<String, dynamic>.from(seatList[fromIndex]);
         final targetSeat = Map<String, dynamic>.from(seatList[targetSeatIndex]);
-  
-        final fromPlayerName = (fromSeat['playerName'] ?? '').toString().trim();
-        final fromPlayerUid = (fromSeat['playerUid'] ?? '').toString().trim();
+
+        final fromPlayerName =
+            (fromSeat['playerName'] ?? '').toString().trim();
+
+        final fromPlayerUid =
+            (fromSeat['playerUid'] ?? '').toString().trim();
+
         final fromReservedName =
             (fromSeat['reservedForName'] ?? '').toString().trim();
+
         final fromReservedUid =
             (fromSeat['reservedForUid'] ?? '').toString().trim();
+
         final fromReservedPlayerId =
             (fromSeat['reservedForPlayerId'] ?? '').toString().trim();
-  
+
         final targetPlayerName =
             (targetSeat['playerName'] ?? '').toString().trim();
+
         final targetPlayerUid =
             (targetSeat['playerUid'] ?? '').toString().trim();
+
         final targetReservedName =
             (targetSeat['reservedForName'] ?? '').toString().trim();
+
         final targetReservedUid =
             (targetSeat['reservedForUid'] ?? '').toString().trim();
+
         final targetReservedPlayerId =
             (targetSeat['reservedForPlayerId'] ?? '').toString().trim();
-  
+
         final fromHasOccupied =
             fromPlayerName.isNotEmpty || fromPlayerUid.isNotEmpty;
+
         final fromHasReserved =
             fromReservedName.isNotEmpty ||
             fromReservedUid.isNotEmpty ||
             fromReservedPlayerId.isNotEmpty;
-  
+
         if (!fromHasOccupied && !fromHasReserved) {
-          _txFail('Source seat is empty');
+          _txFail(
+            tr(
+              context,
+              'Source seat is empty',
+              zhTw: '來源座位是空的',
+              zhCn: '来源座位是空的',
+              ko: '출발 좌석이 비어 있습니다',
+              ja: '元の席は空です',
+              de: 'Der Ausgangssitz ist leer',
+              fr: 'Le siège source est vide',
+              ar: 'مقعد المصدر فارغ',
+              ru: 'Исходное место пустое',
+              trk: 'Kaynak koltuk boş',
+              es: 'El asiento de origen está vacío',
+              it: 'Il posto di origine è vuoto',
+              pl: 'Miejsce źródłowe jest puste',
+              pt: 'O assento de origem está vazio',
+              th: 'ที่นั่งต้นทางว่างอยู่',
+              id: 'Kursi asal kosong',
+              hi: 'स्रोत सीट खाली है',
+              bn: 'উৎস সিট খালি',
+            ),
+          );
         }
-  
+
         final targetHasOccupied =
             targetPlayerName.isNotEmpty || targetPlayerUid.isNotEmpty;
+
         final targetHasReserved =
             targetReservedName.isNotEmpty ||
             targetReservedUid.isNotEmpty ||
             targetReservedPlayerId.isNotEmpty;
-  
+
         targetWasOpen = !targetHasOccupied && !targetHasReserved;
+
         sourceWasReserved = !fromHasOccupied && fromHasReserved;
-  
+
         seatList[targetSeatIndex] = fromSeat;
         seatList[fromIndex] = targetSeat;
-  
+
         tx.update(tableDocRef, {
           'seats': seatList,
           ..._buildMetaUpdate(),
         });
       });
-  
+
       if (!mounted) return;
-  
+
       setState(() {
         movingSeatIndex = null;
         movingPlayerName = null;
       });
-  
+
       if (targetWasOpen) {
         _showSnack(
           sourceWasReserved
-              ? 'Reserved seat moved successfully'
-              : 'Player moved successfully',
+              ? tr(
+                  context,
+                  'Reserved seat moved successfully',
+                  zhTw: '預約座位移動成功',
+                  zhCn: '预约座位移动成功',
+                  ko: '예약 좌석 이동 성공',
+                  ja: '予約席の移動に成功しました',
+                  de: 'Reservierter Sitz erfolgreich verschoben',
+                  fr: 'Siège réservé déplacé avec succès',
+                  ar: 'تم نقل المقعد المحجوز بنجاح',
+                  ru: 'Зарезервированное место успешно перемещено',
+                  trk: 'Rezerve koltuk başarıyla taşındı',
+                  es: 'Asiento reservado movido con éxito',
+                  it: 'Posto riservato spostato con successo',
+                  pl: 'Zarezerwowane miejsce zostało przeniesione',
+                  pt: 'Assento reservado movido com sucesso',
+                  th: 'ย้ายที่นั่งจองสำเร็จ',
+                  id: 'Kursi reservasi berhasil dipindahkan',
+                  hi: 'रिजर्व सीट सफलतापूर्वक स्थानांतरित हुई',
+                  bn: 'রিজার্ভ সিট সফলভাবে সরানো হয়েছে',
+                )
+              : tr(
+                  context,
+                  'Player moved successfully',
+                  zhTw: '玩家移動成功',
+                  zhCn: '玩家移动成功',
+                  ko: '플레이어 이동 성공',
+                  ja: 'プレイヤーの移動に成功しました',
+                  de: 'Spieler erfolgreich verschoben',
+                  fr: 'Joueur déplacé avec succès',
+                  ar: 'تم نقل اللاعب بنجاح',
+                  ru: 'Игрок успешно перемещён',
+                  trk: 'Oyuncu başarıyla taşındı',
+                  es: 'Jugador movido con éxito',
+                  it: 'Giocatore spostato con successo',
+                  pl: 'Gracz został przeniesiony',
+                  pt: 'Jogador movido com sucesso',
+                  th: 'ย้ายผู้เล่นสำเร็จ',
+                  id: 'Pemain berhasil dipindahkan',
+                  hi: 'खिलाड़ी सफलतापूर्वक स्थानांतरित हुआ',
+                  bn: 'খেলোয়াড় সফলভাবে সরানো হয়েছে',
+                ),
         );
       } else {
-        _showSnack('Seats swapped successfully');
+        _showSnack(
+          tr(
+            context,
+            'Seats swapped successfully',
+            zhTw: '座位交換成功',
+            zhCn: '座位交换成功',
+            ko: '좌석 교환 성공',
+            ja: '席の交換に成功しました',
+            de: 'Sitze erfolgreich getauscht',
+            fr: 'Sièges échangés avec succès',
+            ar: 'تم تبديل المقاعد بنجاح',
+            ru: 'Места успешно обменены',
+            trk: 'Koltuklar başarıyla değiştirildi',
+            es: 'Asientos intercambiados con éxito',
+            it: 'Posti scambiati con successo',
+            pl: 'Miejsca zostały zamienione',
+            pt: 'Assentos trocados com sucesso',
+            th: 'สลับที่นั่งสำเร็จ',
+            id: 'Kursi berhasil ditukar',
+            hi: 'सीट सफलतापूर्वक बदली गईं',
+            bn: 'সিট সফলভাবে অদলবদল হয়েছে',
+          ),
+        );
       }
     } catch (e) {
       if (!mounted) return;
+
       _showSnack(_cleanError(e));
+
       _cancelMovePlayer();
     }
   }
 
+
   Future<void> _changeSeatCount(int newCount) async {
     if (!canManageThisTable) {
-      _showSnack('Only the table creator can change seat count');
+      _showSnack(
+        tr(
+          context,
+          'Only the table creator can change seat count',
+          zhTw: '只有牌桌建立者可以更改座位數',
+          zhCn: '只有牌桌创建者可以更改座位数',
+          ko: '테이블 생성자만 좌석 수를 변경할 수 있습니다',
+          ja: 'テーブル作成者のみ席数を変更できます',
+          de: 'Nur der Tischersteller kann die Sitzanzahl ändern',
+          fr: 'Seul le créateur de la table peut modifier le nombre de sièges',
+          ar: 'فقط منشئ الطاولة يمكنه تغيير عدد المقاعد',
+          ru: 'Только создатель стола может изменить количество мест',
+          trk: 'Sadece masa sahibi koltuk sayısını değiştirebilir',
+          es: 'Solo el creador de la mesa puede cambiar la cantidad de asientos',
+          it: 'Solo il creatore del tavolo può modificare il numero di posti',
+          pl: 'Tylko twórca stołu może zmienić liczbę miejsc',
+          pt: 'Somente o criador da mesa pode alterar a quantidade de assentos',
+          th: 'เฉพาะผู้สร้างโต๊ะเท่านั้นที่สามารถเปลี่ยนจำนวนที่นั่งได้',
+          id: 'Hanya pembuat meja yang dapat mengubah jumlah kursi',
+          hi: 'केवल टेबल बनाने वाला ही सीटों की संख्या बदल सकता है',
+          bn: 'শুধুমাত্র টেবিল নির্মাতাই আসনের সংখ্যা পরিবর্তন করতে পারে',
+        ),
+      );
       return;
     }
   
@@ -9510,7 +17057,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
           final playerUid = (seat['playerUid'] ?? '').toString().trim();
           final playerId = (seat['playerId'] ?? '').toString().trim();
   
-          return playerName.isEmpty && playerUid.isEmpty && playerId.isEmpty;
+          return playerName.isEmpty &&
+              playerUid.isEmpty &&
+              playerId.isEmpty;
         }
   
         if (newCount == seatList.length) {
@@ -9536,6 +17085,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
   
             for (int i = seatList.length - 1; i >= 0; i--) {
               final seat = Map<String, dynamic>.from(seatList[i]);
+  
               if (isSeatEmpty(seat)) {
                 removeIndex = i;
                 break;
@@ -9544,7 +17094,27 @@ class _TableDetailPageState extends State<TableDetailPage> {
   
             if (removeIndex == -1) {
               _txFail(
-                'Cannot reduce seat count because there are no empty seats to remove',
+                tr(
+                  context,
+                  'Cannot reduce seat count because there are no empty seats to remove',
+                  zhTw: '無法減少座位數，因為沒有空位可以刪除',
+                  zhCn: '无法减少座位数，因为没有空位可以删除',
+                  ko: '삭제할 빈 좌석이 없어 좌석 수를 줄일 수 없습니다',
+                  ja: '削除できる空席がないため席数を減らせません',
+                  de: 'Die Sitzanzahl kann nicht reduziert werden, da keine leeren Sitze vorhanden sind',
+                  fr: 'Impossible de réduire le nombre de sièges car aucun siège vide n’est disponible',
+                  ar: 'لا يمكن تقليل عدد المقاعد لأنه لا توجد مقاعد فارغة لإزالتها',
+                  ru: 'Невозможно уменьшить количество мест, так как нет пустых мест для удаления',
+                  trk: 'Silinecek boş koltuk olmadığı için koltuk sayısı azaltılamaz',
+                  es: 'No se puede reducir la cantidad de asientos porque no hay asientos vacíos para eliminar',
+                  it: 'Impossibile ridurre il numero di posti perché non ci sono posti vuoti da rimuovere',
+                  pl: 'Nie można zmniejszyć liczby miejsc, ponieważ nie ma pustych miejsc do usunięcia',
+                  pt: 'Não é possível reduzir a quantidade de assentos porque não há assentos vazios para remover',
+                  th: 'ไม่สามารถลดจำนวนที่นั่งได้ เพราะไม่มีที่นั่งว่างให้ลบ',
+                  id: 'Tidak dapat mengurangi jumlah kursi karena tidak ada kursi kosong untuk dihapus',
+                  hi: 'सीटों की संख्या कम नहीं की जा सकती क्योंकि हटाने के लिए कोई खाली सीट नहीं है',
+                  bn: 'সিট সংখ্যা কমানো যাচ্ছে না কারণ মুছে ফেলার মতো কোনো খালি সিট নেই',
+                ),
               );
             }
   
@@ -9559,7 +17129,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
       });
   
-      _showSnack('Seat count updated');
+      _showSnack(
+        tr(
+          context,
+          'Seat count updated',
+          zhTw: '座位數已更新',
+          zhCn: '座位数已更新',
+          ko: '좌석 수가 업데이트되었습니다',
+          ja: '席数が更新されました',
+          de: 'Sitzanzahl aktualisiert',
+          fr: 'Nombre de sièges mis à jour',
+          ar: 'تم تحديث عدد المقاعد',
+          ru: 'Количество мест обновлено',
+          trk: 'Koltuk sayısı güncellendi',
+          es: 'Cantidad de asientos actualizada',
+          it: 'Numero di posti aggiornato',
+          pl: 'Liczba miejsc została zaktualizowana',
+          pt: 'Quantidade de assentos atualizada',
+          th: 'อัปเดตจำนวนที่นั่งแล้ว',
+          id: 'Jumlah kursi berhasil diperbarui',
+          hi: 'सीटों की संख्या अपडेट हो गई है',
+          bn: 'সিট সংখ্যা আপডেট হয়েছে',
+        ),
+      );
     } catch (e) {
       _showSnack(_cleanError(e));
     }
@@ -9571,7 +17163,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      _showSnack('User not found');
+      _showSnack(
+        tr(
+          context,
+          'User not found',
+          zhTw: '找不到使用者',
+          zhCn: '找不到用户',
+          ko: '사용자를 찾을 수 없습니다',
+          ja: 'ユーザーが見つかりません',
+          de: 'Benutzer nicht gefunden',
+          fr: 'Utilisateur introuvable',
+          ar: 'لم يتم العثور على المستخدم',
+          ru: 'Пользователь не найден',
+          trk: 'Kullanıcı bulunamadı',
+          es: 'Usuario no encontrado',
+          it: 'Utente non trovato',
+          pl: 'Nie znaleziono użytkownika',
+          pt: 'Usuário não encontrado',
+          th: 'ไม่พบผู้ใช้',
+          id: 'Pengguna tidak ditemukan',
+          hi: 'उपयोगकर्ता नहीं मिला',
+          bn: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি',
+        ),
+      );
       return;
     }
 
@@ -9612,7 +17226,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
         : 0xFF2563EB;
 
     final seatPhotoUrl =
-        myAvatarType == 'virtual' ? null : (myPhotoUrl.isEmpty ? null : myPhotoUrl);
+        myAvatarType == 'virtual'
+            ? null
+            : (myPhotoUrl.isEmpty ? null : myPhotoUrl);
 
     try {
       await _runTableTransaction<void>((tx, snap, data) async {
@@ -9622,9 +17238,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
           if (seat is Map<String, dynamic>) {
             return Map<String, dynamic>.from(seat);
           }
+
           if (seat is Map) {
             return Map<String, dynamic>.from(seat);
           }
+
           if (seat is String) {
             return <String, dynamic>{
               'playerName': seat,
@@ -9644,6 +17262,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
               'arrived': null,
             };
           }
+
           return <String, dynamic>{
             'playerName': null,
             'playerLastName': null,
@@ -9663,39 +17282,89 @@ class _TableDetailPageState extends State<TableDetailPage> {
           };
         }).toList();
 
-        final waitingList = List<dynamic>.from(data['waitingList'] ?? [])
-            .map((e) => normalizeWaitingEntry(e))
-            .toList();
+        final waitingList = List<dynamic>.from(
+          data['waitingList'] ?? [],
+        ).map((e) => normalizeWaitingEntry(e)).toList();
 
         if (seatIndex < 0 || seatIndex >= seatList.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
 
         final currentSeat = seatList[seatIndex];
 
         final currentSeatName =
             (currentSeat['playerName'] ?? '').toString().trim();
+
         final currentSeatUid =
             (currentSeat['playerUid'] ?? '').toString().trim();
+
         final currentSeatPlayerId =
             (currentSeat['playerId'] ?? '').toString().trim();
 
         final reservedName =
             (currentSeat['reservedForName'] ?? '').toString().trim();
+
         final reservedUid =
             (currentSeat['reservedForUid'] ?? '').toString().trim();
+
         final reservedPlayerId =
             (currentSeat['reservedForPlayerId'] ?? '').toString().trim();
 
-        final seatAlreadyTaken = currentSeatName.isNotEmpty ||
+        final seatAlreadyTaken =
+            currentSeatName.isNotEmpty ||
             currentSeatUid.isNotEmpty ||
             currentSeatPlayerId.isNotEmpty;
 
         if (seatAlreadyTaken) {
-          _txFail('This seat is already taken');
+          _txFail(
+            tr(
+              context,
+              'This seat is already taken',
+              zhTw: '這個座位已經有人了',
+              zhCn: '这个座位已经有人了',
+              ko: '이 좌석은 이미 사용 중입니다',
+              ja: 'この席はすでに使用されています',
+              de: 'Dieser Sitz ist bereits besetzt',
+              fr: 'Ce siège est déjà pris',
+              ar: 'هذا المقعد محجوز بالفعل',
+              ru: 'Это место уже занято',
+              trk: 'Bu koltuk zaten dolu',
+              es: 'Este asiento ya está ocupado',
+              it: 'Questo posto è già occupato',
+              pl: 'To miejsce jest już zajęte',
+              pt: 'Este assento já está ocupado',
+              th: 'ที่นั่งนี้ถูกใช้งานแล้ว',
+              id: 'Kursi ini sudah terisi',
+              hi: 'यह सीट पहले से भरी हुई है',
+              bn: 'এই সিটটি ইতিমধ্যেই নেওয়া হয়েছে',
+            ),
+          );
         }
 
-        final seatReservedForSomeoneElse = reservedName.isNotEmpty ||
+        final seatReservedForSomeoneElse =
+            reservedName.isNotEmpty ||
             reservedUid.isNotEmpty ||
             reservedPlayerId.isNotEmpty;
 
@@ -9707,23 +17376,73 @@ class _TableDetailPageState extends State<TableDetailPage> {
             (reservedName.isNotEmpty && reservedName == myName);
 
         if (seatReservedForSomeoneElse && !reservedForMe) {
-          _txFail('This seat is reserved');
+          _txFail(
+            tr(
+              context,
+              'This seat is reserved',
+              zhTw: '這個座位已被預留',
+              zhCn: '这个座位已被预留',
+              ko: '이 좌석은 예약되었습니다',
+              ja: 'この席は予約済みです',
+              de: 'Dieser Sitz ist reserviert',
+              fr: 'Ce siège est réservé',
+              ar: 'هذا المقعد محجوز',
+              ru: 'Это место зарезервировано',
+              trk: 'Bu koltuk rezerve edildi',
+              es: 'Este asiento está reservado',
+              it: 'Questo posto è riservato',
+              pl: 'To miejsce jest zarezerwowane',
+              pt: 'Este assento está reservado',
+              th: 'ที่นั่งนี้ถูกจองไว้แล้ว',
+              id: 'Kursi ini sudah dipesan',
+              hi: 'यह सीट आरक्षित है',
+              bn: 'এই সিটটি সংরক্ষিত',
+            ),
+          );
         }
 
         final alreadyJoined = seatList.any((seat) {
-          final seatUid = (seat['playerUid'] ?? '').toString().trim();
-          final seatPlayerId = (seat['playerId'] ?? '').toString().trim();
+          final seatUid =
+              (seat['playerUid'] ?? '').toString().trim();
+
+          final seatPlayerId =
+              (seat['playerId'] ?? '').toString().trim();
+
           return seatUid == user.uid ||
-              (myPlayerId.isNotEmpty && seatPlayerId == myPlayerId);
+              (myPlayerId.isNotEmpty &&
+                  seatPlayerId == myPlayerId);
         });
 
         if (alreadyJoined) {
-          _txFail('You already joined this table');
+          _txFail(
+            tr(
+              context,
+              'You already joined this table',
+              zhTw: '你已經加入這個牌桌',
+              zhCn: '你已经加入这张牌桌',
+              ko: '이미 이 테이블에 참가했습니다',
+              ja: 'すでにこのテーブルに参加しています',
+              de: 'Du bist diesem Tisch bereits beigetreten',
+              fr: 'Vous avez déjà rejoint cette table',
+              ar: 'لقد انضممت بالفعل إلى هذه الطاولة',
+              ru: 'Вы уже присоединились к этому столу',
+              trk: 'Bu masaya zaten katıldınız',
+              es: 'Ya te uniste a esta mesa',
+              it: 'Hai già partecipato a questo tavolo',
+              pl: 'Dołączyłeś już do tego stołu',
+              pt: 'Você já entrou nesta mesa',
+              th: 'คุณเข้าร่วมโต๊ะนี้แล้ว',
+              id: 'Anda sudah bergabung dengan meja ini',
+              hi: 'आप पहले ही इस टेबल में शामिल हो चुके हैं',
+              bn: 'আপনি ইতিমধ্যেই এই টেবিলে যোগ দিয়েছেন',
+            ),
+          );
         }
 
         seatList[seatIndex] = buildOccupiedSeatMap(
           playerName: myName,
-          playerShortName: myShortName.isEmpty ? myName : myShortName,
+          playerShortName:
+              myShortName.isEmpty ? myName : myShortName,
           playerUid: user.uid,
           playerId: myPlayerId,
           playerPhotoUrl: seatPhotoUrl,
@@ -9735,10 +17454,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
         );
 
         waitingList.removeWhere((entry) {
-          final uid = (entry['uid'] ?? '').toString().trim();
-          final playerId = (entry['playerId'] ?? '').toString().trim();
+          final uid =
+              (entry['uid'] ?? '').toString().trim();
+
+          final playerId =
+              (entry['playerId'] ?? '').toString().trim();
+
           return uid == user.uid ||
-              (myPlayerId.isNotEmpty && playerId == myPlayerId);
+              (myPlayerId.isNotEmpty &&
+                  playerId == myPlayerId);
         });
 
         tx.update(tableDocRef, {
@@ -9748,7 +17472,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
       });
 
-      _showSnack('Joined successfully');
+      _showSnack(
+        tr(
+          context,
+          'Joined successfully',
+          zhTw: '成功加入座位',
+          zhCn: '成功加入座位',
+          ko: '좌석 참가 성공',
+          ja: '席への参加に成功しました',
+          de: 'Erfolgreich beigetreten',
+          fr: 'Participation réussie',
+          ar: 'تم الانضمام بنجاح',
+          ru: 'Успешно присоединились',
+          trk: 'Başarıyla katıldınız',
+          es: 'Te uniste correctamente',
+          it: 'Partecipazione riuscita',
+          pl: 'Pomyślnie dołączono',
+          pt: 'Entrou com sucesso',
+          th: 'เข้าร่วมสำเร็จ',
+          id: 'Berhasil bergabung',
+          hi: 'सफलतापूर्वक शामिल हुए',
+          bn: 'সফলভাবে যোগ দিয়েছেন',
+        ),
+      );
     } catch (e) {
       _showSnack(_cleanError(e));
     }
@@ -9759,7 +17505,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final myName = widget.session.name.trim();
   
     if (user == null) {
-      _showSnack('User not found');
+      _showSnack(
+        tr(
+          context,
+          'User not found',
+          zhTw: '找不到使用者',
+          zhCn: '找不到用户',
+          ko: '사용자를 찾을 수 없습니다',
+          ja: 'ユーザーが見つかりません',
+          de: 'Benutzer nicht gefunden',
+          fr: 'Utilisateur introuvable',
+          ar: 'لم يتم العثور على المستخدم',
+          ru: 'Пользователь не найден',
+          trk: 'Kullanıcı bulunamadı',
+          es: 'Usuario no encontrado',
+          it: 'Utente non trovato',
+          pl: 'Nie znaleziono użytkownika',
+          pt: 'Usuário não encontrado',
+          th: 'ไม่พบผู้ใช้',
+          id: 'Pengguna tidak ditemukan',
+          hi: 'उपयोगकर्ता नहीं मिला',
+          bn: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি',
+        ),
+      );
       return;
     }
   
@@ -9789,16 +17557,60 @@ class _TableDetailPageState extends State<TableDetailPage> {
         }).toList();
   
         if (seatIndex < 0 || seatIndex >= seatList.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
   
         final seat = seatList[seatIndex];
-        final seatName = (seat['playerName'] ?? '').toString().trim();        
+        final seatName = (seat['playerName'] ?? '').toString().trim();
         final seatUid = (seat['playerUid'] ?? '').toString().trim();
 
         final isMySeat = seatUid == user.uid || seatName == myName;
         if (!isMySeat) {
-          _txFail('You can only cancel your own seat');
+          _txFail(
+            tr(
+              context,
+              'You can only cancel your own seat',
+              zhTw: '你只能取消自己的座位',
+              zhCn: '你只能取消自己的座位',
+              ko: '본인 좌석만 취소할 수 있습니다',
+              ja: '自分の席のみキャンセルできます',
+              de: 'Du kannst nur deinen eigenen Sitz stornieren',
+              fr: 'Vous ne pouvez annuler que votre propre siège',
+              ar: 'يمكنك إلغاء مقعدك فقط',
+              ru: 'Вы можете отменить только свое место',
+              trk: 'Yalnızca kendi koltuğunuzu iptal edebilirsiniz',
+              es: 'Solo puedes cancelar tu propio asiento',
+              it: 'Puoi annullare solo il tuo posto',
+              pl: 'Możesz anulować tylko swoje miejsce',
+              pt: 'Você só pode cancelar seu próprio assento',
+              th: 'คุณสามารถยกเลิกได้เฉพาะที่นั่งของคุณเอง',
+              id: 'Anda hanya dapat membatalkan kursi Anda sendiri',
+              hi: 'आप केवल अपनी सीट रद्द कर सकते हैं',
+              bn: 'আপনি শুধুমাত্র নিজের সিট বাতিল করতে পারেন',
+            ),
+          );
         }
 
         seatList[seatIndex] = buildEmptySeatMap();
@@ -9812,7 +17624,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
       if (isHost) {
         await _promptFillSeatFromWaitingList(seatIndex);
       } else {
-        _showSnack('Seat cancelled');
+        _showSnack(
+          tr(
+            context,
+            'Seat cancelled',
+            zhTw: '座位已取消',
+            zhCn: '座位已取消',
+            ko: '좌석이 취소되었습니다',
+            ja: '席をキャンセルしました',
+            de: 'Sitz storniert',
+            fr: 'Siège annulé',
+            ar: 'تم إلغاء المقعد',
+            ru: 'Место отменено',
+            trk: 'Koltuk iptal edildi',
+            es: 'Asiento cancelado',
+            it: 'Posto annullato',
+            pl: 'Miejsce anulowane',
+            pt: 'Assento cancelado',
+            th: 'ยกเลิกที่นั่งแล้ว',
+            id: 'Kursi dibatalkan',
+            hi: 'सीट रद्द कर दी गई',
+            bn: 'সিট বাতিল করা হয়েছে',
+          ),
+        );
       }
     } catch (e) {
       _showSnack(_cleanError(e));
@@ -9821,7 +17655,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
   Future<void> _setDealerName() async {
     if (!canManageThisTable) {
-      _showSnack('Only the table creator can set the dealer name');
+      _showSnack(
+        tr(
+          context,
+          'Only the table creator can set the dealer name',
+          zhTw: '只有牌桌建立者可以設定荷官名稱',
+          zhCn: '只有牌桌创建者可以设置荷官名称',
+          ko: '테이블 생성자만 딜러 이름을 설정할 수 있습니다',
+          ja: 'テーブル作成者のみディーラー名を設定できます',
+          de: 'Nur der Tischersteller kann den Dealernamen festlegen',
+          fr: 'Seul le créateur de la table peut définir le nom du donneur',
+          ar: 'فقط منشئ الطاولة يمكنه تعيين اسم الموزع',
+          ru: 'Только создатель стола может задать имя дилера',
+          trk: 'Sadece masa sahibi krupiye adını ayarlayabilir',
+          es: 'Solo el creador de la mesa puede configurar el nombre del dealer',
+          it: 'Solo il creatore del tavolo può impostare il nome del dealer',
+          pl: 'Tylko twórca stołu może ustawić nazwę rozdającego',
+          pt: 'Somente o criador da mesa pode definir o nome do dealer',
+          th: 'เฉพาะผู้สร้างโต๊ะเท่านั้นที่สามารถตั้งชื่อดีลเลอร์ได้',
+          id: 'Hanya pembuat meja yang dapat mengatur nama dealer',
+          hi: 'केवल टेबल बनाने वाला ही डीलर का नाम सेट कर सकता है',
+          bn: 'শুধুমাত্র টেবিল নির্মাতাই ডিলারের নাম সেট করতে পারে',
+        ),
+      );
       return;
     }
 
@@ -9837,25 +17693,131 @@ class _TableDetailPageState extends State<TableDetailPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Set Dealer Name'),
+          title: Text(
+            tr(
+              context,
+              'Set Dealer Name',
+              zhTw: '設定荷官名稱',
+              zhCn: '设置荷官名称',
+              ko: '딜러 이름 설정',
+              ja: 'ディーラー名を設定',
+              de: 'Dealernamen festlegen',
+              fr: 'Définir le nom du donneur',
+              ar: 'تعيين اسم الموزع',
+              ru: 'Установить имя дилера',
+              trk: 'Krupiye Adını Ayarla',
+              es: 'Configurar nombre del dealer',
+              it: 'Imposta nome dealer',
+              pl: 'Ustaw nazwę rozdającego',
+              pt: 'Definir nome do dealer',
+              th: 'ตั้งชื่อดีลเลอร์',
+              id: 'Atur Nama Dealer',
+              hi: 'डीलर का नाम सेट करें',
+              bn: 'ডিলারের নাম সেট করুন',
+            ),
+          ),
           content: TextField(
             controller: controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Dealer Name',
-              hintText: 'Leave empty if unknown',
+            decoration: InputDecoration(
+              labelText: tr(
+                context,
+                'Dealer Name',
+                zhTw: '荷官名稱',
+                zhCn: '荷官名称',
+                ko: '딜러 이름',
+                ja: 'ディーラー名',
+                de: 'Dealername',
+                fr: 'Nom du donneur',
+                ar: 'اسم الموزع',
+                ru: 'Имя дилера',
+                trk: 'Krupiye Adı',
+                es: 'Nombre del dealer',
+                it: 'Nome dealer',
+                pl: 'Nazwa rozdającego',
+                pt: 'Nome do dealer',
+                th: 'ชื่อดีลเลอร์',
+                id: 'Nama Dealer',
+                hi: 'डीलर का नाम',
+                bn: 'ডিলারের নাম',
+              ),
+              hintText: tr(
+                context,
+                'Leave empty if unknown',
+                zhTw: '不知道的話可以留空',
+                zhCn: '不知道的话可以留空',
+                ko: '모르면 비워 두세요',
+                ja: '不明な場合は空白のままにしてください',
+                de: 'Leer lassen, falls unbekannt',
+                fr: 'Laissez vide si inconnu',
+                ar: 'اتركه فارغًا إذا كان غير معروف',
+                ru: 'Оставьте пустым, если неизвестно',
+                trk: 'Bilinmiyorsa boş bırakın',
+                es: 'Déjalo vacío si no se sabe',
+                it: 'Lascia vuoto se sconosciuto',
+                pl: 'Zostaw puste, jeśli nie wiadomo',
+                pt: 'Deixe vazio se não souber',
+                th: 'เว้นว่างไว้หากไม่ทราบ',
+                id: 'Kosongkan jika tidak diketahui',
+                hi: 'यदि पता न हो तो खाली छोड़ दें',
+                bn: 'জানা না থাকলে খালি রাখুন',
+              ),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(context, controller.text.trim());
               },
-              child: const Text('Save'),
+              child: Text(
+                tr(
+                  context,
+                  'Save',
+                  zhTw: '儲存',
+                  zhCn: '保存',
+                  ko: '저장',
+                  ja: '保存',
+                  de: 'Speichern',
+                  fr: 'Enregistrer',
+                  ar: 'حفظ',
+                  ru: 'Сохранить',
+                  trk: 'Kaydet',
+                  es: 'Guardar',
+                  it: 'Salva',
+                  pl: 'Zapisz',
+                  pt: 'Salvar',
+                  th: 'บันทึก',
+                  id: 'Simpan',
+                  hi: 'सेव करें',
+                  bn: 'সংরক্ষণ',
+                ),
+              ),
             ),
           ],
         );
@@ -9870,7 +17832,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
         'dealerName': result.isEmpty ? null : result,
         ..._buildMetaUpdate(),
       });
-      _showSnack('Dealer updated');
+
+      _showSnack(
+        tr(
+          context,
+          'Dealer updated',
+          zhTw: '荷官已更新',
+          zhCn: '荷官已更新',
+          ko: '딜러가 업데이트되었습니다',
+          ja: 'ディーラーを更新しました',
+          de: 'Dealer aktualisiert',
+          fr: 'Donneur mis à jour',
+          ar: 'تم تحديث الموزع',
+          ru: 'Дилер обновлен',
+          trk: 'Krupiye güncellendi',
+          es: 'Dealer actualizado',
+          it: 'Dealer aggiornato',
+          pl: 'Rozdający zaktualizowany',
+          pt: 'Dealer atualizado',
+          th: 'อัปเดตดีลเลอร์แล้ว',
+          id: 'Dealer berhasil diperbarui',
+          hi: 'डीलर अपडेट हो गया',
+          bn: 'ডিলার আপডেট হয়েছে',
+        ),
+      );
     } catch (e) {
       _showSnack(_cleanError(e));
     }
@@ -9881,7 +17866,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final previewSnap = await tableDocRef.get();
 
     if (!previewSnap.exists) {
-      _showSnack('Table not found');
+      _showSnack(
+        tr(
+          context,
+          'Table not found',
+          zhTw: '找不到牌桌',
+          zhCn: '找不到牌桌',
+          ko: '테이블을 찾을 수 없습니다',
+          ja: 'テーブルが見つかりません',
+          de: 'Tisch nicht gefunden',
+          fr: 'Table introuvable',
+          ar: 'لم يتم العثور على الطاولة',
+          ru: 'Стол не найден',
+          trk: 'Masa bulunamadı',
+          es: 'Mesa no encontrada',
+          it: 'Tavolo non trovato',
+          pl: 'Nie znaleziono stołu',
+          pt: 'Mesa não encontrada',
+          th: 'ไม่พบโต๊ะ',
+          id: 'Meja tidak ditemukan',
+          hi: 'टेबल नहीं मिली',
+          bn: 'টেবিল খুঁজে পাওয়া যায়নি',
+        ),
+      );
       return;
     }
 
@@ -9894,13 +17901,39 @@ class _TableDetailPageState extends State<TableDetailPage> {
     if (result == null) return;
 
     final reservedName = (result['name'] ?? '').toString().trim();
+
     final reservedShortName =
         (result['shortName'] ?? reservedName).toString().trim();
+
     final reservedUid = (result['uid'] ?? '').toString().trim();
-    final reservedPlayerId = (result['playerId'] ?? '').toString().trim();
+
+    final reservedPlayerId =
+        (result['playerId'] ?? '').toString().trim();
 
     if (reservedName.isEmpty) {
-      _showSnack('Invalid player');
+      _showSnack(
+        tr(
+          context,
+          'Invalid player',
+          zhTw: '無效玩家',
+          zhCn: '无效玩家',
+          ko: '잘못된 플레이어입니다',
+          ja: '無効なプレイヤーです',
+          de: 'Ungültiger Spieler',
+          fr: 'Joueur invalide',
+          ar: 'لاعب غير صالح',
+          ru: 'Недопустимый игрок',
+          trk: 'Geçersiz oyuncu',
+          es: 'Jugador inválido',
+          it: 'Giocatore non valido',
+          pl: 'Nieprawidłowy gracz',
+          pt: 'Jogador inválido',
+          th: 'ผู้เล่นไม่ถูกต้อง',
+          id: 'Pemain tidak valid',
+          hi: 'अमान्य खिलाड़ी',
+          bn: 'অকার্যকর খেলোয়াড়',
+        ),
+      );
       return;
     }
 
@@ -9910,68 +17943,163 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
         final seatList = normalizeSeatMaps(data['seats']);
 
-        final waitingList = List<dynamic>.from(data['waitingList'] ?? [])
-            .map((e) => normalizeWaitingEntry(e))
-            .toList();
+        final waitingList = List<dynamic>.from(
+          data['waitingList'] ?? [],
+        ).map((e) => normalizeWaitingEntry(e)).toList();
 
         if (seatIndex < 0 || seatIndex >= seatList.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
 
-        final currentSeat = Map<String, dynamic>.from(seatList[seatIndex]);
+        final currentSeat =
+            Map<String, dynamic>.from(seatList[seatIndex]);
 
-        final playerName = (currentSeat['playerName'] ?? '').toString().trim();
-        final playerUid = (currentSeat['playerUid'] ?? '').toString().trim();
+        final playerName =
+            (currentSeat['playerName'] ?? '').toString().trim();
+
+        final playerUid =
+            (currentSeat['playerUid'] ?? '').toString().trim();
+
         final reservedForName =
             (currentSeat['reservedForName'] ?? '').toString().trim();
+
         final reservedForUid =
             (currentSeat['reservedForUid'] ?? '').toString().trim();
-        final reservedForPlayerId =
-            (currentSeat['reservedForPlayerId'] ?? '').toString().trim();
 
-        final seatIsOccupied = playerName.isNotEmpty || playerUid.isNotEmpty;
-        final seatIsReserved = reservedForName.isNotEmpty ||
+        final reservedForPlayerId =
+            (currentSeat['reservedForPlayerId'] ?? '')
+                .toString()
+                .trim();
+
+        final seatIsOccupied =
+            playerName.isNotEmpty || playerUid.isNotEmpty;
+
+        final seatIsReserved =
+            reservedForName.isNotEmpty ||
             reservedForUid.isNotEmpty ||
             reservedForPlayerId.isNotEmpty;
 
         if (seatIsOccupied || seatIsReserved) {
-          _txFail('This seat is not open');
+          _txFail(
+            tr(
+              context,
+              'This seat is not open',
+              zhTw: '這個座位不是空位',
+              zhCn: '这个座位不是空位',
+              ko: '이 좌석은 비어있지 않습니다',
+              ja: 'この席は空いていません',
+              de: 'Dieser Sitz ist nicht frei',
+              fr: 'Ce siège n’est pas disponible',
+              ar: 'هذا المقعد غير متاح',
+              ru: 'Это место недоступно',
+              trk: 'Bu koltuk boş değil',
+              es: 'Este asiento no está disponible',
+              it: 'Questo posto non è disponibile',
+              pl: 'To miejsce nie jest wolne',
+              pt: 'Este assento não está disponível',
+              th: 'ที่นั่งนี้ไม่ว่าง',
+              id: 'Kursi ini tidak tersedia',
+              hi: 'यह सीट खाली नहीं है',
+              bn: 'এই সিটটি খালি নয়',
+            ),
+          );
         }
 
         final alreadySeated = seatList.any((seat) {
-          final seatPlayerUid = (seat['playerUid'] ?? '').toString().trim();
-          final seatPlayerId = (seat['playerId'] ?? '').toString().trim();
-          final seatPlayerName = (seat['playerName'] ?? '').toString().trim();
 
-          if (reservedUid.isNotEmpty && seatPlayerUid == reservedUid) {
+          final seatPlayerUid =
+              (seat['playerUid'] ?? '').toString().trim();
+
+          final seatPlayerId =
+              (seat['playerId'] ?? '').toString().trim();
+
+          final seatPlayerName =
+              (seat['playerName'] ?? '').toString().trim();
+
+          if (reservedUid.isNotEmpty &&
+              seatPlayerUid == reservedUid) {
             return true;
           }
 
-          if (reservedPlayerId.isNotEmpty && seatPlayerId == reservedPlayerId) {
+          if (reservedPlayerId.isNotEmpty &&
+              seatPlayerId == reservedPlayerId) {
             return true;
           }
 
           if (reservedUid.isEmpty &&
               reservedPlayerId.isEmpty &&
-              seatPlayerName.toLowerCase() == reservedName.toLowerCase()) {
+              seatPlayerName.toLowerCase() ==
+                  reservedName.toLowerCase()) {
             return true;
           }
 
           return false;
+
         });
 
         if (alreadySeated) {
-          _txFail('This player is already seated');
+          _txFail(
+            tr(
+              context,
+              'This player is already seated',
+              zhTw: '這位玩家已經入座',
+              zhCn: '这位玩家已经入座',
+              ko: '이 플레이어는 이미 착석했습니다',
+              ja: 'このプレイヤーはすでに着席しています',
+              de: 'Dieser Spieler sitzt bereits am Tisch',
+              fr: 'Ce joueur est déjà assis',
+              ar: 'هذا اللاعب يجلس بالفعل',
+              ru: 'Этот игрок уже сидит за столом',
+              trk: 'Bu oyuncu zaten oturuyor',
+              es: 'Este jugador ya está sentado',
+              it: 'Questo giocatore è già seduto',
+              pl: 'Ten gracz już siedzi przy stole',
+              pt: 'Este jogador já está sentado',
+              th: 'ผู้เล่นนี้นั่งอยู่แล้ว',
+              id: 'Pemain ini sudah duduk',
+              hi: 'यह खिलाड़ी पहले से बैठा हुआ है',
+              bn: 'এই খেলোয়াড় ইতিমধ্যেই বসে আছে',
+            ),
+          );
         }
 
         final alreadyReserved = seatList.any((seat) {
-          final seatReservedUid = (seat['reservedForUid'] ?? '').toString().trim();
+
+          final seatReservedUid =
+              (seat['reservedForUid'] ?? '').toString().trim();
+
           final seatReservedPlayerId =
-              (seat['reservedForPlayerId'] ?? '').toString().trim();
+              (seat['reservedForPlayerId'] ?? '')
+                  .toString()
+                  .trim();
+
           final seatReservedName =
               (seat['reservedForName'] ?? '').toString().trim();
 
-          if (reservedUid.isNotEmpty && seatReservedUid == reservedUid) {
+          if (reservedUid.isNotEmpty &&
+              seatReservedUid == reservedUid) {
             return true;
           }
 
@@ -9982,15 +18110,39 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
           if (reservedUid.isEmpty &&
               reservedPlayerId.isEmpty &&
-              seatReservedName.toLowerCase() == reservedName.toLowerCase()) {
+              seatReservedName.toLowerCase() ==
+                  reservedName.toLowerCase()) {
             return true;
           }
 
           return false;
+
         });
 
         if (alreadyReserved) {
-          _txFail('This player is already reserved');
+          _txFail(
+            tr(
+              context,
+              'This player is already reserved',
+              zhTw: '這位玩家已經被預留',
+              zhCn: '这位玩家已经被预留',
+              ko: '이 플레이어는 이미 예약되었습니다',
+              ja: 'このプレイヤーはすでに予約されています',
+              de: 'Dieser Spieler ist bereits reserviert',
+              fr: 'Ce joueur est déjà réservé',
+              ar: 'هذا اللاعب محجوز بالفعل',
+              ru: 'Этот игрок уже зарезервирован',
+              trk: 'Bu oyuncu zaten rezerve edildi',
+              es: 'Este jugador ya está reservado',
+              it: 'Questo giocatore è già riservato',
+              pl: 'Ten gracz jest już zarezerwowany',
+              pt: 'Este jogador já está reservado',
+              th: 'ผู้เล่นนี้ถูกจองไว้แล้ว',
+              id: 'Pemain ini sudah dipesan',
+              hi: 'यह खिलाड़ी पहले से आरक्षित है',
+              bn: 'এই খেলোয়াড় ইতিমধ্যেই সংরক্ষিত',
+            ),
+          );
         }
 
         seatList[seatIndex] = buildReservedSeatMap(
@@ -10002,11 +18154,18 @@ class _TableDetailPageState extends State<TableDetailPage> {
         );
 
         waitingList.removeWhere((entry) {
-          final waitingUid = (entry['uid'] ?? '').toString().trim();
-          final waitingPlayerId = (entry['playerId'] ?? '').toString().trim();
-          final waitingName = (entry['name'] ?? '').toString().trim();
 
-          if (reservedUid.isNotEmpty && waitingUid == reservedUid) {
+          final waitingUid =
+              (entry['uid'] ?? '').toString().trim();
+
+          final waitingPlayerId =
+              (entry['playerId'] ?? '').toString().trim();
+
+          final waitingName =
+              (entry['name'] ?? '').toString().trim();
+
+          if (reservedUid.isNotEmpty &&
+              waitingUid == reservedUid) {
             return true;
           }
 
@@ -10017,11 +18176,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
           if (reservedUid.isEmpty &&
               reservedPlayerId.isEmpty &&
-              waitingName.toLowerCase() == reservedName.toLowerCase()) {
+              waitingName.toLowerCase() ==
+                  reservedName.toLowerCase()) {
             return true;
           }
 
           return false;
+
         });
 
         tx.update(tableDocRef, {
@@ -10034,7 +18195,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
       if (!mounted) return;
 
-      _showSnack('Seat reserved successfully');
+      _showSnack(
+        tr(
+          context,
+          'Seat reserved successfully',
+          zhTw: '座位預留成功',
+          zhCn: '座位预留成功',
+          ko: '좌석 예약 성공',
+          ja: '席の予約に成功しました',
+          de: 'Sitz erfolgreich reserviert',
+          fr: 'Siège réservé avec succès',
+          ar: 'تم حجز المقعد بنجاح',
+          ru: 'Место успешно зарезервировано',
+          trk: 'Koltuk başarıyla rezerve edildi',
+          es: 'Asiento reservado correctamente',
+          it: 'Posto riservato con successo',
+          pl: 'Miejsce zostało pomyślnie zarezerwowane',
+          pt: 'Assento reservado com sucesso',
+          th: 'จองที่นั่งสำเร็จ',
+          id: 'Kursi berhasil dipesan',
+          hi: 'सीट सफलतापूर्वक आरक्षित की गई',
+          bn: 'সিট সফলভাবে সংরক্ষিত হয়েছে',
+        ),
+      );
 
     } catch (e) {
 
@@ -10055,7 +18238,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final seats = normalizeSeatMaps(data['seats']);
   
         if (seatIndex < 0 || seatIndex >= seats.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
   
         final seat = Map<String, dynamic>.from(seats[seatIndex]);
@@ -10073,7 +18278,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
             reservedForPlayerId.isNotEmpty;
   
         if (!hasOccupiedPlayer && !hasReservedPlayer) {
-          _txFail('Seat already empty');
+          _txFail(
+            tr(
+              context,
+              'Seat already empty',
+              zhTw: '座位已經是空的',
+              zhCn: '座位已经是空的',
+              ko: '좌석이 이미 비어 있습니다',
+              ja: '席はすでに空いています',
+              de: 'Sitz ist bereits leer',
+              fr: 'Le siège est déjà vide',
+              ar: 'المقعد فارغ بالفعل',
+              ru: 'Место уже пустое',
+              trk: 'Koltuk zaten boş',
+              es: 'El asiento ya está vacío',
+              it: 'Il posto è già vuoto',
+              pl: 'Miejsce jest już puste',
+              pt: 'O assento já está vazio',
+              th: 'ที่นั่งว่างอยู่แล้ว',
+              id: 'Kursi sudah kosong',
+              hi: 'सीट पहले से खाली है',
+              bn: 'সিট ইতিমধ্যেই খালি',
+            ),
+          );
         }
   
         seats[seatIndex] = buildEmptySeatMap();
@@ -10107,31 +18334,156 @@ class _TableDetailPageState extends State<TableDetailPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Add to Waiting List'),
+          title: Text(
+            tr(
+              context,
+              'Add to Waiting List',
+              zhTw: '加入等待名單',
+              zhCn: '加入等待名单',
+              ko: '대기 명단에 추가',
+              ja: 'ウェイティングリストに追加',
+              de: 'Zur Warteliste hinzufügen',
+              fr: 'Ajouter à la liste d’attente',
+              ar: 'إضافة إلى قائمة الانتظار',
+              ru: 'Добавить в список ожидания',
+              trk: 'Bekleme Listesine Ekle',
+              es: 'Agregar a la lista de espera',
+              it: 'Aggiungi alla lista d’attesa',
+              pl: 'Dodaj do listy oczekujących',
+              pt: 'Adicionar à lista de espera',
+              th: 'เพิ่มในรายชื่อรอ',
+              id: 'Tambahkan ke Daftar Tunggu',
+              hi: 'प्रतीक्षा सूची में जोड़ें',
+              bn: 'অপেক্ষমাণ তালিকায় যোগ করুন',
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Guest Name',
-                  hintText: 'Example: Joe',
+                decoration: InputDecoration(
+                  labelText: tr(
+                    context,
+                    'Guest Name',
+                    zhTw: '訪客名稱',
+                    zhCn: '访客名称',
+                    ko: '게스트 이름',
+                    ja: 'ゲスト名',
+                    de: 'Gastname',
+                    fr: 'Nom de l’invité',
+                    ar: 'اسم الضيف',
+                    ru: 'Имя гостя',
+                    trk: 'Misafir Adı',
+                    es: 'Nombre del invitado',
+                    it: 'Nome ospite',
+                    pl: 'Imię gościa',
+                    pt: 'Nome do convidado',
+                    th: 'ชื่อแขก',
+                    id: 'Nama Tamu',
+                    hi: 'मेहमान का नाम',
+                    bn: 'অতিথির নাম',
+                  ),
+                  hintText: tr(
+                    context,
+                    'Example: Joe',
+                    zhTw: '例如：Joe',
+                    zhCn: '例如：Joe',
+                    ko: '예: Joe',
+                    ja: '例：Joe',
+                    de: 'Beispiel: Joe',
+                    fr: 'Exemple : Joe',
+                    ar: 'مثال: Joe',
+                    ru: 'Пример: Joe',
+                    trk: 'Örnek: Joe',
+                    es: 'Ejemplo: Joe',
+                    it: 'Esempio: Joe',
+                    pl: 'Przykład: Joe',
+                    pt: 'Exemplo: Joe',
+                    th: 'ตัวอย่าง: Joe',
+                    id: 'Contoh: Joe',
+                    hi: 'उदाहरण: Joe',
+                    bn: 'উদাহরণ: Joe',
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: codeController,
-                decoration: const InputDecoration(
-                  labelText: 'Invitation Code / Player ID (optional)',
-                  hintText: 'Example: AB12CD34',
+                decoration: InputDecoration(
+                  labelText: tr(
+                    context,
+                    'Invitation Code / Player ID (optional)',
+                    zhTw: '邀請碼 / 玩家 ID（選填）',
+                    zhCn: '邀请码 / 玩家 ID（选填）',
+                    ko: '초대 코드 / 플레이어 ID (선택 사항)',
+                    ja: '招待コード / プレイヤー ID（任意）',
+                    de: 'Einladungscode / Spieler-ID (optional)',
+                    fr: 'Code d’invitation / ID joueur (optionnel)',
+                    ar: 'رمز الدعوة / معرف اللاعب (اختياري)',
+                    ru: 'Код приглашения / ID игрока (необязательно)',
+                    trk: 'Davet Kodu / Oyuncu ID (isteğe bağlı)',
+                    es: 'Código de invitación / ID de jugador (opcional)',
+                    it: 'Codice invito / ID giocatore (facoltativo)',
+                    pl: 'Kod zaproszenia / ID gracza (opcjonalnie)',
+                    pt: 'Código de convite / ID do jogador (opcional)',
+                    th: 'รหัสเชิญ / ID ผู้เล่น (ไม่บังคับ)',
+                    id: 'Kode Undangan / ID Pemain (opsional)',
+                    hi: 'निमंत्रण कोड / प्लेयर ID (वैकल्पिक)',
+                    bn: 'আমন্ত্রণ কোড / প্লেয়ার ID (ঐচ্ছিক)',
+                  ),
+                  hintText: tr(
+                    context,
+                    'Example: AB12CD34',
+                    zhTw: '例如：AB12CD34',
+                    zhCn: '例如：AB12CD34',
+                    ko: '예: AB12CD34',
+                    ja: '例：AB12CD34',
+                    de: 'Beispiel: AB12CD34',
+                    fr: 'Exemple : AB12CD34',
+                    ar: 'مثال: AB12CD34',
+                    ru: 'Пример: AB12CD34',
+                    trk: 'Örnek: AB12CD34',
+                    es: 'Ejemplo: AB12CD34',
+                    it: 'Esempio: AB12CD34',
+                    pl: 'Przykład: AB12CD34',
+                    pt: 'Exemplo: AB12CD34',
+                    th: 'ตัวอย่าง: AB12CD34',
+                    id: 'Contoh: AB12CD34',
+                    hi: 'उदाहरण: AB12CD34',
+                    bn: 'উদাহরণ: AB12CD34',
+                  ),
                 ),
               ),
               const SizedBox(height: 8),
-              const Align(
+              Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Leave code empty for guest without account.',
-                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                  tr(
+                    context,
+                    'Leave code empty for guest without account.',
+                    zhTw: '沒有帳號的訪客可以留空邀請碼。',
+                    zhCn: '没有账号的访客可以留空邀请码。',
+                    ko: '계정이 없는 게스트는 코드를 비워 두세요.',
+                    ja: 'アカウントのないゲストはコードを空欄にしてください。',
+                    de: 'Code leer lassen für Gäste ohne Konto.',
+                    fr: 'Laissez le code vide pour un invité sans compte.',
+                    ar: 'اترك الرمز فارغًا للضيف الذي لا يملك حسابًا.',
+                    ru: 'Оставьте код пустым для гостя без аккаунта.',
+                    trk: 'Hesabı olmayan misafir için kodu boş bırakın.',
+                    es: 'Deja el código vacío para un invitado sin cuenta.',
+                    it: 'Lascia il codice vuoto per un ospite senza account.',
+                    pl: 'Zostaw kod pusty dla gościa bez konta.',
+                    pt: 'Deixe o código vazio para convidado sem conta.',
+                    th: 'เว้นรหัสว่างไว้สำหรับแขกที่ไม่มีบัญชี',
+                    id: 'Kosongkan kode untuk tamu tanpa akun.',
+                    hi: 'बिना खाते वाले मेहमान के लिए कोड खाली छोड़ें।',
+                    bn: 'অ্যাকাউন্ট ছাড়া অতিথির জন্য কোড খালি রাখুন।',
+                  ),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Colors.black54,
+                  ),
                 ),
               ),
             ],
@@ -10139,7 +18491,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () {
@@ -10154,7 +18528,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   'playerId': playerId,
                 });
               },
-              child: const Text('Add'),
+              child: Text(
+                tr(
+                  context,
+                  'Add',
+                  zhTw: '新增',
+                  zhCn: '新增',
+                  ko: '추가',
+                  ja: '追加',
+                  de: 'Hinzufügen',
+                  fr: 'Ajouter',
+                  ar: 'إضافة',
+                  ru: 'Добавить',
+                  trk: 'Ekle',
+                  es: 'Agregar',
+                  it: 'Aggiungi',
+                  pl: 'Dodaj',
+                  pt: 'Adicionar',
+                  th: 'เพิ่ม',
+                  id: 'Tambah',
+                  hi: 'जोड़ें',
+                  bn: 'যোগ করুন',
+                ),
+              ),
             ),
           ],
         );
@@ -10168,12 +18564,56 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final myShortName = widget.session.shortName.trim();
   
     if (user == null) {
-      _showSnack('User not found');
+      _showSnack(
+        tr(
+          context,
+          'User not found',
+          zhTw: '找不到使用者',
+          zhCn: '找不到用户',
+          ko: '사용자를 찾을 수 없습니다',
+          ja: 'ユーザーが見つかりません',
+          de: 'Benutzer nicht gefunden',
+          fr: 'Utilisateur introuvable',
+          ar: 'لم يتم العثور على المستخدم',
+          ru: 'Пользователь не найден',
+          trk: 'Kullanıcı bulunamadı',
+          es: 'Usuario no encontrado',
+          it: 'Utente non trovato',
+          pl: 'Nie znaleziono użytkownika',
+          pt: 'Usuário não encontrado',
+          th: 'ไม่พบผู้ใช้',
+          id: 'Pengguna tidak ditemukan',
+          hi: 'उपयोगकर्ता नहीं मिला',
+          bn: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি',
+        ),
+      );
       return;
     }
   
     if (myName.isEmpty) {
-      _showSnack('Name not found');
+      _showSnack(
+        tr(
+          context,
+          'Name not found',
+          zhTw: '找不到名稱',
+          zhCn: '找不到名称',
+          ko: '이름을 찾을 수 없습니다',
+          ja: '名前が見つかりません',
+          de: 'Name nicht gefunden',
+          fr: 'Nom introuvable',
+          ar: 'لم يتم العثور على الاسم',
+          ru: 'Имя не найдено',
+          trk: 'İsim bulunamadı',
+          es: 'Nombre no encontrado',
+          it: 'Nome non trovato',
+          pl: 'Nie znaleziono imienia',
+          pt: 'Nome não encontrado',
+          th: 'ไม่พบชื่อ',
+          id: 'Nama tidak ditemukan',
+          hi: 'नाम नहीं मिला',
+          bn: 'নাম খুঁজে পাওয়া যায়নি',
+        ),
+      );
       return;
     }
   
@@ -10194,7 +18634,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final myData = myUserDoc.data() ?? {};
 
         final myPlayerId =
-            (myUserDoc.data()?['playerId'] ?? '').toString().trim();
+            (myData['playerId'] ?? '').toString().trim();
   
         final seatList = rawSeats.map((seat) {
           if (seat is Map<String, dynamic>) {
@@ -10231,7 +18671,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
   
         if (alreadySeated) {
-          _txFail('You are already seated');
+          _txFail(
+            tr(
+              context,
+              'You are already seated',
+              zhTw: '你已經入座',
+              zhCn: '你已经入座',
+              ko: '이미 착석했습니다',
+              ja: 'すでに着席しています',
+              de: 'Du sitzt bereits am Tisch',
+              fr: 'Vous êtes déjà assis',
+              ar: 'أنت جالس بالفعل',
+              ru: 'Вы уже сидите за столом',
+              trk: 'Zaten oturuyorsunuz',
+              es: 'Ya estás sentado',
+              it: 'Sei già seduto',
+              pl: 'Już siedzisz przy stole',
+              pt: 'Você já está sentado',
+              th: 'คุณนั่งอยู่แล้ว',
+              id: 'Anda sudah duduk',
+              hi: 'आप पहले से बैठे हैं',
+              bn: 'আপনি ইতিমধ্যেই বসে আছেন',
+            ),
+          );
         }
   
         final alreadyWaiting = waitingList.any((entry) {
@@ -10242,7 +18704,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
   
         if (alreadyWaiting) {
-          _txFail('Already in waiting list');
+          _txFail(
+            tr(
+              context,
+              'Already in waiting list',
+              zhTw: '已經在等待名單中',
+              zhCn: '已经在等待名单中',
+              ko: '이미 대기 명단에 있습니다',
+              ja: 'すでにウェイティングリストに入っています',
+              de: 'Bereits auf der Warteliste',
+              fr: 'Déjà dans la liste d’attente',
+              ar: 'أنت بالفعل في قائمة الانتظار',
+              ru: 'Уже в списке ожидания',
+              trk: 'Zaten bekleme listesindesiniz',
+              es: 'Ya estás en la lista de espera',
+              it: 'Sei già nella lista d’attesa',
+              pl: 'Jesteś już na liście oczekujących',
+              pt: 'Você já está na lista de espera',
+              th: 'คุณอยู่ในรายชื่อรอแล้ว',
+              id: 'Anda sudah ada di daftar tunggu',
+              hi: 'आप पहले से प्रतीक्षा सूची में हैं',
+              bn: 'আপনি ইতিমধ্যেই অপেক্ষমাণ তালিকায় আছেন',
+            ),
+          );
         }
   
         waitingList.add({
@@ -10258,7 +18742,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
       });
   
-      _showSnack('Added to waiting list');
+      _showSnack(
+        tr(
+          context,
+          'Added to waiting list',
+          zhTw: '已加入等待名單',
+          zhCn: '已加入等待名单',
+          ko: '대기 명단에 추가되었습니다',
+          ja: 'ウェイティングリストに追加しました',
+          de: 'Zur Warteliste hinzugefügt',
+          fr: 'Ajouté à la liste d’attente',
+          ar: 'تمت الإضافة إلى قائمة الانتظار',
+          ru: 'Добавлено в список ожидания',
+          trk: 'Bekleme listesine eklendi',
+          es: 'Agregado a la lista de espera',
+          it: 'Aggiunto alla lista d’attesa',
+          pl: 'Dodano do listy oczekujących',
+          pt: 'Adicionado à lista de espera',
+          th: 'เพิ่มในรายชื่อรอแล้ว',
+          id: 'Ditambahkan ke daftar tunggu',
+          hi: 'प्रतीक्षा सूची में जोड़ा गया',
+          bn: 'অপেক্ষমাণ তালিকায় যোগ করা হয়েছে',
+        ),
+      );
     } catch (e) {
       _showSnack(_cleanError(e));
     }
@@ -10266,7 +18772,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
   Future<void> _hostAddToWaitingList() async {
     if (!canManageThisTable) {
-      _showSnack('Only host can add others to waiting list');
+      _showSnack(
+        tr(
+          context,
+          'Only host can add others to waiting list',
+          zhTw: '只有房主可以將其他人加入等待名單',
+          zhCn: '只有房主可以将其他人加入等待名单',
+          ko: '호스트만 다른 사람을 대기 명단에 추가할 수 있습니다',
+          ja: 'ホストのみ他の人をウェイティングリストに追加できます',
+          de: 'Nur der Host kann andere zur Warteliste hinzufügen',
+          fr: 'Seul l’hôte peut ajouter d’autres personnes à la liste d’attente',
+          ar: 'يمكن للمضيف فقط إضافة الآخرين إلى قائمة الانتظار',
+          ru: 'Только хост может добавлять других в список ожидания',
+          trk: 'Yalnızca ev sahibi başkalarını bekleme listesine ekleyebilir',
+          es: 'Solo el anfitrión puede agregar a otros a la lista de espera',
+          it: 'Solo l’host può aggiungere altri alla lista d’attesa',
+          pl: 'Tylko gospodarz może dodawać innych do listy oczekujących',
+          pt: 'Somente o anfitrião pode adicionar outros à lista de espera',
+          th: 'เฉพาะโฮสต์เท่านั้นที่สามารถเพิ่มผู้อื่นในรายชื่อรอได้',
+          id: 'Hanya host yang dapat menambahkan orang lain ke daftar tunggu',
+          hi: 'केवल होस्ट ही दूसरों को प्रतीक्षा सूची में जोड़ सकता है',
+          bn: 'শুধুমাত্র হোস্ট অন্যদের অপেক্ষমাণ তালিকায় যোগ করতে পারে',
+        ),
+      );
       return;
     }
   
@@ -10278,7 +18806,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final guestPlayerId = (result['playerId'] ?? '').trim().toUpperCase();
   
     if (guestName.isEmpty) {
-      _showSnack('Guest name is required');
+      _showSnack(
+        tr(
+          context,
+          'Guest name is required',
+          zhTw: '請輸入訪客名稱',
+          zhCn: '请输入访客名称',
+          ko: '게스트 이름은 필수입니다',
+          ja: 'ゲスト名は必須です',
+          de: 'Gastname ist erforderlich',
+          fr: 'Le nom de l’invité est requis',
+          ar: 'اسم الضيف مطلوب',
+          ru: 'Имя гостя обязательно',
+          trk: 'Misafir adı gerekli',
+          es: 'El nombre del invitado es obligatorio',
+          it: 'Il nome dell’ospite è obbligatorio',
+          pl: 'Imię gościa jest wymagane',
+          pt: 'O nome do convidado é obrigatório',
+          th: 'ต้องกรอกชื่อแขก',
+          id: 'Nama tamu wajib diisi',
+          hi: 'मेहमान का नाम आवश्यक है',
+          bn: 'অতিথির নাম প্রয়োজন',
+        ),
+      );
       return;
     }
   
@@ -10320,7 +18870,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
   
         final alreadySeated = seatList.any((seat) {
           final seatName = (seat['playerName'] ?? '').toString().trim();
-          final seatPlayerId = (seat['playerId'] ?? '').toString().trim().toUpperCase();
+          final seatPlayerId =
+              (seat['playerId'] ?? '').toString().trim().toUpperCase();
   
           if (guestPlayerId.isNotEmpty) {
             return seatPlayerId == guestPlayerId;
@@ -10330,12 +18881,35 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
   
         if (alreadySeated) {
-          _txFail('This player is already seated');
+          _txFail(
+            tr(
+              context,
+              'This player is already seated',
+              zhTw: '這位玩家已經入座',
+              zhCn: '这位玩家已经入座',
+              ko: '이 플레이어는 이미 착석했습니다',
+              ja: 'このプレイヤーはすでに着席しています',
+              de: 'Dieser Spieler sitzt bereits am Tisch',
+              fr: 'Ce joueur est déjà assis',
+              ar: 'هذا اللاعب يجلس بالفعل',
+              ru: 'Этот игрок уже сидит за столом',
+              trk: 'Bu oyuncu zaten oturuyor',
+              es: 'Este jugador ya está sentado',
+              it: 'Questo giocatore è già seduto',
+              pl: 'Ten gracz już siedzi przy stole',
+              pt: 'Este jogador já está sentado',
+              th: 'ผู้เล่นนี้นั่งอยู่แล้ว',
+              id: 'Pemain ini sudah duduk',
+              hi: 'यह खिलाड़ी पहले से बैठा हुआ है',
+              bn: 'এই খেলোয়াড় ইতিমধ্যেই বসে আছে',
+            ),
+          );
         }
   
         final alreadyWaiting = waitingList.any((entry) {
           final entryName = (entry['name'] ?? '').toString().trim();
-          final entryPlayerId = (entry['playerId'] ?? '').toString().trim().toUpperCase();
+          final entryPlayerId =
+              (entry['playerId'] ?? '').toString().trim().toUpperCase();
   
           if (guestPlayerId.isNotEmpty) {
             return entryPlayerId == guestPlayerId;
@@ -10345,7 +18919,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
   
         if (alreadyWaiting) {
-          _txFail('Already in waiting list');
+          _txFail(
+            tr(
+              context,
+              'Already in waiting list',
+              zhTw: '已經在等待名單中',
+              zhCn: '已经在等待名单中',
+              ko: '이미 대기 명단에 있습니다',
+              ja: 'すでにウェイティングリストに入っています',
+              de: 'Bereits auf der Warteliste',
+              fr: 'Déjà dans la liste d’attente',
+              ar: 'أنت بالفعل في قائمة الانتظار',
+              ru: 'Уже в списке ожидания',
+              trk: 'Zaten bekleme listesindesiniz',
+              es: 'Ya estás en la lista de espera',
+              it: 'Sei già nella lista d’attesa',
+              pl: 'Jesteś już na liście oczekujących',
+              pt: 'Você já está na lista de espera',
+              th: 'คุณอยู่ในรายชื่อรอแล้ว',
+              id: 'Anda sudah ada di daftar tunggu',
+              hi: 'आप पहले से प्रतीक्षा सूची में हैं',
+              bn: 'আপনি ইতিমধ্যেই অপেক্ষমাণ তালিকায় আছেন',
+            ),
+          );
         }
   
         waitingList.add({
@@ -10362,7 +18958,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
       });
   
-      _showSnack('Added to waiting list');
+      _showSnack(
+        tr(
+          context,
+          'Added to waiting list',
+          zhTw: '已加入等待名單',
+          zhCn: '已加入等待名单',
+          ko: '대기 명단에 추가되었습니다',
+          ja: 'ウェイティングリストに追加しました',
+          de: 'Zur Warteliste hinzugefügt',
+          fr: 'Ajouté à la liste d’attente',
+          ar: 'تمت الإضافة إلى قائمة الانتظار',
+          ru: 'Добавлено в список ожидания',
+          trk: 'Bekleme listesine eklendi',
+          es: 'Agregado a la lista de espera',
+          it: 'Aggiunto alla lista d’attesa',
+          pl: 'Dodano do listy oczekujących',
+          pt: 'Adicionado à lista de espera',
+          th: 'เพิ่มในรายชื่อรอแล้ว',
+          id: 'Ditambahkan ke daftar tunggu',
+          hi: 'प्रतीक्षा सूची में जोड़ा गया',
+          bn: 'অপেক্ষমাণ তালিকায় যোগ করা হয়েছে',
+        ),
+      );
     } catch (e) {
       _showSnack(_cleanError(e));
     }
@@ -10376,13 +18994,57 @@ class _TableDetailPageState extends State<TableDetailPage> {
             .toList();
 
         if (index < 0 || index >= waitingList.length) {
-          _txFail('Invalid waiting list index');
+          _txFail(
+            tr(
+              context,
+              'Invalid waiting list index',
+              zhTw: '無效的等待名單索引',
+              zhCn: '无效的等待名单索引',
+              ko: '잘못된 대기 목록 인덱스입니다',
+              ja: '無効なウェイティングリスト番号です',
+              de: 'Ungültiger Wartelistenindex',
+              fr: 'Index de liste d’attente invalide',
+              ar: 'فهرس قائمة الانتظار غير صالح',
+              ru: 'Недопустимый индекс списка ожидания',
+              trk: 'Geçersiz bekleme listesi indeksi',
+              es: 'Índice de lista de espera inválido',
+              it: 'Indice lista d’attesa non valido',
+              pl: 'Nieprawidłowy indeks listy oczekujących',
+              pt: 'Índice da lista de espera inválido',
+              th: 'ลำดับรายชื่อรอไม่ถูกต้อง',
+              id: 'Indeks daftar tunggu tidak valid',
+              hi: 'अमान्य प्रतीक्षा सूची इंडेक्स',
+              bn: 'অকার্যকর অপেক্ষমাণ তালিকা ইনডেক্স',
+            ),
+          );
         }
 
         final entry = Map<String, dynamic>.from(waitingList[index]);
 
         if (!_canCurrentUserRemoveWaitingEntry(entry)) {
-          _txFail('You can only remove yourself from waiting list');
+          _txFail(
+            tr(
+              context,
+              'You can only remove yourself from waiting list',
+              zhTw: '你只能將自己從等待名單中移除',
+              zhCn: '你只能将自己从等待名单中移除',
+              ko: '본인만 대기 명단에서 제거할 수 있습니다',
+              ja: '自分自身のみウェイティングリストから削除できます',
+              de: 'Du kannst nur dich selbst von der Warteliste entfernen',
+              fr: 'Vous pouvez seulement vous retirer de la liste d’attente',
+              ar: 'يمكنك فقط إزالة نفسك من قائمة الانتظار',
+              ru: 'Вы можете удалить из списка ожидания только себя',
+              trk: 'Bekleme listesinden yalnızca kendinizi kaldırabilirsiniz',
+              es: 'Solo puedes eliminarte a ti mismo de la lista de espera',
+              it: 'Puoi rimuovere solo te stesso dalla lista d’attesa',
+              pl: 'Możesz usunąć z listy oczekujących tylko siebie',
+              pt: 'Você só pode remover a si mesmo da lista de espera',
+              th: 'คุณสามารถลบตัวเองออกจากรายชื่อรอได้เท่านั้น',
+              id: 'Anda hanya dapat menghapus diri sendiri dari daftar tunggu',
+              hi: 'आप केवल स्वयं को प्रतीक्षा सूची से हटा सकते हैं',
+              bn: 'আপনি শুধুমাত্র নিজেকে অপেক্ষমাণ তালিকা থেকে সরাতে পারেন',
+            ),
+          );
         }
 
         waitingList.removeAt(index);
@@ -10394,7 +19056,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Removed from waiting list');
+
+      _showSnack(
+        tr(
+          context,
+          'Removed from waiting list',
+          zhTw: '已從等待名單移除',
+          zhCn: '已从等待名单移除',
+          ko: '대기 명단에서 제거되었습니다',
+          ja: 'ウェイティングリストから削除しました',
+          de: 'Von der Warteliste entfernt',
+          fr: 'Retiré de la liste d’attente',
+          ar: 'تمت الإزالة من قائمة الانتظار',
+          ru: 'Удалено из списка ожидания',
+          trk: 'Bekleme listesinden kaldırıldı',
+          es: 'Eliminado de la lista de espera',
+          it: 'Rimosso dalla lista d’attesa',
+          pl: 'Usunięto z listy oczekujących',
+          pt: 'Removido da lista de espera',
+          th: 'ลบออกจากรายชื่อรอแล้ว',
+          id: 'Dihapus dari daftar tunggu',
+          hi: 'प्रतीक्षा सूची से हटा दिया गया',
+          bn: 'অপেক্ষমাণ তালিকা থেকে সরানো হয়েছে',
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       _showSnack(_cleanError(e));
@@ -10406,7 +19091,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     int targetSeatIndex,
   ) async {
     if (!canManageThisTable) {
-      _showSnack('Only the table creator can move waiting players');
+      _showSnack(
+        tr(
+          context,
+          'Only the table creator can move waiting players',
+          zhTw: '只有牌桌建立者可以移動等待中的玩家',
+          zhCn: '只有牌桌创建者可以移动等待中的玩家',
+          ko: '테이블 생성자만 대기 중인 플레이어를 이동할 수 있습니다',
+          ja: 'テーブル作成者のみ待機プレイヤーを移動できます',
+          de: 'Nur der Tischersteller kann wartende Spieler verschieben',
+          fr: 'Seul le créateur de la table peut déplacer les joueurs en attente',
+          ar: 'فقط منشئ الطاولة يمكنه نقل اللاعبين المنتظرين',
+          ru: 'Только создатель стола может перемещать ожидающих игроков',
+          trk: 'Yalnızca masa sahibi bekleyen oyuncuları taşıyabilir',
+          es: 'Solo el creador de la mesa puede mover jugadores en espera',
+          it: 'Solo il creatore del tavolo può spostare i giocatori in attesa',
+          pl: 'Tylko twórca stołu może przenosić oczekujących graczy',
+          pt: 'Somente o criador da mesa pode mover jogadores em espera',
+          th: 'เฉพาะผู้สร้างโต๊ะเท่านั้นที่สามารถย้ายผู้เล่นในรายชื่อรอได้',
+          id: 'Hanya pembuat meja yang dapat memindahkan pemain dalam daftar tunggu',
+          hi: 'केवल टेबल बनाने वाला ही प्रतीक्षा कर रहे खिलाड़ियों को स्थानांतरित कर सकता है',
+          bn: 'শুধুমাত্র টেবিল নির্মাতাই অপেক্ষমাণ খেলোয়াড়দের সরাতে পারে',
+        ),
+      );
       return;
     }
 
@@ -10419,32 +19126,107 @@ class _TableDetailPageState extends State<TableDetailPage> {
             .toList();
 
         if (waitingIndex < 0 || waitingIndex >= waitingList.length) {
-          _txFail('Invalid waiting list index');
+          _txFail(
+            tr(
+              context,
+              'Invalid waiting list index',
+              zhTw: '無效的等待名單索引',
+              zhCn: '无效的等待名单索引',
+              ko: '잘못된 대기 목록 인덱스입니다',
+              ja: '無効なウェイティングリスト番号です',
+              de: 'Ungültiger Wartelistenindex',
+              fr: 'Index de liste d’attente invalide',
+              ar: 'فهرس قائمة الانتظار غير صالح',
+              ru: 'Недопустимый индекс списка ожидания',
+              trk: 'Geçersiz bekleme listesi indeksi',
+              es: 'Índice de lista de espera inválido',
+              it: 'Indice lista d’attesa non valido',
+              pl: 'Nieprawidłowy indeks listy oczekujących',
+              pt: 'Índice da lista de espera inválido',
+              th: 'ลำดับรายชื่อรอไม่ถูกต้อง',
+              id: 'Indeks daftar tunggu tidak valid',
+              hi: 'अमान्य प्रतीक्षा सूची इंडेक्स',
+              bn: 'অকার্যকর অপেক্ষমাণ তালিকা ইনডেক্স',
+            ),
+          );
         }
 
         if (targetSeatIndex < 0 || targetSeatIndex >= seats.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
 
-        final targetSeat = Map<String, dynamic>.from(seats[targetSeatIndex]);
+        final targetSeat =
+            Map<String, dynamic>.from(seats[targetSeatIndex]);
 
-        final playerName = (targetSeat['playerName'] ?? '').toString().trim();
-        final playerUid = (targetSeat['playerUid'] ?? '').toString().trim();
+        final playerName =
+            (targetSeat['playerName'] ?? '').toString().trim();
+
+        final playerUid =
+            (targetSeat['playerUid'] ?? '').toString().trim();
+
         final reservedName =
             (targetSeat['reservedForName'] ?? '').toString().trim();
+
         final reservedUid =
             (targetSeat['reservedForUid'] ?? '').toString().trim();
+
         final reservedPlayerId =
             (targetSeat['reservedForPlayerId'] ?? '').toString().trim();
 
-        final seatIsReserved = reservedName.isNotEmpty ||
+        final seatIsReserved =
+            reservedName.isNotEmpty ||
             reservedUid.isNotEmpty ||
             reservedPlayerId.isNotEmpty;
 
-        final seatIsOccupied = playerName.isNotEmpty || playerUid.isNotEmpty;
+        final seatIsOccupied =
+            playerName.isNotEmpty || playerUid.isNotEmpty;
 
         if (seatIsReserved || seatIsOccupied) {
-          _txFail('Target seat is not open');
+          _txFail(
+            tr(
+              context,
+              'Target seat is not open',
+              zhTw: '目標座位不是空位',
+              zhCn: '目标座位不是空位',
+              ko: '대상 좌석이 비어 있지 않습니다',
+              ja: '対象の席は空いていません',
+              de: 'Der Zielplatz ist nicht frei',
+              fr: 'Le siège cible n’est pas disponible',
+              ar: 'المقعد المستهدف غير متاح',
+              ru: 'Целевое место недоступно',
+              trk: 'Hedef koltuk boş değil',
+              es: 'El asiento de destino no está disponible',
+              it: 'Il posto selezionato non è disponibile',
+              pl: 'Docelowe miejsce nie jest wolne',
+              pt: 'O assento de destino não está disponível',
+              th: 'ที่นั่งเป้าหมายไม่ว่าง',
+              id: 'Kursi tujuan tidak tersedia',
+              hi: 'लक्ष्य सीट खाली नहीं है',
+              bn: 'লক্ষ্য সিটটি খালি নয়',
+            ),
+          );
         }
 
         final entry = Map<String, dynamic>.from(
@@ -10452,10 +19234,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
         );
 
         final waitingName = (entry['name'] ?? '').toString().trim();
+
         final waitingShortName =
             (entry['shortName'] ?? waitingName).toString().trim();
+
         final waitingUid = (entry['uid'] ?? '').toString().trim();
-        final waitingPlayerId = (entry['playerId'] ?? '').toString().trim();
+
+        final waitingPlayerId =
+            (entry['playerId'] ?? '').toString().trim();
+
         final waitingArrived = entry['arrived'] == true;
 
         String waitingPhotoUrl = '';
@@ -10475,18 +19262,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
               (waitingUserData['photoUrl'] ?? '').toString().trim();
 
           waitingAvatarType =
-              (waitingUserData['avatarType'] ?? 'photo').toString().trim().isEmpty
+              (waitingUserData['avatarType'] ?? 'photo')
+                      .toString()
+                      .trim()
+                      .isEmpty
                   ? 'photo'
-                  : (waitingUserData['avatarType'] ?? 'photo').toString().trim();
+                  : (waitingUserData['avatarType'] ?? 'photo')
+                      .toString()
+                      .trim();
 
           waitingAvatarIcon =
-              (waitingUserData['avatarIcon'] ?? 'person').toString().trim().isEmpty
+              (waitingUserData['avatarIcon'] ?? 'person')
+                      .toString()
+                      .trim()
+                      .isEmpty
                   ? 'person'
-                  : (waitingUserData['avatarIcon'] ?? 'person').toString().trim();
+                  : (waitingUserData['avatarIcon'] ?? 'person')
+                      .toString()
+                      .trim();
 
-          waitingAvatarBgColor = waitingUserData['avatarBgColor'] is int
-              ? waitingUserData['avatarBgColor'] as int
-              : 0xFF2563EB;
+          waitingAvatarBgColor =
+              waitingUserData['avatarBgColor'] is int
+                  ? waitingUserData['avatarBgColor'] as int
+                  : 0xFF2563EB;
         }
 
         seats[targetSeatIndex] = buildOccupiedSeatMap(
@@ -10509,7 +19307,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Moved to Seat ${targetSeatIndex + 1}');
+
+      _showSnack(
+        tr(
+          context,
+          'Moved to Seat ${targetSeatIndex + 1}',
+          zhTw: '已移動到座位 ${targetSeatIndex + 1}',
+          zhCn: '已移动到座位 ${targetSeatIndex + 1}',
+          ko: '${targetSeatIndex + 1}번 좌석으로 이동되었습니다',
+          ja: '${targetSeatIndex + 1}番席へ移動しました',
+          de: 'Zu Sitz ${targetSeatIndex + 1} verschoben',
+          fr: 'Déplacé au siège ${targetSeatIndex + 1}',
+          ar: 'تم النقل إلى المقعد ${targetSeatIndex + 1}',
+          ru: 'Перемещено на место ${targetSeatIndex + 1}',
+          trk: '${targetSeatIndex + 1}. koltuğa taşındı',
+          es: 'Movido al asiento ${targetSeatIndex + 1}',
+          it: 'Spostato al posto ${targetSeatIndex + 1}',
+          pl: 'Przeniesiono na miejsce ${targetSeatIndex + 1}',
+          pt: 'Movido para o assento ${targetSeatIndex + 1}',
+          th: 'ย้ายไปยังที่นั่ง ${targetSeatIndex + 1}',
+          id: 'Dipindahkan ke Kursi ${targetSeatIndex + 1}',
+          hi: 'सीट ${targetSeatIndex + 1} पर स्थानांतरित किया गया',
+          bn: 'সিট ${targetSeatIndex + 1}-এ সরানো হয়েছে',
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       _showSnack(_cleanError(e));
@@ -10524,13 +19345,57 @@ class _TableDetailPageState extends State<TableDetailPage> {
             .toList();
 
         if (index < 0 || index >= waitingList.length) {
-          _txFail('Invalid waiting list index');
+          _txFail(
+            tr(
+              context,
+              'Invalid waiting list index',
+              zhTw: '無效的等待名單索引',
+              zhCn: '无效的等待名单索引',
+              ko: '잘못된 대기 목록 인덱스입니다',
+              ja: '無効なウェイティングリスト番号です',
+              de: 'Ungültiger Wartelistenindex',
+              fr: 'Index de liste d’attente invalide',
+              ar: 'فهرس قائمة الانتظار غير صالح',
+              ru: 'Недопустимый индекс списка ожидания',
+              trk: 'Geçersiz bekleme listesi indeksi',
+              es: 'Índice de lista de espera inválido',
+              it: 'Indice lista d’attesa non valido',
+              pl: 'Nieprawidłowy indeks listy oczekujących',
+              pt: 'Índice da lista de espera inválido',
+              th: 'ลำดับรายชื่อรอไม่ถูกต้อง',
+              id: 'Indeks daftar tunggu tidak valid',
+              hi: 'अमान्य प्रतीक्षा सूची इंडेक्स',
+              bn: 'অকার্যকর অপেক্ষমাণ তালিকা ইনডেক্স',
+            ),
+          );
         }
 
         final entry = Map<String, dynamic>.from(waitingList[index]);
 
         if (!_canCurrentUserToggleWaitingArrived(entry)) {
-          _txFail('You can only change your own arrived status');
+          _txFail(
+            tr(
+              context,
+              'You can only change your own arrived status',
+              zhTw: '你只能更改自己的到場狀態',
+              zhCn: '你只能更改自己的到场状态',
+              ko: '본인의 도착 상태만 변경할 수 있습니다',
+              ja: '自分の到着状態のみ変更できます',
+              de: 'Du kannst nur deinen eigenen Ankunftsstatus ändern',
+              fr: 'Vous ne pouvez modifier que votre propre statut d’arrivée',
+              ar: 'يمكنك فقط تغيير حالة وصولك',
+              ru: 'Вы можете изменить только свой статус прибытия',
+              trk: 'Yalnızca kendi varış durumunuzu değiştirebilirsiniz',
+              es: 'Solo puedes cambiar tu propio estado de llegada',
+              it: 'Puoi modificare solo il tuo stato di arrivo',
+              pl: 'Możesz zmienić tylko swój własny status przybycia',
+              pt: 'Você só pode alterar seu próprio status de chegada',
+              th: 'คุณสามารถเปลี่ยนสถานะการมาถึงของตัวเองได้เท่านั้น',
+              id: 'Anda hanya dapat mengubah status kedatangan Anda sendiri',
+              hi: 'आप केवल अपनी आगमन स्थिति बदल सकते हैं',
+              bn: 'আপনি শুধুমাত্র নিজের উপস্থিতির অবস্থা পরিবর্তন করতে পারেন',
+            ),
+          );
         }
 
         waitingList[index]['arrived'] = !(entry['arrived'] == true);
@@ -10552,7 +19417,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final seats = normalizeSeatMaps(data['seats']);
 
         if (seatIndex < 0 || seatIndex >= seats.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
 
         final seat = Map<String, dynamic>.from(seats[seatIndex]);
@@ -10561,11 +19448,55 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final playerUid = (seat['playerUid'] ?? '').toString().trim();
 
         if (playerName.isEmpty && playerUid.isEmpty) {
-          _txFail('Seat is empty');
+          _txFail(
+            tr(
+              context,
+              'Seat is empty',
+              zhTw: '座位是空的',
+              zhCn: '座位是空的',
+              ko: '좌석이 비어 있습니다',
+              ja: '席が空いています',
+              de: 'Sitz ist leer',
+              fr: 'Le siège est vide',
+              ar: 'المقعد فارغ',
+              ru: 'Место пустое',
+              trk: 'Koltuk boş',
+              es: 'El asiento está vacío',
+              it: 'Il posto è vuoto',
+              pl: 'Miejsce jest puste',
+              pt: 'O assento está vazio',
+              th: 'ที่นั่งว่าง',
+              id: 'Kursi kosong',
+              hi: 'सीट खाली है',
+              bn: 'সিট খালি',
+            ),
+          );
         }
 
         if (!_canCurrentUserToggleSeatArrived(seat)) {
-          _txFail('You can only change your own arrived status');
+          _txFail(
+            tr(
+              context,
+              'You can only change your own arrived status',
+              zhTw: '你只能更改自己的到場狀態',
+              zhCn: '你只能更改自己的到场状态',
+              ko: '본인의 도착 상태만 변경할 수 있습니다',
+              ja: '自分の到着状態のみ変更できます',
+              de: 'Du kannst nur deinen eigenen Ankunftsstatus ändern',
+              fr: 'Vous ne pouvez modifier que votre propre statut d’arrivée',
+              ar: 'يمكنك فقط تغيير حالة وصولك',
+              ru: 'Вы можете изменить только свой статус прибытия',
+              trk: 'Yalnızca kendi varış durumunuzu değiştirebilirsiniz',
+              es: 'Solo puedes cambiar tu propio estado de llegada',
+              it: 'Puoi modificare solo il tuo stato di arrivo',
+              pl: 'Możesz zmienić tylko swój własny status przybycia',
+              pt: 'Você só pode alterar seu próprio status de chegada',
+              th: 'คุณสามารถเปลี่ยนสถานะการมาถึงของตัวเองได้เท่านั้น',
+              id: 'Anda hanya dapat mengubah status kedatangan Anda sendiri',
+              hi: 'आप केवल अपनी आगमन स्थिति बदल सकते हैं',
+              bn: 'আপনি শুধুমাত্র নিজের উপস্থিতির অবস্থা পরিবর্তন করতে পারেন',
+            ),
+          );
         }
 
         final currentArrived = seat['arrived'] == true;
@@ -10661,7 +19592,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final name = (player['name'] ?? '').toString().trim();
     final playerId = (player['playerId'] ?? '').toString().trim();
   
-    final suffix = playerId.isNotEmpty ? '($playerId)' : '(Guest)';
+    final suffix = playerId.isNotEmpty
+        ? '($playerId)'
+        : tr(
+            context,
+            '(Guest)',
+            zhTw: '（訪客）',
+            zhCn: '（访客）',
+            ko: '(게스트)',
+            ja: '（ゲスト）',
+            de: '(Gast)',
+            fr: '(Invité)',
+            ar: '(ضيف)',
+            ru: '(Гость)',
+            trk: '(Misafir)',
+            es: '(Invitado)',
+            it: '(Ospite)',
+            pl: '(Gość)',
+            pt: '(Convidado)',
+            th: '(แขก)',
+            id: '(Tamu)',
+            hi: '(मेहमान)',
+            bn: '(অতিথি)',
+          );
   
     return '${index + 1}. $name $suffix';
   }
@@ -10697,7 +19650,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
     if (openSeatIndexes.isEmpty) {
       if (!mounted) return null;
-      _showSnack('No open seats available');
+
+      _showSnack(
+        tr(
+          context,
+          'No open seats available',
+          zhTw: '目前沒有可用空位',
+          zhCn: '目前没有可用空位',
+          ko: '사용 가능한 빈 좌석이 없습니다',
+          ja: '利用できる空席がありません',
+          de: 'Keine freien Sitze verfügbar',
+          fr: 'Aucun siège disponible',
+          ar: 'لا توجد مقاعد متاحة',
+          ru: 'Нет доступных свободных мест',
+          trk: 'Uygun boş koltuk yok',
+          es: 'No hay asientos disponibles',
+          it: 'Nessun posto disponibile',
+          pl: 'Brak dostępnych wolnych miejsc',
+          pt: 'Nenhum assento disponível',
+          th: 'ไม่มีที่นั่งว่าง',
+          id: 'Tidak ada kursi kosong yang tersedia',
+          hi: 'कोई खाली सीट उपलब्ध नहीं है',
+          bn: 'কোনো খালি সিট উপলব্ধ নেই',
+        ),
+      );
       return null;
     }
 
@@ -10713,12 +19689,56 @@ class _TableDetailPageState extends State<TableDetailPage> {
               for (final seatIndex in openSeatIndexes)
                 ListTile(
                   leading: const Icon(Icons.event_seat_outlined),
-                  title: Text('Seat ${seatIndex + 1}'),
+                  title: Text(
+                    tr(
+                      context,
+                      'Seat ${seatIndex + 1}',
+                      zhTw: '座位 ${seatIndex + 1}',
+                      zhCn: '座位 ${seatIndex + 1}',
+                      ko: '${seatIndex + 1}번 좌석',
+                      ja: '${seatIndex + 1}番席',
+                      de: 'Sitz ${seatIndex + 1}',
+                      fr: 'Siège ${seatIndex + 1}',
+                      ar: 'المقعد ${seatIndex + 1}',
+                      ru: 'Место ${seatIndex + 1}',
+                      trk: '${seatIndex + 1}. Koltuk',
+                      es: 'Asiento ${seatIndex + 1}',
+                      it: 'Posto ${seatIndex + 1}',
+                      pl: 'Miejsce ${seatIndex + 1}',
+                      pt: 'Assento ${seatIndex + 1}',
+                      th: 'ที่นั่ง ${seatIndex + 1}',
+                      id: 'Kursi ${seatIndex + 1}',
+                      hi: 'सीट ${seatIndex + 1}',
+                      bn: 'সিট ${seatIndex + 1}',
+                    ),
+                  ),
                   onTap: () => Navigator.pop(context, seatIndex),
                 ),
               ListTile(
                 leading: const Icon(Icons.close),
-                title: const Text('Cancel'),
+                title: Text(
+                  tr(
+                    context,
+                    'Cancel',
+                    zhTw: '取消',
+                    zhCn: '取消',
+                    ko: '취소',
+                    ja: 'キャンセル',
+                    de: 'Abbrechen',
+                    fr: 'Annuler',
+                    ar: 'إلغاء',
+                    ru: 'Отмена',
+                    trk: 'İptal',
+                    es: 'Cancelar',
+                    it: 'Annulla',
+                    pl: 'Anuluj',
+                    pt: 'Cancelar',
+                    th: 'ยกเลิก',
+                    id: 'Batal',
+                    hi: 'रद्द करें',
+                    bn: 'বাতিল',
+                  ),
+                ),
                 onTap: () => Navigator.pop(context),
               ),
             ],
@@ -10734,7 +19754,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
       final canToggle = canManageThisTable || await _isReservedSeatMine(rawSeat);
       if (!canToggle) {
-        _showSnack('You cannot update this reserved player');
+        _showSnack(
+          tr(
+            context,
+            'You cannot update this reserved player',
+            zhTw: '你不能更新這位預留玩家',
+            zhCn: '你不能更新这位预留玩家',
+            ko: '이 예약된 플레이어를 업데이트할 수 없습니다',
+            ja: 'この予約プレイヤーは更新できません',
+            de: 'Du kannst diesen reservierten Spieler nicht aktualisieren',
+            fr: 'Vous ne pouvez pas modifier ce joueur réservé',
+            ar: 'لا يمكنك تحديث هذا اللاعب المحجوز',
+            ru: 'Вы не можете обновить этого зарезервированного игрока',
+            trk: 'Bu rezerve oyuncuyu güncelleyemezsiniz',
+            es: 'No puedes actualizar este jugador reservado',
+            it: 'Non puoi aggiornare questo giocatore riservato',
+            pl: 'Nie możesz zaktualizować tego zarezerwowanego gracza',
+            pt: 'Você não pode atualizar este jogador reservado',
+            th: 'คุณไม่สามารถอัปเดตผู้เล่นที่ถูกจองไว้นี้ได้',
+            id: 'Anda tidak dapat memperbarui pemain yang dipesan ini',
+            hi: 'आप इस आरक्षित खिलाड़ी को अपडेट नहीं कर सकते',
+            bn: 'আপনি এই সংরক্ষিত খেলোয়াড়কে আপডেট করতে পারবেন না',
+          ),
+        );
         return;
       }
 
@@ -10742,7 +19784,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final seats = normalizeSeatMaps(data['seats']);
 
         if (seatIndex < 0 || seatIndex >= seats.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
 
         final seat = Map<String, dynamic>.from(seats[seatIndex]);
@@ -10757,7 +19821,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
             reservedPlayerId.isNotEmpty;
 
         if (!isReserved) {
-          _txFail('This seat is not reserved');
+          _txFail(
+            tr(
+              context,
+              'This seat is not reserved',
+              zhTw: '這個座位沒有被預留',
+              zhCn: '这个座位没有被预留',
+              ko: '이 좌석은 예약되어 있지 않습니다',
+              ja: 'この席は予約されていません',
+              de: 'Dieser Sitz ist nicht reserviert',
+              fr: 'Ce siège n’est pas réservé',
+              ar: 'هذا المقعد غير محجوز',
+              ru: 'Это место не зарезервировано',
+              trk: 'Bu koltuk rezerve edilmemiş',
+              es: 'Este asiento no está reservado',
+              it: 'Questo posto non è riservato',
+              pl: 'To miejsce nie jest zarezerwowane',
+              pt: 'Este assento não está reservado',
+              th: 'ที่นั่งนี้ไม่ได้ถูกจองไว้',
+              id: 'Kursi ini tidak dipesan',
+              hi: 'यह सीट आरक्षित नहीं है',
+              bn: 'এই সিটটি সংরক্ষিত নয়',
+            ),
+          );
         }
 
         final arrived = seat['reservedArrived'] == true;
@@ -10771,7 +19857,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Reserved status updated');
+
+      _showSnack(
+        tr(
+          context,
+          'Reserved status updated',
+          zhTw: '預留狀態已更新',
+          zhCn: '预留状态已更新',
+          ko: '예약 상태가 업데이트되었습니다',
+          ja: '予約状態を更新しました',
+          de: 'Reservierungsstatus aktualisiert',
+          fr: 'Statut de réservation mis à jour',
+          ar: 'تم تحديث حالة الحجز',
+          ru: 'Статус резервации обновлен',
+          trk: 'Rezervasyon durumu güncellendi',
+          es: 'Estado de reserva actualizado',
+          it: 'Stato della prenotazione aggiornato',
+          pl: 'Status rezerwacji został zaktualizowany',
+          pt: 'Status da reserva atualizado',
+          th: 'อัปเดตสถานะการจองแล้ว',
+          id: 'Status reservasi diperbarui',
+          hi: 'आरक्षित स्थिति अपडेट हो गई',
+          bn: 'সংরক্ষণের অবস্থা আপডেট হয়েছে',
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       _showSnack(_cleanError(e));
@@ -10792,10 +19901,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
   Future<void> _promptFillSeatFromWaitingList(int seatIndex) async {
     final waitingList = await _getWaitingListFromFirestore();
+
     if (!mounted) return;
     if (waitingList.isEmpty) return;
 
     final nextPlayer = normalizeWaitingEntry(waitingList.first);
+
     final nextPlayerName =
         (nextPlayer['shortName'] ?? nextPlayer['name'] ?? '')
             .toString()
@@ -10805,18 +19916,104 @@ class _TableDetailPageState extends State<TableDetailPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Fill Open Seat'),
+          title: Text(
+            tr(
+              context,
+              'Fill Open Seat',
+              zhTw: '填補空位',
+              zhCn: '填补空位',
+              ko: '빈 좌석 채우기',
+              ja: '空席を埋める',
+              de: 'Freien Sitz besetzen',
+              fr: 'Remplir le siège libre',
+              ar: 'ملء المقعد الفارغ',
+              ru: 'Заполнить свободное место',
+              trk: 'Boş Koltuğu Doldur',
+              es: 'Llenar asiento vacío',
+              it: 'Riempi posto libero',
+              pl: 'Wypełnij wolne miejsce',
+              pt: 'Preencher assento vazio',
+              th: 'เติมที่นั่งว่าง',
+              id: 'Isi Kursi Kosong',
+              hi: 'खाली सीट भरें',
+              bn: 'খালি সিট পূরণ করুন',
+            ),
+          ),
           content: Text(
-            'Move $nextPlayerName from waiting list to this seat?',
+            tr(
+              context,
+              'Move $nextPlayerName from waiting list to this seat?',
+              zhTw: '要將 $nextPlayerName 從等待名單移動到這個座位嗎？',
+              zhCn: '要将 $nextPlayerName 从等待名单移动到这个座位吗？',
+              ko: '$nextPlayerName 님을 대기 명단에서 이 좌석으로 이동하시겠습니까?',
+              ja: '$nextPlayerName をウェイティングリストからこの席に移動しますか？',
+              de: '$nextPlayerName von der Warteliste auf diesen Sitz verschieben?',
+              fr: 'Déplacer $nextPlayerName de la liste d’attente vers ce siège ?',
+              ar: 'هل تريد نقل $nextPlayerName من قائمة الانتظار إلى هذا المقعد؟',
+              ru: 'Переместить $nextPlayerName из списка ожидания на это место?',
+              trk: '$nextPlayerName bekleme listesinden bu koltuğa taşınsın mı?',
+              es: '¿Mover a $nextPlayerName de la lista de espera a este asiento?',
+              it: 'Spostare $nextPlayerName dalla lista d’attesa a questo posto?',
+              pl: 'Przenieść $nextPlayerName z listy oczekujących na to miejsce?',
+              pt: 'Mover $nextPlayerName da lista de espera para este assento?',
+              th: 'ย้าย $nextPlayerName จากรายชื่อรอมายังที่นั่งนี้หรือไม่?',
+              id: 'Pindahkan $nextPlayerName dari daftar tunggu ke kursi ini?',
+              hi: '$nextPlayerName को प्रतीक्षा सूची से इस सीट पर ले जाएँ?',
+              bn: '$nextPlayerName-কে অপেক্ষমাণ তালিকা থেকে এই সিটে সরাবেন?',
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Skip'),
+              child: Text(
+                tr(
+                  context,
+                  'Skip',
+                  zhTw: '略過',
+                  zhCn: '跳过',
+                  ko: '건너뛰기',
+                  ja: 'スキップ',
+                  de: 'Überspringen',
+                  fr: 'Passer',
+                  ar: 'تخطي',
+                  ru: 'Пропустить',
+                  trk: 'Atla',
+                  es: 'Omitir',
+                  it: 'Salta',
+                  pl: 'Pomiń',
+                  pt: 'Pular',
+                  th: 'ข้าม',
+                  id: 'Lewati',
+                  hi: 'छोड़ें',
+                  bn: 'এড়িয়ে যান',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Yes'),
+              child: Text(
+                tr(
+                  context,
+                  'Yes',
+                  zhTw: '是',
+                  zhCn: '是',
+                  ko: '예',
+                  ja: 'はい',
+                  de: 'Ja',
+                  fr: 'Oui',
+                  ar: 'نعم',
+                  ru: 'Да',
+                  trk: 'Evet',
+                  es: 'Sí',
+                  it: 'Sì',
+                  pl: 'Tak',
+                  pt: 'Sim',
+                  th: 'ใช่',
+                  id: 'Ya',
+                  hi: 'हाँ',
+                  bn: 'হ্যাঁ',
+                ),
+              ),
             ),
           ],
         );
@@ -10830,55 +20027,137 @@ class _TableDetailPageState extends State<TableDetailPage> {
       await _runTableTransaction<void>((tx, snap, data) async {
         final seats = normalizeSeatMaps(data['seats']);
 
-        final latestWaitingList = List<dynamic>.from(data['waitingList'] ?? [])
-            .map((e) => normalizeWaitingEntry(e))
-            .toList();
+        final latestWaitingList = List<dynamic>.from(
+          data['waitingList'] ?? [],
+        ).map((e) => normalizeWaitingEntry(e)).toList();
 
         if (seatIndex < 0 || seatIndex >= seats.length) {
-          _txFail('Invalid seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid seat',
+              zhTw: '無效座位',
+              zhCn: '无效座位',
+              ko: '잘못된 좌석입니다',
+              ja: '無効な席です',
+              de: 'Ungültiger Sitz',
+              fr: 'Siège invalide',
+              ar: 'مقعد غير صالح',
+              ru: 'Недействительное место',
+              trk: 'Geçersiz koltuk',
+              es: 'Asiento inválido',
+              it: 'Posto non valido',
+              pl: 'Nieprawidłowe miejsce',
+              pt: 'Assento inválido',
+              th: 'ที่นั่งไม่ถูกต้อง',
+              id: 'Kursi tidak valid',
+              hi: 'अमान्य सीट',
+              bn: 'অকার্যকর সিট',
+            ),
+          );
         }
 
         if (latestWaitingList.isEmpty) {
-          _txFail('Waiting list is empty');
+          _txFail(
+            tr(
+              context,
+              'Waiting list is empty',
+              zhTw: '等待名單是空的',
+              zhCn: '等待名单是空的',
+              ko: '대기 명단이 비어 있습니다',
+              ja: 'ウェイティングリストが空です',
+              de: 'Die Warteliste ist leer',
+              fr: 'La liste d’attente est vide',
+              ar: 'قائمة الانتظار فارغة',
+              ru: 'Список ожидания пуст',
+              trk: 'Bekleme listesi boş',
+              es: 'La lista de espera está vacía',
+              it: 'La lista d’attesa è vuota',
+              pl: 'Lista oczekujących jest pusta',
+              pt: 'A lista de espera está vazia',
+              th: 'รายชื่อรอว่างเปล่า',
+              id: 'Daftar tunggu kosong',
+              hi: 'प्रतीक्षा सूची खाली है',
+              bn: 'অপেক্ষমাণ তালিকা খালি',
+            ),
+          );
         }
 
-        final currentSeat = Map<String, dynamic>.from(seats[seatIndex]);
+        final currentSeat =
+            Map<String, dynamic>.from(seats[seatIndex]);
 
         final currentPlayerName =
             (currentSeat['playerName'] ?? '').toString().trim();
+
         final currentPlayerUid =
             (currentSeat['playerUid'] ?? '').toString().trim();
+
         final currentPlayerId =
             (currentSeat['playerId'] ?? '').toString().trim();
+
         final currentReservedName =
             (currentSeat['reservedForName'] ?? '').toString().trim();
+
         final currentReservedUid =
             (currentSeat['reservedForUid'] ?? '').toString().trim();
-        final currentReservedPlayerId =
-            (currentSeat['reservedForPlayerId'] ?? '').toString().trim();
 
-        final seatOccupied = currentPlayerName.isNotEmpty ||
+        final currentReservedPlayerId =
+            (currentSeat['reservedForPlayerId'] ?? '')
+                .toString()
+                .trim();
+
+        final seatOccupied =
+            currentPlayerName.isNotEmpty ||
             currentPlayerUid.isNotEmpty ||
             currentPlayerId.isNotEmpty;
 
-        final seatReserved = currentReservedName.isNotEmpty ||
+        final seatReserved =
+            currentReservedName.isNotEmpty ||
             currentReservedUid.isNotEmpty ||
             currentReservedPlayerId.isNotEmpty;
 
         if (seatOccupied || seatReserved) {
-          _txFail('This seat is no longer open');
+          _txFail(
+            tr(
+              context,
+              'This seat is no longer open',
+              zhTw: '這個座位已經不是空位了',
+              zhCn: '这个座位已经不是空位了',
+              ko: '이 좌석은 더 이상 비어 있지 않습니다',
+              ja: 'この席はもう空いていません',
+              de: 'Dieser Sitz ist nicht mehr frei',
+              fr: 'Ce siège n’est plus disponible',
+              ar: 'هذا المقعد لم يعد متاحًا',
+              ru: 'Это место больше не свободно',
+              trk: 'Bu koltuk artık boş değil',
+              es: 'Este asiento ya no está disponible',
+              it: 'Questo posto non è più disponibile',
+              pl: 'To miejsce nie jest już wolne',
+              pt: 'Este assento não está mais disponível',
+              th: 'ที่นั่งนี้ไม่ว่างแล้ว',
+              id: 'Kursi ini sudah tidak kosong',
+              hi: 'यह सीट अब खाली नहीं है',
+              bn: 'এই সিটটি আর খালি নেই',
+            ),
+          );
         }
 
         final nextEntry = latestWaitingList.removeAt(0);
 
         final waitingName =
             (nextEntry['name'] ?? '').toString().trim();
+
         final waitingShortName =
-            (nextEntry['shortName'] ?? waitingName).toString().trim();
+            (nextEntry['shortName'] ?? waitingName)
+                .toString()
+                .trim();
+
         final waitingUid =
             (nextEntry['uid'] ?? '').toString().trim();
+
         final waitingPlayerId =
             (nextEntry['playerId'] ?? '').toString().trim();
+
         final waitingArrived = nextEntry['arrived'] == true;
 
         String? playerPhotoUrl;
@@ -10902,22 +20181,34 @@ class _TableDetailPageState extends State<TableDetailPage> {
               (userData['photoUrl'] ?? '').toString().trim();
 
           final resolvedAvatarType =
-              (userData['avatarType'] ?? 'photo').toString().trim().isEmpty
+              (userData['avatarType'] ?? 'photo')
+                      .toString()
+                      .trim()
+                      .isEmpty
                   ? 'photo'
-                  : (userData['avatarType'] ?? 'photo').toString().trim();
+                  : (userData['avatarType'] ?? 'photo')
+                      .toString()
+                      .trim();
 
           final resolvedAvatarIcon =
-              (userData['avatarIcon'] ?? 'person').toString().trim().isEmpty
+              (userData['avatarIcon'] ?? 'person')
+                      .toString()
+                      .trim()
+                      .isEmpty
                   ? 'person'
-                  : (userData['avatarIcon'] ?? 'person').toString().trim();
+                  : (userData['avatarIcon'] ?? 'person')
+                      .toString()
+                      .trim();
 
-          final resolvedAvatarBgColor = userData['avatarBgColor'] is int
-              ? userData['avatarBgColor'] as int
-              : 0xFF2563EB;
+          final resolvedAvatarBgColor =
+              userData['avatarBgColor'] is int
+                  ? userData['avatarBgColor'] as int
+                  : 0xFF2563EB;
 
           playerAvatarType = resolvedAvatarType;
           playerAvatarIcon = resolvedAvatarIcon;
           playerAvatarBgColor = resolvedAvatarBgColor;
+
           playerPhotoUrl =
               resolvedAvatarType == 'virtual'
                   ? null
@@ -10927,7 +20218,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
         seats[seatIndex] = buildOccupiedSeatMap(
           playerName: waitingName,
           playerShortName:
-              waitingShortName.isEmpty ? waitingName : waitingShortName,
+              waitingShortName.isEmpty
+                  ? waitingName
+                  : waitingShortName,
           playerUid: waitingUid,
           playerId: waitingPlayerId,
           playerPhotoUrl: playerPhotoUrl,
@@ -10946,7 +20239,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Seat filled from waiting list');
+
+      _showSnack(
+        tr(
+          context,
+          'Seat filled from waiting list',
+          zhTw: '已從等待名單填補座位',
+          zhCn: '已从等待名单填补座位',
+          ko: '대기 명단에서 좌석을 채웠습니다',
+          ja: 'ウェイティングリストから席を埋めました',
+          de: 'Sitz aus der Warteliste besetzt',
+          fr: 'Siège rempli depuis la liste d’attente',
+          ar: 'تم ملء المقعد من قائمة الانتظار',
+          ru: 'Место заполнено из списка ожидания',
+          trk: 'Koltuk bekleme listesinden dolduruldu',
+          es: 'Asiento ocupado desde la lista de espera',
+          it: 'Posto riempito dalla lista d’attesa',
+          pl: 'Miejsce zostało zajęte z listy oczekujących',
+          pt: 'Assento preenchido da lista de espera',
+          th: 'เติมที่นั่งจากรายชื่อรอแล้ว',
+          id: 'Kursi diisi dari daftar tunggu',
+          hi: 'प्रतीक्षा सूची से सीट भर दी गई',
+          bn: 'অপেক্ষমাণ তালিকা থেকে সিট পূরণ করা হয়েছে',
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       _showSnack(_cleanError(e));
@@ -10960,18 +20276,43 @@ class _TableDetailPageState extends State<TableDetailPage> {
     required Map<String, dynamic> toSeat,
   }) async {
     final requesterUid = (fromSeat['playerUid'] ?? '').toString().trim();
+
     final requesterName =
         (fromSeat['playerShortName'] ?? fromSeat['playerName'] ?? '')
             .toString()
             .trim();
+
     final targetUid = (toSeat['playerUid'] ?? '').toString().trim();
+
     final targetName =
         (toSeat['playerShortName'] ?? toSeat['playerName'] ?? '')
             .toString()
             .trim();
 
     if (requesterUid.isEmpty || targetUid.isEmpty) {
-      _showSnack('Only seated users can swap');
+      _showSnack(
+        tr(
+          context,
+          'Only seated users can swap',
+          zhTw: '只有已入座的使用者可以交換座位',
+          zhCn: '只有已入座的用户可以交换座位',
+          ko: '착석한 사용자만 좌석을 교환할 수 있습니다',
+          ja: '着席しているユーザーのみ席を交換できます',
+          de: 'Nur sitzende Benutzer können Plätze tauschen',
+          fr: 'Seuls les utilisateurs assis peuvent échanger leur siège',
+          ar: 'يمكن للمستخدمين الجالسين فقط تبديل المقاعد',
+          ru: 'Только сидящие пользователи могут меняться местами',
+          trk: 'Yalnızca oturan kullanıcılar koltuk değiştirebilir',
+          es: 'Solo los usuarios sentados pueden intercambiar asientos',
+          it: 'Solo gli utenti seduti possono scambiare posto',
+          pl: 'Tylko siedzący użytkownicy mogą zamienić się miejscami',
+          pt: 'Somente usuários sentados podem trocar de assento',
+          th: 'เฉพาะผู้ใช้ที่นั่งแล้วเท่านั้นที่สามารถสลับที่นั่งได้',
+          id: 'Hanya pengguna yang sudah duduk yang dapat bertukar kursi',
+          hi: 'केवल बैठे हुए उपयोगकर्ता सीट बदल सकते हैं',
+          bn: 'শুধুমাত্র বসা ব্যবহারকারীরাই সিট বদল করতে পারে',
+        ),
+      );
       return;
     }
 
@@ -10989,7 +20330,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
     }, SetOptions(merge: true));
 
     if (!mounted) return;
-    _showSnack('Swap request sent to $targetName');
+
+    _showSnack(
+      tr(
+        context,
+        'Swap request sent to $targetName',
+        zhTw: '已發送換位請求給 $targetName',
+        zhCn: '已发送换位请求给 $targetName',
+        ko: '$targetName 님에게 좌석 교환 요청을 보냈습니다',
+        ja: '$targetName に席交換リクエストを送信しました',
+        de: 'Tauschanfrage an $targetName gesendet',
+        fr: 'Demande d’échange envoyée à $targetName',
+        ar: 'تم إرسال طلب تبديل المقعد إلى $targetName',
+        ru: 'Запрос на обмен местами отправлен $targetName',
+        trk: 'Koltuk değişim isteği $targetName kişisine gönderildi',
+        es: 'Solicitud de intercambio enviada a $targetName',
+        it: 'Richiesta di scambio inviata a $targetName',
+        pl: 'Prośba o zamianę miejsc wysłana do $targetName',
+        pt: 'Solicitação de troca enviada para $targetName',
+        th: 'ส่งคำขอสลับที่นั่งไปยัง $targetName แล้ว',
+        id: 'Permintaan tukar kursi dikirim ke $targetName',
+        hi: '$targetName को सीट बदलने का अनुरोध भेजा गया',
+        bn: '$targetName-কে সিট বদলের অনুরোধ পাঠানো হয়েছে',
+      ),
+    );
   }
 
   Future<void> _approvePendingSeatSwap(Map<String, dynamic> swap) async {
@@ -10999,7 +20363,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final pendingRaw = data['pendingSeatSwap'];
 
         if (pendingRaw is! Map) {
-          _txFail('No pending swap');
+          _txFail(
+            tr(
+              context,
+              'No pending swap',
+              zhTw: '沒有待處理的換位請求',
+              zhCn: '没有待处理的换位请求',
+              ko: '대기 중인 좌석 교환 요청이 없습니다',
+              ja: '保留中の席交換リクエストはありません',
+              de: 'Keine ausstehende Tauschanfrage',
+              fr: 'Aucun échange en attente',
+              ar: 'لا يوجد طلب تبديل معلق',
+              ru: 'Нет ожидающего обмена местами',
+              trk: 'Bekleyen koltuk değişimi yok',
+              es: 'No hay intercambio pendiente',
+              it: 'Nessuno scambio in sospeso',
+              pl: 'Brak oczekującej zamiany miejsc',
+              pt: 'Nenhuma troca pendente',
+              th: 'ไม่มีคำขอสลับที่นั่งที่รอดำเนินการ',
+              id: 'Tidak ada pertukaran kursi yang tertunda',
+              hi: 'कोई लंबित सीट बदलाव नहीं है',
+              bn: 'কোনো অপেক্ষমাণ সিট বদল নেই',
+            ),
+          );
         }
 
         final pending = Map<String, dynamic>.from(pendingRaw);
@@ -11008,10 +20394,55 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final toSeatIndex = (pending['toSeatIndex'] ?? -1) as int;
 
         if (fromSeatIndex < 0 || fromSeatIndex >= seats.length) {
-          _txFail('Invalid source seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid source seat',
+              zhTw: '無效的來源座位',
+              zhCn: '无效的来源座位',
+              ko: '잘못된 원래 좌석입니다',
+              ja: '無効な元の席です',
+              de: 'Ungültiger Ausgangssitz',
+              fr: 'Siège source invalide',
+              ar: 'المقعد المصدر غير صالح',
+              ru: 'Недействительное исходное место',
+              trk: 'Geçersiz kaynak koltuk',
+              es: 'Asiento de origen inválido',
+              it: 'Posto di origine non valido',
+              pl: 'Nieprawidłowe miejsce źródłowe',
+              pt: 'Assento de origem inválido',
+              th: 'ที่นั่งต้นทางไม่ถูกต้อง',
+              id: 'Kursi asal tidak valid',
+              hi: 'अमान्य स्रोत सीट',
+              bn: 'অকার্যকর উৎস সিট',
+            ),
+          );
         }
+
         if (toSeatIndex < 0 || toSeatIndex >= seats.length) {
-          _txFail('Invalid target seat');
+          _txFail(
+            tr(
+              context,
+              'Invalid target seat',
+              zhTw: '無效的目標座位',
+              zhCn: '无效的目标座位',
+              ko: '잘못된 대상 좌석입니다',
+              ja: '無効な移動先の席です',
+              de: 'Ungültiger Zielsitz',
+              fr: 'Siège cible invalide',
+              ar: 'المقعد الهدف غير صالح',
+              ru: 'Недействительное целевое место',
+              trk: 'Geçersiz hedef koltuk',
+              es: 'Asiento de destino inválido',
+              it: 'Posto di destinazione non valido',
+              pl: 'Nieprawidłowe miejsce docelowe',
+              pt: 'Assento de destino inválido',
+              th: 'ที่นั่งเป้าหมายไม่ถูกต้อง',
+              id: 'Kursi tujuan tidak valid',
+              hi: 'अमान्य लक्ष्य सीट',
+              bn: 'অকার্যকর লক্ষ্য সিট',
+            ),
+          );
         }
 
         final fromSeat = Map<String, dynamic>.from(seats[fromSeatIndex]);
@@ -11021,7 +20452,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final toUid = (toSeat['playerUid'] ?? '').toString().trim();
 
         if (fromUid.isEmpty || toUid.isEmpty) {
-          _txFail('Both seats must still be occupied');
+          _txFail(
+            tr(
+              context,
+              'Both seats must still be occupied',
+              zhTw: '兩個座位都必須仍有人入座',
+              zhCn: '两个座位都必须仍有人入座',
+              ko: '두 좌석 모두 아직 사용 중이어야 합니다',
+              ja: '両方の席がまだ使用中である必要があります',
+              de: 'Beide Sitze müssen weiterhin besetzt sein',
+              fr: 'Les deux sièges doivent encore être occupés',
+              ar: 'يجب أن يكون المقعدان مشغولين',
+              ru: 'Оба места должны оставаться занятыми',
+              trk: 'Her iki koltuk da hâlâ dolu olmalı',
+              es: 'Ambos asientos deben seguir ocupados',
+              it: 'Entrambi i posti devono essere ancora occupati',
+              pl: 'Oba miejsca muszą nadal być zajęte',
+              pt: 'Ambos os assentos ainda devem estar ocupados',
+              th: 'ทั้งสองที่นั่งต้องยังมีคนนั่งอยู่',
+              id: 'Kedua kursi harus masih terisi',
+              hi: 'दोनों सीटें अभी भी भरी होनी चाहिए',
+              bn: 'দুইটি সিটই এখনও দখল করা থাকতে হবে',
+            ),
+          );
         }
 
         seats[fromSeatIndex] = toSeat;
@@ -11035,7 +20488,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Seat swap completed');
+
+      _showSnack(
+        tr(
+          context,
+          'Seat swap completed',
+          zhTw: '座位交換完成',
+          zhCn: '座位交换完成',
+          ko: '좌석 교환이 완료되었습니다',
+          ja: '席交換が完了しました',
+          de: 'Sitztausch abgeschlossen',
+          fr: 'Échange de sièges terminé',
+          ar: 'تم تبديل المقاعد',
+          ru: 'Обмен местами завершен',
+          trk: 'Koltuk değişimi tamamlandı',
+          es: 'Intercambio de asientos completado',
+          it: 'Scambio posto completato',
+          pl: 'Zamiana miejsc zakończona',
+          pt: 'Troca de assentos concluída',
+          th: 'สลับที่นั่งเสร็จแล้ว',
+          id: 'Pertukaran kursi selesai',
+          hi: 'सीट बदलाव पूरा हुआ',
+          bn: 'সিট বদল সম্পন্ন হয়েছে',
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       _showSnack(_cleanError(e));
@@ -11049,7 +20525,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
     }, SetOptions(merge: true));
 
     if (!mounted) return;
-    _showSnack('Seat swap declined');
+
+    _showSnack(
+      tr(
+        context,
+        'Seat swap declined',
+        zhTw: '已拒絕座位交換',
+        zhCn: '已拒绝座位交换',
+        ko: '좌석 교환이 거절되었습니다',
+        ja: '席交換を拒否しました',
+        de: 'Sitztausch abgelehnt',
+        fr: 'Échange de sièges refusé',
+        ar: 'تم رفض تبديل المقاعد',
+        ru: 'Обмен местами отклонен',
+        trk: 'Koltuk değişimi reddedildi',
+        es: 'Intercambio de asientos rechazado',
+        it: 'Scambio posto rifiutato',
+        pl: 'Zamiana miejsc odrzucona',
+        pt: 'Troca de assentos recusada',
+        th: 'ปฏิเสธการสลับที่นั่งแล้ว',
+        id: 'Pertukaran kursi ditolak',
+        hi: 'सीट बदलाव अस्वीकार किया गया',
+        bn: 'সিট বদল প্রত্যাখ্যান করা হয়েছে',
+      ),
+    );
   }
 
   Future<void> _onSeatTap(int seatIndex) async {
@@ -11064,9 +20563,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
       if (seat is Map<String, dynamic>) {
         return Map<String, dynamic>.from(seat);
       }
+
       if (seat is Map) {
         return Map<String, dynamic>.from(seat);
       }
+
       if (seat is String) {
         return <String, dynamic>{
           'playerName': seat,
@@ -11082,6 +20583,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
           'reservedArrived': null,
         };
       }
+
       return <String, dynamic>{
         'playerName': null,
         'playerLastName': null,
@@ -11098,7 +20600,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
     }).toList();
 
     if (seatIndex < 0 || seatIndex >= seatList.length) {
-      _showSnack('Invalid seat');
+      _showSnack(
+        tr(
+          context,
+          'Invalid seat',
+          zhTw: '無效座位',
+          zhCn: '无效座位',
+          ko: '잘못된 좌석입니다',
+          ja: '無効な席です',
+          de: 'Ungültiger Sitz',
+          fr: 'Siège invalide',
+          ar: 'مقعد غير صالح',
+          ru: 'Недействительное место',
+          trk: 'Geçersiz koltuk',
+          es: 'Asiento inválido',
+          it: 'Posto non valido',
+          pl: 'Nieprawidłowe miejsce',
+          pt: 'Assento inválido',
+          th: 'ที่นั่งไม่ถูกต้อง',
+          id: 'Kursi tidak valid',
+          hi: 'अमान्य सीट',
+          bn: 'অকার্যকর সিট',
+        ),
+      );
       return;
     }
 
@@ -11106,14 +20630,22 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
     final reservedArrived =
         (seat['reservedArrived'] ?? false) == true;
+
     final arrived =
         (seat['arrived'] ?? false) == true;
   
-    final seatPlayerName = seat['playerName']?.toString().trim() ?? '';
-    final seatPlayerUid = seat['playerUid']?.toString().trim() ?? '';
+    final seatPlayerName =
+        seat['playerName']?.toString().trim() ?? '';
 
-    final reservedName = (seat['reservedForName'] ?? '').toString().trim();
-    final reservedUid = (seat['reservedForUid'] ?? '').toString().trim();
+    final seatPlayerUid =
+        seat['playerUid']?.toString().trim() ?? '';
+
+    final reservedName =
+        (seat['reservedForName'] ?? '').toString().trim();
+
+    final reservedUid =
+        (seat['reservedForUid'] ?? '').toString().trim();
+
     final reservedPlayerId =
         (seat['reservedForPlayerId'] ?? '').toString().trim();
 
@@ -11145,12 +20677,54 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 children: [
                   ListTile(
                     leading: Icon(
-                      reservedArrived ? Icons.schedule : Icons.check_circle,
+                      reservedArrived
+                          ? Icons.schedule
+                          : Icons.check_circle,
                     ),
                     title: Text(
                       reservedArrived
-                          ? 'Mark as unarrived'
-                          : 'Mark as arrived',
+                          ? tr(
+                              context,
+                              'Mark as unarrived',
+                              zhTw: '標記為未到場',
+                              zhCn: '标记为未到场',
+                              ko: '미도착으로 표시',
+                              ja: '未到着にする',
+                              de: 'Als nicht angekommen markieren',
+                              fr: 'Marquer comme non arrivé',
+                              ar: 'تحديد كغير حاضر',
+                              ru: 'Отметить как не прибывшего',
+                              trk: 'Gelmedi olarak işaretle',
+                              es: 'Marcar como no llegado',
+                              it: 'Segna come non arrivato',
+                              pl: 'Oznacz jako nieprzybyły',
+                              pt: 'Marcar como não chegou',
+                              th: 'ทำเครื่องหมายว่ายังไม่มา',
+                              id: 'Tandai belum datang',
+                              hi: 'नहीं पहुँचा के रूप में चिह्नित करें',
+                              bn: 'না আসা হিসেবে চিহ্নিত করুন',
+                            )
+                          : tr(
+                              context,
+                              'Mark as arrived',
+                              zhTw: '標記為已到場',
+                              zhCn: '标记为已到场',
+                              ko: '도착으로 표시',
+                              ja: '到着済みにする',
+                              de: 'Als angekommen markieren',
+                              fr: 'Marquer comme arrivé',
+                              ar: 'تحديد كحاضر',
+                              ru: 'Отметить как прибывшего',
+                              trk: 'Geldi olarak işaretle',
+                              es: 'Marcar como llegado',
+                              it: 'Segna come arrivato',
+                              pl: 'Oznacz jako przybyły',
+                              pt: 'Marcar como chegou',
+                              th: 'ทำเครื่องหมายว่ามาถึงแล้ว',
+                              id: 'Tandai sudah datang',
+                              hi: 'पहुंच गया के रूप में चिह्नित करें',
+                              bn: 'এসেছে হিসেবে চিহ্নিত করুন',
+                            ),
                     ),
                     onTap: () => Navigator.pop(
                       context,
@@ -11158,18 +20732,91 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.drive_file_move_outline),
-                    title: const Text('Move / Swap seat'),
+                    leading: const Icon(
+                      Icons.drive_file_move_outline,
+                    ),
+                    title: Text(
+                      tr(
+                        context,
+                        'Move / Swap seat',
+                        zhTw: '移動 / 交換座位',
+                        zhCn: '移动 / 交换座位',
+                        ko: '좌석 이동 / 교환',
+                        ja: '席を移動 / 交換',
+                        de: 'Sitz verschieben / tauschen',
+                        fr: 'Déplacer / échanger le siège',
+                        ar: 'نقل / تبديل المقعد',
+                        ru: 'Переместить / обменять место',
+                        trk: 'Koltuğu taşı / değiştir',
+                        es: 'Mover / intercambiar asiento',
+                        it: 'Sposta / scambia posto',
+                        pl: 'Przenieś / zamień miejsce',
+                        pt: 'Mover / trocar assento',
+                        th: 'ย้าย / สลับที่นั่ง',
+                        id: 'Pindah / Tukar kursi',
+                        hi: 'सीट बदलें / स्वैप करें',
+                        bn: 'সিট সরান / বদল করুন',
+                      ),
+                    ),
                     onTap: () => Navigator.pop(context, 'move'),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.bookmark_remove_outlined),
-                    title: const Text('Remove Reserve'),
-                    onTap: () => Navigator.pop(context, 'remove_reserve'),
+                    leading: const Icon(
+                      Icons.bookmark_remove_outlined,
+                    ),
+                    title: Text(
+                      tr(
+                        context,
+                        'Remove Reserve',
+                        zhTw: '移除預留',
+                        zhCn: '移除预留',
+                        ko: '예약 제거',
+                        ja: '予約を削除',
+                        de: 'Reservierung entfernen',
+                        fr: 'Supprimer la réservation',
+                        ar: 'إزالة الحجز',
+                        ru: 'Удалить резерв',
+                        trk: 'Rezervasyonu kaldır',
+                        es: 'Eliminar reserva',
+                        it: 'Rimuovi prenotazione',
+                        pl: 'Usuń rezerwację',
+                        pt: 'Remover reserva',
+                        th: 'ลบการจอง',
+                        id: 'Hapus reservasi',
+                        hi: 'आरक्षण हटाएँ',
+                        bn: 'রিজার্ভ সরান',
+                      ),
+                    ),
+                    onTap: () => Navigator.pop(
+                      context,
+                      'remove_reserve',
+                    ),
                   ),
                   ListTile(
                     leading: const Icon(Icons.close),
-                    title: const Text('Cancel'),
+                    title: Text(
+                      tr(
+                        context,
+                        'Cancel',
+                        zhTw: '取消',
+                        zhCn: '取消',
+                        ko: '취소',
+                        ja: 'キャンセル',
+                        de: 'Abbrechen',
+                        fr: 'Annuler',
+                        ar: 'إلغاء',
+                        ru: 'Отмена',
+                        trk: 'İptal',
+                        es: 'Cancelar',
+                        it: 'Annulla',
+                        pl: 'Anuluj',
+                        pt: 'Cancelar',
+                        th: 'ยกเลิก',
+                        id: 'Batal',
+                        hi: 'रद्द करें',
+                        bn: 'বাতিল',
+                      ),
+                    ),
                     onTap: () => Navigator.pop(context, 'cancel'),
                   ),
                 ],
@@ -11188,10 +20835,55 @@ class _TableDetailPageState extends State<TableDetailPage> {
         if (action == 'move') {
           setState(() {
             movingSeatIndex = seatIndex;
+
             movingPlayerName =
-                reservedName.isNotEmpty ? reservedName : 'Reserved Seat';
+                reservedName.isNotEmpty
+                    ? reservedName
+                    : tr(
+                        context,
+                        'Reserved Seat',
+                        zhTw: '預留座位',
+                        zhCn: '预留座位',
+                        ko: '예약 좌석',
+                        ja: '予約席',
+                        de: 'Reservierter Sitz',
+                        fr: 'Siège réservé',
+                        ar: 'مقعد محجوز',
+                        ru: 'Зарезервированное место',
+                        trk: 'Rezerve Koltuk',
+                        es: 'Asiento reservado',
+                        it: 'Posto riservato',
+                        pl: 'Zarezerwowane miejsce',
+                        pt: 'Assento reservado',
+                        th: 'ที่นั่งที่จองไว้',
+                        id: 'Kursi reservasi',
+                        hi: 'आरक्षित सीट',
+                        bn: 'সংরক্ষিত সিট',
+                      );
           });
-          _showSnack('Tap another seat to move or swap');
+          _showSnack(
+            tr(
+              context,
+              'Tap another seat to move or swap',
+              zhTw: '點擊另一個座位來移動或交換',
+              zhCn: '点击另一个座位来移动或交换',
+              ko: '이동하거나 교환할 다른 좌석을 선택하세요',
+              ja: '移動または交換する別の席をタップしてください',
+              de: 'Tippe auf einen anderen Sitz zum Verschieben oder Tauschen',
+              fr: 'Appuyez sur un autre siège pour déplacer ou échanger',
+              ar: 'اضغط على مقعد آخر للنقل أو التبديل',
+              ru: 'Нажмите на другое место для перемещения или обмена',
+              trk: 'Taşımak veya değiştirmek için başka bir koltuğa dokunun',
+              es: 'Toca otro asiento para mover o intercambiar',
+              it: 'Tocca un altro posto per spostare o scambiare',
+              pl: 'Kliknij inne miejsce, aby przenieść lub zamienić',
+              pt: 'Toque em outro assento para mover ou trocar',
+              th: 'แตะที่นั่งอื่นเพื่อย้ายหรือสลับ',
+              id: 'Ketuk kursi lain untuk pindah atau bertukar',
+              hi: 'स्थानांतरित या बदलने के लिए दूसरी सीट टैप करें',
+              bn: 'সরাতে বা বদলাতে অন্য সিটে চাপ দিন',
+            ),
+          );
           return;
         }
 
@@ -11213,24 +20905,112 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 children: [
                   ListTile(
                     leading: const Icon(Icons.person),
-                    title: const Text('Join myself'),
+                    title: Text(
+                      tr(
+                        context,
+                        'Join myself',
+                        zhTw: '自己加入',
+                        zhCn: '自己加入',
+                        ko: '직접 참가',
+                        ja: '自分で参加',
+                        de: 'Selbst beitreten',
+                        fr: 'Me rejoindre moi-même',
+                        ar: 'الانضمام بنفسي',
+                        ru: 'Присоединиться самому',
+                        trk: 'Kendim katıl',
+                        es: 'Unirme yo mismo',
+                        it: 'Uniscimi personalmente',
+                        pl: 'Dołącz samodzielnie',
+                        pt: 'Entrar eu mesmo',
+                        th: 'เข้าร่วมเอง',
+                        id: 'Gabung sendiri',
+                        hi: 'खुद शामिल हों',
+                        bn: 'নিজে যোগ দিন',
+                      ),
+                    ),
                     onTap: () => Navigator.pop(context, 'join_self'),
                   ),
                   if (canManageThisTable)
                     ListTile(
                       leading: const Icon(Icons.search),
-                      title: const Text('Select player'),
+                      title: Text(
+                        tr(
+                          context,
+                          'Select player',
+                          zhTw: '選擇玩家',
+                          zhCn: '选择玩家',
+                          ko: '플레이어 선택',
+                          ja: 'プレイヤーを選択',
+                          de: 'Spieler auswählen',
+                          fr: 'Sélectionner un joueur',
+                          ar: 'اختيار لاعب',
+                          ru: 'Выбрать игрока',
+                          trk: 'Oyuncu seç',
+                          es: 'Seleccionar jugador',
+                          it: 'Seleziona giocatore',
+                          pl: 'Wybierz gracza',
+                          pt: 'Selecionar jogador',
+                          th: 'เลือกผู้เล่น',
+                          id: 'Pilih pemain',
+                          hi: 'खिलाड़ी चुनें',
+                          bn: 'খেলোয়াড় নির্বাচন করুন',
+                        ),
+                      ),
                       onTap: () => Navigator.pop(context, 'select_player'),
                     ),
                   if (canManageThisTable)
                     ListTile(
                       leading: const Icon(Icons.bookmark_add_outlined),
-                      title: const Text('Reserve for Guest'),
+                      title: Text(
+                        tr(
+                          context,
+                          'Reserve for Guest',
+                          zhTw: '為訪客預留',
+                          zhCn: '为访客预留',
+                          ko: '게스트로 예약',
+                          ja: 'ゲスト用に予約',
+                          de: 'Für Gast reservieren',
+                          fr: 'Réserver pour un invité',
+                          ar: 'حجز لضيف',
+                          ru: 'Зарезервировать для гостя',
+                          trk: 'Misafir için rezerve et',
+                          es: 'Reservar para invitado',
+                          it: 'Riserva per ospite',
+                          pl: 'Zarezerwuj dla gościa',
+                          pt: 'Reservar para convidado',
+                          th: 'จองให้แขก',
+                          id: 'Pesan untuk tamu',
+                          hi: 'मेहमान के लिए आरक्षित करें',
+                          bn: 'অতিথির জন্য সংরক্ষণ করুন',
+                        ),
+                      ),
                       onTap: () => Navigator.pop(context, 'reserve_guest'),
                     ),
                   ListTile(
                     leading: const Icon(Icons.close),
-                    title: const Text('Cancel'),
+                    title: Text(
+                      tr(
+                        context,
+                        'Cancel',
+                        zhTw: '取消',
+                        zhCn: '取消',
+                        ko: '취소',
+                        ja: 'キャンセル',
+                        de: 'Abbrechen',
+                        fr: 'Annuler',
+                        ar: 'إلغاء',
+                        ru: 'Отмена',
+                        trk: 'İptal',
+                        es: 'Cancelar',
+                        it: 'Annulla',
+                        pl: 'Anuluj',
+                        pt: 'Cancelar',
+                        th: 'ยกเลิก',
+                        id: 'Batal',
+                        hi: 'रद्द करें',
+                        bn: 'বাতিল',
+                      ),
+                    ),
                     onTap: () => Navigator.pop(context, 'cancel'),
                   ),
                 ],
@@ -11272,23 +21052,131 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     arrived ? Icons.schedule : Icons.check_circle,
                   ),
                   title: Text(
-                    arrived ? 'Mark as unarrived' : 'Mark as arrived',
+                    arrived
+                        ? tr(
+                            context,
+                            'Mark as unarrived',
+                            zhTw: '標記為未到場',
+                            zhCn: '标记为未到场',
+                            ko: '미도착으로 표시',
+                            ja: '未到着にする',
+                            de: 'Als nicht angekommen markieren',
+                            fr: 'Marquer comme non arrivé',
+                            ar: 'تحديد كغير حاضر',
+                            ru: 'Отметить как не прибывшего',
+                            trk: 'Gelmedi olarak işaretle',
+                            es: 'Marcar como no llegado',
+                            it: 'Segna come non arrivato',
+                            pl: 'Oznacz jako nieprzybyły',
+                            pt: 'Marcar como não chegou',
+                            th: 'ทำเครื่องหมายว่ายังไม่มา',
+                            id: 'Tandai belum datang',
+                            hi: 'नहीं पहुँचा के रूप में चिह्नित करें',
+                            bn: 'না আসা হিসেবে চিহ্নিত করুন',
+                          )
+                        : tr(
+                            context,
+                            'Mark as arrived',
+                            zhTw: '標記為已到場',
+                            zhCn: '标记为已到场',
+                            ko: '도착으로 표시',
+                            ja: '到着済みにする',
+                            de: 'Als angekommen markieren',
+                            fr: 'Marquer comme arrivé',
+                            ar: 'تحديد كحاضر',
+                            ru: 'Отметить как прибывшего',
+                            trk: 'Geldi olarak işaretle',
+                            es: 'Marcar como llegado',
+                            it: 'Segna come arrivato',
+                            pl: 'Oznacz jako przybyły',
+                            pt: 'Marcar como chegou',
+                            th: 'ทำเครื่องหมายว่ามาถึงแล้ว',
+                            id: 'Tandai sudah datang',
+                            hi: 'पहुंच गया के रूप में चिह्नित करें',
+                            bn: 'এসেছে হিসেবে চিহ্নিত করুন',
+                          ),
                   ),
                   onTap: () => Navigator.pop(context, 'toggle_arrived'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.drive_file_move_outline),
-                  title: const Text('Move / Swap seat'),
+                  title: Text(
+                    tr(
+                      context,
+                      'Move / Swap seat',
+                      zhTw: '移動 / 交換座位',
+                      zhCn: '移动 / 交换座位',
+                      ko: '좌석 이동 / 교환',
+                      ja: '席を移動 / 交換',
+                      de: 'Sitz verschieben / tauschen',
+                      fr: 'Déplacer / échanger le siège',
+                      ar: 'نقل / تبديل المقعد',
+                      ru: 'Переместить / обменять место',
+                      trk: 'Koltuğu taşı / değiştir',
+                      es: 'Mover / intercambiar asiento',
+                      it: 'Sposta / scambia posto',
+                      pl: 'Przenieś / zamień miejsce',
+                      pt: 'Mover / trocar assento',
+                      th: 'ย้าย / สลับที่นั่ง',
+                      id: 'Pindah / Tukar kursi',
+                      hi: 'सीट बदलें / स्वैप करें',
+                      bn: 'সিট সরান / বদল করুন',
+                    ),
+                  ),
                   onTap: () => Navigator.pop(context, 'move'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.person_remove),
-                  title: const Text('Remove from seat'),
+                  title: Text(
+                    tr(
+                      context,
+                      'Remove from seat',
+                      zhTw: '從座位移除',
+                      zhCn: '从座位移除',
+                      ko: '좌석에서 제거',
+                      ja: '席から削除',
+                      de: 'Vom Sitz entfernen',
+                      fr: 'Retirer du siège',
+                      ar: 'إزالة من المقعد',
+                      ru: 'Удалить с места',
+                      trk: 'Koltuktan kaldır',
+                      es: 'Quitar del asiento',
+                      it: 'Rimuovi dal posto',
+                      pl: 'Usuń z miejsca',
+                      pt: 'Remover do assento',
+                      th: 'นำออกจากที่นั่ง',
+                      id: 'Hapus dari kursi',
+                      hi: 'सीट से हटाएँ',
+                      bn: 'সিট থেকে সরান',
+                    ),
+                  ),
                   onTap: () => Navigator.pop(context, 'remove'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.close),
-                  title: const Text('Cancel'),
+                  title: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                   onTap: () => Navigator.pop(context, 'cancel'),
                 ),
               ],
@@ -11309,7 +21197,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
           movingSeatIndex = seatIndex;
           movingPlayerName = seatPlayerName;
         });
-        _showSnack('Tap another seat to move or swap');
+
+        _showSnack(
+          tr(
+            context,
+            'Tap another seat to move or swap',
+            zhTw: '點擊另一個座位來移動或交換',
+            zhCn: '点击另一个座位来移动或交换',
+            ko: '이동하거나 교환할 다른 좌석을 선택하세요',
+            ja: '移動または交換する別の席をタップしてください',
+            de: 'Tippe auf einen anderen Sitz zum Verschieben oder Tauschen',
+            fr: 'Appuyez sur un autre siège pour déplacer ou échanger',
+            ar: 'اضغط على مقعد آخر للنقل أو التبديل',
+            ru: 'Нажмите на другое место для перемещения или обмена',
+            trk: 'Taşımak veya değiştirmek için başka bir koltuğa dokunun',
+            es: 'Toca otro asiento para mover o intercambiar',
+            it: 'Tocca un altro posto per spostare o scambiare',
+            pl: 'Kliknij inne miejsce, aby przenieść lub zamienić',
+            pt: 'Toque em outro assento para mover ou trocar',
+            th: 'แตะที่นั่งอื่นเพื่อย้ายหรือสลับ',
+            id: 'Ketuk kursi lain untuk pindah atau bertukar',
+            hi: 'स्थानांतरित या बदलने के लिए दूसरी सीट टैप करें',
+            bn: 'সরাতে বা বদলাতে অন্য সিটে চাপ দিন',
+          ),
+        );
         return;
       }
 
@@ -11328,42 +21239,155 @@ class _TableDetailPageState extends State<TableDetailPage> {
           .collection('users')
           .doc(user.uid)
           .get();
+
       final myData = myDoc.data() ?? {};
-      myPlayerId = (myData['playerId'] ?? '').toString().trim();
+
+      myPlayerId =
+          (myData['playerId'] ?? '').toString().trim();
     }
   
-    final myShortName = widget.session.shortName.trim().toLowerCase();
+    final myShortName =
+        widget.session.shortName.trim().toLowerCase();
   
     final reservedShortName =
-        (seat['reservedForShortName'] ?? '').toString().trim().toLowerCase();
+        (seat['reservedForShortName'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
   
     final matchesReservedSeat = seatIsReserved &&
-        ((reservedUid.isNotEmpty && user != null && reservedUid == user.uid) ||
+        ((reservedUid.isNotEmpty &&
+                user != null &&
+                reservedUid == user.uid) ||
             (reservedPlayerId.isNotEmpty &&
                 myPlayerId.isNotEmpty &&
                 reservedPlayerId == myPlayerId) ||
             (reservedShortName.isNotEmpty &&
                 reservedShortName == myShortName) ||
             (reservedName.isNotEmpty &&
-                reservedName.toLowerCase() == myName.toLowerCase()));
+                reservedName.toLowerCase() ==
+                    myName.toLowerCase()));
   
     if (seatIsReserved) {
       if (matchesReservedSeat) {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Claim Reserved Seat'),
+            title: Text(
+              tr(
+                context,
+                'Claim Reserved Seat',
+                zhTw: '認領預留座位',
+                zhCn: '认领预留座位',
+                ko: '예약 좌석 확인',
+                ja: '予約席を確認',
+                de: 'Reservierten Sitz beanspruchen',
+                fr: 'Réclamer le siège réservé',
+                ar: 'تأكيد المقعد المحجوز',
+                ru: 'Подтвердить зарезервированное место',
+                trk: 'Rezerve Koltuğu Talep Et',
+                es: 'Reclamar asiento reservado',
+                it: 'Rivendica posto riservato',
+                pl: 'Odbierz zarezerwowane miejsce',
+                pt: 'Reivindicar assento reservado',
+                th: 'รับสิทธิ์ที่นั่งที่จองไว้',
+                id: 'Klaim Kursi Reservasi',
+                hi: 'आरक्षित सीट का दावा करें',
+                bn: 'সংরক্ষিত সিট দাবি করুন',
+              ),
+            ),
             content: Text(
-              'This seat is reserved for ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'you'}.\n\nIs this you?',
+              tr(
+                context,
+                'This seat is reserved for ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'you'}.\n\nIs this you?',
+                zhTw:
+                    '這個座位是為 ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? '你'} 預留的。\n\n這是你嗎？',
+                zhCn:
+                    '这个座位是为 ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? '你'} 预留的。\n\n这是你吗？',
+                ko:
+                    '이 좌석은 ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? '회원님'} 님을 위해 예약되었습니다.\n\n본인이 맞습니까?',
+                ja:
+                    'この席は ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'あなた'} のために予約されています。\n\nあなたですか？',
+                de:
+                    'Dieser Sitz ist für ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'dich'} reserviert.\n\nBist du das?',
+                fr:
+                    'Ce siège est réservé pour ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'vous'}.\n\nEst-ce bien vous ?',
+                ar:
+                    'هذا المقعد محجوز لـ ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'أنت'}.\n\nهل هذا أنت؟',
+                ru:
+                    'Это место зарезервировано для ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'вас'}.\n\nЭто вы?',
+                trk:
+                    'Bu koltuk ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'senin'} için rezerve edildi.\n\nBu sen misin?',
+                es:
+                    'Este asiento está reservado para ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'ti'}.\n\n¿Eres tú?',
+                it:
+                    'Questo posto è riservato per ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'te'}.\n\nSei tu?',
+                pl:
+                    'To miejsce jest zarezerwowane dla ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'Ciebie'}.\n\nCzy to Ty?',
+                pt:
+                    'Este assento está reservado para ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'você'}.\n\nÉ você?',
+                th:
+                    'ที่นั่งนี้ถูกจองไว้สำหรับ ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'คุณ'}\n\nใช่คุณหรือไม่?',
+                id:
+                    'Kursi ini dipesan untuk ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'Anda'}.\n\nApakah ini Anda?',
+                hi:
+                    'यह सीट ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'आप'} के लिए आरक्षित है।\n\nक्या यह आप हैं?',
+                bn:
+                    'এই সিটটি ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'আপনার'} জন্য সংরক্ষিত।\n\nএটা কি আপনি?',
+              ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text('No'),
+                child: Text(
+                  tr(
+                    context,
+                    'No',
+                    zhTw: '否',
+                    zhCn: '否',
+                    ko: '아니요',
+                    ja: 'いいえ',
+                    de: 'Nein',
+                    fr: 'Non',
+                    ar: 'لا',
+                    ru: 'Нет',
+                    trk: 'Hayır',
+                    es: 'No',
+                    it: 'No',
+                    pl: 'Nie',
+                    pt: 'Não',
+                    th: 'ไม่ใช่',
+                    id: 'Tidak',
+                    hi: 'नहीं',
+                    bn: 'না',
+                  ),
+                ),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text('Yes, it is me'),
+                child: Text(
+                  tr(
+                    context,
+                    'Yes, it is me',
+                    zhTw: '是的，是我',
+                    zhCn: '是的，是我',
+                    ko: '네, 저입니다',
+                    ja: 'はい、私です',
+                    de: 'Ja, ich bin es',
+                    fr: 'Oui, c’est moi',
+                    ar: 'نعم، هذا أنا',
+                    ru: 'Да, это я',
+                    trk: 'Evet, benim',
+                    es: 'Sí, soy yo',
+                    it: 'Sì, sono io',
+                    pl: 'Tak, to ja',
+                    pt: 'Sim, sou eu',
+                    th: 'ใช่ ฉันเอง',
+                    id: 'Ya, itu saya',
+                    hi: 'हाँ, यह मैं हूँ',
+                    bn: 'হ্যাঁ, এটা আমি',
+                  ),
+                ),
               ),
             ],
           ),
@@ -11372,36 +21396,91 @@ class _TableDetailPageState extends State<TableDetailPage> {
         if (confirmed == true) {
           await _claimReservedSeat(seatIndex);
         }
+
         return;
       }
   
-      _showSnack('This seat is reserved for someone else');
+      _showSnack(
+        tr(
+          context,
+          'This seat is reserved for someone else',
+          zhTw: '這個座位是為其他人預留的',
+          zhCn: '这个座位是为其他人预留的',
+          ko: '이 좌석은 다른 사람을 위해 예약되었습니다',
+          ja: 'この席は他の人のために予約されています',
+          de: 'Dieser Sitz ist für jemand anderen reserviert',
+          fr: 'Ce siège est réservé à quelqu’un d’autre',
+          ar: 'هذا المقعد محجوز لشخص آخر',
+          ru: 'Это место зарезервировано для другого человека',
+          trk: 'Bu koltuk başka biri için rezerve edildi',
+          es: 'Este asiento está reservado para otra persona',
+          it: 'Questo posto è riservato a qualcun altro',
+          pl: 'To miejsce jest zarezerwowane dla kogoś innego',
+          pt: 'Este assento está reservado para outra pessoa',
+          th: 'ที่นั่งนี้ถูกจองไว้สำหรับคนอื่น',
+          id: 'Kursi ini dipesan untuk orang lain',
+          hi: 'यह सीट किसी और के लिए आरक्षित है',
+          bn: 'এই সিটটি অন্য কারও জন্য সংরক্ষিত',
+        ),
+      );
+
       return;
     }
   
     final mySeatIndex = seatList.indexWhere((s) {
       final map = Map<String, dynamic>.from(s);
-      final uid = (map['playerUid'] ?? '').toString().trim();
-      final name = (map['playerName'] ?? '').toString().trim();
 
-      return (user != null && uid == user.uid) || name == myName;
+      final uid =
+          (map['playerUid'] ?? '').toString().trim();
+
+      final name =
+          (map['playerName'] ?? '').toString().trim();
+
+      return (user != null && uid == user.uid) ||
+          name == myName;
     });
 
     if (seatIsOpen) {
       if (mySeatIndex != -1) {
-        _showSnack('You are already seated. Leave your current seat first.');
+        _showSnack(
+          tr(
+            context,
+            'You are already seated. Leave your current seat first.',
+            zhTw: '你已經入座，請先離開目前座位。',
+            zhCn: '你已经入座，请先离开目前座位。',
+            ko: '이미 착석했습니다. 먼저 현재 좌석에서 나가세요.',
+            ja: 'すでに着席しています。先に現在の席を離れてください。',
+            de: 'Du sitzt bereits. Verlasse zuerst deinen aktuellen Sitz.',
+            fr: 'Vous êtes déjà assis. Quittez d’abord votre siège actuel.',
+            ar: 'أنت جالس بالفعل. غادر مقعدك الحالي أولاً.',
+            ru: 'Вы уже сидите. Сначала покиньте текущее место.',
+            trk: 'Zaten oturuyorsunuz. Önce mevcut koltuğunuzdan ayrılın.',
+            es: 'Ya estás sentado. Primero deja tu asiento actual.',
+            it: 'Sei già seduto. Lascia prima il tuo posto attuale.',
+            pl: 'Już siedzisz. Najpierw opuść swoje obecne miejsce.',
+            pt: 'Você já está sentado. Saia primeiro do seu assento atual.',
+            th: 'คุณนั่งอยู่แล้ว กรุณาออกจากที่นั่งปัจจุบันก่อน',
+            id: 'Anda sudah duduk. Tinggalkan kursi saat ini terlebih dahulu.',
+            hi: 'आप पहले से बैठे हैं। पहले अपनी वर्तमान सीट छोड़ें।',
+            bn: 'আপনি ইতিমধ্যেই বসে আছেন। আগে আপনার বর্তমান সিট ছাড়ুন।',
+          ),
+        );
+
         return;
       }
 
       await _joinSeatAsCurrentUser(seatIndex);
+
       return;
     }
   
     final isMySeat =
-        (user != null && seatPlayerUid == user.uid) || seatPlayerName == myName;
+        (user != null && seatPlayerUid == user.uid) ||
+        seatPlayerName == myName;
 
     if (isMySeat) {
-      final canToggleMine = _canCurrentUserToggleSeatArrived(seat);
+      final canToggleMine =
+          _canCurrentUserToggleSeatArrived(seat);
 
       final action = await showModalBottomSheet<String>(
         context: context,
@@ -11413,21 +21492,115 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 if (canToggleMine)
                   ListTile(
                     leading: Icon(
-                      arrived ? Icons.schedule : Icons.check_circle,
+                      arrived
+                          ? Icons.schedule
+                          : Icons.check_circle,
                     ),
                     title: Text(
-                      arrived ? 'Mark as unarrived' : 'Mark as arrived',
+                      arrived
+                          ? tr(
+                              context,
+                              'Mark as unarrived',
+                              zhTw: '標記為未到場',
+                              zhCn: '标记为未到场',
+                              ko: '미도착으로 표시',
+                              ja: '未到着にする',
+                              de: 'Als nicht angekommen markieren',
+                              fr: 'Marquer comme non arrivé',
+                              ar: 'تحديد كغير حاضر',
+                              ru: 'Отметить как не прибывшего',
+                              trk: 'Gelmedi olarak işaretle',
+                              es: 'Marcar como no llegado',
+                              it: 'Segna come non arrivato',
+                              pl: 'Oznacz jako nieprzybyły',
+                              pt: 'Marcar como não chegou',
+                              th: 'ทำเครื่องหมายว่ายังไม่มา',
+                              id: 'Tandai belum datang',
+                              hi: 'नहीं पहुँचा के रूप में चिह्नित करें',
+                              bn: 'না আসা হিসেবে চিহ্নিত করুন',
+                            )
+                          : tr(
+                              context,
+                              'Mark as arrived',
+                              zhTw: '標記為已到場',
+                              zhCn: '标记为已到场',
+                              ko: '도착으로 표시',
+                              ja: '到着済みにする',
+                              de: 'Als angekommen markieren',
+                              fr: 'Marquer comme arrivé',
+                              ar: 'تحديد كحاضر',
+                              ru: 'Отметить как прибывшего',
+                              trk: 'Geldi olarak işaretle',
+                              es: 'Marcar como llegado',
+                              it: 'Segna come arrivato',
+                              pl: 'Oznacz jako przybyły',
+                              pt: 'Marcar como chegou',
+                              th: 'ทำเครื่องหมายว่ามาถึงแล้ว',
+                              id: 'Tandai sudah datang',
+                              hi: 'पहुंच गया के रूप में चिह्नित करें',
+                              bn: 'এসেছে হিসেবে চিহ্নিত করুন',
+                            ),
                     ),
-                    onTap: () => Navigator.pop(context, 'toggle_arrived'),
+                    onTap: () => Navigator.pop(
+                      context,
+                      'toggle_arrived',
+                    ),
                   ),
                 ListTile(
                   leading: const Icon(Icons.person_remove),
-                  title: const Text('Leave seat'),
-                  onTap: () => Navigator.pop(context, 'leave_seat'),
+                  title: Text(
+                    tr(
+                      context,
+                      'Leave seat',
+                      zhTw: '離開座位',
+                      zhCn: '离开座位',
+                      ko: '좌석 떠나기',
+                      ja: '席を離れる',
+                      de: 'Sitz verlassen',
+                      fr: 'Quitter le siège',
+                      ar: 'مغادرة المقعد',
+                      ru: 'Покинуть место',
+                      trk: 'Koltuktan ayrıl',
+                      es: 'Salir del asiento',
+                      it: 'Lascia il posto',
+                      pl: 'Opuść miejsce',
+                      pt: 'Sair do assento',
+                      th: 'ออกจากที่นั่ง',
+                      id: 'Tinggalkan kursi',
+                      hi: 'सीट छोड़ें',
+                      bn: 'সিট ছাড়ুন',
+                    ),
+                  ),
+                  onTap: () => Navigator.pop(
+                    context,
+                    'leave_seat',
+                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.close),
-                  title: const Text('Cancel'),
+                  title: Text(
+                    tr(
+                      context,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                   onTap: () => Navigator.pop(context, 'cancel'),
                 ),
               ],
@@ -11436,7 +21609,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
         },
       );
 
-      if (!mounted || action == null || action == 'cancel') return;
+      if (!mounted ||
+          action == null ||
+          action == 'cancel') {
+        return;
+      }
 
       if (action == 'toggle_arrived') {
         await _toggleArrivedAtSeat(seatIndex);
@@ -11452,36 +21629,174 @@ class _TableDetailPageState extends State<TableDetailPage> {
     }
 
     if (mySeatIndex == -1) {
-      _showSnack('You must already be seated to request a swap');
+      _showSnack(
+        tr(
+          context,
+          'You must already be seated to request a swap',
+          zhTw: '你必須先入座才能請求交換座位',
+          zhCn: '你必须先入座才能请求交换座位',
+          ko: '좌석 교환을 요청하려면 먼저 착석해야 합니다',
+          ja: '席交換をリクエストするには先に着席してください',
+          de: 'Du musst bereits sitzen, um einen Sitztausch anzufragen',
+          fr: 'Vous devez déjà être assis pour demander un échange',
+          ar: 'يجب أن تكون جالسًا بالفعل لطلب تبديل المقاعد',
+          ru: 'Вы должны сидеть, чтобы запросить обмен местами',
+          trk: 'Koltuk değişimi istemek için önce oturmalısınız',
+          es: 'Debes estar sentado para solicitar un intercambio',
+          it: 'Devi essere seduto per richiedere uno scambio',
+          pl: 'Musisz już siedzieć, aby poprosić o zamianę miejsc',
+          pt: 'Você deve estar sentado para solicitar uma troca',
+          th: 'คุณต้องนั่งอยู่ก่อนจึงจะขอสลับที่นั่งได้',
+          id: 'Anda harus sudah duduk untuk meminta pertukaran kursi',
+          hi: 'सीट बदलने का अनुरोध करने के लिए पहले बैठना आवश्यक है',
+          bn: 'সিট বদলের অনুরোধ করতে আগে বসতে হবে',
+        ),
+      );
+
       return;
     }
 
-    final mySeat = Map<String, dynamic>.from(seatList[mySeatIndex]);
-    final targetSeat = Map<String, dynamic>.from(seat);
+    final mySeat =
+        Map<String, dynamic>.from(seatList[mySeatIndex]);
 
-    final mySeatUid = (mySeat['playerUid'] ?? '').toString().trim();
-    final targetSeatUid = (targetSeat['playerUid'] ?? '').toString().trim();
+    final targetSeat =
+        Map<String, dynamic>.from(seat);
+
+    final mySeatUid =
+        (mySeat['playerUid'] ?? '').toString().trim();
+
+    final targetSeatUid =
+        (targetSeat['playerUid'] ?? '').toString().trim();
 
     if (mySeatUid.isEmpty || targetSeatUid.isEmpty) {
-      _showSnack('Only seated players can swap');
+      _showSnack(
+        tr(
+          context,
+          'Only seated players can swap',
+          zhTw: '只有已入座玩家可以交換座位',
+          zhCn: '只有已入座玩家可以交换座位',
+          ko: '착석한 플레이어만 좌석을 교환할 수 있습니다',
+          ja: '着席しているプレイヤーのみ席を交換できます',
+          de: 'Nur sitzende Spieler können Plätze tauschen',
+          fr: 'Seuls les joueurs assis peuvent échanger leur siège',
+          ar: 'يمكن للاعبين الجالسين فقط تبديل المقاعد',
+          ru: 'Только сидящие игроки могут меняться местами',
+          trk: 'Yalnızca oturan oyuncular koltuk değiştirebilir',
+          es: 'Solo los jugadores sentados pueden intercambiar asientos',
+          it: 'Solo i giocatori seduti possono scambiarsi i posti',
+          pl: 'Tylko siedzący gracze mogą zamieniać się miejscami',
+          pt: 'Somente jogadores sentados podem trocar de assento',
+          th: 'เฉพาะผู้เล่นที่นั่งอยู่แล้วเท่านั้นที่สามารถสลับที่นั่งได้',
+          id: 'Hanya pemain yang sudah duduk yang dapat bertukar kursi',
+          hi: 'केवल बैठे हुए खिलाड़ी सीट बदल सकते हैं',
+          bn: 'শুধুমাত্র বসা খেলোয়াড়রাই সিট বদল করতে পারে',
+        ),
+      );
+
       return;
     }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Request Seat Swap'),
+        title: Text(
+          tr(
+            context,
+            'Request Seat Swap',
+            zhTw: '請求交換座位',
+            zhCn: '请求交换座位',
+            ko: '좌석 교환 요청',
+            ja: '席交換リクエスト',
+            de: 'Sitztausch anfragen',
+            fr: 'Demander un échange de siège',
+            ar: 'طلب تبديل المقعد',
+            ru: 'Запросить обмен местами',
+            trk: 'Koltuk değişimi iste',
+            es: 'Solicitar intercambio de asiento',
+            it: 'Richiedi scambio posto',
+            pl: 'Poproś o zamianę miejsc',
+            pt: 'Solicitar troca de assento',
+            th: 'ขอสลับที่นั่ง',
+            id: 'Minta pertukaran kursi',
+            hi: 'सीट बदलने का अनुरोध',
+            bn: 'সিট বদলের অনুরোধ',
+          ),
+        ),
         content: Text(
-          'Do you want to ask this player to swap seats with you?',
+          tr(
+            context,
+            'Do you want to ask this player to swap seats with you?',
+            zhTw: '你想邀請這位玩家和你交換座位嗎？',
+            zhCn: '你想邀请这位玩家和你交换座位吗？',
+            ko: '이 플레이어에게 좌석 교환을 요청하시겠습니까?',
+            ja: 'このプレイヤーに席交換を依頼しますか？',
+            de: 'Möchtest du diesen Spieler bitten, die Plätze zu tauschen?',
+            fr: 'Voulez-vous demander à ce joueur d’échanger de siège avec vous ?',
+            ar: 'هل تريد أن تطلب من هذا اللاعب تبديل المقاعد معك؟',
+            ru: 'Хотите попросить этого игрока поменяться с вами местами?',
+            trk: 'Bu oyuncudan seninle koltuk değiştirmesini ister misin?',
+            es: '¿Quieres pedirle a este jugador que intercambie asientos contigo?',
+            it: 'Vuoi chiedere a questo giocatore di scambiare posto con te?',
+            pl: 'Czy chcesz poprosić tego gracza o zamianę miejsc?',
+            pt: 'Deseja pedir a este jogador para trocar de assento com você?',
+            th: 'คุณต้องการขอให้ผู้เล่นคนนี้สลับที่นั่งกับคุณหรือไม่?',
+            id: 'Apakah Anda ingin meminta pemain ini bertukar kursi dengan Anda?',
+            hi: 'क्या आप इस खिलाड़ी से सीट बदलने के लिए पूछना चाहते हैं?',
+            bn: 'আপনি কি এই খেলোয়াড়কে আপনার সাথে সিট বদল করতে বলতে চান?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(
+              tr(
+                context,
+                'Cancel',
+                zhTw: '取消',
+                zhCn: '取消',
+                ko: '취소',
+                ja: 'キャンセル',
+                de: 'Abbrechen',
+                fr: 'Annuler',
+                ar: 'إلغاء',
+                ru: 'Отмена',
+                trk: 'İptal',
+                es: 'Cancelar',
+                it: 'Annulla',
+                pl: 'Anuluj',
+                pt: 'Cancelar',
+                th: 'ยกเลิก',
+                id: 'Batal',
+                hi: 'रद्द करें',
+                bn: 'বাতিল',
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Request'),
+            child: Text(
+              tr(
+                context,
+                'Request',
+                zhTw: '請求',
+                zhCn: '请求',
+                ko: '요청',
+                ja: 'リクエスト',
+                de: 'Anfragen',
+                fr: 'Demander',
+                ar: 'طلب',
+                ru: 'Запросить',
+                trk: 'İste',
+                es: 'Solicitar',
+                it: 'Richiedi',
+                pl: 'Poproś',
+                pt: 'Solicitar',
+                th: 'ขอ',
+                id: 'Minta',
+                hi: 'अनुरोध',
+                bn: 'অনুরোধ',
+              ),
+            ),
           ),
         ],
       ),
@@ -11498,10 +21813,34 @@ class _TableDetailPageState extends State<TableDetailPage> {
   }
 
   String _formatDateTime(DateTime? dt) {
-    if (dt == null) return 'Not set';
+    if (dt == null) {
+      return tr(
+        context,
+        'Not set',
+        zhTw: '未設定',
+        zhCn: '未设置',
+        ko: '설정되지 않음',
+        ja: '未設定',
+        de: 'Nicht festgelegt',
+        fr: 'Non défini',
+        ar: 'غير محدد',
+        ru: 'Не задано',
+        trk: 'Ayarlanmadı',
+        es: 'No establecido',
+        it: 'Non impostato',
+        pl: 'Nie ustawiono',
+        pt: 'Não definido',
+        th: 'ยังไม่ได้ตั้งค่า',
+        id: 'Belum diatur',
+        hi: 'सेट नहीं है',
+        bn: 'সেট করা হয়নি',
+      );
+    }
+
     final hour = dt.hour == 0 ? 12 : (dt.hour > 12 ? dt.hour - 12 : dt.hour);
     final minute = dt.minute.toString().padLeft(2, '0');
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+
     return '${dt.month}/${dt.day}/${dt.year}  $hour:$minute $ampm';
   }
 
@@ -11605,7 +21944,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: color.withOpacity(0.28),
+            color: color.withValues(alpha: 0.28),
           ),
         ),
         child: Row(
@@ -11638,7 +21977,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
     );
   }
 
-  Widget _buildTableHeaderCard(TableData table, int openCount, int takenCount) {
+  Widget _buildTableHeaderCard(
+    TableData table,
+    int openCount,
+    int takenCount,
+  ) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -11676,25 +22019,105 @@ class _TableDetailPageState extends State<TableDetailPage> {
               if (table.stakes.isNotEmpty)
                 _buildDetailStatChip(
                   icon: Icons.paid_outlined,
-                  label: 'Stakes',
+                  label: tr(
+                    context,
+                    'Stakes',
+                    zhTw: '盲注',
+                    zhCn: '盲注',
+                    ko: '블라인드',
+                    ja: 'ブラインド',
+                    de: 'Blinds',
+                    fr: 'Blindes',
+                    ar: 'الرهانات',
+                    ru: 'Блайнды',
+                    trk: 'Bahisler',
+                    es: 'Ciegas',
+                    it: 'Buio',
+                    pl: 'Blindy',
+                    pt: 'Blinds',
+                    th: 'บลายด์',
+                    id: 'Blind',
+                    hi: 'ब्लाइंड्स',
+                    bn: 'ব্লাইন্ড',
+                  ),
                   value: table.stakes,
                   color: const Color(0xFFFFC857),
                 ),
               _buildDetailStatChip(
                 icon: Icons.event_seat,
-                label: 'Taken',
+                label: tr(
+                  context,
+                  'Taken',
+                  zhTw: '已坐',
+                  zhCn: '已坐',
+                  ko: '착석',
+                  ja: '着席',
+                  de: 'Besetzt',
+                  fr: 'Occupé',
+                  ar: 'مشغول',
+                  ru: 'Занято',
+                  trk: 'Dolu',
+                  es: 'Ocupado',
+                  it: 'Occupato',
+                  pl: 'Zajęte',
+                  pt: 'Ocupado',
+                  th: 'มีคนนั่ง',
+                  id: 'Terisi',
+                  hi: 'भरी हुई',
+                  bn: 'দখলকৃত',
+                ),
                 value: '$takenCount/${table.playerSeatCount}',
                 color: const Color(0xFFEF5350),
               ),
               _buildDetailStatChip(
                 icon: Icons.chair_alt_outlined,
-                label: 'Open',
+                label: tr(
+                  context,
+                  'Open',
+                  zhTw: '空位',
+                  zhCn: '空位',
+                  ko: '빈자리',
+                  ja: '空席',
+                  de: 'Frei',
+                  fr: 'Libre',
+                  ar: 'متاح',
+                  ru: 'Свободно',
+                  trk: 'Boş',
+                  es: 'Libre',
+                  it: 'Libero',
+                  pl: 'Wolne',
+                  pt: 'Livre',
+                  th: 'ว่าง',
+                  id: 'Kosong',
+                  hi: 'खाली',
+                  bn: 'খালি',
+                ),
                 value: '$openCount',
                 color: const Color(0xFF2E9E5B),
               ),
               _buildDetailStatChip(
                 icon: Icons.groups_2_outlined,
-                label: 'Waiting',
+                label: tr(
+                  context,
+                  'Waiting',
+                  zhTw: '等待',
+                  zhCn: '等待',
+                  ko: '대기',
+                  ja: '待機',
+                  de: 'Wartend',
+                  fr: 'En attente',
+                  ar: 'قائمة الانتظار',
+                  ru: 'Ожидание',
+                  trk: 'Bekleyen',
+                  es: 'Espera',
+                  it: 'Attesa',
+                  pl: 'Oczekujący',
+                  pt: 'Espera',
+                  th: 'รอ',
+                  id: 'Menunggu',
+                  hi: 'प्रतीक्षा',
+                  bn: 'অপেক্ষমাণ',
+                ),
                 value: '${table.waitingList.length}',
                 color: const Color(0xFF7E57C2),
               ),
@@ -11708,7 +22131,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.schedule, size: 16, color: Colors.white70),
+                  const Icon(
+                    Icons.schedule,
+                    size: 16,
+                    color: Colors.white70,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     _formatDateTime(table.dateTime),
@@ -11723,8 +22150,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on_outlined,
-                        size: 16, color: Colors.white70),
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 16,
+                      color: Colors.white70,
+                    ),
                     const SizedBox(width: 6),
                     Text(
                       table.location,
@@ -11738,13 +22168,56 @@ class _TableDetailPageState extends State<TableDetailPage> {
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.casino_outlined,
-                      size: 16, color: Colors.white70),
+                  const Icon(
+                    Icons.casino_outlined,
+                    size: 16,
+                    color: Colors.white70,
+                  ),
                   const SizedBox(width: 6),
                   Text(
                     table.dealerName?.trim().isNotEmpty == true
-                        ? 'Dealer: ${table.dealerName}'
-                        : 'Dealer: Not set',
+                        ? tr(
+                            context,
+                            'Dealer: ${table.dealerName}',
+                            zhTw: 'Dealer：${table.dealerName}',
+                            zhCn: 'Dealer：${table.dealerName}',
+                            ko: '딜러: ${table.dealerName}',
+                            ja: 'ディーラー：${table.dealerName}',
+                            de: 'Dealer: ${table.dealerName}',
+                            fr: 'Croupier : ${table.dealerName}',
+                            ar: 'الموزع: ${table.dealerName}',
+                            ru: 'Дилер: ${table.dealerName}',
+                            trk: 'Dağıtıcı: ${table.dealerName}',
+                            es: 'Dealer: ${table.dealerName}',
+                            it: 'Dealer: ${table.dealerName}',
+                            pl: 'Dealer: ${table.dealerName}',
+                            pt: 'Dealer: ${table.dealerName}',
+                            th: 'ดีลเลอร์: ${table.dealerName}',
+                            id: 'Dealer: ${table.dealerName}',
+                            hi: 'डीलर: ${table.dealerName}',
+                            bn: 'ডিলার: ${table.dealerName}',
+                          )
+                        : tr(
+                            context,
+                            'Dealer: Not set',
+                            zhTw: 'Dealer：未設定',
+                            zhCn: 'Dealer：未设置',
+                            ko: '딜러: 설정되지 않음',
+                            ja: 'ディーラー：未設定',
+                            de: 'Dealer: Nicht festgelegt',
+                            fr: 'Croupier : Non défini',
+                            ar: 'الموزع: غير محدد',
+                            ru: 'Дилер: Не задан',
+                            trk: 'Dağıtıcı: Ayarlanmadı',
+                            es: 'Dealer: No establecido',
+                            it: 'Dealer: Non impostato',
+                            pl: 'Dealer: Nie ustawiono',
+                            pt: 'Dealer: Não definido',
+                            th: 'ดีลเลอร์: ยังไม่ได้ตั้งค่า',
+                            id: 'Dealer: Belum diatur',
+                            hi: 'डीलर: सेट नहीं है',
+                            bn: 'ডিলার: সেট করা হয়নি',
+                          ),
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
@@ -11783,16 +22256,36 @@ class _TableDetailPageState extends State<TableDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.groups_2_outlined,
                   color: Colors.black87,
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Text(
-                  'Waiting List',
-                  style: TextStyle(
+                  tr(
+                    context,
+                    'Waiting List',
+                    zhTw: '等待名單',
+                    zhCn: '等待名单',
+                    ko: '대기 목록',
+                    ja: 'ウェイティングリスト',
+                    de: 'Warteliste',
+                    fr: 'Liste d’attente',
+                    ar: 'قائمة الانتظار',
+                    ru: 'Список ожидания',
+                    trk: 'Bekleme Listesi',
+                    es: 'Lista de espera',
+                    it: 'Lista d’attesa',
+                    pl: 'Lista oczekujących',
+                    pt: 'Lista de espera',
+                    th: 'รายชื่อรอ',
+                    id: 'Daftar tunggu',
+                    hi: 'प्रतीक्षा सूची',
+                    bn: 'অপেক্ষমাণ তালিকা',
+                  ),
+                  style: const TextStyle(
                     color: Colors.black87,
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
@@ -11802,9 +22295,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),
             const SizedBox(height: 12),
             if (table.waitingList.isEmpty)
-              const Text(
-                'Nobody is waiting yet.',
-                style: TextStyle(
+              Text(
+                tr(
+                  context,
+                  'Nobody is waiting yet.',
+                  zhTw: '目前還沒有人在等待。',
+                  zhCn: '目前还没有人在等待。',
+                  ko: '현재 대기 중인 사람이 없습니다.',
+                  ja: '現在待機中の人はいません。',
+                  de: 'Derzeit wartet niemand.',
+                  fr: 'Personne n’attend pour le moment.',
+                  ar: 'لا يوجد أحد في قائمة الانتظار حالياً.',
+                  ru: 'Сейчас никто не ожидает.',
+                  trk: 'Henüz bekleyen kimse yok.',
+                  es: 'Nadie está esperando todavía.',
+                  it: 'Nessuno è ancora in attesa.',
+                  pl: 'Nikt jeszcze nie czeka.',
+                  pt: 'Ninguém está esperando ainda.',
+                  th: 'ยังไม่มีใครรออยู่',
+                  id: 'Belum ada yang menunggu.',
+                  hi: 'अभी कोई प्रतीक्षा नहीं कर रहा है।',
+                  bn: 'এখনও কেউ অপেক্ষা করছে না।',
+                ),
+                style: const TextStyle(
                   color: Colors.black54,
                   fontWeight: FontWeight.w600,
                 ),
@@ -11814,7 +22327,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 children: List.generate(table.waitingList.length, (index) {
                   final entry =
                       Map<String, dynamic>.from(table.waitingList[index]);
+
                   final label = buildWaitingLabel(entry, index);
+
                   final arrived = entry['arrived'] == true;
 
                   return ListTile(
@@ -11827,7 +22342,49 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       ),
                     ),
                     subtitle: Text(
-                      arrived ? 'Arrived' : 'Unarrived',
+                      arrived
+                          ? tr(
+                              context,
+                              'Arrived',
+                              zhTw: '已到場',
+                              zhCn: '已到场',
+                              ko: '도착',
+                              ja: '到着済み',
+                              de: 'Angekommen',
+                              fr: 'Arrivé',
+                              ar: 'حاضر',
+                              ru: 'Прибыл',
+                              trk: 'Geldi',
+                              es: 'Llegó',
+                              it: 'Arrivato',
+                              pl: 'Przybył',
+                              pt: 'Chegou',
+                              th: 'มาถึงแล้ว',
+                              id: 'Sudah datang',
+                              hi: 'आ गया',
+                              bn: 'এসেছে',
+                            )
+                          : tr(
+                              context,
+                              'Unarrived',
+                              zhTw: '未到場',
+                              zhCn: '未到场',
+                              ko: '미도착',
+                              ja: '未到着',
+                              de: 'Nicht angekommen',
+                              fr: 'Non arrivé',
+                              ar: 'غير حاضر',
+                              ru: 'Не прибыл',
+                              trk: 'Gelmedi',
+                              es: 'No llegó',
+                              it: 'Non arrivato',
+                              pl: 'Nie przybył',
+                              pt: 'Não chegou',
+                              th: 'ยังไม่มา',
+                              id: 'Belum datang',
+                              hi: 'नहीं आया',
+                              bn: 'এখনও আসেনি',
+                            ),
                       style: const TextStyle(
                         fontSize: 12,
                         color: Colors.black54,
@@ -11857,8 +22414,48 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                       ),
                                       title: Text(
                                         arrived
-                                            ? 'Mark as unarrived'
-                                            : 'Mark as arrived',
+                                            ? tr(
+                                                context,
+                                                'Mark as unarrived',
+                                                zhTw: '標記為未到場',
+                                                zhCn: '标记为未到场',
+                                                ko: '미도착으로 표시',
+                                                ja: '未到着にする',
+                                                de: 'Als nicht angekommen markieren',
+                                                fr: 'Marquer comme non arrivé',
+                                                ar: 'تحديد كغير حاضر',
+                                                ru: 'Отметить как не прибывшего',
+                                                trk: 'Gelmedi olarak işaretle',
+                                                es: 'Marcar como no llegado',
+                                                it: 'Segna come non arrivato',
+                                                pl: 'Oznacz jako nieprzybyły',
+                                                pt: 'Marcar como não chegou',
+                                                th: 'ทำเครื่องหมายว่ายังไม่มา',
+                                                id: 'Tandai belum datang',
+                                                hi: 'नहीं पहुँचा के रूप में चिह्नित करें',
+                                                bn: 'না আসা হিসেবে চিহ্নিত করুন',
+                                              )
+                                            : tr(
+                                                context,
+                                                'Mark as arrived',
+                                                zhTw: '標記為已到場',
+                                                zhCn: '标记为已到场',
+                                                ko: '도착으로 표시',
+                                                ja: '到着済みにする',
+                                                de: 'Als angekommen markieren',
+                                                fr: 'Marquer comme arrivé',
+                                                ar: 'تحديد كحاضر',
+                                                ru: 'Отметить как прибывшего',
+                                                trk: 'Geldi olarak işaretle',
+                                                es: 'Marcar como llegado',
+                                                it: 'Segna come arrivato',
+                                                pl: 'Oznacz jako przybyły',
+                                                pt: 'Marcar como chegou',
+                                                th: 'ทำเครื่องหมายว่ามาถึงแล้ว',
+                                                id: 'Tandai sudah datang',
+                                                hi: 'पहुंच गया के रूप में चिह्नित करें',
+                                                bn: 'এসেছে হিসেবে চিহ্নিত করুন',
+                                              ),
                                         style: const TextStyle(
                                           color: Colors.black87,
                                         ),
@@ -11872,9 +22469,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                         Icons.drive_file_move_outline,
                                         color: Colors.black87,
                                       ),
-                                      title: const Text(
-                                        'Move / swap seat',
-                                        style: TextStyle(
+                                      title: Text(
+                                        tr(
+                                          context,
+                                          'Move / swap seat',
+                                          zhTw: '移動 / 交換座位',
+                                          zhCn: '移动 / 交换座位',
+                                          ko: '좌석 이동 / 교환',
+                                          ja: '席を移動 / 交換',
+                                          de: 'Sitz verschieben / tauschen',
+                                          fr: 'Déplacer / échanger le siège',
+                                          ar: 'نقل / تبديل المقعد',
+                                          ru: 'Переместить / обменять место',
+                                          trk: 'Koltuğu taşı / değiştir',
+                                          es: 'Mover / intercambiar asiento',
+                                          it: 'Sposta / scambia posto',
+                                          pl: 'Przenieś / zamień miejsce',
+                                          pt: 'Mover / trocar assento',
+                                          th: 'ย้าย / สลับที่นั่ง',
+                                          id: 'Pindah / Tukar kursi',
+                                          hi: 'सीट बदलें / स्वैप करें',
+                                          bn: 'সিট সরান / বদল করুন',
+                                        ),
+                                        style: const TextStyle(
                                           color: Colors.black87,
                                         ),
                                       ),
@@ -11889,8 +22506,48 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                       ),
                                       title: Text(
                                         canManageThisTable
-                                            ? 'Remove from waiting list'
-                                            : 'Leave waiting list',
+                                            ? tr(
+                                                context,
+                                                'Remove from waiting list',
+                                                zhTw: '從等待名單移除',
+                                                zhCn: '从等待名单移除',
+                                                ko: '대기 목록에서 제거',
+                                                ja: 'ウェイティングリストから削除',
+                                                de: 'Von der Warteliste entfernen',
+                                                fr: 'Retirer de la liste d’attente',
+                                                ar: 'إزالة من قائمة الانتظار',
+                                                ru: 'Удалить из списка ожидания',
+                                                trk: 'Bekleme listesinden kaldır',
+                                                es: 'Eliminar de la lista de espera',
+                                                it: 'Rimuovi dalla lista d’attesa',
+                                                pl: 'Usuń z listy oczekujących',
+                                                pt: 'Remover da lista de espera',
+                                                th: 'นำออกจากรายชื่อรอ',
+                                                id: 'Hapus dari daftar tunggu',
+                                                hi: 'प्रतीक्षा सूची से हटाएँ',
+                                                bn: 'অপেক্ষমাণ তালিকা থেকে সরান',
+                                              )
+                                            : tr(
+                                                context,
+                                                'Leave waiting list',
+                                                zhTw: '離開等待名單',
+                                                zhCn: '离开等待名单',
+                                                ko: '대기 목록 나가기',
+                                                ja: 'ウェイティングリストを離れる',
+                                                de: 'Warteliste verlassen',
+                                                fr: 'Quitter la liste d’attente',
+                                                ar: 'مغادرة قائمة الانتظار',
+                                                ru: 'Покинуть список ожидания',
+                                                trk: 'Bekleme listesinden ayrıl',
+                                                es: 'Salir de la lista de espera',
+                                                it: 'Lascia la lista d’attesa',
+                                                pl: 'Opuść listę oczekujących',
+                                                pt: 'Sair da lista de espera',
+                                                th: 'ออกจากรายชื่อรอ',
+                                                id: 'Keluar dari daftar tunggu',
+                                                hi: 'प्रतीक्षा सूची छोड़ें',
+                                                bn: 'অপেক্ষমাণ তালিকা ত্যাগ করুন',
+                                              ),
                                         style: const TextStyle(
                                           color: Colors.black87,
                                         ),
@@ -11903,9 +22560,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                       Icons.close,
                                       color: Colors.black87,
                                     ),
-                                    title: const Text(
-                                      'Cancel',
-                                      style: TextStyle(
+                                    title: Text(
+                                      tr(
+                                        context,
+                                        'Cancel',
+                                        zhTw: '取消',
+                                        zhCn: '取消',
+                                        ko: '취소',
+                                        ja: 'キャンセル',
+                                        de: 'Abbrechen',
+                                        fr: 'Annuler',
+                                        ar: 'إلغاء',
+                                        ru: 'Отмена',
+                                        trk: 'İptal',
+                                        es: 'Cancelar',
+                                        it: 'Annulla',
+                                        pl: 'Anuluj',
+                                        pt: 'Cancelar',
+                                        th: 'ยกเลิก',
+                                        id: 'Batal',
+                                        hi: 'रद्द करें',
+                                        bn: 'বাতিল',
+                                      ),
+                                      style: const TextStyle(
                                         color: Colors.black87,
                                       ),
                                     ),
@@ -11919,7 +22596,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         },
                       );
 
-                      if (!mounted || action == null || action == 'cancel') {
+                      if (!mounted ||
+                          action == null ||
+                          action == 'cancel') {
                         return;
                       }
 
@@ -11931,10 +22610,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       if (action == 'move') {
                         final targetSeatIndex =
                             await _showPickOpenSeatDialog();
+
                         if (!mounted) return;
                         if (targetSeatIndex == null) return;
 
-                        await _moveWaitingToSeat(index, targetSeatIndex);
+                        await _moveWaitingToSeat(
+                          index,
+                          targetSeatIndex,
+                        );
+
                         return;
                       }
 
@@ -11991,8 +22675,48 @@ class _TableDetailPageState extends State<TableDetailPage> {
               icon: const Icon(Icons.playlist_add),
               label: Text(
                 isAlreadySeated
-                    ? 'Already seated'
-                    : 'Add myself to waiting list',
+                    ? tr(
+                        context,
+                        'Already seated',
+                        zhTw: '已經入座',
+                        zhCn: '已经入座',
+                        ko: '이미 착석함',
+                        ja: 'すでに着席済み',
+                        de: 'Bereits sitzend',
+                        fr: 'Déjà assis',
+                        ar: 'جالس بالفعل',
+                        ru: 'Уже сидит',
+                        trk: 'Zaten oturuyor',
+                        es: 'Ya sentado',
+                        it: 'Già seduto',
+                        pl: 'Już siedzi',
+                        pt: 'Já sentado',
+                        th: 'นั่งอยู่แล้ว',
+                        id: 'Sudah duduk',
+                        hi: 'पहले से बैठे हैं',
+                        bn: 'ইতিমধ্যেই বসে আছেন',
+                      )
+                    : tr(
+                        context,
+                        'Add myself to waiting list',
+                        zhTw: '將自己加入等待名單',
+                        zhCn: '将自己加入等待名单',
+                        ko: '대기 명단에 나 추가',
+                        ja: '自分をウェイティングリストに追加',
+                        de: 'Mich zur Warteliste hinzufügen',
+                        fr: 'M’ajouter à la liste d’attente',
+                        ar: 'إضافتي إلى قائمة الانتظار',
+                        ru: 'Добавить себя в список ожидания',
+                        trk: 'Kendimi bekleme listesine ekle',
+                        es: 'Agregarme a la lista de espera',
+                        it: 'Aggiungimi alla lista d’attesa',
+                        pl: 'Dodaj mnie do listy oczekujących',
+                        pt: 'Adicionar-me à lista de espera',
+                        th: 'เพิ่มตัวเองในรายชื่อรอ',
+                        id: 'Tambahkan saya ke daftar tunggu',
+                        hi: 'मुझे प्रतीक्षा सूची में जोड़ें',
+                        bn: 'নিজেকে অপেক্ষমাণ তালিকায় যোগ করুন',
+                      ),
               ),
             ),
 
@@ -12009,14 +22733,58 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 }
               },
               icon: const Icon(Icons.playlist_remove),
-              label: const Text('Leave Waiting'),
+              label: Text(
+                tr(
+                  context,
+                  'Leave Waiting',
+                  zhTw: '離開等待',
+                  zhCn: '离开等待',
+                  ko: '대기 나가기',
+                  ja: '待機をやめる',
+                  de: 'Warten verlassen',
+                  fr: 'Quitter l’attente',
+                  ar: 'مغادرة الانتظار',
+                  ru: 'Покинуть ожидание',
+                  trk: 'Beklemeden çık',
+                  es: 'Salir de espera',
+                  it: 'Lascia attesa',
+                  pl: 'Opuść oczekiwanie',
+                  pt: 'Sair da espera',
+                  th: 'ออกจากการรอ',
+                  id: 'Keluar dari antrean',
+                  hi: 'प्रतीक्षा छोड़ें',
+                  bn: 'অপেক্ষা ছাড়ুন',
+                ),
+              ),
             ),
 
           if (canManageThisTable)
             FilledButton.icon(
               onPressed: _showAddPlayerToWaitingListSheet,
               icon: const Icon(Icons.person_add_alt_1),
-              label: const Text('Add Player'),
+              label: Text(
+                tr(
+                  context,
+                  'Add Player',
+                  zhTw: '新增玩家',
+                  zhCn: '新增玩家',
+                  ko: '플레이어 추가',
+                  ja: 'プレイヤーを追加',
+                  de: 'Spieler hinzufügen',
+                  fr: 'Ajouter un joueur',
+                  ar: 'إضافة لاعب',
+                  ru: 'Добавить игрока',
+                  trk: 'Oyuncu ekle',
+                  es: 'Agregar jugador',
+                  it: 'Aggiungi giocatore',
+                  pl: 'Dodaj gracza',
+                  pt: 'Adicionar jogador',
+                  th: 'เพิ่มผู้เล่น',
+                  id: 'Tambah pemain',
+                  hi: 'खिलाड़ी जोड़ें',
+                  bn: 'খেলোয়াড় যোগ করুন',
+                ),
+              ),
             ),
         ],
       ),
@@ -12033,12 +22801,56 @@ class _TableDetailPageState extends State<TableDetailPage> {
             children: [
               ListTile(
                 leading: const Icon(Icons.search),
-                title: const Text('Select player'),
+                title: Text(
+                  tr(
+                    context,
+                    'Select player',
+                    zhTw: '選擇玩家',
+                    zhCn: '选择玩家',
+                    ko: '플레이어 선택',
+                    ja: 'プレイヤーを選択',
+                    de: 'Spieler auswählen',
+                    fr: 'Sélectionner un joueur',
+                    ar: 'اختيار لاعب',
+                    ru: 'Выбрать игрока',
+                    trk: 'Oyuncu seç',
+                    es: 'Seleccionar jugador',
+                    it: 'Seleziona giocatore',
+                    pl: 'Wybierz gracza',
+                    pt: 'Selecionar jogador',
+                    th: 'เลือกผู้เล่น',
+                    id: 'Pilih pemain',
+                    hi: 'खिलाड़ी चुनें',
+                    bn: 'খেলোয়াড় নির্বাচন করুন',
+                  ),
+                ),
                 onTap: () => Navigator.pop(context, 'select_player'),
               ),
               ListTile(
                 leading: const Icon(Icons.person_add_alt_1),
-                title: const Text('Add guest'),
+                title: Text(
+                  tr(
+                    context,
+                    'Add guest',
+                    zhTw: '新增訪客',
+                    zhCn: '新增访客',
+                    ko: '게스트 추가',
+                    ja: 'ゲストを追加',
+                    de: 'Gast hinzufügen',
+                    fr: 'Ajouter un invité',
+                    ar: 'إضافة ضيف',
+                    ru: 'Добавить гостя',
+                    trk: 'Misafir ekle',
+                    es: 'Agregar invitado',
+                    it: 'Aggiungi ospite',
+                    pl: 'Dodaj gościa',
+                    pt: 'Adicionar convidado',
+                    th: 'เพิ่มแขก',
+                    id: 'Tambah tamu',
+                    hi: 'मेहमान जोड़ें',
+                    bn: 'অতিথি যোগ করুন',
+                  ),
+                ),
                 onTap: () => Navigator.pop(context, 'add_guest'),
               ),
             ],
@@ -12085,7 +22897,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         (selectedPlayer['playerId'] ?? '').toString().trim();
   
     if (selectedName.isEmpty) {
-      _showSnack('Invalid player');
+      _showSnack(
+        tr(
+          context,
+          'Invalid player',
+          zhTw: '無效玩家',
+          zhCn: '无效玩家',
+          ko: '잘못된 플레이어입니다',
+          ja: '無効なプレイヤーです',
+          de: 'Ungültiger Spieler',
+          fr: 'Joueur invalide',
+          ar: 'لاعب غير صالح',
+          ru: 'Недопустимый игрок',
+          trk: 'Geçersiz oyuncu',
+          es: 'Jugador inválido',
+          it: 'Giocatore non valido',
+          pl: 'Nieprawidłowy gracz',
+          pt: 'Jogador inválido',
+          th: 'ผู้เล่นไม่ถูกต้อง',
+          id: 'Pemain tidak valid',
+          hi: 'अमान्य खिलाड़ी',
+          bn: 'অকার্যকর খেলোয়াড়',
+        ),
+      );
       return;
     }
 
@@ -12111,7 +22945,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
 
         if (alreadySeated) {
-          _txFail('This player is already seated');
+          _txFail(
+            tr(
+              context,
+              'This player is already seated',
+              zhTw: '這位玩家已經入座',
+              zhCn: '这位玩家已经入座',
+              ko: '이 플레이어는 이미 착석했습니다',
+              ja: 'このプレイヤーはすでに着席しています',
+              de: 'Dieser Spieler sitzt bereits am Tisch',
+              fr: 'Ce joueur est déjà assis',
+              ar: 'هذا اللاعب يجلس بالفعل',
+              ru: 'Этот игрок уже сидит за столом',
+              trk: 'Bu oyuncu zaten oturuyor',
+              es: 'Este jugador ya está sentado',
+              it: 'Questo giocatore è già seduto',
+              pl: 'Ten gracz już siedzi przy stole',
+              pt: 'Este jogador já está sentado',
+              th: 'ผู้เล่นนี้นั่งอยู่แล้ว',
+              id: 'Pemain ini sudah duduk',
+              hi: 'यह खिलाड़ी पहले से बैठा हुआ है',
+              bn: 'এই খেলোয়াড় ইতিমধ্যেই বসে আছে',
+            ),
+          );
         }
 
         final alreadyWaiting = waitingList.any((entry) {
@@ -12129,7 +22985,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
         });
 
         if (alreadyWaiting) {
-          _txFail('This player is already in waiting list');
+          _txFail(
+            tr(
+              context,
+              'This player is already in waiting list',
+              zhTw: '這位玩家已經在等待名單中',
+              zhCn: '这位玩家已经在等待名单中',
+              ko: '이 플레이어는 이미 대기 명단에 있습니다',
+              ja: 'このプレイヤーはすでにウェイティングリストにいます',
+              de: 'Dieser Spieler ist bereits auf der Warteliste',
+              fr: 'Ce joueur est déjà dans la liste d’attente',
+              ar: 'هذا اللاعب موجود بالفعل في قائمة الانتظار',
+              ru: 'Этот игрок уже в списке ожидания',
+              trk: 'Bu oyuncu zaten bekleme listesinde',
+              es: 'Este jugador ya está en la lista de espera',
+              it: 'Questo giocatore è già nella lista d’attesa',
+              pl: 'Ten gracz jest już na liście oczekujących',
+              pt: 'Este jogador já está na lista de espera',
+              th: 'ผู้เล่นนี้อยู่ในรายชื่อรอแล้ว',
+              id: 'Pemain ini sudah ada di daftar tunggu',
+              hi: 'यह खिलाड़ी पहले से प्रतीक्षा सूची में है',
+              bn: 'এই খেলোয়াড় ইতিমধ্যেই অপেক্ষমাণ তালিকায় আছে',
+            ),
+          );
         }
 
         waitingList.add({
@@ -12148,7 +23026,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
       });
 
       if (!mounted) return;
-      _showSnack('Player added to waiting list');
+
+      _showSnack(
+        tr(
+          context,
+          'Player added to waiting list',
+          zhTw: '玩家已加入等待名單',
+          zhCn: '玩家已加入等待名单',
+          ko: '플레이어가 대기 명단에 추가되었습니다',
+          ja: 'プレイヤーをウェイティングリストに追加しました',
+          de: 'Spieler zur Warteliste hinzugefügt',
+          fr: 'Joueur ajouté à la liste d’attente',
+          ar: 'تمت إضافة اللاعب إلى قائمة الانتظار',
+          ru: 'Игрок добавлен в список ожидания',
+          trk: 'Oyuncu bekleme listesine eklendi',
+          es: 'Jugador agregado a la lista de espera',
+          it: 'Giocatore aggiunto alla lista d’attesa',
+          pl: 'Gracz dodany do listy oczekujących',
+          pt: 'Jogador adicionado à lista de espera',
+          th: 'เพิ่มผู้เล่นในรายชื่อรอแล้ว',
+          id: 'Pemain ditambahkan ke daftar tunggu',
+          hi: 'खिलाड़ी को प्रतीक्षा सूची में जोड़ा गया',
+          bn: 'খেলোয়াড়কে অপেক্ষমাণ তালিকায় যোগ করা হয়েছে',
+        ),
+      );
 
       if (selectedUid.isNotEmpty) {
         await FirebaseFirestore.instance
@@ -12172,18 +23073,59 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final hasDealer =
         table.dealerName != null && table.dealerName!.trim().isNotEmpty;
 
-    final dealerText =
-        hasDealer ? 'Dealer: ${table.dealerName!.trim()}' : 'Dealer: ???';
+    final dealerText = hasDealer
+        ? tr(
+            context,
+            'Dealer: ${table.dealerName!.trim()}',
+            zhTw: 'Dealer：${table.dealerName!.trim()}',
+            zhCn: 'Dealer：${table.dealerName!.trim()}',
+            ko: '딜러: ${table.dealerName!.trim()}',
+            ja: 'ディーラー：${table.dealerName!.trim()}',
+            de: 'Dealer: ${table.dealerName!.trim()}',
+            fr: 'Croupier : ${table.dealerName!.trim()}',
+            ar: 'الموزع: ${table.dealerName!.trim()}',
+            ru: 'Дилер: ${table.dealerName!.trim()}',
+            trk: 'Dağıtıcı: ${table.dealerName!.trim()}',
+            es: 'Dealer: ${table.dealerName!.trim()}',
+            it: 'Dealer: ${table.dealerName!.trim()}',
+            pl: 'Dealer: ${table.dealerName!.trim()}',
+            pt: 'Dealer: ${table.dealerName!.trim()}',
+            th: 'ดีลเลอร์: ${table.dealerName!.trim()}',
+            id: 'Dealer: ${table.dealerName!.trim()}',
+            hi: 'डीलर: ${table.dealerName!.trim()}',
+            bn: 'ডিলার: ${table.dealerName!.trim()}',
+          )
+        : tr(
+            context,
+            'Dealer: ???',
+            zhTw: 'Dealer：???',
+            zhCn: 'Dealer：???',
+            ko: '딜러: ???',
+            ja: 'ディーラー：???',
+            de: 'Dealer: ???',
+            fr: 'Croupier : ???',
+            ar: 'الموزع: ???',
+            ru: 'Дилер: ???',
+            trk: 'Dağıtıcı: ???',
+            es: 'Dealer: ???',
+            it: 'Dealer: ???',
+            pl: 'Dealer: ???',
+            pt: 'Dealer: ???',
+            th: 'ดีลเลอร์: ???',
+            id: 'Dealer: ???',
+            hi: 'डीलर: ???',
+            bn: 'ডিলার: ???',
+          );
 
-  final double cardWidth = isMobile ? 130 : 132;
-  final double horizontalPadding = isMobile ? 14 : 12;
-  final double verticalPadding = isMobile ? 14 : 14;
-  final double avatarRadius = isMobile ? 24 : 20;
-  final double avatarFontSize = isMobile ? 22 : 20;
-  final double titleFontSize = isMobile ? 13 : 12.5;
-  final double subFontSize = isMobile ? 11 : 11.5;
-  final double gap1 = isMobile ? 8 : 8;
-  final double gap2 = isMobile ? 6 : 6;
+    final double cardWidth = isMobile ? 130 : 132;
+    final double horizontalPadding = isMobile ? 14 : 12;
+    final double verticalPadding = isMobile ? 14 : 14;
+    final double avatarRadius = isMobile ? 24 : 20;
+    final double avatarFontSize = isMobile ? 22 : 20;
+    final double titleFontSize = isMobile ? 13 : 12.5;
+    final double subFontSize = isMobile ? 11 : 11.5;
+    final double gap1 = isMobile ? 8 : 8;
+    final double gap2 = isMobile ? 6 : 6;
   
     return InkWell(
       borderRadius: BorderRadius.circular(24),
@@ -12240,8 +23182,70 @@ class _TableDetailPageState extends State<TableDetailPage> {
             SizedBox(height: gap2),
             Text(
               canManageThisTable
-                  ? (hasDealer ? 'Change Dealer Name' : 'Set Dealer')
-                  : 'Dealer Seat',
+                  ? hasDealer
+                      ? tr(
+                          context,
+                          'Change Dealer Name',
+                          zhTw: '更改荷官名稱',
+                          zhCn: '更改荷官名称',
+                          ko: '딜러 이름 변경',
+                          ja: 'ディーラー名を変更',
+                          de: 'Dealernamen ändern',
+                          fr: 'Modifier le nom du donneur',
+                          ar: 'تغيير اسم الموزع',
+                          ru: 'Изменить имя дилера',
+                          trk: 'Dağıtıcı adını değiştir',
+                          es: 'Cambiar nombre del dealer',
+                          it: 'Cambia nome dealer',
+                          pl: 'Zmień nazwę dealera',
+                          pt: 'Alterar nome do dealer',
+                          th: 'เปลี่ยนชื่อดีลเลอร์',
+                          id: 'Ubah nama dealer',
+                          hi: 'डीलर का नाम बदलें',
+                          bn: 'ডিলারের নাম পরিবর্তন করুন',
+                        )
+                      : tr(
+                          context,
+                          'Set Dealer',
+                          zhTw: '設定荷官',
+                          zhCn: '设置荷官',
+                          ko: '딜러 설정',
+                          ja: 'ディーラーを設定',
+                          de: 'Dealer festlegen',
+                          fr: 'Définir le donneur',
+                          ar: 'تعيين الموزع',
+                          ru: 'Установить дилера',
+                          trk: 'Dağıtıcı ayarla',
+                          es: 'Configurar dealer',
+                          it: 'Imposta dealer',
+                          pl: 'Ustaw dealera',
+                          pt: 'Definir dealer',
+                          th: 'ตั้งดีลเลอร์',
+                          id: 'Atur dealer',
+                          hi: 'डीलर सेट करें',
+                          bn: 'ডিলার সেট করুন',
+                        )
+                  : tr(
+                      context,
+                      'Dealer Seat',
+                      zhTw: '荷官座位',
+                      zhCn: '荷官座位',
+                      ko: '딜러 좌석',
+                      ja: 'ディーラー席',
+                      de: 'Dealersitz',
+                      fr: 'Siège du donneur',
+                      ar: 'مقعد الموزع',
+                      ru: 'Место дилера',
+                      trk: 'Dağıtıcı koltuğu',
+                      es: 'Asiento del dealer',
+                      it: 'Posto dealer',
+                      pl: 'Miejsce dealera',
+                      pt: 'Assento do dealer',
+                      th: 'ที่นั่งดีลเลอร์',
+                      id: 'Kursi dealer',
+                      hi: 'डीलर सीट',
+                      bn: 'ডিলার সিট',
+                    ),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: subFontSize,
@@ -12463,9 +23467,75 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final uid = (entry['uid'] ?? '').toString().trim();
     final playerId = (entry['playerId'] ?? '').toString().trim();
   
-    if (uid.isNotEmpty) return 'Player';
-    if (playerId.isNotEmpty) return 'Known Player';
-    return 'Guest';
+    if (uid.isNotEmpty) {
+      return tr(
+        context,
+        'Player',
+        zhTw: '玩家',
+        zhCn: '玩家',
+        ko: '플레이어',
+        ja: 'プレイヤー',
+        de: 'Spieler',
+        fr: 'Joueur',
+        ar: 'لاعب',
+        ru: 'Игрок',
+        trk: 'Oyuncu',
+        es: 'Jugador',
+        it: 'Giocatore',
+        pl: 'Gracz',
+        pt: 'Jogador',
+        th: 'ผู้เล่น',
+        id: 'Pemain',
+        hi: 'खिलाड़ी',
+        bn: 'খেলোয়াড়',
+      );
+    }
+
+    if (playerId.isNotEmpty) {
+      return tr(
+        context,
+        'Known Player',
+        zhTw: '已知玩家',
+        zhCn: '已知玩家',
+        ko: '등록된 플레이어',
+        ja: '登録済みプレイヤー',
+        de: 'Bekannter Spieler',
+        fr: 'Joueur connu',
+        ar: 'لاعب معروف',
+        ru: 'Известный игрок',
+        trk: 'Bilinen Oyuncu',
+        es: 'Jugador conocido',
+        it: 'Giocatore conosciuto',
+        pl: 'Znany gracz',
+        pt: 'Jogador conhecido',
+        th: 'ผู้เล่นที่รู้จัก',
+        id: 'Pemain dikenal',
+        hi: 'ज्ञात खिलाड़ी',
+        bn: 'পরিচিত খেলোয়াড়',
+      );
+    }
+
+    return tr(
+      context,
+      'Guest',
+      zhTw: '訪客',
+      zhCn: '访客',
+      ko: '게스트',
+      ja: 'ゲスト',
+      de: 'Gast',
+      fr: 'Invité',
+      ar: 'ضيف',
+      ru: 'Гость',
+      trk: 'Misafir',
+      es: 'Invitado',
+      it: 'Ospite',
+      pl: 'Gość',
+      pt: 'Convidado',
+      th: 'แขก',
+      id: 'Tamu',
+      hi: 'मेहमान',
+      bn: 'অতিথি',
+    );
   }
 
   bool _hasDuplicateFirstName(TableData table, String targetName) {
@@ -12482,6 +23552,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
   
       final occupiedBase =
           playerShortName.isNotEmpty ? playerShortName : playerName;
+
       final reservedBase =
           reservedShortName.isNotEmpty ? reservedShortName : reservedName;
   
@@ -12563,7 +23634,27 @@ class _TableDetailPageState extends State<TableDetailPage> {
     required int seatIndex,
   }) {
     if (displayName.trim().isEmpty) {
-      return 'Open Seat';
+      return tr(
+        context,
+        'Open Seat',
+        zhTw: '空位',
+        zhCn: '空位',
+        ko: '빈자리',
+        ja: '空席',
+        de: 'Freier Sitz',
+        fr: 'Siège libre',
+        ar: 'مقعد فارغ',
+        ru: 'Свободное место',
+        trk: 'Boş Koltuk',
+        es: 'Asiento libre',
+        it: 'Posto libero',
+        pl: 'Wolne miejsce',
+        pt: 'Assento livre',
+        th: 'ที่นั่งว่าง',
+        id: 'Kursi kosong',
+        hi: 'खाली सीट',
+        bn: 'খালি সিট',
+      );
     }
 
     return displayName;
@@ -12819,7 +23910,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          table.stakes.isNotEmpty ? table.stakes : 'Cash Game',
+                          table.stakes.isNotEmpty
+                              ? table.stakes
+                              : tr(
+                                  context,
+                                  'Cash Game',
+                                  zhTw: '現金局',
+                                  zhCn: '现金局',
+                                  ko: '캐시 게임',
+                                  ja: 'キャッシュゲーム',
+                                  de: 'Cash Game',
+                                  fr: 'Cash Game',
+                                  ar: 'لعبة نقدية',
+                                  ru: 'Кэш-игра',
+                                  trk: 'Nakit Oyun',
+                                  es: 'Partida cash',
+                                  it: 'Cash game',
+                                  pl: 'Gra cashowa',
+                                  pt: 'Cash game',
+                                  th: 'เกมเงินสด',
+                                  id: 'Cash Game',
+                                  hi: 'कैश गेम',
+                                  bn: 'ক্যাশ গেম',
+                                ),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white70,
@@ -12995,7 +24108,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              isOpen ? 'Open Seat' : displayName,
+              isOpen
+                  ? tr(
+                      context,
+                      'Open Seat',
+                      zhTw: '空位',
+                      zhCn: '空位',
+                      ko: '빈자리',
+                      ja: '空席',
+                      de: 'Freier Sitz',
+                      fr: 'Siège libre',
+                      ar: 'مقعد فارغ',
+                      ru: 'Свободное место',
+                      trk: 'Boş Koltuk',
+                      es: 'Asiento libre',
+                      it: 'Posto libero',
+                      pl: 'Wolne miejsce',
+                      pt: 'Assento livre',
+                      th: 'ที่นั่งว่าง',
+                      id: 'Kursi kosong',
+                      hi: 'खाली सीट',
+                      bn: 'খালি সিট',
+                    )
+                  : displayName,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -13019,12 +24154,94 @@ class _TableDetailPageState extends State<TableDetailPage> {
               const SizedBox(height: 4),
               Text(
                 isMine
-                    ? ((seat.arrived == true) ? 'Arrived' : 'Unarrived')
+                    ? ((seat.arrived == true)
+                        ? tr(
+                            context,
+                            'Arrived',
+                            zhTw: '已到場',
+                            zhCn: '已到场',
+                            ko: '도착',
+                            ja: '到着済み',
+                            de: 'Angekommen',
+                            fr: 'Arrivé',
+                            ar: 'حاضر',
+                            ru: 'Прибыл',
+                            trk: 'Geldi',
+                            es: 'Llegó',
+                            it: 'Arrivato',
+                            pl: 'Przybył',
+                            pt: 'Chegou',
+                            th: 'มาถึงแล้ว',
+                            id: 'Sudah datang',
+                            hi: 'आ गया',
+                            bn: 'এসেছে',
+                          )
+                        : tr(
+                            context,
+                            'Unarrived',
+                            zhTw: '未到場',
+                            zhCn: '未到场',
+                            ko: '미도착',
+                            ja: '未到着',
+                            de: 'Nicht angekommen',
+                            fr: 'Non arrivé',
+                            ar: 'غير حاضر',
+                            ru: 'Не прибыл',
+                            trk: 'Gelmedi',
+                            es: 'No llegó',
+                            it: 'Non arrivato',
+                            pl: 'Nie przybył',
+                            pt: 'Não chegou',
+                            th: 'ยังไม่มา',
+                            id: 'Belum datang',
+                            hi: 'नहीं आया',
+                            bn: 'এখনও আসেনি',
+                          ))
                     : ((isReserved
                             ? (seat.reservedArrived == true)
                             : (seat.arrived == true))
-                        ? 'Arrived'
-                        : 'Unarrived'),
+                        ? tr(
+                            context,
+                            'Arrived',
+                            zhTw: '已到場',
+                            zhCn: '已到场',
+                            ko: '도착',
+                            ja: '到着済み',
+                            de: 'Angekommen',
+                            fr: 'Arrivé',
+                            ar: 'حاضر',
+                            ru: 'Прибыл',
+                            trk: 'Geldi',
+                            es: 'Llegó',
+                            it: 'Arrivato',
+                            pl: 'Przybył',
+                            pt: 'Chegou',
+                            th: 'มาถึงแล้ว',
+                            id: 'Sudah datang',
+                            hi: 'आ गया',
+                            bn: 'এসেছে',
+                          )
+                        : tr(
+                            context,
+                            'Unarrived',
+                            zhTw: '未到場',
+                            zhCn: '未到场',
+                            ko: '미도착',
+                            ja: '未到着',
+                            de: 'Nicht angekommen',
+                            fr: 'Non arrivé',
+                            ar: 'غير حاضر',
+                            ru: 'Не прибыл',
+                            trk: 'Gelmedi',
+                            es: 'No llegó',
+                            it: 'Non arrivato',
+                            pl: 'Nie przybył',
+                            pt: 'Não chegou',
+                            th: 'ยังไม่มา',
+                            id: 'Belum datang',
+                            hi: 'नहीं आया',
+                            bn: 'এখনও আসেনি',
+                          )),
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 11,
@@ -13121,25 +24338,133 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
   Future<void> _endGame() async {
     if (!canManageThisTable) {
-      _showSnack('Only the table creator can end this game');
+      _showSnack(
+        tr(
+          context,
+          'Only the table creator can end this game',
+          zhTw: '只有牌桌建立者可以結束這場遊戲',
+          zhCn: '只有牌桌创建者可以结束这场游戏',
+          ko: '테이블 생성자만 이 게임을 종료할 수 있습니다',
+          ja: 'テーブル作成者のみこのゲームを終了できます',
+          de: 'Nur der Tischersteller kann dieses Spiel beenden',
+          fr: 'Seul le créateur de la table peut terminer cette partie',
+          ar: 'فقط منشئ الطاولة يمكنه إنهاء هذه اللعبة',
+          ru: 'Только создатель стола может завершить эту игру',
+          trk: 'Bu oyunu yalnızca masa sahibi bitirebilir',
+          es: 'Solo el creador de la mesa puede terminar este juego',
+          it: 'Solo il creatore del tavolo può terminare questa partita',
+          pl: 'Tylko twórca stołu może zakończyć tę grę',
+          pt: 'Somente o criador da mesa pode encerrar este jogo',
+          th: 'เฉพาะผู้สร้างโต๊ะเท่านั้นที่สามารถจบเกมนี้ได้',
+          id: 'Hanya pembuat meja yang dapat mengakhiri permainan ini',
+          hi: 'केवल टेबल बनाने वाला ही इस गेम को समाप्त कर सकता है',
+          bn: 'শুধুমাত্র টেবিল নির্মাতাই এই গেম শেষ করতে পারে',
+        ),
+      );
       return;
     }
   
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('End Game'),
-        content: const Text(
-          'This will delete this table and return to Table List.\n\nDo you want to continue?',
+        title: Text(
+          tr(
+            context,
+            'End Game',
+            zhTw: '結束遊戲',
+            zhCn: '结束游戏',
+            ko: '게임 종료',
+            ja: 'ゲーム終了',
+            de: 'Spiel beenden',
+            fr: 'Terminer la partie',
+            ar: 'إنهاء اللعبة',
+            ru: 'Завершить игру',
+            trk: 'Oyunu Bitir',
+            es: 'Terminar juego',
+            it: 'Termina partita',
+            pl: 'Zakończ grę',
+            pt: 'Encerrar jogo',
+            th: 'จบเกม',
+            id: 'Akhiri Permainan',
+            hi: 'गेम समाप्त करें',
+            bn: 'গেম শেষ করুন',
+          ),
+        ),
+        content: Text(
+          tr(
+            context,
+            'This will delete this table and return to Table List.\n\nDo you want to continue?',
+            zhTw: '這會刪除此牌桌並返回牌桌列表。\n\n你要繼續嗎？',
+            zhCn: '这会删除此牌桌并返回牌桌列表。\n\n你要继续吗？',
+            ko: '이 테이블이 삭제되고 테이블 목록으로 돌아갑니다.\n\n계속하시겠습니까?',
+            ja: 'このテーブルを削除してテーブル一覧に戻ります。\n\n続行しますか？',
+            de: 'Dieser Tisch wird gelöscht und du kehrst zur Tischliste zurück.\n\nMöchtest du fortfahren?',
+            fr: 'Cette table sera supprimée et vous retournerez à la liste des tables.\n\nVoulez-vous continuer ?',
+            ar: 'سيتم حذف هذه الطاولة والعودة إلى قائمة الطاولات.\n\nهل تريد المتابعة؟',
+            ru: 'Этот стол будет удален, и вы вернетесь к списку столов.\n\nПродолжить?',
+            trk: 'Bu masa silinecek ve Masa Listesine dönülecek.\n\nDevam etmek istiyor musunuz?',
+            es: 'Esto eliminará esta mesa y volverá a la lista de mesas.\n\n¿Quieres continuar?',
+            it: 'Questo tavolo verrà eliminato e tornerai alla lista dei tavoli.\n\nVuoi continuare?',
+            pl: 'Ten stół zostanie usunięty i wrócisz do listy stołów.\n\nCzy chcesz kontynuować?',
+            pt: 'Esta mesa será excluída e você voltará para a lista de mesas.\n\nDeseja continuar?',
+            th: 'การดำเนินการนี้จะลบโต๊ะนี้และกลับไปยังรายการโต๊ะ\n\nคุณต้องการดำเนินการต่อหรือไม่?',
+            id: 'Ini akan menghapus meja ini dan kembali ke Daftar Meja.\n\nApakah Anda ingin melanjutkan?',
+            hi: 'यह इस टेबल को हटा देगा और टेबल सूची पर वापस जाएगा।\n\nक्या आप जारी रखना चाहते हैं?',
+            bn: 'এটি এই টেবিল মুছে ফেলবে এবং টেবিল তালিকায় ফিরে যাবে।\n\nআপনি কি চালিয়ে যেতে চান?',
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(
+              tr(
+                context,
+                'Cancel',
+                zhTw: '取消',
+                zhCn: '取消',
+                ko: '취소',
+                ja: 'キャンセル',
+                de: 'Abbrechen',
+                fr: 'Annuler',
+                ar: 'إلغاء',
+                ru: 'Отмена',
+                trk: 'İptal',
+                es: 'Cancelar',
+                it: 'Annulla',
+                pl: 'Anuluj',
+                pt: 'Cancelar',
+                th: 'ยกเลิก',
+                id: 'Batal',
+                hi: 'रद्द करें',
+                bn: 'বাতিল',
+              ),
+            ),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('End Game'),
+            child: Text(
+              tr(
+                context,
+                'End Game',
+                zhTw: '結束遊戲',
+                zhCn: '结束游戏',
+                ko: '게임 종료',
+                ja: 'ゲーム終了',
+                de: 'Spiel beenden',
+                fr: 'Terminer la partie',
+                ar: 'إنهاء اللعبة',
+                ru: 'Завершить игру',
+                trk: 'Oyunu Bitir',
+                es: 'Terminar juego',
+                it: 'Termina partita',
+                pl: 'Zakończ grę',
+                pt: 'Encerrar jogo',
+                th: 'จบเกม',
+                id: 'Akhiri Permainan',
+                hi: 'गेम समाप्त करें',
+                bn: 'গেম শেষ করুন',
+              ),
+            ),
           ),
         ],
       ),
@@ -13263,10 +24588,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   children: [
                     const Icon(Icons.people_alt_outlined),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
-                        'Friends',
-                        style: TextStyle(
+                        tr(
+                          context,
+                          'Friends',
+                          zhTw: '好友',
+                          zhCn: '好友',
+                          ko: '친구',
+                          ja: '友達',
+                          de: 'Freunde',
+                          fr: 'Amis',
+                          ar: 'الأصدقاء',
+                          ru: 'Друзья',
+                          trk: 'Arkadaşlar',
+                          es: 'Amigos',
+                          it: 'Amici',
+                          pl: 'Znajomi',
+                          pt: 'Amigos',
+                          th: 'เพื่อน',
+                          id: 'Teman',
+                          hi: 'मित्र',
+                          bn: 'বন্ধুরা',
+                        ),
+                        style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
@@ -13274,15 +24619,57 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     ),
                     TextButton(
                       onPressed: _openFriendsHub,
-                      child: const Text('Open All'),
+                      child: Text(
+                        tr(
+                          context,
+                          'Open All',
+                          zhTw: '全部開啟',
+                          zhCn: '全部打开',
+                          ko: '모두 열기',
+                          ja: 'すべて開く',
+                          de: 'Alle öffnen',
+                          fr: 'Tout ouvrir',
+                          ar: 'فتح الكل',
+                          ru: 'Открыть всё',
+                          trk: 'Hepsini Aç',
+                          es: 'Abrir todo',
+                          it: 'Apri tutto',
+                          pl: 'Otwórz wszystko',
+                          pt: 'Abrir tudo',
+                          th: 'เปิดทั้งหมด',
+                          id: 'Buka semua',
+                          hi: 'सभी खोलें',
+                          bn: 'সব খুলুন',
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 if (docs.isEmpty)
-                  const Text(
-                    'No friends yet',
-                    style: TextStyle(color: Colors.black54),
+                  Text(
+                    tr(
+                      context,
+                      'No friends yet',
+                      zhTw: '目前還沒有好友',
+                      zhCn: '目前还没有好友',
+                      ko: '아직 친구가 없습니다',
+                      ja: 'まだ友達がいません',
+                      de: 'Noch keine Freunde',
+                      fr: 'Pas encore d’amis',
+                      ar: 'لا يوجد أصدقاء بعد',
+                      ru: 'Пока нет друзей',
+                      trk: 'Henüz arkadaş yok',
+                      es: 'Aún no hay amigos',
+                      it: 'Ancora nessun amico',
+                      pl: 'Brak znajomych',
+                      pt: 'Ainda sem amigos',
+                      th: 'ยังไม่มีเพื่อน',
+                      id: 'Belum ada teman',
+                      hi: 'अभी तक कोई मित्र नहीं',
+                      bn: 'এখনও কোনো বন্ধু নেই',
+                    ),
+                    style: const TextStyle(color: Colors.black54),
                   )
                 else
                   Column(
@@ -13340,8 +24727,48 @@ class _TableDetailPageState extends State<TableDetailPage> {
                             ),
                             subtitle: Text(
                               unreadCount > 0
-                                  ? '$unreadCount unread'
-                                  : 'No unread messages',
+                                  ? tr(
+                                      context,
+                                      '$unreadCount unread',
+                                      zhTw: '$unreadCount 則未讀',
+                                      zhCn: '$unreadCount 则未读',
+                                      ko: '$unreadCount개의 읽지 않음',
+                                      ja: '$unreadCount 件未読',
+                                      de: '$unreadCount ungelesen',
+                                      fr: '$unreadCount non lus',
+                                      ar: '$unreadCount غير مقروءة',
+                                      ru: '$unreadCount непрочитанных',
+                                      trk: '$unreadCount okunmamış',
+                                      es: '$unreadCount sin leer',
+                                      it: '$unreadCount non letti',
+                                      pl: '$unreadCount nieprzeczytanych',
+                                      pt: '$unreadCount não lidas',
+                                      th: '$unreadCount ข้อความที่ยังไม่ได้อ่าน',
+                                      id: '$unreadCount belum dibaca',
+                                      hi: '$unreadCount अपठित',
+                                      bn: '$unreadCount অপঠিত',
+                                    )
+                                  : tr(
+                                      context,
+                                      'No unread messages',
+                                      zhTw: '沒有未讀訊息',
+                                      zhCn: '没有未读消息',
+                                      ko: '읽지 않은 메시지 없음',
+                                      ja: '未読メッセージなし',
+                                      de: 'Keine ungelesenen Nachrichten',
+                                      fr: 'Aucun message non lu',
+                                      ar: 'لا توجد رسائل غير مقروءة',
+                                      ru: 'Нет непрочитанных сообщений',
+                                      trk: 'Okunmamış mesaj yok',
+                                      es: 'No hay mensajes sin leer',
+                                      it: 'Nessun messaggio non letto',
+                                      pl: 'Brak nieprzeczytanych wiadomości',
+                                      pt: 'Nenhuma mensagem não lida',
+                                      th: 'ไม่มีข้อความที่ยังไม่ได้อ่าน',
+                                      id: 'Tidak ada pesan belum dibaca',
+                                      hi: 'कोई अपठित संदेश नहीं',
+                                      bn: 'কোনো অপঠিত বার্তা নেই',
+                                    ),
                             ),
                             trailing: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -13371,7 +24798,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                 FilledButton(
                                   onPressed: () =>
                                       _openDirectChatFromFriendship(data),
-                                  child: const Text('Chat'),
+                                  child: Text(
+                                    tr(
+                                      context,
+                                      'Chat',
+                                      zhTw: '聊天',
+                                      zhCn: '聊天',
+                                      ko: '채팅',
+                                      ja: 'チャット',
+                                      de: 'Chat',
+                                      fr: 'Discussion',
+                                      ar: 'دردشة',
+                                      ru: 'Чат',
+                                      trk: 'Sohbet',
+                                      es: 'Chat',
+                                      it: 'Chat',
+                                      pl: 'Czat',
+                                      pt: 'Chat',
+                                      th: 'แชท',
+                                      id: 'Chat',
+                                      hi: 'चैट',
+                                      bn: 'চ্যাট',
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -13407,9 +24856,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
               surfaceTintColor: Colors.white,
               foregroundColor: Colors.black,
               elevation: 0,
-              title: const Text(
-                'Table Details',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                tr(
+                  context,
+                  'Table Details',
+                  zhTw: '牌桌詳情',
+                  zhCn: '牌桌详情',
+                  ko: '테이블 상세',
+                  ja: 'テーブル詳細',
+                  de: 'Tischdetails',
+                  fr: 'Détails de la table',
+                  ar: 'تفاصيل الطاولة',
+                  ru: 'Детали стола',
+                  trk: 'Masa Detayları',
+                  es: 'Detalles de la mesa',
+                  it: 'Dettagli tavolo',
+                  pl: 'Szczegóły stołu',
+                  pt: 'Detalhes da mesa',
+                  th: 'รายละเอียดโต๊ะ',
+                  id: 'Detail Meja',
+                  hi: 'टेबल विवरण',
+                  bn: 'টেবিলের বিবরণ',
+                ),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
             body: const Center(child: CircularProgressIndicator()),
@@ -13423,13 +24892,55 @@ class _TableDetailPageState extends State<TableDetailPage> {
               surfaceTintColor: Colors.white,
               foregroundColor: Colors.black,
               elevation: 0,
-              title: const Text(
-                'Table Details',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                tr(
+                  context,
+                  'Table Details',
+                  zhTw: '牌桌詳情',
+                  zhCn: '牌桌详情',
+                  ko: '테이블 상세',
+                  ja: 'テーブル詳細',
+                  de: 'Tischdetails',
+                  fr: 'Détails de la table',
+                  ar: 'تفاصيل الطاولة',
+                  ru: 'Детали стола',
+                  trk: 'Masa Detayları',
+                  es: 'Detalles de la mesa',
+                  it: 'Dettagli tavolo',
+                  pl: 'Szczegóły stołu',
+                  pt: 'Detalhes da mesa',
+                  th: 'รายละเอียดโต๊ะ',
+                  id: 'Detail Meja',
+                  hi: 'टेबल विवरण',
+                  bn: 'টেবিলের বিবরণ',
+                ),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
             body: Center(
-              child: Text('Error: ${snapshot.error}'),
+              child: Text(
+                tr(
+                  context,
+                  'Error: ${snapshot.error}',
+                  zhTw: '錯誤：${snapshot.error}',
+                  zhCn: '错误：${snapshot.error}',
+                  ko: '오류: ${snapshot.error}',
+                  ja: 'エラー：${snapshot.error}',
+                  de: 'Fehler: ${snapshot.error}',
+                  fr: 'Erreur : ${snapshot.error}',
+                  ar: 'خطأ: ${snapshot.error}',
+                  ru: 'Ошибка: ${snapshot.error}',
+                  trk: 'Hata: ${snapshot.error}',
+                  es: 'Error: ${snapshot.error}',
+                  it: 'Errore: ${snapshot.error}',
+                  pl: 'Błąd: ${snapshot.error}',
+                  pt: 'Erro: ${snapshot.error}',
+                  th: 'ข้อผิดพลาด: ${snapshot.error}',
+                  id: 'Error: ${snapshot.error}',
+                  hi: 'त्रुटि: ${snapshot.error}',
+                  bn: 'ত্রুটি: ${snapshot.error}',
+                ),
+              ),
             ),
           );
         }
@@ -13442,13 +24953,55 @@ class _TableDetailPageState extends State<TableDetailPage> {
               surfaceTintColor: Colors.white,
               foregroundColor: Colors.black,
               elevation: 0,
-              title: const Text(
-                'Table Details',
-                style: TextStyle(fontWeight: FontWeight.w800),
+              title: Text(
+                tr(
+                  context,
+                  'Table Details',
+                  zhTw: '牌桌詳情',
+                  zhCn: '牌桌详情',
+                  ko: '테이블 상세',
+                  ja: 'テーブル詳細',
+                  de: 'Tischdetails',
+                  fr: 'Détails de la table',
+                  ar: 'تفاصيل الطاولة',
+                  ru: 'Детали стола',
+                  trk: 'Masa Detayları',
+                  es: 'Detalles de la mesa',
+                  it: 'Dettagli tavolo',
+                  pl: 'Szczegóły stołu',
+                  pt: 'Detalhes da mesa',
+                  th: 'รายละเอียดโต๊ะ',
+                  id: 'Detail Meja',
+                  hi: 'टेबल विवरण',
+                  bn: 'টেবিলের বিবরণ',
+                ),
+                style: const TextStyle(fontWeight: FontWeight.w800),
               ),
             ),
-            body: const Center(
-              child: Text('Table not found'),
+            body: Center(
+              child: Text(
+                tr(
+                  context,
+                  'Table not found',
+                  zhTw: '找不到牌桌',
+                  zhCn: '找不到牌桌',
+                  ko: '테이블을 찾을 수 없습니다',
+                  ja: 'テーブルが見つかりません',
+                  de: 'Tisch nicht gefunden',
+                  fr: 'Table introuvable',
+                  ar: 'لم يتم العثور على الطاولة',
+                  ru: 'Стол не найден',
+                  trk: 'Masa bulunamadı',
+                  es: 'Mesa no encontrada',
+                  it: 'Tavolo non trovato',
+                  pl: 'Nie znaleziono stołu',
+                  pt: 'Mesa não encontrada',
+                  th: 'ไม่พบโต๊ะ',
+                  id: 'Meja tidak ditemukan',
+                  hi: 'टेबल नहीं मिली',
+                  bn: 'টেবিল খুঁজে পাওয়া যায়নি',
+                ),
+              ),
             ),
           );
         }
@@ -13477,7 +25030,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 TextButton.icon(
                   onPressed: _endGame,
                   icon: const Icon(Icons.stop_circle_outlined),
-                  label: const Text('End Game'),
+                  label: Text(
+                    tr(
+                      context,
+                      'End Game',
+                      zhTw: '結束遊戲',
+                      zhCn: '结束游戏',
+                      ko: '게임 종료',
+                      ja: 'ゲーム終了',
+                      de: 'Spiel beenden',
+                      fr: 'Terminer la partie',
+                      ar: 'إنهاء اللعبة',
+                      ru: 'Завершить игру',
+                      trk: 'Oyunu Bitir',
+                      es: 'Terminar juego',
+                      it: 'Termina partita',
+                      pl: 'Zakończ grę',
+                      pt: 'Encerrar jogo',
+                      th: 'จบเกม',
+                      id: 'Akhiri Permainan',
+                      hi: 'गेम समाप्त करें',
+                      bn: 'গেম শেষ করুন',
+                    ),
+                  ),
                 ),
             ],
           ),
@@ -13510,14 +25085,58 @@ class _TableDetailPageState extends State<TableDetailPage> {
                             color: Colors.black87,
                             fontWeight: FontWeight.w800,
                           ),
-                          items: const [
+                          items: [
                             DropdownMenuItem(
                               value: 9,
-                              child: Text('9 Players'),
+                              child: Text(
+                                tr(
+                                  context,
+                                  '9 Players',
+                                  zhTw: '9 人桌',
+                                  zhCn: '9 人桌',
+                                  ko: '9인 테이블',
+                                  ja: '9人テーブル',
+                                  de: '9 Spieler',
+                                  fr: '9 joueurs',
+                                  ar: '9 لاعبين',
+                                  ru: '9 игроков',
+                                  trk: '9 Oyuncu',
+                                  es: '9 jugadores',
+                                  it: '9 giocatori',
+                                  pl: '9 graczy',
+                                  pt: '9 jogadores',
+                                  th: '9 ผู้เล่น',
+                                  id: '9 Pemain',
+                                  hi: '9 खिलाड़ी',
+                                  bn: '৯ জন খেলোয়াড়',
+                                ),
+                              ),
                             ),
                             DropdownMenuItem(
                               value: 10,
-                              child: Text('10 Players'),
+                              child: Text(
+                                tr(
+                                  context,
+                                  '10 Players',
+                                  zhTw: '10 人桌',
+                                  zhCn: '10 人桌',
+                                  ko: '10인 테이블',
+                                  ja: '10人テーブル',
+                                  de: '10 Spieler',
+                                  fr: '10 joueurs',
+                                  ar: '10 لاعبين',
+                                  ru: '10 игроков',
+                                  trk: '10 Oyuncu',
+                                  es: '10 jugadores',
+                                  it: '10 giocatori',
+                                  pl: '10 graczy',
+                                  pt: '10 jogadores',
+                                  th: '10 ผู้เล่น',
+                                  id: '10 Pemain',
+                                  hi: '10 खिलाड़ी',
+                                  bn: '১০ জন খেলোয়াড়',
+                                ),
+                              ),
                             ),
                           ],
                           onChanged: (value) async {
@@ -13547,8 +25166,48 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   ),
                   child: Text(
                     isEffectiveHost
-                        ? 'Host: tap any seat to manage reservations, remove players, or move players.'
-                        : 'Player: tap an open seat to join, tap your own seat to cancel.',
+                        ? tr(
+                            context,
+                            'Host: tap any seat to manage reservations, remove players, or move players.',
+                            zhTw: '房主：點擊任何座位來管理預約、移除玩家或移動玩家。',
+                            zhCn: '房主：点击任何座位来管理预约、移除玩家或移动玩家。',
+                            ko: '호스트: 아무 좌석이나 눌러 예약 관리, 플레이어 제거 또는 이동을 할 수 있습니다.',
+                            ja: 'ホスト：任意の席をタップして予約管理、プレイヤー削除、移動ができます。',
+                            de: 'Host: Tippe auf einen beliebigen Sitz, um Reservierungen zu verwalten, Spieler zu entfernen oder zu verschieben.',
+                            fr: 'Hôte : appuyez sur un siège pour gérer les réservations, retirer ou déplacer des joueurs.',
+                            ar: 'المضيف: اضغط على أي مقعد لإدارة الحجوزات أو إزالة أو نقل اللاعبين.',
+                            ru: 'Хост: нажмите на любое место, чтобы управлять бронями, удалять или перемещать игроков.',
+                            trk: 'Masa sahibi: Rezervasyonları yönetmek, oyuncuları kaldırmak veya taşımak için herhangi bir koltuğa dokunun.',
+                            es: 'Host: toca cualquier asiento para gestionar reservas, eliminar o mover jugadores.',
+                            it: 'Host: tocca qualsiasi posto per gestire prenotazioni, rimuovere o spostare giocatori.',
+                            pl: 'Host: stuknij dowolne miejsce, aby zarządzać rezerwacjami, usuwać lub przenosić graczy.',
+                            pt: 'Host: toque em qualquer assento para gerenciar reservas, remover ou mover jogadores.',
+                            th: 'โฮสต์: แตะที่นั่งใดก็ได้เพื่อจัดการการจอง ลบ หรือย้ายผู้เล่น',
+                            id: 'Host: ketuk kursi mana saja untuk mengelola reservasi, menghapus, atau memindahkan pemain.',
+                            hi: 'होस्ट: आरक्षण प्रबंधित करने, खिलाड़ियों को हटाने या स्थानांतरित करने के लिए किसी भी सीट पर टैप करें।',
+                            bn: 'হোস্ট: রিজার্ভেশন পরিচালনা, খেলোয়াড় সরানো বা স্থানান্তরের জন্য যেকোনো সিটে চাপ দিন।',
+                          )
+                        : tr(
+                            context,
+                            'Player: tap an open seat to join, tap your own seat to cancel.',
+                            zhTw: '玩家：點擊空位加入，點擊自己的座位取消。',
+                            zhCn: '玩家：点击空位加入，点击自己的座位取消。',
+                            ko: '플레이어: 빈 좌석을 눌러 참가하고, 자신의 좌석을 눌러 취소하세요.',
+                            ja: 'プレイヤー：空席をタップして参加、自分の席をタップしてキャンセル。',
+                            de: 'Spieler: Tippe auf einen freien Sitz, um beizutreten, oder auf deinen Sitz zum Verlassen.',
+                            fr: 'Joueur : appuyez sur un siège libre pour rejoindre, ou sur votre siège pour annuler.',
+                            ar: 'اللاعب: اضغط على مقعد فارغ للانضمام، واضغط على مقعدك للإلغاء.',
+                            ru: 'Игрок: нажмите на свободное место, чтобы присоединиться, или на своё место, чтобы отменить.',
+                            trk: 'Oyuncu: Katılmak için boş bir koltuğa, iptal etmek için kendi koltuğunuza dokunun.',
+                            es: 'Jugador: toca un asiento libre para unirte, toca tu asiento para cancelar.',
+                            it: 'Giocatore: tocca un posto libero per unirti, tocca il tuo posto per annullare.',
+                            pl: 'Gracz: stuknij wolne miejsce, aby dołączyć, stuknij swoje miejsce, aby anulować.',
+                            pt: 'Jogador: toque em um assento livre para entrar, toque no seu assento para cancelar.',
+                            th: 'ผู้เล่น: แตะที่นั่งว่างเพื่อเข้าร่วม แตะที่นั่งของคุณเพื่อยกเลิก',
+                            id: 'Pemain: ketuk kursi kosong untuk bergabung, ketuk kursi Anda untuk membatalkan.',
+                            hi: 'खिलाड़ी: शामिल होने के लिए खाली सीट टैप करें, रद्द करने के लिए अपनी सीट टैप करें।',
+                            bn: 'খেলোয়াড়: যোগ দিতে খালি সিটে চাপ দিন, বাতিল করতে নিজের সিটে চাপ দিন।',
+                          ),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: isEffectiveHost
@@ -13747,7 +25406,27 @@ class DealerSeatWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName =
         dealerName == null || dealerName!.trim().isEmpty
-            ? 'Dealer'
+            ? tr(
+                context,
+                'Dealer',
+                zhTw: '荷官',
+                zhCn: '荷官',
+                ko: '딜러',
+                ja: 'ディーラー',
+                de: 'Dealer',
+                fr: 'Croupier',
+                ar: 'الموزع',
+                ru: 'Дилер',
+                trk: 'Dağıtıcı',
+                es: 'Dealer',
+                it: 'Dealer',
+                pl: 'Dealer',
+                pt: 'Dealer',
+                th: 'ดีลเลอร์',
+                id: 'Dealer',
+                hi: 'डीलर',
+                bn: 'ডিলার',
+              )
             : dealerName!.trim();
 
     return GestureDetector(
@@ -13907,7 +25586,27 @@ class PlayerSeatWidget extends StatelessWidget {
       borderColor = Colors.black;
       statusColor = Colors.black;
       nameColor = Colors.black;
-      statusText = 'MOVING';
+      statusText = tr(
+        context,
+        'MOVING',
+        zhTw: '移動中',
+        zhCn: '移动中',
+        ko: '이동 중',
+        ja: '移動中',
+        de: 'Verschieben',
+        fr: 'Déplacement',
+        ar: 'جارٍ النقل',
+        ru: 'ПЕРЕМЕЩЕНИЕ',
+        trk: 'TAŞINIYOR',
+        es: 'MOVIENDO',
+        it: 'SPOSTAMENTO',
+        pl: 'PRZENOSZENIE',
+        pt: 'MOVENDO',
+        th: 'กำลังย้าย',
+        id: 'MEMINDAHKAN',
+        hi: 'स्थानांतरित हो रहा है',
+        bn: 'সরানো হচ্ছে',
+      );
       playerText = displayName;
       topIcon = Icons.drive_file_move_outline;
     } else if (isOpen) {
@@ -13915,15 +25614,75 @@ class PlayerSeatWidget extends StatelessWidget {
       borderColor = const Color(0xFFD1D5DB);
       statusColor = const Color(0xFF16A34A);
       nameColor = const Color(0xFF374151);
-      statusText = 'OPEN';
-      playerText = 'Seat $seatNumber';
+      statusText = tr(
+        context,
+        'OPEN',
+        zhTw: '開放',
+        zhCn: '开放',
+        ko: '오픈',
+        ja: '空席',
+        de: 'OFFEN',
+        fr: 'LIBRE',
+        ar: 'متاح',
+        ru: 'СВОБОДНО',
+        trk: 'AÇIK',
+        es: 'ABIERTO',
+        it: 'APERTO',
+        pl: 'WOLNE',
+        pt: 'ABERTO',
+        th: 'ว่าง',
+        id: 'TERBUKA',
+        hi: 'खुला',
+        bn: 'খালি',
+      );
+      playerText = tr(
+        context,
+        'Seat $seatNumber',
+        zhTw: '座位 $seatNumber',
+        zhCn: '座位 $seatNumber',
+        ko: '$seatNumber번 좌석',
+        ja: '$seatNumber番席',
+        de: 'Sitz $seatNumber',
+        fr: 'Siège $seatNumber',
+        ar: 'المقعد $seatNumber',
+        ru: 'Место $seatNumber',
+        trk: 'Koltuk $seatNumber',
+        es: 'Asiento $seatNumber',
+        it: 'Posto $seatNumber',
+        pl: 'Miejsce $seatNumber',
+        pt: 'Assento $seatNumber',
+        th: 'ที่นั่ง $seatNumber',
+        id: 'Kursi $seatNumber',
+        hi: 'सीट $seatNumber',
+        bn: 'সিট $seatNumber',
+      );
       topIcon = Icons.event_seat;
     } else if (isMine) {
       bgColor = const Color(0xFFEFF6FF);
       borderColor = const Color(0xFF2563EB);
       statusColor = const Color(0xFF2563EB);
       nameColor = const Color(0xFF1D4ED8);
-      statusText = 'YOU';
+      statusText = tr(
+        context,
+        'YOU',
+        zhTw: '你',
+        zhCn: '你',
+        ko: '나',
+        ja: 'あなた',
+        de: 'DU',
+        fr: 'VOUS',
+        ar: 'أنت',
+        ru: 'ВЫ',
+        trk: 'SEN',
+        es: 'TÚ',
+        it: 'TU',
+        pl: 'TY',
+        pt: 'VOCÊ',
+        th: 'คุณ',
+        id: 'ANDA',
+        hi: 'आप',
+        bn: 'আপনি',
+      );
       playerText = displayName;
       topIcon = Icons.person;
     } else if (isArrived) {
@@ -13931,7 +25690,27 @@ class PlayerSeatWidget extends StatelessWidget {
       borderColor = const Color.fromARGB(255, 230, 100, 241);
       statusColor = const Color.fromARGB(255, 230, 100, 241);
       nameColor = const Color(0xFF991B1B);
-      statusText = 'ARRIVED';
+      statusText = tr(
+        context,
+        'ARRIVED',
+        zhTw: '已到場',
+        zhCn: '已到场',
+        ko: '도착',
+        ja: '到着済み',
+        de: 'ANGEKOMMEN',
+        fr: 'ARRIVÉ',
+        ar: 'حاضر',
+        ru: 'ПРИБЫЛ',
+        trk: 'GELDİ',
+        es: 'LLEGÓ',
+        it: 'ARRIVATO',
+        pl: 'PRZYBYŁ',
+        pt: 'CHEGOU',
+        th: 'มาถึงแล้ว',
+        id: 'SUDAH DATANG',
+        hi: 'पहुंच गया',
+        bn: 'এসেছে',
+      );
       playerText = displayName;
       topIcon = isReserved ? Icons.bookmark : Icons.check_circle;
     } else {
@@ -13939,7 +25718,27 @@ class PlayerSeatWidget extends StatelessWidget {
       borderColor = const Color.fromARGB(255, 248, 58, 58);
       statusColor = const Color.fromARGB(255, 248, 58, 58);
       nameColor = const Color(0xFF9A3412);
-      statusText = 'UNARRIVED';
+      statusText = tr(
+        context,
+        'UNARRIVED',
+        zhTw: '未到場',
+        zhCn: '未到场',
+        ko: '미도착',
+        ja: '未到着',
+        de: 'NICHT ANGEKOMMEN',
+        fr: 'NON ARRIVÉ',
+        ar: 'غير حاضر',
+        ru: 'НЕ ПРИБЫЛ',
+        trk: 'GELMEDİ',
+        es: 'NO LLEGÓ',
+        it: 'NON ARRIVATO',
+        pl: 'NIE PRZYBYŁ',
+        pt: 'NÃO CHEGOU',
+        th: 'ยังไม่มา',
+        id: 'BELUM DATANG',
+        hi: 'नहीं पहुँचा',
+        bn: 'এখনও আসেনি',
+      );
       playerText = displayName;
       topIcon = isReserved ? Icons.bookmark : Icons.schedule;
     }
@@ -14249,8 +26048,157 @@ String _dateTimeText(DateTime dt) {
       '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
 }
 
-String _weekdayZh(DateTime dt) {
-  const labels = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+String _weekdayZh(BuildContext context, DateTime dt) {
+  final labels = [
+    tr(
+      context,
+      'Monday',
+      zhTw: '星期一',
+      zhCn: '星期一',
+      ko: '월요일',
+      ja: '月曜日',
+      de: 'Montag',
+      fr: 'Lundi',
+      ar: 'الاثنين',
+      ru: 'Понедельник',
+      trk: 'Pazartesi',
+      es: 'Lunes',
+      it: 'Lunedì',
+      pl: 'Poniedziałek',
+      pt: 'Segunda-feira',
+      th: 'วันจันทร์',
+      id: 'Senin',
+      hi: 'सोमवार',
+      bn: 'সোমবার',
+    ),
+    tr(
+      context,
+      'Tuesday',
+      zhTw: '星期二',
+      zhCn: '星期二',
+      ko: '화요일',
+      ja: '火曜日',
+      de: 'Dienstag',
+      fr: 'Mardi',
+      ar: 'الثلاثاء',
+      ru: 'Вторник',
+      trk: 'Salı',
+      es: 'Martes',
+      it: 'Martedì',
+      pl: 'Wtorek',
+      pt: 'Terça-feira',
+      th: 'วันอังคาร',
+      id: 'Selasa',
+      hi: 'मंगलवार',
+      bn: 'মঙ্গলবার',
+    ),
+    tr(
+      context,
+      'Wednesday',
+      zhTw: '星期三',
+      zhCn: '星期三',
+      ko: '수요일',
+      ja: '水曜日',
+      de: 'Mittwoch',
+      fr: 'Mercredi',
+      ar: 'الأربعاء',
+      ru: 'Среда',
+      trk: 'Çarşamba',
+      es: 'Miércoles',
+      it: 'Mercoledì',
+      pl: 'Środa',
+      pt: 'Quarta-feira',
+      th: 'วันพุธ',
+      id: 'Rabu',
+      hi: 'बुधवार',
+      bn: 'বুধবার',
+    ),
+    tr(
+      context,
+      'Thursday',
+      zhTw: '星期四',
+      zhCn: '星期四',
+      ko: '목요일',
+      ja: '木曜日',
+      de: 'Donnerstag',
+      fr: 'Jeudi',
+      ar: 'الخميس',
+      ru: 'Четверг',
+      trk: 'Perşembe',
+      es: 'Jueves',
+      it: 'Giovedì',
+      pl: 'Czwartek',
+      pt: 'Quinta-feira',
+      th: 'วันพฤหัสบดี',
+      id: 'Kamis',
+      hi: 'गुरुवार',
+      bn: 'বৃহস্পতিবার',
+    ),
+    tr(
+      context,
+      'Friday',
+      zhTw: '星期五',
+      zhCn: '星期五',
+      ko: '금요일',
+      ja: '金曜日',
+      de: 'Freitag',
+      fr: 'Vendredi',
+      ar: 'الجمعة',
+      ru: 'Пятница',
+      trk: 'Cuma',
+      es: 'Viernes',
+      it: 'Venerdì',
+      pl: 'Piątek',
+      pt: 'Sexta-feira',
+      th: 'วันศุกร์',
+      id: 'Jumat',
+      hi: 'शुक्रवार',
+      bn: 'শুক্রবার',
+    ),
+    tr(
+      context,
+      'Saturday',
+      zhTw: '星期六',
+      zhCn: '星期六',
+      ko: '토요일',
+      ja: '土曜日',
+      de: 'Samstag',
+      fr: 'Samedi',
+      ar: 'السبت',
+      ru: 'Суббота',
+      trk: 'Cumartesi',
+      es: 'Sábado',
+      it: 'Sabato',
+      pl: 'Sobota',
+      pt: 'Sábado',
+      th: 'วันเสาร์',
+      id: 'Sabtu',
+      hi: 'शनिवार',
+      bn: 'শনিবার',
+    ),
+    tr(
+      context,
+      'Sunday',
+      zhTw: '星期日',
+      zhCn: '星期日',
+      ko: '일요일',
+      ja: '日曜日',
+      de: 'Sonntag',
+      fr: 'Dimanche',
+      ar: 'الأحد',
+      ru: 'Воскресенье',
+      trk: 'Pazar',
+      es: 'Domingo',
+      it: 'Domenica',
+      pl: 'Niedziela',
+      pt: 'Domingo',
+      th: 'วันอาทิตย์',
+      id: 'Minggu',
+      hi: 'रविवार',
+      bn: 'রবিবার',
+    ),
+  ];
+
   return labels[dt.weekday - 1];
 }
 
@@ -14325,22 +26273,42 @@ class CashGameStatsLockedPage extends StatelessWidget {
           surfaceTintColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
-          title: const Text(
-            'Cash Game Stats',
-            style: TextStyle(fontWeight: FontWeight.w800),
+          title: Text(
+            tr(
+              context,
+              'Cash Game Stats',
+              zhTw: '現金局統計',
+              zhCn: '现金局统计',
+              ko: '캐시 게임 통계',
+              ja: 'キャッシュゲーム統計',
+              de: 'Cash Game Statistiken',
+              fr: 'Stats cash game',
+              ar: 'إحصائيات اللعبة النقدية',
+              ru: 'Статистика кэш-игр',
+              trk: 'Nakit Oyun İstatistikleri',
+              es: 'Estadísticas cash game',
+              it: 'Statistiche cash game',
+              pl: 'Statystyki gier cash',
+              pt: 'Estatísticas cash game',
+              th: 'สถิติเกมเงินสด',
+              id: 'Statistik Cash Game',
+              hi: 'कैश गेम आँकड़े',
+              bn: 'ক্যাশ গেম পরিসংখ্যান',
+            ),
+            style: const TextStyle(fontWeight: FontWeight.w800),
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelColor: Color(0xFF2E7D32),
+            labelColor: const Color(0xFF2E7D32),
             unselectedLabelColor: Colors.black54,
-            indicatorColor: Color(0xFF2E7D32),
+            indicatorColor: const Color(0xFF2E7D32),
             tabs: [
-              Tab(text: 'All Games'),
-              Tab(text: 'Location Profits'),
-              Tab(text: 'Game Profits'),
-              Tab(text: 'Weekly Profits'),
-              Tab(text: 'Monthly Profits'),
+              Tab(text: tr(context, 'All Games', zhTw: '全部牌局', zhCn: '全部牌局', ko: '전체 게임', ja: '全ゲーム', de: 'Alle Spiele', fr: 'Toutes les parties', ar: 'كل الألعاب', ru: 'Все игры', trk: 'Tüm Oyunlar', es: 'Todas las partidas', it: 'Tutte le partite', pl: 'Wszystkie gry', pt: 'Todos os jogos', th: 'เกมทั้งหมด', id: 'Semua Game', hi: 'सभी गेम', bn: 'সব গেম')),
+              Tab(text: tr(context, 'Location Profits', zhTw: '地點盈利', zhCn: '地点盈利', ko: '장소별 수익', ja: '場所別利益', de: 'Gewinn nach Ort', fr: 'Profits par lieu', ar: 'أرباح المواقع', ru: 'Прибыль по местам', trk: 'Konum Kârları', es: 'Ganancias por ubicación', it: 'Profitti per luogo', pl: 'Zyski według lokalizacji', pt: 'Lucros por local', th: 'กำไรตามสถานที่', id: 'Profit Lokasi', hi: 'स्थान लाभ', bn: 'স্থানভিত্তিক লাভ')),
+              Tab(text: tr(context, 'Game Profits', zhTw: '遊戲盈利', zhCn: '游戏盈利', ko: '게임별 수익', ja: 'ゲーム別利益', de: 'Gewinn nach Spiel', fr: 'Profits par jeu', ar: 'أرباح الألعاب', ru: 'Прибыль по играм', trk: 'Oyun Kârları', es: 'Ganancias por juego', it: 'Profitti per gioco', pl: 'Zyski według gry', pt: 'Lucros por jogo', th: 'กำไรตามเกม', id: 'Profit Game', hi: 'गेम लाभ', bn: 'গেমভিত্তিক লাভ')),
+              Tab(text: tr(context, 'Weekly Profits', zhTw: '每週盈利', zhCn: '每周盈利', ko: '주간 수익', ja: '週間利益', de: 'Wöchentliche Gewinne', fr: 'Profits hebdomadaires', ar: 'الأرباح الأسبوعية', ru: 'Недельная прибыль', trk: 'Haftalık Kârlar', es: 'Ganancias semanales', it: 'Profitti settimanali', pl: 'Tygodniowe zyski', pt: 'Lucros semanais', th: 'กำไรรายสัปดาห์', id: 'Profit Mingguan', hi: 'साप्ताहिक लाभ', bn: 'সাপ্তাহিক লাভ')),
+              Tab(text: tr(context, 'Monthly Profits', zhTw: '每月盈利', zhCn: '每月盈利', ko: '월간 수익', ja: '月間利益', de: 'Monatliche Gewinne', fr: 'Profits mensuels', ar: 'الأرباح الشهرية', ru: 'Месячная прибыль', trk: 'Aylık Kârlar', es: 'Ganancias mensuales', it: 'Profitti mensili', pl: 'Miesięczne zyski', pt: 'Lucros mensais', th: 'กำไรรายเดือน', id: 'Profit Bulanan', hi: 'मासिक लाभ', bn: 'মাসিক লাভ')),
             ],
           ),
         ),
@@ -14375,21 +26343,61 @@ class CashGameStatsLockedPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Center(
+                    Center(
                       child: Text(
-                        'Unlock Cash Game Stats',
-                        style: TextStyle(
+                        tr(
+                          context,
+                          'Unlock Cash Game Stats',
+                          zhTw: '解鎖現金局統計',
+                          zhCn: '解锁现金局统计',
+                          ko: '캐시 게임 통계 잠금 해제',
+                          ja: 'キャッシュゲーム統計を解除',
+                          de: 'Cash Game Statistiken freischalten',
+                          fr: 'Débloquer les statistiques cash game',
+                          ar: 'فتح إحصائيات اللعبة النقدية',
+                          ru: 'Разблокировать статистику кэш-игр',
+                          trk: 'Nakit Oyun İstatistiklerini Aç',
+                          es: 'Desbloquear estadísticas cash game',
+                          it: 'Sblocca statistiche cash game',
+                          pl: 'Odblokuj statystyki cash game',
+                          pt: 'Desbloquear estatísticas cash game',
+                          th: 'ปลดล็อกสถิติเกมเงินสด',
+                          id: 'Buka Statistik Cash Game',
+                          hi: 'कैश गेम आँकड़े अनलॉक करें',
+                          bn: 'ক্যাশ গেম পরিসংখ্যান আনলক করুন',
+                        ),
+                        style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const Center(
+                    Center(
                       child: Text(
-                        'You need to pay to see your hand statistics, monthly reports, location performance, and hourly profit and loss.',
+                        tr(
+                          context,
+                          'You need to pay to see your hand statistics, monthly reports, location performance, and hourly profit and loss.',
+                          zhTw: '你需要付費才能查看你的牌局統計、每月報表、地點表現以及每小時盈虧。',
+                          zhCn: '你需要付费才能查看你的牌局统计、每月报表、地点表现以及每小时盈亏。',
+                          ko: '핸드 통계, 월간 보고서, 장소별 성과 및 시간당 손익을 보려면 결제가 필요합니다.',
+                          ja: 'ハンド統計、月次レポート、場所別成績、時給損益を見るには支払いが必要です。',
+                          de: 'Du musst bezahlen, um deine Handstatistiken, Monatsberichte, Standortleistung und stündlichen Gewinn/Verlust zu sehen.',
+                          fr: 'Vous devez payer pour voir vos statistiques, rapports mensuels, performances par lieu et profits/pertes horaires.',
+                          ar: 'تحتاج إلى الدفع لرؤية إحصائيات اللعب والتقارير الشهرية وأداء المواقع والأرباح والخسائر بالساعة.',
+                          ru: 'Вам нужно оплатить доступ, чтобы видеть статистику, месячные отчёты, результаты по локациям и почасовую прибыль/убытки.',
+                          trk: 'El istatistiklerinizi, aylık raporları, konum performansını ve saatlik kâr/zararı görmek için ödeme yapmanız gerekir.',
+                          es: 'Necesitas pagar para ver tus estadísticas, reportes mensuales, rendimiento por ubicación y ganancias/pérdidas por hora.',
+                          it: 'Devi pagare per vedere statistiche, report mensili, rendimento per luogo e profitti/perdite orarie.',
+                          pl: 'Musisz zapłacić, aby zobaczyć statystyki rozdań, raporty miesięczne, wyniki lokalizacji i godzinowe zyski/straty.',
+                          pt: 'Você precisa pagar para ver estatísticas, relatórios mensais, desempenho por local e lucro/prejuízo por hora.',
+                          th: 'คุณต้องชำระเงินเพื่อดูสถิติ รายงานรายเดือน ผลงานตามสถานที่ และกำไรขาดทุนรายชั่วโมง',
+                          id: 'Anda perlu membayar untuk melihat statistik permainan, laporan bulanan, performa lokasi, dan untung/rugi per jam.',
+                          hi: 'अपने हैंड आँकड़े, मासिक रिपोर्ट, स्थान प्रदर्शन और प्रति घंटे लाभ/हानि देखने के लिए आपको भुगतान करना होगा।',
+                          bn: 'আপনার হ্যান্ড পরিসংখ্যান, মাসিক রিপোর্ট, লোকেশন পারফরম্যান্স এবং ঘণ্টাভিত্তিক লাভ-ক্ষতি দেখতে অর্থ প্রদান করতে হবে।',
+                        ),
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.black54,
                           height: 1.5,
                           fontWeight: FontWeight.w600,
@@ -14397,12 +26405,150 @@ class CashGameStatsLockedPage extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _buildBenefit('View total profit/loss, hourly profit/loss, average profit/loss per game'),
-                    _buildBenefit('View location group profit'),
-                    _buildBenefit('View game group profit'),
-                    _buildBenefit('View weekly group profit'),
-                    _buildBenefit('View monthly profit'),
-                    _buildBenefit('Continuously track ongoing games'),
+
+                    _buildBenefit(
+                      tr(
+                        context,
+                        'View total profit/loss, hourly profit/loss, average profit/loss per game',
+                        zhTw: '查看總盈虧、每小時盈虧、每場平均盈虧',
+                        zhCn: '查看总盈亏、每小时盈亏、每场平均盈亏',
+                        ko: '총 손익, 시간당 손익, 게임당 평균 손익 보기',
+                        ja: '総損益、時給損益、ゲームごとの平均損益を表示',
+                        de: 'Gesamtgewinn/-verlust, Stundengewinn/-verlust und durchschnittlichen Gewinn/Verlust pro Spiel anzeigen',
+                        fr: 'Voir le profit/perte total, horaire et moyen par partie',
+                        ar: 'عرض إجمالي الأرباح والخسائر والأرباح والخسائر بالساعة ومتوسط الأرباح والخسائر لكل لعبة',
+                        ru: 'Просмотр общей прибыли/убытков, почасовой прибыли/убытков и средней прибыли/убытков за игру',
+                        trk: 'Toplam kâr/zarar, saatlik kâr/zarar ve oyun başına ortalama kâr/zararı görüntüle',
+                        es: 'Ver ganancias/pérdidas totales, por hora y promedio por juego',
+                        it: 'Visualizza profitto/perdita totale, oraria e media per partita',
+                        pl: 'Zobacz całkowity zysk/stratę, godzinowy zysk/stratę i średni wynik na grę',
+                        pt: 'Ver lucro/prejuízo total, por hora e média por jogo',
+                        th: 'ดูผลกำไร/ขาดทุนรวม รายชั่วโมง และเฉลี่ยต่อเกม',
+                        id: 'Lihat total untung/rugi, untung/rugi per jam, dan rata-rata per game',
+                        hi: 'कुल लाभ/हानि, प्रति घंटे लाभ/हानि और प्रति गेम औसत लाभ/हानि देखें',
+                        bn: 'মোট লাভ/ক্ষতি, ঘণ্টাভিত্তিক লাভ/ক্ষতি এবং প্রতি গেম গড় লাভ/ক্ষতি দেখুন',
+                      ),
+                    ),
+
+                    _buildBenefit(
+                      tr(
+                        context,
+                        'View location group profit',
+                        zhTw: '查看地點分類盈利',
+                        zhCn: '查看地点分类盈利',
+                        ko: '장소별 수익 보기',
+                        ja: '場所別利益を見る',
+                        de: 'Gewinn nach Standort anzeigen',
+                        fr: 'Voir les profits par lieu',
+                        ar: 'عرض الأرباح حسب الموقع',
+                        ru: 'Просмотр прибыли по локациям',
+                        trk: 'Konuma göre kârı görüntüle',
+                        es: 'Ver ganancias por ubicación',
+                        it: 'Visualizza profitti per luogo',
+                        pl: 'Zobacz zyski według lokalizacji',
+                        pt: 'Ver lucro por local',
+                        th: 'ดูผลกำไรตามสถานที่',
+                        id: 'Lihat profit berdasarkan lokasi',
+                        hi: 'स्थान के अनुसार लाभ देखें',
+                        bn: 'লোকেশনভিত্তিক লাভ দেখুন',
+                      ),
+                    ),
+
+                    _buildBenefit(
+                      tr(
+                        context,
+                        'View game group profit',
+                        zhTw: '查看遊戲分類盈利',
+                        zhCn: '查看游戏分类盈利',
+                        ko: '게임별 수익 보기',
+                        ja: 'ゲーム別利益を見る',
+                        de: 'Gewinn nach Spiel anzeigen',
+                        fr: 'Voir les profits par jeu',
+                        ar: 'عرض الأرباح حسب اللعبة',
+                        ru: 'Просмотр прибыли по играм',
+                        trk: 'Oyuna göre kârı görüntüle',
+                        es: 'Ver ganancias por juego',
+                        it: 'Visualizza profitti per gioco',
+                        pl: 'Zobacz zyski według gry',
+                        pt: 'Ver lucro por jogo',
+                        th: 'ดูผลกำไรตามเกม',
+                        id: 'Lihat profit berdasarkan game',
+                        hi: 'गेम के अनुसार लाभ देखें',
+                        bn: 'গেমভিত্তিক লাভ দেখুন',
+                      ),
+                    ),
+
+                    _buildBenefit(
+                      tr(
+                        context,
+                        'View weekly group profit',
+                        zhTw: '查看每週分類盈利',
+                        zhCn: '查看每周分类盈利',
+                        ko: '주간 수익 보기',
+                        ja: '週間利益を見る',
+                        de: 'Wöchentliche Gewinne anzeigen',
+                        fr: 'Voir les profits hebdomadaires',
+                        ar: 'عرض الأرباح الأسبوعية',
+                        ru: 'Просмотр недельной прибыли',
+                        trk: 'Haftalık kârı görüntüle',
+                        es: 'Ver ganancias semanales',
+                        it: 'Visualizza profitti settimanali',
+                        pl: 'Zobacz tygodniowe zyski',
+                        pt: 'Ver lucros semanais',
+                        th: 'ดูผลกำไรรายสัปดาห์',
+                        id: 'Lihat profit mingguan',
+                        hi: 'साप्ताहिक लाभ देखें',
+                        bn: 'সাপ্তাহিক লাভ দেখুন',
+                      ),
+                    ),
+
+                    _buildBenefit(
+                      tr(
+                        context,
+                        'View monthly profit',
+                        zhTw: '查看每月盈利',
+                        zhCn: '查看每月盈利',
+                        ko: '월간 수익 보기',
+                        ja: '月間利益を見る',
+                        de: 'Monatliche Gewinne anzeigen',
+                        fr: 'Voir les profits mensuels',
+                        ar: 'عرض الأرباح الشهرية',
+                        ru: 'Просмотр месячной прибыли',
+                        trk: 'Aylık kârı görüntüle',
+                        es: 'Ver ganancias mensuales',
+                        it: 'Visualizza profitti mensili',
+                        pl: 'Zobacz miesięczne zyski',
+                        pt: 'Ver lucros mensais',
+                        th: 'ดูผลกำไรรายเดือน',
+                        id: 'Lihat profit bulanan',
+                        hi: 'मासिक लाभ देखें',
+                        bn: 'মাসিক লাভ দেখুন',
+                      ),
+                    ),
+
+                    _buildBenefit(
+                      tr(
+                        context,
+                        'Continuously track ongoing games',
+                        zhTw: '持續追蹤進行中的牌局',
+                        zhCn: '持续追踪进行中的牌局',
+                        ko: '진행 중인 게임 지속 추적',
+                        ja: '進行中のゲームを継続追跡',
+                        de: 'Laufende Spiele kontinuierlich verfolgen',
+                        fr: 'Suivre en continu les parties en cours',
+                        ar: 'تتبع الألعاب الجارية باستمرار',
+                        ru: 'Постоянное отслеживание текущих игр',
+                        trk: 'Devam eden oyunları sürekli takip et',
+                        es: 'Rastrear continuamente partidas en curso',
+                        it: 'Traccia continuamente le partite in corso',
+                        pl: 'Ciągłe śledzenie trwających gier',
+                        pt: 'Acompanhar continuamente jogos em andamento',
+                        th: 'ติดตามเกมที่กำลังดำเนินอยู่ต่อเนื่อง',
+                        id: 'Lacak game yang sedang berlangsung secara terus-menerus',
+                        hi: 'चल रहे गेम को लगातार ट्रैक करें',
+                        bn: 'চলমান গেম নিয়মিত ট্র্যাক করুন',
+                      ),
+                    ),
                     const SizedBox(height: 24),
                     if (!isAppleIapPlatform) ...[
                       Container(
@@ -14416,9 +26562,29 @@ class CashGameStatsLockedPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text(
-                              'Payment Link',
-                              style: TextStyle(
+                            Text(
+                              tr(
+                                context,
+                                'Payment Link',
+                                zhTw: '付款連結',
+                                zhCn: '付款链接',
+                                ko: '결제 링크',
+                                ja: '支払いリンク',
+                                de: 'Zahlungslink',
+                                fr: 'Lien de paiement',
+                                ar: 'رابط الدفع',
+                                ru: 'Ссылка на оплату',
+                                trk: 'Ödeme Bağlantısı',
+                                es: 'Enlace de pago',
+                                it: 'Link di pagamento',
+                                pl: 'Link do płatności',
+                                pt: 'Link de pagamento',
+                                th: 'ลิงก์ชำระเงิน',
+                                id: 'Tautan Pembayaran',
+                                hi: 'भुगतान लिंक',
+                                bn: 'পেমেন্ট লিংক',
+                              ),
+                              style: const TextStyle(
                                 fontWeight: FontWeight.w800,
                               ),
                             ),
@@ -14446,13 +26612,57 @@ class CashGameStatsLockedPage extends StatelessWidget {
                                 if (!context.mounted) return;
 
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Payment link copied'),
+                                  SnackBar(
+                                    content: Text(
+                                      tr(
+                                        context,
+                                        'Payment link copied',
+                                        zhTw: '付款連結已複製',
+                                        zhCn: '付款链接已复制',
+                                        ko: '결제 링크가 복사되었습니다',
+                                        ja: '支払いリンクをコピーしました',
+                                        de: 'Zahlungslink kopiert',
+                                        fr: 'Lien de paiement copié',
+                                        ar: 'تم نسخ رابط الدفع',
+                                        ru: 'Ссылка на оплату скопирована',
+                                        trk: 'Ödeme bağlantısı kopyalandı',
+                                        es: 'Enlace de pago copiado',
+                                        it: 'Link di pagamento copiato',
+                                        pl: 'Link płatności skopiowany',
+                                        pt: 'Link de pagamento copiado',
+                                        th: 'คัดลอกลิงก์ชำระเงินแล้ว',
+                                        id: 'Tautan pembayaran disalin',
+                                        hi: 'भुगतान लिंक कॉपी हो गया',
+                                        bn: 'পেমেন্ট লিংক কপি হয়েছে',
+                                      ),
+                                    ),
                                   ),
                                 );
                               },
                               icon: const Icon(Icons.copy),
-                              label: const Text('Copy Payment Link'),
+                              label: Text(
+                                tr(
+                                  context,
+                                  'Copy Payment Link',
+                                  zhTw: '複製付款連結',
+                                  zhCn: '复制付款链接',
+                                  ko: '결제 링크 복사',
+                                  ja: '支払いリンクをコピー',
+                                  de: 'Zahlungslink kopieren',
+                                  fr: 'Copier le lien de paiement',
+                                  ar: 'نسخ رابط الدفع',
+                                  ru: 'Скопировать ссылку оплаты',
+                                  trk: 'Ödeme bağlantısını kopyala',
+                                  es: 'Copiar enlace de pago',
+                                  it: 'Copia link pagamento',
+                                  pl: 'Kopiuj link płatności',
+                                  pt: 'Copiar link de pagamento',
+                                  th: 'คัดลอกลิงก์ชำระเงิน',
+                                  id: 'Salin tautan pembayaran',
+                                  hi: 'भुगतान लिंक कॉपी करें',
+                                  bn: 'পেমেন্ট লিংক কপি করুন',
+                                ),
+                              ),
                             ),
                           ),
                         ],
@@ -14518,7 +26728,31 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Stats Pro activated')),
+          SnackBar(
+            content: Text(
+              tr(
+                context,
+                'Stats Pro activated',
+                zhTw: 'Stats Pro 已啟用',
+                zhCn: 'Stats Pro 已启用',
+                ko: 'Stats Pro 활성화됨',
+                ja: 'Stats Pro が有効化されました',
+                de: 'Stats Pro aktiviert',
+                fr: 'Stats Pro activé',
+                ar: 'تم تفعيل Stats Pro',
+                ru: 'Stats Pro активирован',
+                trk: 'Stats Pro etkinleştirildi',
+                es: 'Stats Pro activado',
+                it: 'Stats Pro attivato',
+                pl: 'Stats Pro aktywowany',
+                pt: 'Stats Pro ativado',
+                th: 'เปิดใช้งาน Stats Pro แล้ว',
+                id: 'Stats Pro diaktifkan',
+                hi: 'Stats Pro सक्रिय हो गया',
+                bn: 'Stats Pro সক্রিয় হয়েছে',
+              ),
+            ),
+          ),
         );
 
         setState(() {});
@@ -14538,7 +26772,31 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login again')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해주세요',
+              ja: '再度ログインしてください',
+              de: 'Bitte erneut anmelden',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Por favor inicia sesión nuevamente',
+              it: 'Effettua nuovamente l’accesso',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Faça login novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan login kembali',
+              hi: 'कृपया फिर से लॉगिन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -14556,9 +26814,35 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to create checkout: ${response.body}')),
+          SnackBar(
+            content: Text(
+              tr(
+                context,
+                'Failed to create checkout: ${response.body}',
+                zhTw: '建立付款失敗：${response.body}',
+                zhCn: '建立付款失败：${response.body}',
+                ko: '결제 생성 실패: ${response.body}',
+                ja: 'チェックアウト作成失敗: ${response.body}',
+                de: 'Checkout konnte nicht erstellt werden: ${response.body}',
+                fr: 'Échec de création du paiement : ${response.body}',
+                ar: 'فشل إنشاء الدفع: ${response.body}',
+                ru: 'Не удалось создать оплату: ${response.body}',
+                trk: 'Ödeme oluşturulamadı: ${response.body}',
+                es: 'Error al crear el pago: ${response.body}',
+                it: 'Creazione pagamento fallita: ${response.body}',
+                pl: 'Nie udało się utworzyć płatności: ${response.body}',
+                pt: 'Falha ao criar pagamento: ${response.body}',
+                th: 'สร้างการชำระเงินล้มเหลว: ${response.body}',
+                id: 'Gagal membuat pembayaran: ${response.body}',
+                hi: 'चेकआउट बनाना विफल: ${response.body}',
+                bn: 'চেকআউট তৈরি ব্যর্থ: ${response.body}',
+              ),
+            ),
+          ),
         );
+
         return;
       }
 
@@ -14567,9 +26851,35 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
       if (checkoutUrl.isEmpty) {
         if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Checkout URL is empty')),
+          SnackBar(
+            content: Text(
+              tr(
+                context,
+                'Checkout URL is empty',
+                zhTw: '付款網址是空的',
+                zhCn: '付款网址为空',
+                ko: '결제 URL이 비어 있습니다',
+                ja: 'チェックアウトURLが空です',
+                de: 'Checkout-URL ist leer',
+                fr: 'L’URL de paiement est vide',
+                ar: 'رابط الدفع فارغ',
+                ru: 'URL оплаты пуст',
+                trk: 'Ödeme bağlantısı boş',
+                es: 'La URL de pago está vacía',
+                it: 'L’URL di pagamento è vuoto',
+                pl: 'Adres URL płatności jest pusty',
+                pt: 'O URL de pagamento está vazio',
+                th: 'ลิงก์ชำระเงินว่างเปล่า',
+                id: 'URL pembayaran kosong',
+                hi: 'चेकआउट URL खाली है',
+                bn: 'চেকআউট URL খালি',
+              ),
+            ),
+          ),
         );
+
         return;
       }
 
@@ -14579,8 +26889,33 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
       );
     } catch (e) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to open payment page: $e')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Failed to open payment page: $e',
+              zhTw: '無法開啟付款頁面：$e',
+              zhCn: '无法打开付款页面：$e',
+              ko: '결제 페이지를 열 수 없습니다: $e',
+              ja: '支払いページを開けませんでした: $e',
+              de: 'Zahlungsseite konnte nicht geöffnet werden: $e',
+              fr: 'Impossible d’ouvrir la page de paiement : $e',
+              ar: 'فشل فتح صفحة الدفع: $e',
+              ru: 'Не удалось открыть страницу оплаты: $e',
+              trk: 'Ödeme sayfası açılamadı: $e',
+              es: 'No se pudo abrir la página de pago: $e',
+              it: 'Impossibile aprire la pagina di pagamento: $e',
+              pl: 'Nie udało się otworzyć strony płatności: $e',
+              pt: 'Falha ao abrir página de pagamento: $e',
+              th: 'ไม่สามารถเปิดหน้าชำระเงินได้: $e',
+              id: 'Gagal membuka halaman pembayaran: $e',
+              hi: 'भुगतान पृष्ठ खोलने में विफल: $e',
+              bn: 'পেমেন্ট পেজ খুলতে ব্যর্থ: $e',
+            ),
+          ),
+        ),
       );
     }
   }
@@ -14592,8 +26927,33 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
         .delete();
 
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Session deleted')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Session deleted',
+            zhTw: '牌局已刪除',
+            zhCn: '牌局已删除',
+            ko: '세션이 삭제되었습니다',
+            ja: 'セッションを削除しました',
+            de: 'Sitzung gelöscht',
+            fr: 'Session supprimée',
+            ar: 'تم حذف الجلسة',
+            ru: 'Сессия удалена',
+            trk: 'Oturum silindi',
+            es: 'Sesión eliminada',
+            it: 'Sessione eliminata',
+            pl: 'Sesja usunięta',
+            pt: 'Sessão excluída',
+            th: 'ลบเซสชันแล้ว',
+            id: 'Sesi dihapus',
+            hi: 'सेशन हटा दिया गया',
+            bn: 'সেশন মুছে ফেলা হয়েছে',
+          ),
+        ),
+      ),
     );
   }
 
@@ -14665,8 +27025,32 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
   @override
   Widget build(BuildContext context) {
     if (_currentUid.isEmpty) {
-      return const Scaffold(
-        body: Center(child: Text('Please login again')),
+      return Scaffold(
+        body: Center(
+          child: Text(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해주세요',
+              ja: '再度ログインしてください',
+              de: 'Bitte erneut anmelden',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Por favor inicia sesión nuevamente',
+              it: 'Effettua nuovamente l’accesso',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Faça login novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan login kembali',
+              hi: 'कृपया फिर से लॉगिन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          ),
+        ),
       );
     }
 
@@ -14678,22 +27062,152 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
           surfaceTintColor: Colors.white,
           foregroundColor: Colors.black,
           elevation: 0,
-          title: const Text(
-            'Cash Game Stats',
-            style: TextStyle(fontWeight: FontWeight.w800),
+          title: Text(
+            tr(
+              context,
+              'Cash Game Stats',
+              zhTw: '現金局統計',
+              zhCn: '现金局统计',
+              ko: '캐시 게임 통계',
+              ja: 'キャッシュゲーム統計',
+              de: 'Cash Game Statistiken',
+              fr: 'Stats cash game',
+              ar: 'إحصائيات اللعبة النقدية',
+              ru: 'Статистика кэш-игр',
+              trk: 'Nakit Oyun İstatistikleri',
+              es: 'Estadísticas cash game',
+              it: 'Statistiche cash game',
+              pl: 'Statystyki gier cash',
+              pt: 'Estatísticas cash game',
+              th: 'สถิติเกมเงินสด',
+              id: 'Statistik Cash Game',
+              hi: 'कैश गेम आँकड़े',
+              bn: 'ক্যাশ গেম পরিসংখ্যান',
+            ),
+            style: const TextStyle(fontWeight: FontWeight.w800),
           ),
-          bottom: const TabBar(
+          bottom: TabBar(
             isScrollable: true,
             tabAlignment: TabAlignment.start,
-            labelColor: Color(0xFF2E7D32),
+            labelColor: const Color(0xFF2E7D32),
             unselectedLabelColor: Colors.black54,
-            indicatorColor: Color(0xFF2E7D32),
+            indicatorColor: const Color(0xFF2E7D32),
             tabs: [
-              Tab(text: 'All Games'),
-              Tab(text: 'Location Profits'),
-              Tab(text: 'Game Profits'),
-              Tab(text: 'Weekly Profits'),
-              Tab(text: 'Monthly Profits'),
+              Tab(
+                text: tr(
+                  context,
+                  'All Games',
+                  zhTw: '全部牌局',
+                  zhCn: '全部牌局',
+                  ko: '전체 게임',
+                  ja: '全ゲーム',
+                  de: 'Alle Spiele',
+                  fr: 'Toutes les parties',
+                  ar: 'كل الألعاب',
+                  ru: 'Все игры',
+                  trk: 'Tüm Oyunlar',
+                  es: 'Todas las partidas',
+                  it: 'Tutte le partite',
+                  pl: 'Wszystkie gry',
+                  pt: 'Todos os jogos',
+                  th: 'เกมทั้งหมด',
+                  id: 'Semua Game',
+                  hi: 'सभी गेम',
+                  bn: 'সব গেম',
+                ),
+              ),
+              Tab(
+                text: tr(
+                  context,
+                  'Location Profits',
+                  zhTw: '地點盈利',
+                  zhCn: '地点盈利',
+                  ko: '장소별 수익',
+                  ja: '場所別利益',
+                  de: 'Gewinn nach Ort',
+                  fr: 'Profits par lieu',
+                  ar: 'أرباح المواقع',
+                  ru: 'Прибыль по местам',
+                  trk: 'Konum Kârları',
+                  es: 'Ganancias por ubicación',
+                  it: 'Profitti per luogo',
+                  pl: 'Zyski według lokalizacji',
+                  pt: 'Lucros por local',
+                  th: 'กำไรตามสถานที่',
+                  id: 'Profit Lokasi',
+                  hi: 'स्थान लाभ',
+                  bn: 'স্থানভিত্তিক লাভ',
+                ),
+              ),
+              Tab(
+                text: tr(
+                  context,
+                  'Game Profits',
+                  zhTw: '遊戲盈利',
+                  zhCn: '游戏盈利',
+                  ko: '게임별 수익',
+                  ja: 'ゲーム別利益',
+                  de: 'Gewinn nach Spiel',
+                  fr: 'Profits par jeu',
+                  ar: 'أرباح الألعاب',
+                  ru: 'Прибыль по играм',
+                  trk: 'Oyun Kârları',
+                  es: 'Ganancias por juego',
+                  it: 'Profitti per gioco',
+                  pl: 'Zyski według gry',
+                  pt: 'Lucros por jogo',
+                  th: 'กำไรตามเกม',
+                  id: 'Profit Game',
+                  hi: 'गेम लाभ',
+                  bn: 'গেমভিত্তিক লাভ',
+                ),
+              ),
+              Tab(
+                text: tr(
+                  context,
+                  'Weekly Profits',
+                  zhTw: '每週盈利',
+                  zhCn: '每周盈利',
+                  ko: '주간 수익',
+                  ja: '週間利益',
+                  de: 'Wöchentliche Gewinne',
+                  fr: 'Profits hebdomadaires',
+                  ar: 'الأرباح الأسبوعية',
+                  ru: 'Недельная прибыль',
+                  trk: 'Haftalık Kârlar',
+                  es: 'Ganancias semanales',
+                  it: 'Profitti settimanali',
+                  pl: 'Tygodniowe zyski',
+                  pt: 'Lucros semanais',
+                  th: 'กำไรรายสัปดาห์',
+                  id: 'Profit Mingguan',
+                  hi: 'साप्ताहिक लाभ',
+                  bn: 'সাপ্তাহিক লাভ',
+                ),
+              ),
+              Tab(
+                text: tr(
+                  context,
+                  'Monthly Profits',
+                  zhTw: '每月盈利',
+                  zhCn: '每月盈利',
+                  ko: '월간 수익',
+                  ja: '月間利益',
+                  de: 'Monatliche Gewinne',
+                  fr: 'Profits mensuels',
+                  ar: 'الأرباح الشهرية',
+                  ru: 'Месячная прибыль',
+                  trk: 'Aylık Kârlar',
+                  es: 'Ganancias mensuales',
+                  it: 'Profitti mensili',
+                  pl: 'Miesięczne zyski',
+                  pt: 'Lucros mensais',
+                  th: 'กำไรรายเดือน',
+                  id: 'Profit Bulanan',
+                  hi: 'मासिक लाभ',
+                  bn: 'মাসিক লাভ',
+                ),
+              ),
             ],
           ),
         ),
@@ -14706,22 +27220,86 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                     _openEditor();
                   }
                 },
-                itemBuilder: (context) => const [
+                itemBuilder: (context) => [
                   PopupMenuItem<String>(
                     value: 'ongoing',
-                    child: Text('Add an ongoing game'),
+                    child: Text(
+                      tr(
+                        context,
+                        'Add an ongoing game',
+                        zhTw: '新增進行中的牌局',
+                        zhCn: '新增进行中的牌局',
+                        ko: '진행 중인 게임 추가',
+                        ja: '進行中のゲームを追加',
+                        de: 'Laufendes Spiel hinzufügen',
+                        fr: 'Ajouter une partie en cours',
+                        ar: 'إضافة لعبة جارية',
+                        ru: 'Добавить текущую игру',
+                        trk: 'Devam eden oyun ekle',
+                        es: 'Agregar una partida en curso',
+                        it: 'Aggiungi partita in corso',
+                        pl: 'Dodaj trwającą grę',
+                        pt: 'Adicionar jogo em andamento',
+                        th: 'เพิ่มเกมที่กำลังดำเนินอยู่',
+                        id: 'Tambah game yang sedang berlangsung',
+                        hi: 'चल रहा गेम जोड़ें',
+                        bn: 'চলমান গেম যোগ করুন',
+                      ),
+                    ),
                   ),
                   PopupMenuItem<String>(
                     value: 'ended',
-                    child: Text('Add an already finished game'),
+                    child: Text(
+                      tr(
+                        context,
+                        'Add an already finished game',
+                        zhTw: '新增已結束的牌局',
+                        zhCn: '新增已结束的牌局',
+                        ko: '이미 종료된 게임 추가',
+                        ja: '終了済みゲームを追加',
+                        de: 'Bereits beendetes Spiel hinzufügen',
+                        fr: 'Ajouter une partie terminée',
+                        ar: 'إضافة لعبة منتهية',
+                        ru: 'Добавить уже завершённую игру',
+                        trk: 'Bitmiş oyun ekle',
+                        es: 'Agregar una partida finalizada',
+                        it: 'Aggiungi partita terminata',
+                        pl: 'Dodaj zakończoną grę',
+                        pt: 'Adicionar jogo finalizado',
+                        th: 'เพิ่มเกมที่จบแล้ว',
+                        id: 'Tambah game yang sudah selesai',
+                        hi: 'पहले से समाप्त गेम जोड़ें',
+                        bn: 'ইতোমধ্যে শেষ হওয়া গেম যোগ করুন',
+                      ),
+                    ),
                   ),
                 ],
                 child: FloatingActionButton.extended(
                   onPressed: null,
                   icon: const Icon(Icons.add),
-                  label: const Text(
-                    'Add game',
-                    style: TextStyle(fontWeight: FontWeight.w800),
+                  label: Text(
+                    tr(
+                      context,
+                      'Add game',
+                      zhTw: '新增牌局',
+                      zhCn: '新增牌局',
+                      ko: '게임 추가',
+                      ja: 'ゲーム追加',
+                      de: 'Spiel hinzufügen',
+                      fr: 'Ajouter une partie',
+                      ar: 'إضافة لعبة',
+                      ru: 'Добавить игру',
+                      trk: 'Oyun ekle',
+                      es: 'Agregar partida',
+                      it: 'Aggiungi partita',
+                      pl: 'Dodaj grę',
+                      pt: 'Adicionar jogo',
+                      th: 'เพิ่มเกม',
+                      id: 'Tambah game',
+                      hi: 'गेम जोड़ें',
+                      bn: 'গেম যোগ করুন',
+                    ),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
               )
@@ -14742,7 +27320,31 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                             if (!mounted) return;
 
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Purchase restored')),
+                              SnackBar(
+                                content: Text(
+                                  tr(
+                                    context,
+                                    'Purchase restored',
+                                    zhTw: '購買已恢復',
+                                    zhCn: '购买已恢复',
+                                    ko: '구매가 복원되었습니다',
+                                    ja: '購入が復元されました',
+                                    de: 'Kauf wiederhergestellt',
+                                    fr: 'Achat restauré',
+                                    ar: 'تمت استعادة الشراء',
+                                    ru: 'Покупка восстановлена',
+                                    trk: 'Satın alma geri yüklendi',
+                                    es: 'Compra restaurada',
+                                    it: 'Acquisto ripristinato',
+                                    pl: 'Zakup przywrócony',
+                                    pt: 'Compra restaurada',
+                                    th: 'กู้คืนการซื้อแล้ว',
+                                    id: 'Pembelian dipulihkan',
+                                    hi: 'खरीद पुनर्स्थापित हुई',
+                                    bn: 'ক্রয় পুনরুদ্ধার হয়েছে',
+                                  ),
+                                ),
+                              ),
                             );
 
                             setState(() {});
@@ -14758,7 +27360,29 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                             );
                           }
                         },
-                        child: const Text('Restore Purchase'),
+                        child: Text(
+                          tr(
+                            context,
+                            'Restore Purchase',
+                            zhTw: '恢復購買',
+                            zhCn: '恢复购买',
+                            ko: '구매 복원',
+                            ja: '購入を復元',
+                            de: 'Kauf wiederherstellen',
+                            fr: 'Restaurer l’achat',
+                            ar: 'استعادة الشراء',
+                            ru: 'Восстановить покупку',
+                            trk: 'Satın almayı geri yükle',
+                            es: 'Restaurar compra',
+                            it: 'Ripristina acquisto',
+                            pl: 'Przywróć zakup',
+                            pt: 'Restaurar compra',
+                            th: 'กู้คืนการซื้อ',
+                            id: 'Pulihkan pembelian',
+                            hi: 'खरीद पुनर्स्थापित करें',
+                            bn: 'ক্রয় পুনরুদ্ধার করুন',
+                          ),
+                        ),
                       ),
                     ),
                   FloatingActionButton.extended(
@@ -14766,9 +27390,29 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                     backgroundColor: const Color(0xFFDBEAFE),
                     foregroundColor: const Color(0xFF1D4ED8),
                     icon: const Icon(Icons.workspace_premium),
-                    label: const Text(
-                      'Upgrade to Stats Pro',
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                    label: Text(
+                      tr(
+                        context,
+                        'Upgrade to Stats Pro',
+                        zhTw: '升級至 Stats Pro',
+                        zhCn: '升级至 Stats Pro',
+                        ko: 'Stats Pro로 업그레이드',
+                        ja: 'Stats Pro にアップグレード',
+                        de: 'Auf Stats Pro upgraden',
+                        fr: 'Passer à Stats Pro',
+                        ar: 'الترقية إلى Stats Pro',
+                        ru: 'Обновить до Stats Pro',
+                        trk: 'Stats Pro’ya yükselt',
+                        es: 'Actualizar a Stats Pro',
+                        it: 'Passa a Stats Pro',
+                        pl: 'Ulepsz do Stats Pro',
+                        pt: 'Atualizar para Stats Pro',
+                        th: 'อัปเกรดเป็น Stats Pro',
+                        id: 'Upgrade ke Stats Pro',
+                        hi: 'Stats Pro में अपग्रेड करें',
+                        bn: 'Stats Pro-তে আপগ্রেড করুন',
+                      ),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),
                 ],
@@ -14789,7 +27433,27 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: SelectableText(
-                    'Failed to load stats\n\n${snapshot.error}',
+                    tr(
+                      context,
+                      'Failed to load stats\n\n${snapshot.error}',
+                      zhTw: '載入統計失敗\n\n${snapshot.error}',
+                      zhCn: '加载统计失败\n\n${snapshot.error}',
+                      ko: '통계를 불러오지 못했습니다\n\n${snapshot.error}',
+                      ja: '統計の読み込みに失敗しました\n\n${snapshot.error}',
+                      de: 'Statistiken konnten nicht geladen werden\n\n${snapshot.error}',
+                      fr: 'Impossible de charger les statistiques\n\n${snapshot.error}',
+                      ar: 'فشل تحميل الإحصائيات\n\n${snapshot.error}',
+                      ru: 'Не удалось загрузить статистику\n\n${snapshot.error}',
+                      trk: 'İstatistikler yüklenemedi\n\n${snapshot.error}',
+                      es: 'No se pudieron cargar las estadísticas\n\n${snapshot.error}',
+                      it: 'Impossibile caricare le statistiche\n\n${snapshot.error}',
+                      pl: 'Nie udało się załadować statystyk\n\n${snapshot.error}',
+                      pt: 'Falha ao carregar estatísticas\n\n${snapshot.error}',
+                      th: 'โหลดสถิติไม่สำเร็จ\n\n${snapshot.error}',
+                      id: 'Gagal memuat statistik\n\n${snapshot.error}',
+                      hi: 'आँकड़े लोड करने में विफल\n\n${snapshot.error}',
+                      bn: 'পরিসংখ্যান লোড ব্যর্থ\n\n${snapshot.error}',
+                    ),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 16,
@@ -14809,12 +27473,12 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
             final totalProfit = endedItems.fold<double>(
               0,
-              (sum, item) => sum + item.profit,
+              (total, item) => total + item.profit,
             );
 
             final totalHours = endedItems.fold<double>(
               0,
-              (sum, item) => sum + item.hours,
+              (total, item) => total + item.hours,
             );
 
             final sessionsCount = endedItems.length;
@@ -14842,7 +27506,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
             final groupedByWeekday = _buildGroupedData(
               endedItems,
-              (item) => _weekdayZh(item.startedAt),
+              (item) => _weekdayZh(context, item.startedAt),
             );
 
             final groupedByMonth = _buildGroupedData(
@@ -14987,10 +27651,30 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                       ),
                       child: Row(
                         children: [
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Win Rate',
-                              style: TextStyle(
+                              tr(
+                                context,
+                                'Win Rate',
+                                zhTw: '勝率',
+                                zhCn: '胜率',
+                                ko: '승률',
+                                ja: '勝率',
+                                de: 'Gewinnrate',
+                                fr: 'Taux de victoire',
+                                ar: 'معدل الفوز',
+                                ru: 'Процент побед',
+                                trk: 'Kazanma Oranı',
+                                es: 'Porcentaje de victoria',
+                                it: 'Percentuale di vittoria',
+                                pl: 'Wskaźnik wygranych',
+                                pt: 'Taxa de vitória',
+                                th: 'อัตราชนะ',
+                                id: 'Rasio kemenangan',
+                                hi: 'जीत दर',
+                                bn: 'জয়ের হার',
+                              ),
+                              style: const TextStyle(
                                 color: Colors.black87,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
@@ -15022,10 +27706,30 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                             color: const Color(0xFFE5E7EB),
                           ),
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
-                            'No hand data yet',
-                            style: TextStyle(
+                            tr(
+                              context,
+                              'No hand data yet',
+                              zhTw: '目前還沒有牌局資料',
+                              zhCn: '目前还没有牌局数据',
+                              ko: '아직 게임 데이터가 없습니다',
+                              ja: 'まだゲームデータがありません',
+                              de: 'Noch keine Handdaten',
+                              fr: 'Aucune donnée disponible',
+                              ar: 'لا توجد بيانات بعد',
+                              ru: 'Пока нет данных',
+                              trk: 'Henüz veri yok',
+                              es: 'Aún no hay datos',
+                              it: 'Nessun dato disponibile',
+                              pl: 'Brak danych',
+                              pt: 'Ainda sem dados',
+                              th: 'ยังไม่มีข้อมูล',
+                              id: 'Belum ada data',
+                              hi: 'अभी तक कोई डेटा नहीं',
+                              bn: 'এখনও কোনো ডেটা নেই',
+                            ),
+                            style: const TextStyle(
                               color: Colors.black87,
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
@@ -15057,7 +27761,27 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                                   children: [
                                     Text(
                                       item.location.isEmpty
-                                          ? 'Unknown Location'
+                                          ? tr(
+                                              context,
+                                              'Unknown Location',
+                                              zhTw: '未知地點',
+                                              zhCn: '未知地点',
+                                              ko: '알 수 없는 장소',
+                                              ja: '不明な場所',
+                                              de: 'Unbekannter Ort',
+                                              fr: 'Lieu inconnu',
+                                              ar: 'موقع غير معروف',
+                                              ru: 'Неизвестное место',
+                                              trk: 'Bilinmeyen Konum',
+                                              es: 'Ubicación desconocida',
+                                              it: 'Posizione sconosciuta',
+                                              pl: 'Nieznana lokalizacja',
+                                              pt: 'Local desconhecido',
+                                              th: 'สถานที่ไม่ทราบ',
+                                              id: 'Lokasi tidak diketahui',
+                                              hi: 'अज्ञात स्थान',
+                                              bn: 'অজানা অবস্থান',
+                                            )
                                           : _normalizeLocationForDisplay(item.location),
                                       style: const TextStyle(
                                         color: Colors.black87,
@@ -15093,9 +27817,29 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                                           color: const Color(0xFFDBEAFE),
                                           borderRadius: BorderRadius.circular(999),
                                         ),
-                                        child: const Text(
-                                          'Is Ongoing',
-                                          style: TextStyle(
+                                        child: Text(
+                                          tr(
+                                            context,
+                                            'Is Ongoing',
+                                            zhTw: '進行中',
+                                            zhCn: '进行中',
+                                            ko: '진행 중',
+                                            ja: '進行中',
+                                            de: 'Läuft',
+                                            fr: 'En cours',
+                                            ar: 'جارٍ',
+                                            ru: 'В процессе',
+                                            trk: 'Devam Ediyor',
+                                            es: 'En curso',
+                                            it: 'In corso',
+                                            pl: 'W trakcie',
+                                            pt: 'Em andamento',
+                                            th: 'กำลังดำเนินอยู่',
+                                            id: 'Sedang berlangsung',
+                                            hi: 'चल रहा है',
+                                            bn: 'চলমান',
+                                          ),
+                                          style: const TextStyle(
                                             color: Color(0xFF1D4ED8),
                                             fontWeight: FontWeight.w800,
                                           ),
@@ -15128,19 +27872,63 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                                       await _deleteSession(item.id);
                                     }
                                   },
-                                  itemBuilder: (context) => const [
+                                  itemBuilder: (context) => [
                                     PopupMenuItem<String>(
                                       value: 'edit',
                                       child: Text(
-                                        'Edit',
-                                        style: TextStyle(color: Colors.black87),
+                                        tr(
+                                          context,
+                                          'Edit',
+                                          zhTw: '編輯',
+                                          zhCn: '编辑',
+                                          ko: '수정',
+                                          ja: '編集',
+                                          de: 'Bearbeiten',
+                                          fr: 'Modifier',
+                                          ar: 'تعديل',
+                                          ru: 'Редактировать',
+                                          trk: 'Düzenle',
+                                          es: 'Editar',
+                                          it: 'Modifica',
+                                          pl: 'Edytuj',
+                                          pt: 'Editar',
+                                          th: 'แก้ไข',
+                                          id: 'Edit',
+                                          hi: 'संपादित करें',
+                                          bn: 'এডিট',
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                        ),
                                       ),
                                     ),
                                     PopupMenuItem<String>(
                                       value: 'delete',
                                       child: Text(
-                                        'Remove',
-                                        style: TextStyle(color: Colors.black87),
+                                        tr(
+                                          context,
+                                          'Remove',
+                                          zhTw: '移除',
+                                          zhCn: '移除',
+                                          ko: '삭제',
+                                          ja: '削除',
+                                          de: 'Entfernen',
+                                          fr: 'Supprimer',
+                                          ar: 'إزالة',
+                                          ru: 'Удалить',
+                                          trk: 'Kaldır',
+                                          es: 'Eliminar',
+                                          it: 'Rimuovi',
+                                          pl: 'Usuń',
+                                          pt: 'Remover',
+                                          th: 'ลบ',
+                                          id: 'Hapus',
+                                          hi: 'हटाएँ',
+                                          bn: 'মুছুন',
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.black87,
+                                        ),
                                       ),
                                     ),
                                   ],
@@ -15317,16 +28105,104 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete Game'),
-          content: const Text('Are you sure you want to delete this game?'),
+          title: Text(
+            tr(
+              context,
+              'Delete Game',
+              zhTw: '刪除牌局',
+              zhCn: '删除牌局',
+              ko: '게임 삭제',
+              ja: 'ゲーム削除',
+              de: 'Spiel löschen',
+              fr: 'Supprimer la partie',
+              ar: 'حذف اللعبة',
+              ru: 'Удалить игру',
+              trk: 'Oyunu Sil',
+              es: 'Eliminar partida',
+              it: 'Elimina partita',
+              pl: 'Usuń grę',
+              pt: 'Excluir jogo',
+              th: 'ลบเกม',
+              id: 'Hapus game',
+              hi: 'गेम हटाएँ',
+              bn: 'গেম মুছুন',
+            ),
+          ),
+          content: Text(
+            tr(
+              context,
+              'Are you sure you want to delete this game?',
+              zhTw: '你確定要刪除這場牌局嗎？',
+              zhCn: '你确定要删除这场牌局吗？',
+              ko: '이 게임을 삭제하시겠습니까?',
+              ja: 'このゲームを削除しますか？',
+              de: 'Möchtest du dieses Spiel wirklich löschen?',
+              fr: 'Voulez-vous vraiment supprimer cette partie ?',
+              ar: 'هل أنت متأكد أنك تريد حذف هذه اللعبة؟',
+              ru: 'Вы уверены, что хотите удалить эту игру?',
+              trk: 'Bu oyunu silmek istediğinizden emin misiniz?',
+              es: '¿Seguro que deseas eliminar esta partida?',
+              it: 'Sei sicuro di voler eliminare questa partita?',
+              pl: 'Czy na pewno chcesz usunąć tę grę?',
+              pt: 'Tem certeza que deseja excluir este jogo?',
+              th: 'คุณแน่ใจหรือไม่ว่าต้องการลบเกมนี้?',
+              id: 'Apakah Anda yakin ingin menghapus game ini?',
+              hi: 'क्या आप वाकई इस गेम को हटाना चाहते हैं?',
+              bn: 'আপনি কি নিশ্চিত এই গেম মুছতে চান?',
+            ),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Delete'),
+              child: Text(
+                tr(
+                  context,
+                  'Delete',
+                  zhTw: '刪除',
+                  zhCn: '删除',
+                  ko: '삭제',
+                  ja: '削除',
+                  de: 'Löschen',
+                  fr: 'Supprimer',
+                  ar: 'حذف',
+                  ru: 'Удалить',
+                  trk: 'Sil',
+                  es: 'Eliminar',
+                  it: 'Elimina',
+                  pl: 'Usuń',
+                  pt: 'Excluir',
+                  th: 'ลบ',
+                  id: 'Hapus',
+                  hi: 'हटाएँ',
+                  bn: 'মুছুন',
+                ),
+              ),
             ),
           ],
         );
@@ -15343,7 +28219,31 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Game deleted')),
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Game deleted',
+            zhTw: '牌局已刪除',
+            zhCn: '牌局已删除',
+            ko: '게임이 삭제되었습니다',
+            ja: 'ゲームを削除しました',
+            de: 'Spiel gelöscht',
+            fr: 'Partie supprimée',
+            ar: 'تم حذف اللعبة',
+            ru: 'Игра удалена',
+            trk: 'Oyun silindi',
+            es: 'Partida eliminada',
+            it: 'Partita eliminata',
+            pl: 'Gra usunięta',
+            pt: 'Jogo excluído',
+            th: 'ลบเกมแล้ว',
+            id: 'Game dihapus',
+            hi: 'गेम हटा दिया गया',
+            bn: 'গেম মুছে ফেলা হয়েছে',
+          ),
+        ),
+      ),
     );
 
     Navigator.pop(context);
@@ -15358,14 +28258,62 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
     if (locationController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter the location')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Enter the location',
+              zhTw: '請輸入地點',
+              zhCn: '请输入地点',
+              ko: '장소를 입력하세요',
+              ja: '場所を入力してください',
+              de: 'Ort eingeben',
+              fr: 'Entrez le lieu',
+              ar: 'أدخل الموقع',
+              ru: 'Введите место',
+              trk: 'Konumu girin',
+              es: 'Ingresa la ubicación',
+              it: 'Inserisci la posizione',
+              pl: 'Wprowadź lokalizację',
+              pt: 'Digite o local',
+              th: 'กรุณากรอกสถานที่',
+              id: 'Masukkan lokasi',
+              hi: 'स्थान दर्ज करें',
+              bn: 'লোকেশন লিখুন',
+            ),
+          ),
+        ),
       );
       return;
     }
 
     if (!isOngoing && endedAt == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose the end time')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Choose the end time',
+              zhTw: '請選擇結束時間',
+              zhCn: '请选择结束时间',
+              ko: '종료 시간을 선택하세요',
+              ja: '終了時間を選択してください',
+              de: 'Endzeit auswählen',
+              fr: 'Choisissez l’heure de fin',
+              ar: 'اختر وقت الانتهاء',
+              ru: 'Выберите время окончания',
+              trk: 'Bitiş zamanını seçin',
+              es: 'Elige la hora de finalización',
+              it: 'Scegli l’orario di fine',
+              pl: 'Wybierz czas zakończenia',
+              pt: 'Escolha o horário de término',
+              th: 'กรุณาเลือกเวลาสิ้นสุด',
+              id: 'Pilih waktu selesai',
+              hi: 'समाप्ति समय चुनें',
+              bn: 'শেষ সময় নির্বাচন করুন',
+            ),
+          ),
+        ),
       );
       return;
     }
@@ -15412,7 +28360,31 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Failed to save')),
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Failed to save',
+              zhTw: '儲存失敗',
+              zhCn: '保存失败',
+              ko: '저장 실패',
+              ja: '保存に失敗しました',
+              de: 'Speichern fehlgeschlagen',
+              fr: 'Échec de l’enregistrement',
+              ar: 'فشل الحفظ',
+              ru: 'Не удалось сохранить',
+              trk: 'Kaydedilemedi',
+              es: 'No se pudo guardar',
+              it: 'Salvataggio non riuscito',
+              pl: 'Nie udało się zapisać',
+              pt: 'Falha ao salvar',
+              th: 'บันทึกไม่สำเร็จ',
+              id: 'Gagal menyimpan',
+              hi: 'सेव नहीं हो पाया',
+              bn: 'সংরক্ষণ ব্যর্থ',
+            ),
+          ),
+        ),
       );
 
       setState(() {
@@ -15442,7 +28414,49 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
         foregroundColor: Colors.black,
         elevation: 0,
         title: Text(
-          isEditing ? 'Edit Game' : 'Add Game',
+          isEditing
+              ? tr(
+                  context,
+                  'Edit Game',
+                  zhTw: '編輯牌局',
+                  zhCn: '编辑牌局',
+                  ko: '게임 수정',
+                  ja: 'ゲーム編集',
+                  de: 'Spiel bearbeiten',
+                  fr: 'Modifier la partie',
+                  ar: 'تعديل اللعبة',
+                  ru: 'Редактировать игру',
+                  trk: 'Oyunu Düzenle',
+                  es: 'Editar partida',
+                  it: 'Modifica partita',
+                  pl: 'Edytuj grę',
+                  pt: 'Editar jogo',
+                  th: 'แก้ไขเกม',
+                  id: 'Edit game',
+                  hi: 'गेम संपादित करें',
+                  bn: 'গেম সম্পাদনা',
+                )
+              : tr(
+                  context,
+                  'Add Game',
+                  zhTw: '新增牌局',
+                  zhCn: '新增牌局',
+                  ko: '게임 추가',
+                  ja: 'ゲーム追加',
+                  de: 'Spiel hinzufügen',
+                  fr: 'Ajouter une partie',
+                  ar: 'إضافة لعبة',
+                  ru: 'Добавить игру',
+                  trk: 'Oyun Ekle',
+                  es: 'Agregar partida',
+                  it: 'Aggiungi partita',
+                  pl: 'Dodaj grę',
+                  pt: 'Adicionar jogo',
+                  th: 'เพิ่มเกม',
+                  id: 'Tambah game',
+                  hi: 'गेम जोड़ें',
+                  bn: 'গেম যোগ করুন',
+                ),
           style: const TextStyle(fontWeight: FontWeight.w800),
         ),
         actions: [
@@ -15450,32 +28464,113 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
             IconButton(
               onPressed: _deleteGame,
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete Game',
+              tooltip: tr(
+                context,
+                'Delete Game',
+                zhTw: '刪除牌局',
+                zhCn: '删除牌局',
+                ko: '게임 삭제',
+                ja: 'ゲーム削除',
+                de: 'Spiel löschen',
+                fr: 'Supprimer la partie',
+                ar: 'حذف اللعبة',
+                ru: 'Удалить игру',
+                trk: 'Oyunu Sil',
+                es: 'Eliminar partida',
+                it: 'Elimina partita',
+                pl: 'Usuń grę',
+                pt: 'Excluir jogo',
+                th: 'ลบเกม',
+                id: 'Hapus game',
+                hi: 'गेम हटाएँ',
+                bn: 'গেম মুছুন',
+              ),
             ),
         ],
       ),
+
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
             TextField(
               controller: gameController,
-              decoration: const InputDecoration(
-                labelText: 'Game',
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Game',
+                  zhTw: '遊戲',
+                  zhCn: '游戏',
+                  ko: '게임',
+                  ja: 'ゲーム',
+                  de: 'Spiel',
+                  fr: 'Jeu',
+                  ar: 'اللعبة',
+                  ru: 'Игра',
+                  trk: 'Oyun',
+                  es: 'Juego',
+                  it: 'Gioco',
+                  pl: 'Gra',
+                  pt: 'Jogo',
+                  th: 'เกม',
+                  id: 'Game',
+                  hi: 'गेम',
+                  bn: 'গেম',
+                ),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: stakesController,
-              decoration: const InputDecoration(
-                labelText: 'Stakes',
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Stakes',
+                  zhTw: '盲注',
+                  zhCn: '盲注',
+                  ko: '스테이크',
+                  ja: 'ブラインド',
+                  de: 'Einsätze',
+                  fr: 'Blindes',
+                  ar: 'الرهانات',
+                  ru: 'Ставки',
+                  trk: 'Bahisler',
+                  es: 'Ciegas',
+                  it: 'Puntate',
+                  pl: 'Stawki',
+                  pt: 'Blinds',
+                  th: 'เดิมพัน',
+                  id: 'Taruhan',
+                  hi: 'स्टेक्स',
+                  bn: 'ব্লাইন্ড',
+                ),
               ),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<CashGameLocationType>(
-              value: locationType,
-              decoration: const InputDecoration(
-                labelText: 'Location Type',
+              initialValue: locationType,
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Location Type',
+                  zhTw: '地點類型',
+                  zhCn: '地点类型',
+                  ko: '장소 유형',
+                  ja: '場所タイプ',
+                  de: 'Ortstyp',
+                  fr: 'Type de lieu',
+                  ar: 'نوع الموقع',
+                  ru: 'Тип места',
+                  trk: 'Konum Türü',
+                  es: 'Tipo de ubicación',
+                  it: 'Tipo di luogo',
+                  pl: 'Typ lokalizacji',
+                  pt: 'Tipo de local',
+                  th: 'ประเภทสถานที่',
+                  id: 'Tipe lokasi',
+                  hi: 'स्थान प्रकार',
+                  bn: 'লোকেশন ধরন',
+                ),
               ),
               items: const [
                 DropdownMenuItem(
@@ -15495,49 +28590,252 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                 });
               },
             ),
+
             const SizedBox(height: 12),
             TextField(
               controller: locationController,
               decoration: InputDecoration(
                 labelText: locationType == CashGameLocationType.casino
-                    ? 'Casino Name'
-                    : 'Player Name',
+                    ? tr(
+                        context,
+                        'Casino Name',
+                        zhTw: '賭場名稱',
+                        zhCn: '赌场名称',
+                        ko: '카지노 이름',
+                        ja: 'カジノ名',
+                        de: 'Casino-Name',
+                        fr: 'Nom du casino',
+                        ar: 'اسم الكازينو',
+                        ru: 'Название казино',
+                        trk: 'Casino Adı',
+                        es: 'Nombre del casino',
+                        it: 'Nome del casinò',
+                        pl: 'Nazwa kasyna',
+                        pt: 'Nome do cassino',
+                        th: 'ชื่อคาสิโน',
+                        id: 'Nama kasino',
+                        hi: 'कैसिनो का नाम',
+                        bn: 'ক্যাসিনোর নাম',
+                      )
+                    : tr(
+                        context,
+                        'Player Name',
+                        zhTw: '玩家名稱',
+                        zhCn: '玩家名称',
+                        ko: '플레이어 이름',
+                        ja: 'プレイヤー名',
+                        de: 'Spielername',
+                        fr: 'Nom du joueur',
+                        ar: 'اسم اللاعب',
+                        ru: 'Имя игрока',
+                        trk: 'Oyuncu Adı',
+                        es: 'Nombre del jugador',
+                        it: 'Nome giocatore',
+                        pl: 'Nazwa gracza',
+                        pt: 'Nome do jogador',
+                        th: 'ชื่อผู้เล่น',
+                        id: 'Nama pemain',
+                        hi: 'खिलाड़ी का नाम',
+                        bn: 'প্লেয়ারের নাম',
+                      ),
                 hintText: locationType == CashGameLocationType.casino
-                    ? 'Enter casino name'
-                    : 'Enter player name',
+                    ? tr(
+                        context,
+                        'Enter casino name',
+                        zhTw: '輸入賭場名稱',
+                        zhCn: '输入赌场名称',
+                        ko: '카지노 이름 입력',
+                        ja: 'カジノ名を入力',
+                        de: 'Casino-Namen eingeben',
+                        fr: 'Entrez le nom du casino',
+                        ar: 'أدخل اسم الكازينو',
+                        ru: 'Введите название казино',
+                        trk: 'Casino adını girin',
+                        es: 'Ingresa el nombre del casino',
+                        it: 'Inserisci il nome del casinò',
+                        pl: 'Wpisz nazwę kasyna',
+                        pt: 'Digite o nome do cassino',
+                        th: 'กรอกชื่อคาสิโน',
+                        id: 'Masukkan nama kasino',
+                        hi: 'कैसिनो का नाम दर्ज करें',
+                        bn: 'ক্যাসিনোর নাম লিখুন',
+                      )
+                    : tr(
+                        context,
+                        'Enter player name',
+                        zhTw: '輸入玩家名稱',
+                        zhCn: '输入玩家名称',
+                        ko: '플레이어 이름 입력',
+                        ja: 'プレイヤー名を入力',
+                        de: 'Spielernamen eingeben',
+                        fr: 'Entrez le nom du joueur',
+                        ar: 'أدخل اسم اللاعب',
+                        ru: 'Введите имя игрока',
+                        trk: 'Oyuncu adını girin',
+                        es: 'Ingresa el nombre del jugador',
+                        it: 'Inserisci il nome del giocatore',
+                        pl: 'Wpisz nazwę gracza',
+                        pt: 'Digite o nome do jogador',
+                        th: 'กรอกชื่อผู้เล่น',
+                        id: 'Masukkan nama pemain',
+                        hi: 'खिलाड़ी का नाम दर्ज करें',
+                        bn: 'প্লেয়ারের নাম লিখুন',
+                      ),
                 helperText: locationType == CashGameLocationType.casino
-                    ? 'Will save as: Name Casino'
-                    : "Will save as: Name's Game",
+                    ? tr(
+                        context,
+                        'Will save as: Name Casino',
+                        zhTw: '將儲存為：名稱 Casino',
+                        zhCn: '将保存为：名称 Casino',
+                        ko: '다음 형식으로 저장됩니다: Name Casino',
+                        ja: '保存形式: Name Casino',
+                        de: 'Wird gespeichert als: Name Casino',
+                        fr: 'Sera enregistré comme : Name Casino',
+                        ar: 'سيتم الحفظ كالتالي: Name Casino',
+                        ru: 'Будет сохранено как: Name Casino',
+                        trk: 'Şöyle kaydedilecek: Name Casino',
+                        es: 'Se guardará como: Name Casino',
+                        it: 'Verrà salvato come: Name Casino',
+                        pl: 'Zostanie zapisane jako: Name Casino',
+                        pt: 'Será salvo como: Name Casino',
+                        th: 'จะบันทึกเป็น: Name Casino',
+                        id: 'Akan disimpan sebagai: Name Casino',
+                        hi: 'इस रूप में सेव होगा: Name Casino',
+                        bn: 'এভাবে সংরক্ষণ হবে: Name Casino',
+                      )
+                    : tr(
+                        context,
+                        "Will save as: Name's Game",
+                        zhTw: "將儲存為：Name's Game",
+                        zhCn: "将保存为：Name's Game",
+                        ko: "다음 형식으로 저장됩니다: Name's Game",
+                        ja: "保存形式: Name's Game",
+                        de: "Wird gespeichert als: Name's Game",
+                        fr: "Sera enregistré comme : Name's Game",
+                        ar: "سيتم الحفظ كالتالي: Name's Game",
+                        ru: "Будет сохранено как: Name's Game",
+                        trk: "Şöyle kaydedilecek: Name's Game",
+                        es: "Se guardará como: Name's Game",
+                        it: "Verrà salvato come: Name's Game",
+                        pl: "Zostanie zapisane jako: Name's Game",
+                        pt: "Será salvo como: Name's Game",
+                        th: "จะบันทึกเป็น: Name's Game",
+                        id: "Akan disimpan sebagai: Name's Game",
+                        hi: "इस रूप में सेव होगा: Name's Game",
+                        bn: "এভাবে সংরক্ষণ হবে: Name's Game",
+                      ),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: buyInController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Buy In',
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Buy In',
+                  zhTw: '買入',
+                  zhCn: '买入',
+                  ko: '바이인',
+                  ja: 'バイイン',
+                  de: 'Buy-in',
+                  fr: 'Buy-in',
+                  ar: 'الدخول',
+                  ru: 'Бай-ин',
+                  trk: 'Buy-in',
+                  es: 'Buy-in',
+                  it: 'Buy-in',
+                  pl: 'Buy-in',
+                  pt: 'Buy-in',
+                  th: 'บายอิน',
+                  id: 'Buy In',
+                  hi: 'बाय-इन',
+                  bn: 'বাই-ইন',
+                ),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: cashOutController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Cash Out',
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Cash Out',
+                  zhTw: '結算',
+                  zhCn: '结算',
+                  ko: '캐시아웃',
+                  ja: 'キャッシュアウト',
+                  de: 'Cash-out',
+                  fr: 'Cash-out',
+                  ar: 'السحب',
+                  ru: 'Кэшаут',
+                  trk: 'Cash-out',
+                  es: 'Cash-out',
+                  it: 'Cash-out',
+                  pl: 'Cash-out',
+                  pt: 'Cash-out',
+                  th: 'แคชเอาท์',
+                  id: 'Cash Out',
+                  hi: 'कैश आउट',
+                  bn: 'ক্যাশ আউট',
+                ),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: tipsController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Tips',
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Tips',
+                  zhTw: '小費',
+                  zhCn: '小费',
+                  ko: '팁',
+                  ja: 'チップ',
+                  de: 'Trinkgeld',
+                  fr: 'Pourboire',
+                  ar: 'الإكرامية',
+                  ru: 'Чаевые',
+                  trk: 'Bahşiş',
+                  es: 'Propinas',
+                  it: 'Mancia',
+                  pl: 'Napiwki',
+                  pt: 'Gorjetas',
+                  th: 'ทิป',
+                  id: 'Tip',
+                  hi: 'टिप',
+                  bn: 'টিপস',
+                ),
               ),
             ),
             const SizedBox(height: 12),
             SwitchListTile(
               value: isOngoing,
-              title: const Text('Is Ongoing'),
+              title: Text(
+                tr(
+                  context,
+                  'Is Ongoing',
+                  zhTw: '進行中',
+                  zhCn: '进行中',
+                  ko: '진행 중',
+                  ja: '進行中',
+                  de: 'Läuft',
+                  fr: 'En cours',
+                  ar: 'جارٍ',
+                  ru: 'В процессе',
+                  trk: 'Devam Ediyor',
+                  es: 'En curso',
+                  it: 'In corso',
+                  pl: 'W trakcie',
+                  pt: 'Em andamento',
+                  th: 'กำลังดำเนินอยู่',
+                  id: 'Sedang berlangsung',
+                  hi: 'चल रहा है',
+                  bn: 'চলমান',
+                ),
+              ),
               onChanged: (value) {
                 setState(() {
                   isOngoing = value;
@@ -15549,7 +28847,7 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
             ),
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Start'),
+              title: Text(tr(context, 'Start', zhTw: '開始', zhCn: '开始', ko: '시작', ja: '開始', de: 'Start', fr: 'Début', ar: 'البداية', ru: 'Начало', trk: 'Başlangıç', es: 'Inicio', it: 'Inizio', pl: 'Start', pt: 'Início', th: 'เริ่ม', id: 'Mulai', hi: 'शुरू', bn: 'শুরু')),
               subtitle: Text(_dateTimeText(startedAt)),
               trailing: const Icon(Icons.schedule),
               onTap: _pickStartTime,
@@ -15557,9 +28855,11 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
             if (!isOngoing)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('End'),
+                title: Text(tr(context, 'End', zhTw: '結束', zhCn: '结束', ko: '종료', ja: '終了', de: 'Ende', fr: 'Fin', ar: 'النهاية', ru: 'Конец', trk: 'Bitiş', es: 'Fin', it: 'Fine', pl: 'Koniec', pt: 'Fim', th: 'สิ้นสุด', id: 'Selesai', hi: 'समाप्त', bn: 'শেষ')),
                 subtitle: Text(
-                  endedAt == null ? 'Please choose' : _dateTimeText(endedAt!),
+                  endedAt == null
+                      ? tr(context, 'Please choose', zhTw: '請選擇', zhCn: '请选择', ko: '선택해주세요', ja: '選択してください', de: 'Bitte auswählen', fr: 'Veuillez choisir', ar: 'يرجى الاختيار', ru: 'Пожалуйста, выберите', trk: 'Lütfen seçin', es: 'Por favor elige', it: 'Scegli', pl: 'Wybierz', pt: 'Escolha', th: 'กรุณาเลือก', id: 'Silakan pilih', hi: 'कृपया चुनें', bn: 'অনুগ্রহ করে নির্বাচন করুন')
+                      : _dateTimeText(endedAt!),
                 ),
                 trailing: const Icon(Icons.schedule),
                 onTap: _pickEndTime,
@@ -15568,8 +28868,8 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
             TextField(
               controller: noteController,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Note',
+              decoration: InputDecoration(
+                labelText: tr(context, 'Note', zhTw: '備註', zhCn: '备注', ko: '메모', ja: 'メモ', de: 'Notiz', fr: 'Note', ar: 'ملاحظة', ru: 'Заметка', trk: 'Not', es: 'Nota', it: 'Nota', pl: 'Notatka', pt: 'Nota', th: 'หมายเหตุ', id: 'Catatan', hi: 'नोट', bn: 'নোট'),
               ),
             ),
             const SizedBox(height: 20),
@@ -15578,7 +28878,9 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 child: Text(
-                  isSaving ? 'Saving...' : 'Save',
+                  isSaving
+                      ? tr(context, 'Saving...', zhTw: '儲存中...', zhCn: '保存中...', ko: '저장 중...', ja: '保存中...', de: 'Speichern...', fr: 'Enregistrement...', ar: 'جارٍ الحفظ...', ru: 'Сохранение...', trk: 'Kaydediliyor...', es: 'Guardando...', it: 'Salvataggio...', pl: 'Zapisywanie...', pt: 'Salvando...', th: 'กำลังบันทึก...', id: 'Menyimpan...', hi: 'सेव हो रहा है...', bn: 'সংরক্ষণ হচ্ছে...')
+                      : tr(context, 'Save', zhTw: '儲存', zhCn: '保存', ko: '저장', ja: '保存', de: 'Speichern', fr: 'Enregistrer', ar: 'حفظ', ru: 'Сохранить', trk: 'Kaydet', es: 'Guardar', it: 'Salva', pl: 'Zapisz', pt: 'Salvar', th: 'บันทึก', id: 'Simpan', hi: 'सेव करें', bn: 'সংরক্ষণ'),
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                   ),

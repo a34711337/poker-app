@@ -1,6 +1,6 @@
 {
-    "name": "poker_scheduler_clean",
-    "short_name": "poker_scheduler_clean",
+    "name": "Poker Scheduler",
+    "short_name": "Poker Scheduler",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
