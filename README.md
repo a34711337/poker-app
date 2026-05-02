@@ -1,4 +1,4 @@
-# poker_scheduler_clean
+# poker_scheduler
 
 A new Flutter project.
 
