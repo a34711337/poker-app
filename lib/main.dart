@@ -553,6 +553,7 @@ class AuthGate extends StatelessWidget {
       name: name,
       shortName: (data['shortName'] ?? name).toString(),
       role: role,
+      hasCompletedTutorial: data['hasCompletedTutorial'] == true,
     );
   }
 
@@ -587,6 +588,14 @@ class AuthGate extends StatelessWidget {
             }
 
             currentAppSession = sessionSnapshot.data!;
+            
+            final hasCompletedTutorial =
+                sessionSnapshot.data!.hasCompletedTutorial;
+
+            if (!hasCompletedTutorial) {
+              return ChooseTutorialRolePage(session: sessionSnapshot.data!);
+            }
+
             return TableListPage(session: sessionSnapshot.data!);
           },
         );
@@ -1164,6 +1173,7 @@ Future<String> saveUserProfileData({
   required String displayName,
   required String lastName,
   required UserRole role,
+  required String languageCode,
 }) async {
   final cleanDisplayName = displayName.trim();
   final cleanLastName = lastName.trim();
@@ -1184,43 +1194,1391 @@ Future<String> saveUserProfileData({
 
   final shortName = buildShortName(cleanDisplayName, cleanLastName);
 
+  final profileMap = buildUserProfileMap(
+    displayName: cleanDisplayName,
+    lastName: cleanLastName,
+    email: user.email ?? '',
+    playerId: playerId,
+    roleText: role == UserRole.host ? 'host' : 'player',
+    photoUrl: (existingData['photoUrl'] ?? user.photoURL)?.toString(),
+    avatarType: (existingData['avatarType'] ?? 'photo').toString(),
+    avatarIcon: (existingData['avatarIcon'] ?? 'person').toString(),
+    avatarBgColor: existingData['avatarBgColor'] is int
+        ? existingData['avatarBgColor'] as int
+        : 0xFF2563EB,
+    grantedHostIds:
+        List<dynamic>.from(existingData['grantedHostIds'] ?? <String>[]),
+    blockedUids:
+        List<dynamic>.from(existingData['blockedUids'] ?? <String>[]),
+    isActive: existingData['isActive'] == false ? false : true,
+    createdAt: existingData['createdAt'] ?? FieldValue.serverTimestamp(),
+    includeCreatedAt: true,
+  );
+
+  profileMap['languageCode'] = languageCode;
+  profileMap['updatedAt'] = FieldValue.serverTimestamp();
+
   await userRef.set(
-    buildUserProfileMap(
-      displayName: cleanDisplayName,
-      lastName: cleanLastName,
-      email: user.email ?? '',
-      playerId: playerId,
-      roleText: role == UserRole.host ? 'host' : 'player',
-      photoUrl: (existingData['photoUrl'] ?? user.photoURL)?.toString(),
-      avatarType: (existingData['avatarType'] ?? 'photo').toString(),
-      avatarIcon: (existingData['avatarIcon'] ?? 'person').toString(),
-      avatarBgColor: existingData['avatarBgColor'] is int
-          ? existingData['avatarBgColor'] as int
-          : 0xFF2563EB,
-      grantedHostIds:
-          List<dynamic>.from(existingData['grantedHostIds'] ?? <String>[]),
-      blockedUids:
-          List<dynamic>.from(existingData['blockedUids'] ?? <String>[]),
-      isActive: existingData['isActive'] == false ? false : true,
-      createdAt: existingData['createdAt'] ?? FieldValue.serverTimestamp(),
-      includeCreatedAt: true,
-    ),
+    profileMap,
     SetOptions(merge: true),
   );
 
   return shortName;
 }
 
+
+class ChooseTutorialRolePage extends StatelessWidget {
+  final UserSession session;
+
+  const ChooseTutorialRolePage({
+    super.key,
+    required this.session,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    void openTutorial(UserRole tutorialRole) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => TutorialPage(
+            session: session.copyWith(
+              role: tutorialRole,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F6F8),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.school,
+                size: 80,
+                color: Colors.green,
+              ),
+              const SizedBox(height: 24),
+              Text(
+                tr(
+                  context,
+                  'Which tutorial do you want to see?',
+                  zhTw: '你想看哪一種教學？',
+                  zhCn: '你想看哪一种教学？',
+                  ko: '어떤 튜토리얼을 볼까요?',
+                  ja: 'どちらのチュートリアルを見ますか？',
+                  de: 'Welches Tutorial möchtest du sehen?',
+                  fr: 'Quel tutoriel voulez-vous voir ?',
+                  ar: 'أي شرح تريد أن ترى؟',
+                  ru: 'Какое обучение вы хотите посмотреть?',
+                  trk: 'Hangi öğreticiyi görmek istiyorsun?',
+                  es: '¿Qué tutorial quieres ver?',
+                  it: 'Quale tutorial vuoi vedere?',
+                  pl: 'Który samouczek chcesz zobaczyć?',
+                  pt: 'Qual tutorial você quer ver?',
+                  th: 'คุณต้องการดูบทสอนแบบไหน?',
+                  id: 'Tutorial mana yang ingin Anda lihat?',
+                  hi: 'आप कौन सा tutorial देखना चाहते हैं?',
+                  bn: 'আপনি কোন tutorial দেখতে চান?',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                tr(
+                  context,
+                  'You can choose Player or Host tutorial. Your account role will not change.',
+                  zhTw: '你可以選 Player 或 Host 教學，帳號身份不會被改變。',
+                  zhCn: '你可以选 Player 或 Host 教学，账号身份不会被改变。',
+                  ko: 'Player 또는 Host 튜토리얼을 볼 수 있으며 계정 역할은 바뀌지 않습니다.',
+                  ja: 'Player または Host の説明を選べます。アカウント権限は変更されません。',
+                  de: 'Du kannst Player oder Host wählen. Deine Kontorolle ändert sich nicht.',
+                  fr: 'Vous pouvez choisir Player ou Host. Le rôle du compte ne changera pas.',
+                  ar: 'يمكنك اختيار شرح Player أو Host. لن يتغير دور حسابك.',
+                  ru: 'Можно выбрать Player или Host. Роль аккаунта не изменится.',
+                  trk: 'Player veya Host öğreticisini seçebilirsin. Hesap rolün değişmez.',
+                  es: 'Puedes elegir Player o Host. Tu rol de cuenta no cambiará.',
+                  it: 'Puoi scegliere Player o Host. Il ruolo dell’account non cambia.',
+                  pl: 'Możesz wybrać Player lub Host. Rola konta się nie zmieni.',
+                  pt: 'Você pode escolher Player ou Host. O papel da conta não muda.',
+                  th: 'เลือกดู Player หรือ Host ได้ โดยสถานะบัญชีจะไม่เปลี่ยน',
+                  id: 'Anda bisa memilih Player atau Host. Role akun tidak berubah.',
+                  hi: 'आप Player या Host tutorial चुन सकते हैं। Account role नहीं बदलेगा।',
+                  bn: 'আপনি Player বা Host tutorial বেছে নিতে পারেন। Account role বদলাবে না।',
+                ),
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => openTutorial(UserRole.player),
+                  icon: const Icon(Icons.person),
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Text(
+                      tr(
+                        context,
+                        'I am a Player',
+                        zhTw: '我是玩家',
+                        zhCn: '我是玩家',
+                        ko: '저는 플레이어입니다',
+                        ja: '私はプレイヤーです',
+                        de: 'Ich bin Spieler',
+                        fr: 'Je suis joueur',
+                        ar: 'أنا لاعب',
+                        ru: 'Я игрок',
+                        trk: 'Ben oyuncuyum',
+                        es: 'Soy jugador',
+                        it: 'Sono un giocatore',
+                        pl: 'Jestem graczem',
+                        pt: 'Sou jogador',
+                        th: 'ฉันเป็นผู้เล่น',
+                        id: 'Saya pemain',
+                        hi: 'मैं Player हूँ',
+                        bn: 'আমি Player',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => openTutorial(UserRole.host),
+                  icon: const Icon(Icons.table_bar),
+                  label: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Text(
+                      tr(
+                        context,
+                        'I am a Host',
+                        zhTw: '我是房主',
+                        zhCn: '我是房主',
+                        ko: '저는 호스트입니다',
+                        ja: '私はホストです',
+                        de: 'Ich bin Host',
+                        fr: 'Je suis hôte',
+                        ar: 'أنا مضيف',
+                        ru: 'Я хост',
+                        trk: 'Ben hostum',
+                        es: 'Soy anfitrión',
+                        it: 'Sono host',
+                        pl: 'Jestem hostem',
+                        pt: 'Sou anfitrião',
+                        th: 'ฉันเป็นโฮสต์',
+                        id: 'Saya host',
+                        hi: 'मैं Host हूँ',
+                        bn: 'আমি Host',
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+
+class TutorialPage extends StatefulWidget {
+  final UserSession session;
+
+  const TutorialPage({
+    super.key,
+    required this.session,
+  });
+
+  @override
+  State<TutorialPage> createState() => _TutorialPageState();
+}
+
+class _TutorialPageState extends State<TutorialPage> {
+  final PageController _controller = PageController();
+
+  int currentPage = 0;
+  bool isSaving = false;
+
+  List<Map<String, dynamic>> get slides {
+    return [
+
+      {
+        'image': 'assets/tutorial/player_id_profile.png',
+        'title': tr(
+          context,
+          'Share Your Player ID',
+          zhTw: '分享你的 Player ID',
+          zhCn: '分享你的 Player ID',
+          ko: '플레이어 ID 공유',
+          ja: 'プレイヤーIDを共有',
+          de: 'Teile deine Player-ID',
+          fr: 'Partagez votre ID joueur',
+          ar: 'شارك معرف اللاعب الخاص بك',
+          ru: 'Поделитесь своим Player ID',
+          trk: 'Oyuncu Kimliğini Paylaş',
+          es: 'Comparte tu ID de jugador',
+          it: 'Condividi il tuo ID giocatore',
+          pl: 'Udostępnij swoje ID gracza',
+          pt: 'Compartilhe seu ID de jogador',
+          th: 'แชร์ Player ID ของคุณ',
+          id: 'Bagikan Player ID Anda',
+          hi: 'अपना Player ID साझा करें',
+          bn: 'আপনার Player ID শেয়ার করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Find your Player ID in Edit Profile and give it to the host so they can add you.',
+          zhTw: '在右上角 Edit Profile 裡找到你的 Player ID，給房主新增後你才能看到桌子並加入。',
+          zhCn: '在右上角 Edit Profile 里找到你的 Player ID，给房主添加后你才能看到桌子并加入。',
+          ko: '오른쪽 상단 Edit Profile에서 Player ID를 찾아 호스트에게 전달하세요. 호스트가 추가해야 테이블을 볼 수 있습니다.',
+          ja: '右上の Edit Profile でPlayer IDを確認し、ホストに送ってください。追加されるとテーブルが表示されます。',
+          de: 'Finde deine Player-ID im Edit Profile und sende sie dem Host, damit du seine Tische sehen kannst.',
+          fr: 'Trouvez votre ID joueur dans Edit Profile et envoyez-le à l’hôte pour voir les tables.',
+          ar: 'ابحث عن معرف اللاعب الخاص بك في Edit Profile وأرسله إلى المضيف حتى تتمكن من رؤية الطاولات.',
+          ru: 'Найдите свой Player ID в Edit Profile и отправьте его хосту, чтобы видеть столы.',
+          trk: 'Player ID’nizi Edit Profile bölümünde bulun ve hosta gönderin.',
+          es: 'Encuentra tu ID de jugador en Edit Profile y envíalo al anfitrión.',
+          it: 'Trova il tuo ID giocatore in Edit Profile e invialo all’host.',
+          pl: 'Znajdź swoje ID gracza w Edit Profile i wyślij je hostowi.',
+          pt: 'Encontre seu ID de jogador em Edit Profile e envie ao anfitrião.',
+          th: 'ไปที่ Edit Profile เพื่อดู Player ID แล้วส่งให้โฮสต์เพิ่มคุณเข้าระบบ',
+          id: 'Temukan Player ID Anda di Edit Profile lalu kirim ke host.',
+          hi: 'Edit Profile में अपना Player ID ढूंढकर होस्ट को भेजें।',
+          bn: 'Edit Profile থেকে আপনার Player ID খুঁজে হোস্টকে পাঠান।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/lobby.png',
+        'title': tr(
+          context,
+          'Browse Tables',
+          zhTw: '瀏覽牌桌',
+          zhCn: '浏览牌桌',
+          ko: '테이블 둘러보기',
+          ja: 'テーブルを見る',
+          de: 'Tische durchsuchen',
+          fr: 'Parcourir les tables',
+          ar: 'تصفح الطاولات',
+          ru: 'Просмотр столов',
+          trk: 'Masaları Görüntüle',
+          es: 'Explorar mesas',
+          it: 'Sfoglia i tavoli',
+          pl: 'Przeglądaj stoły',
+          pt: 'Explorar mesas',
+          th: 'ดูโต๊ะ',
+          id: 'Lihat Meja',
+          hi: 'टेबल देखें',
+          bn: 'টেবিল দেখুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Find games, check stakes, and view open seats.',
+          zhTw: '尋找牌局、查看盲注與空位。',
+          zhCn: '寻找牌局、查看盲注与空位。',
+          ko: '게임과 빈 자리를 확인하세요.',
+          ja: 'ゲームや空席を確認できます。',
+          de: 'Finde Spiele und freie Plätze.',
+          fr: 'Trouvez des parties et des places libres.',
+          ar: 'اعثر على الألعاب والمقاعد المتاحة.',
+          ru: 'Находите игры и свободные места.',
+          trk: 'Oyunları ve boş koltukları görüntüle.',
+          es: 'Encuentra juegos y asientos disponibles.',
+          it: 'Trova partite e posti liberi.',
+          pl: 'Znajdź gry i wolne miejsca.',
+          pt: 'Encontre jogos e lugares livres.',
+          th: 'ค้นหาเกมและที่นั่งว่าง',
+          id: 'Cari game dan kursi kosong.',
+          hi: 'गेम और खाली सीट देखें।',
+          bn: 'গেম ও খালি সিট দেখুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/join_seat.png',
+        'title': tr(
+          context,
+          'Join a Seat',
+          zhTw: '加入座位',
+          zhCn: '加入座位',
+          ko: '자리 참가',
+          ja: '席に参加',
+          de: 'Platz einnehmen',
+          fr: 'Rejoindre une place',
+          ar: 'الانضمام إلى مقعد',
+          ru: 'Занять место',
+          trk: 'Koltuk Al',
+          es: 'Unirse a un asiento',
+          it: 'Unisciti a un posto',
+          pl: 'Dołącz do miejsca',
+          pt: 'Entrar em um assento',
+          th: 'เข้าร่วมที่นั่ง',
+          id: 'Gabung Kursi',
+          hi: 'सीट जॉइन करें',
+          bn: 'সিটে যোগ দিন',
+        ),
+        'subtitle': tr(
+          context,
+          'Tap any open seat to join the table.',
+          zhTw: '點擊空位即可加入牌桌。',
+          zhCn: '点击空位即可加入牌桌。',
+          ko: '빈 자리를 눌러 참가하세요.',
+          ja: '空席をタップして参加。',
+          de: 'Tippe auf einen freien Platz.',
+          fr: 'Touchez une place libre.',
+          ar: 'اضغط على مقعد فارغ.',
+          ru: 'Нажмите на свободное место.',
+          trk: 'Boş koltuğa dokun.',
+          es: 'Toca un asiento libre.',
+          it: 'Tocca un posto libero.',
+          pl: 'Kliknij wolne miejsce.',
+          pt: 'Toque em um lugar livre.',
+          th: 'แตะที่นั่งว่างเพื่อเข้าร่วม',
+          id: 'Tekan kursi kosong.',
+          hi: 'खाली सीट पर टैप करें।',
+          bn: 'খালি সিটে চাপুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/joined.png',
+        'title': tr(
+          context,
+          'Seat Reserved',
+          zhTw: '已預約座位',
+          zhCn: '已预约座位',
+          ko: '좌석 예약 완료',
+          ja: '席を予約済み',
+          de: 'Platz reserviert',
+          fr: 'Place réservée',
+          ar: 'تم حجز المقعد',
+          ru: 'Место забронировано',
+          trk: 'Koltuk Rezerve',
+          es: 'Asiento reservado',
+          it: 'Posto riservato',
+          pl: 'Miejsce zarezerwowane',
+          pt: 'Assento reservado',
+          th: 'จองที่นั่งแล้ว',
+          id: 'Kursi Dipesan',
+          hi: 'सीट रिज़र्व हुई',
+          bn: 'সিট সংরক্ষিত',
+        ),
+        'subtitle': tr(
+          context,
+          'Your seat is now reserved and marked as unarrived.',
+          zhTw: '你的座位已保留並標記為未到場。',
+          zhCn: '你的座位已保留并标记为未到场。',
+          ko: '좌석이 예약되고 미도착 상태입니다.',
+          ja: '席が予約され未到着状態です。',
+          de: 'Dein Platz wurde reserviert.',
+          fr: 'Votre place est réservée.',
+          ar: 'تم حجز مقعدك.',
+          ru: 'Ваше место забронировано.',
+          trk: 'Koltuk ayrıldı.',
+          es: 'Tu asiento fue reservado.',
+          it: 'Il tuo posto è riservato.',
+          pl: 'Twoje miejsce zostało zapisane.',
+          pt: 'Seu assento foi reservado.',
+          th: 'ที่นั่งของคุณถูกจองแล้ว',
+          id: 'Kursi sudah dipesan.',
+          hi: 'आपकी सीट रिज़र्व हो गई।',
+          bn: 'আপনার সিট সংরক্ষিত হয়েছে।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/arrived.png',
+        'title': tr(
+          context,
+          'Mark as Arrived',
+          zhTw: '標記已到場',
+          zhCn: '标记已到场',
+          ko: '도착 표시',
+          ja: '到着済みにする',
+          de: 'Als angekommen markieren',
+          fr: 'Marquer arrivé',
+          ar: 'تحديد الوصول',
+          ru: 'Отметить прибытие',
+          trk: 'Geldi Olarak İşaretle',
+          es: 'Marcar como llegado',
+          it: 'Segna come arrivato',
+          pl: 'Oznacz jako obecny',
+          pt: 'Marcar como chegado',
+          th: 'ทำเครื่องหมายว่า arrived',
+          id: 'Tandai Tiba',
+          hi: 'आ चुके हैं',
+          bn: 'উপস্থিত চিহ্নিত করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Tap your seat and mark yourself as arrived.',
+          zhTw: '點擊自己的座位並標記已到場。',
+          zhCn: '点击自己的座位并标记已到场。',
+          ko: '자신의 좌석을 눌러 도착 처리하세요.',
+          ja: '自分の席をタップしてください。',
+          de: 'Markiere dich als angekommen.',
+          fr: 'Marquez-vous arrivé.',
+          ar: 'حدد أنك وصلت.',
+          ru: 'Отметьте себя как прибывшего.',
+          trk: 'Kendini geldi olarak işaretle.',
+          es: 'Márcate como llegado.',
+          it: 'Segnati come arrivato.',
+          pl: 'Oznacz swoje przybycie.',
+          pt: 'Marque sua chegada.',
+          th: 'แตะที่นั่งแล้วกด arrived',
+          id: 'Tandai diri sudah tiba.',
+          hi: 'अपनी सीट टैप करें।',
+          bn: 'নিজের সিটে চাপুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/waiting_list.png',
+        'title': tr(
+          context,
+          'Join Waiting List',
+          zhTw: '加入等待名單',
+          zhCn: '加入等待名单',
+          ko: '대기열 참가',
+          ja: 'ウェイティング参加',
+          de: 'Warteliste beitreten',
+          fr: 'Rejoindre la liste d’attente',
+          ar: 'الانضمام لقائمة الانتظار',
+          ru: 'В лист ожидания',
+          trk: 'Bekleme Listesine Katıl',
+          es: 'Unirse a la lista',
+          it: 'Unisciti alla lista',
+          pl: 'Dołącz do kolejki',
+          pt: 'Entrar na fila',
+          th: 'เข้าคิวรอ',
+          id: 'Masuk Daftar Tunggu',
+          hi: 'वेटिंग लिस्ट में जाएँ',
+          bn: 'ওয়েটিং লিস্টে যোগ দিন',
+        ),
+        'subtitle': tr(
+          context,
+          'If the table is full, join the waiting list.',
+          zhTw: '牌桌滿了時可加入等待名單。',
+          zhCn: '牌桌满了时可加入等待名单。',
+          ko: '테이블이 가득 차면 대기열에 참가하세요.',
+          ja: '満席時は待機リストへ。',
+          de: 'Tritt der Warteliste bei.',
+          fr: 'Rejoignez la liste d’attente.',
+          ar: 'انضم لقائمة الانتظار.',
+          ru: 'Встаньте в очередь ожидания.',
+          trk: 'Bekleme listesine katıl.',
+          es: 'Únete a la lista de espera.',
+          it: 'Unisciti alla lista d’attesa.',
+          pl: 'Dołącz do listy oczekujących.',
+          pt: 'Entre na fila de espera.',
+          th: 'หากโต๊ะเต็มให้เข้าคิวรอ',
+          id: 'Masuk daftar tunggu.',
+          hi: 'टेबल फुल होने पर प्रतीक्षा करें।',
+          bn: 'টেবিল ভর্তি হলে অপেক্ষা করুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/stats_dashboard.png',
+        'title': tr(
+          context,
+          'Track Your Results',
+          zhTw: '追蹤你的成績',
+          zhCn: '追踪你的成绩',
+          ko: '결과 추적',
+          ja: '成績を追跡',
+          de: 'Ergebnisse verfolgen',
+          fr: 'Suivre vos résultats',
+          ar: 'تتبع نتائجك',
+          ru: 'Отслеживайте результаты',
+          trk: 'Sonuçlarını Takip Et',
+          es: 'Rastrea tus resultados',
+          it: 'Traccia i risultati',
+          pl: 'Śledź wyniki',
+          pt: 'Acompanhe resultados',
+          th: 'ติดตามผลลัพธ์',
+          id: 'Lacak Hasil',
+          hi: 'अपने परिणाम ट्रैक करें',
+          bn: 'আপনার ফলাফল ট্র্যাক করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Monitor profit, hourly rate, and win rate.',
+          zhTw: '查看盈利、時薪與勝率。',
+          zhCn: '查看盈利、时薪与胜率。',
+          ko: '수익과 승률을 확인하세요.',
+          ja: '利益や勝率を確認。',
+          de: 'Gewinn und Winrate anzeigen.',
+          fr: 'Consultez profits et win rate.',
+          ar: 'اعرض الأرباح ونسبة الفوز.',
+          ru: 'Просмотр прибыли и винрейта.',
+          trk: 'Kâr ve kazanma oranını gör.',
+          es: 'Consulta ganancias y win rate.',
+          it: 'Visualizza profitto e win rate.',
+          pl: 'Sprawdź zysk i win rate.',
+          pt: 'Veja lucro e win rate.',
+          th: 'ดูผลกำไรและอัตราชนะ',
+          id: 'Lihat profit dan win rate.',
+          hi: 'प्रॉफिट और विन रेट देखें।',
+          bn: 'লাভ ও জয়ের হার দেখুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/stats_categories.png',
+        'title': tr(
+          context,
+          'Analyze Performance',
+          zhTw: '分析表現',
+          zhCn: '分析表现',
+          ko: '성과 분석',
+          ja: '成績分析',
+          de: 'Leistung analysieren',
+          fr: 'Analyser les performances',
+          ar: 'تحليل الأداء',
+          ru: 'Анализ результатов',
+          trk: 'Performansı Analiz Et',
+          es: 'Analizar rendimiento',
+          it: 'Analizza prestazioni',
+          pl: 'Analizuj wyniki',
+          pt: 'Analisar desempenho',
+          th: 'วิเคราะห์ผลลัพธ์',
+          id: 'Analisis Performa',
+          hi: 'प्रदर्शन विश्लेषण',
+          bn: 'পারফরম্যান্স বিশ্লেষণ',
+        ),
+        'subtitle': tr(
+          context,
+          'View profits by game, location, week, and month.',
+          zhTw: '依照遊戲、地點、週與月份查看盈利。',
+          zhCn: '按照游戏、地点、周与月份查看盈利。',
+          ko: '게임과 기간별 수익을 분석하세요.',
+          ja: 'ゲームや月別に分析。',
+          de: 'Gewinne nach Spiel analysieren.',
+          fr: 'Analyse des profits par catégorie.',
+          ar: 'اعرض الأرباح حسب الفئة.',
+          ru: 'Смотрите прибыль по категориям.',
+          trk: 'Kazançları kategorilere göre gör.',
+          es: 'Analiza ganancias por categoría.',
+          it: 'Analizza i profitti per categoria.',
+          pl: 'Analizuj zyski według kategorii.',
+          pt: 'Analise lucros por categoria.',
+          th: 'ดูผลกำไรแยกตามประเภท',
+          id: 'Lihat profit berdasarkan kategori.',
+          hi: 'श्रेणी अनुसार लाभ देखें।',
+          bn: 'ক্যাটাগরি অনুযায়ী লাভ দেখুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/add_game.png',
+        'title': tr(
+          context,
+          'Add Sessions',
+          zhTw: '新增牌局',
+          zhCn: '新增牌局',
+          ko: '세션 추가',
+          ja: 'セッション追加',
+          de: 'Session hinzufügen',
+          fr: 'Ajouter une session',
+          ar: 'إضافة جلسة',
+          ru: 'Добавить сессию',
+          trk: 'Oturum Ekle',
+          es: 'Agregar sesión',
+          it: 'Aggiungi sessione',
+          pl: 'Dodaj sesję',
+          pt: 'Adicionar sessão',
+          th: 'เพิ่มเซสชัน',
+          id: 'Tambah Sesi',
+          hi: 'सेशन जोड़ें',
+          bn: 'সেশন যোগ করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Record poker sessions to build your statistics.',
+          zhTw: '記錄你的撲克場次來建立統計資料。',
+          zhCn: '记录你的扑克场次来建立统计资料。',
+          ko: '포커 세션을 기록하세요.',
+          ja: 'ポーカー履歴を記録。',
+          de: 'Poker-Sessions speichern.',
+          fr: 'Enregistrez vos sessions de poker.',
+          ar: 'سجل جلسات البوكر الخاصة بك.',
+          ru: 'Сохраняйте покерные сессии.',
+          trk: 'Poker oturumlarını kaydet.',
+          es: 'Guarda tus sesiones de póker.',
+          it: 'Salva le sessioni di poker.',
+          pl: 'Zapisuj sesje pokerowe.',
+          pt: 'Salve sessões de pôquer.',
+          th: 'บันทึกเซสชันโป๊กเกอร์',
+          id: 'Catat sesi poker Anda.',
+          hi: 'अपने पोकर सेशन रिकॉर्ड करें।',
+          bn: 'আপনার পোকার সেশন সংরক্ষণ করুন।',
+        ),
+      },
+    ];
+  }
+
+  List<Map<String, dynamic>> get hostSlides {
+    return [
+      {
+        'image': 'assets/tutorial/host_dashboard.png',
+        'title': tr(
+          context,
+          'Host Dashboard',
+          zhTw: '房主管理主頁',
+          zhCn: '房主管理主页',
+          ko: '호스트 대시보드',
+          ja: 'ホストダッシュボード',
+          de: 'Host-Dashboard',
+          fr: 'Tableau de bord hôte',
+          ar: 'لوحة تحكم المضيف',
+          ru: 'Панель хоста',
+          trk: 'Host Paneli',
+          es: 'Panel del anfitrión',
+          it: 'Dashboard Host',
+          pl: 'Panel gospodarza',
+          pt: 'Painel do anfitrião',
+          th: 'แดชบอร์ดโฮสต์',
+          id: 'Dashboard Host',
+          hi: 'होस्ट डैशबोर्ड',
+          bn: 'হোস্ট ড্যাশবোর্ড',
+        ),
+        'subtitle': tr(
+          context,
+          'Create tables, manage reservations, and control table details.',
+          zhTw: '建立牌桌、管理預約與控制牌桌資訊。',
+          zhCn: '创建牌桌、管理预约与控制牌桌信息。',
+          ko: '테이블 생성 및 예약 관리 기능입니다.',
+          ja: 'テーブル作成と予約管理を行います。',
+          de: 'Erstelle Tische und verwalte Reservierungen.',
+          fr: 'Créez des tables et gérez les réservations.',
+          ar: 'أنشئ الطاولات وأدر الحجوزات.',
+          ru: 'Создавайте столы и управляйте бронями.',
+          trk: 'Masalar oluştur ve rezervasyonları yönet.',
+          es: 'Crea mesas y administra reservas.',
+          it: 'Crea tavoli e gestisci le prenotazioni.',
+          pl: 'Twórz stoły i zarządzaj rezerwacjami.',
+          pt: 'Crie mesas e gerencie reservas.',
+          th: 'สร้างโต๊ะและจัดการการจอง',
+          id: 'Buat meja dan kelola reservasi.',
+          hi: 'टेबल बनाएं और रिजर्वेशन संभालें।',
+          bn: 'টেবিল তৈরি ও রিজার্ভেশন পরিচালনা করুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/host_add_player_id.png',
+        'title': tr(
+          context,
+          'Add Player ID',
+          zhTw: '新增玩家 ID',
+          zhCn: '新增玩家 ID',
+          ko: '플레이어 ID 추가',
+          ja: 'プレイヤーID追加',
+          de: 'Player-ID hinzufügen',
+          fr: 'Ajouter un ID joueur',
+          ar: 'إضافة معرف اللاعب',
+          ru: 'Добавить Player ID',
+          trk: 'Oyuncu Kimliği Ekle',
+          es: 'Agregar ID de jugador',
+          it: 'Aggiungi ID giocatore',
+          pl: 'Dodaj ID gracza',
+          pt: 'Adicionar ID do jogador',
+          th: 'เพิ่ม Player ID',
+          id: 'Tambahkan Player ID',
+          hi: 'Player ID जोड़ें',
+          bn: 'Player ID যোগ করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Add the player’s ID from their Edit Profile so they can see your tables and join.',
+          zhTw: '新增玩家在 Edit Profile 裡的 Player ID，對方才能看到你的桌子並加入。',
+          zhCn: '添加玩家在 Edit Profile 里的 Player ID，对方才能看到你的桌子并加入。',
+          ko: '플레이어의 Edit Profile에 있는 ID를 추가해야 테이블을 볼 수 있습니다.',
+          ja: 'プレイヤーのEdit ProfileにあるIDを追加すると、テーブルが表示されます。',
+          de: 'Füge die Player-ID aus dem Edit Profile hinzu.',
+          fr: 'Ajoutez l’ID joueur depuis Edit Profile.',
+          ar: 'أضف معرف اللاعب من Edit Profile.',
+          ru: 'Добавьте Player ID из Edit Profile.',
+          trk: 'Oyuncunun Edit Profile bölümündeki ID’sini ekleyin.',
+          es: 'Agrega el ID del jugador desde Edit Profile.',
+          it: 'Aggiungi l’ID giocatore da Edit Profile.',
+          pl: 'Dodaj ID gracza z Edit Profile.',
+          pt: 'Adicione o ID do jogador do Edit Profile.',
+          th: 'เพิ่ม Player ID จาก Edit Profile ของผู้เล่น',
+          id: 'Tambahkan Player ID dari Edit Profile pemain.',
+          hi: 'खिलाड़ी का Player ID जोड़ें।',
+          bn: 'খেলোয়াড়ের Player ID যোগ করুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/host_seat_actions.png',
+        'title': tr(
+          context,
+          'Manage Seats',
+          zhTw: '管理座位',
+          zhCn: '管理座位',
+          ko: '좌석 관리',
+          ja: '席を管理',
+          de: 'Sitze verwalten',
+          fr: 'Gérer les sièges',
+          ar: 'إدارة المقاعد',
+          ru: 'Управление местами',
+          trk: 'Koltukları Yönet',
+          es: 'Administrar asientos',
+          it: 'Gestisci posti',
+          pl: 'Zarządzaj miejscami',
+          pt: 'Gerenciar assentos',
+          th: 'จัดการที่นั่ง',
+          id: 'Kelola kursi',
+          hi: 'सीट प्रबंधित करें',
+          bn: 'সিট পরিচালনা করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Tap any open seat to reserve or assign players.',
+          zhTw: '點擊空位即可預約或安排玩家。',
+          zhCn: '点击空位即可预约或安排玩家。',
+          ko: '빈 좌석을 눌러 예약하세요.',
+          ja: '空席をタップして予約します。',
+          de: 'Tippe auf freie Sitze zum Reservieren.',
+          fr: 'Touchez un siège vide pour réserver.',
+          ar: 'اضغط على المقعد للحجز.',
+          ru: 'Нажмите на место для брони.',
+          trk: 'Boş koltuğa dokunarak ayır.',
+          es: 'Toca un asiento vacío para reservar.',
+          it: 'Tocca un posto libero per prenotare.',
+          pl: 'Dotknij wolnego miejsca.',
+          pt: 'Toque no assento vazio.',
+          th: 'แตะที่นั่งว่างเพื่อจอง',
+          id: 'Ketuk kursi kosong untuk reservasi.',
+          hi: 'खाली सीट पर टैप करें।',
+          bn: 'খালি সিটে ট্যাপ করুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/host_select_player.png',
+        'title': tr(
+          context,
+          'Select Players',
+          zhTw: '選擇玩家',
+          zhCn: '选择玩家',
+          ko: '플레이어 선택',
+          ja: 'プレイヤー選択',
+          de: 'Spieler auswählen',
+          fr: 'Sélectionner des joueurs',
+          ar: 'اختيار اللاعبين',
+          ru: 'Выбор игроков',
+          trk: 'Oyuncu Seç',
+          es: 'Seleccionar jugadores',
+          it: 'Seleziona giocatori',
+          pl: 'Wybierz graczy',
+          pt: 'Selecionar jogadores',
+          th: 'เลือกผู้เล่น',
+          id: 'Pilih pemain',
+          hi: 'खिलाड़ी चुनें',
+          bn: 'খেলোয়াড় নির্বাচন করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Search and assign players to seats quickly.',
+          zhTw: '快速搜尋並安排玩家座位。',
+          zhCn: '快速搜索并安排玩家座位。',
+          ko: '빠르게 플레이어를 배정합니다.',
+          ja: 'プレイヤーを素早く配置します。',
+          de: 'Suche Spieler schnell.',
+          fr: 'Recherchez des joueurs rapidement.',
+          ar: 'ابحث عن اللاعبين بسرعة.',
+          ru: 'Быстрый поиск игроков.',
+          trk: 'Oyuncuları hızlıca ata.',
+          es: 'Busca jugadores rápidamente.',
+          it: 'Trova giocatori rapidamente.',
+          pl: 'Szybko wyszukuj graczy.',
+          pt: 'Pesquise jogadores rapidamente.',
+          th: 'ค้นหาผู้เล่นอย่างรวดเร็ว',
+          id: 'Cari pemain dengan cepat.',
+          hi: 'खिलाड़ी जल्दी खोजें।',
+          bn: 'দ্রুত খেলোয়াড় খুঁজুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/host_waiting_list.png',
+        'title': tr(
+          context,
+          'Waiting List',
+          zhTw: '等待名單',
+          zhCn: '等待名单',
+          ko: '대기자 명단',
+          ja: 'ウェイティングリスト',
+          de: 'Warteliste',
+          fr: 'Liste d’attente',
+          ar: 'قائمة الانتظار',
+          ru: 'Список ожидания',
+          trk: 'Bekleme Listesi',
+          es: 'Lista de espera',
+          it: 'Lista d’attesa',
+          pl: 'Lista oczekujących',
+          pt: 'Lista de espera',
+          th: 'รายชื่อรอ',
+          id: 'Daftar tunggu',
+          hi: 'वेटिंग लिस्ट',
+          bn: 'ওয়েটিং লিস্ট',
+        ),
+        'subtitle': tr(
+          context,
+          'Manage players waiting for an open seat.',
+          zhTw: '管理等待空位的玩家。',
+          zhCn: '管理等待空位的玩家。',
+          ko: '대기 플레이어를 관리합니다.',
+          ja: '待機プレイヤーを管理します。',
+          de: 'Verwalte wartende Spieler.',
+          fr: 'Gérez les joueurs en attente.',
+          ar: 'إدارة قائمة الانتظار.',
+          ru: 'Управляйте очередью игроков.',
+          trk: 'Bekleyen oyuncuları yönet.',
+          es: 'Administra jugadores en espera.',
+          it: 'Gestisci i giocatori in attesa.',
+          pl: 'Zarządzaj oczekującymi.',
+          pt: 'Gerencie jogadores na fila.',
+          th: 'จัดการผู้เล่นที่รอ',
+          id: 'Kelola pemain yang menunggu.',
+          hi: 'इंतजार कर रहे खिलाड़ियों को संभालें।',
+          bn: 'অপেক্ষমাণ খেলোয়াড় পরিচালনা করুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/host_manage_player.png',
+        'title': tr(
+          context,
+          'Manage Players',
+          zhTw: '管理玩家',
+          zhCn: '管理玩家',
+          ko: '플레이어 관리',
+          ja: 'プレイヤー管理',
+          de: 'Spieler verwalten',
+          fr: 'Gérer les joueurs',
+          ar: 'إدارة اللاعبين',
+          ru: 'Управление игроками',
+          trk: 'Oyuncuları Yönet',
+          es: 'Administrar jugadores',
+          it: 'Gestisci giocatori',
+          pl: 'Zarządzaj graczami',
+          pt: 'Gerenciar jogadores',
+          th: 'จัดการผู้เล่น',
+          id: 'Kelola pemain',
+          hi: 'खिलाड़ी प्रबंधित करें',
+          bn: 'খেলোয়াড় পরিচালনা করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Mark arrivals, move seats, or remove players.',
+          zhTw: '標記到場、移動座位或移除玩家。',
+          zhCn: '标记到场、移动座位或移除玩家。',
+          ko: '도착 표시 및 자리 이동.',
+          ja: '到着確認や席移動を管理します。',
+          de: 'Spieler verschieben oder entfernen.',
+          fr: 'Déplacez ou retirez des joueurs.',
+          ar: 'حرّك اللاعبين أو أزلهم.',
+          ru: 'Перемещайте или удаляйте игроков.',
+          trk: 'Oyuncuları taşı veya kaldır.',
+          es: 'Mueve o elimina jugadores.',
+          it: 'Sposta o rimuovi giocatori.',
+          pl: 'Przesuwaj lub usuwaj graczy.',
+          pt: 'Mova ou remova jogadores.',
+          th: 'ย้ายหรือเอาผู้เล่นออก',
+          id: 'Pindah atau hapus pemain.',
+          hi: 'खिलाड़ियों को हटाएं या स्थान बदलें।',
+          bn: 'খেলোয়াড় সরান বা মুছুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/stats_dashboard.png',
+        'title': tr(
+          context,
+          'Track Results',
+          zhTw: '追蹤成績',
+          zhCn: '追踪成绩',
+          ko: '결과 추적',
+          ja: '成績追跡',
+          de: 'Ergebnisse verfolgen',
+          fr: 'Suivre les résultats',
+          ar: 'تتبع النتائج',
+          ru: 'Отслеживание результатов',
+          trk: 'Sonuçları Takip Et',
+          es: 'Rastrear resultados',
+          it: 'Traccia risultati',
+          pl: 'Śledź wyniki',
+          pt: 'Acompanhar resultados',
+          th: 'ติดตามผลลัพธ์',
+          id: 'Lacak hasil',
+          hi: 'परिणाम ट्रैक करें',
+          bn: 'ফলাফল ট্র্যাক করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Monitor profit, hourly rate, and win rate.',
+          zhTw: '查看盈利、時薪與勝率。',
+          zhCn: '查看盈利、时薪与胜率。',
+          ko: '수익과 승률을 확인합니다.',
+          ja: '利益や勝率を確認します。',
+          de: 'Überwache Gewinn und Winrate.',
+          fr: 'Suivez profits et winrate.',
+          ar: 'تابع الأرباح ونسبة الفوز.',
+          ru: 'Следите за прибылью и винрейтом.',
+          trk: 'Kazanç ve winrate takip et.',
+          es: 'Controla ganancias y winrate.',
+          it: 'Controlla profitti e winrate.',
+          pl: 'Monitoruj zysk i winrate.',
+          pt: 'Monitore lucros e winrate.',
+          th: 'ดูผลกำไรและอัตราชนะ',
+          id: 'Pantau profit dan win rate.',
+          hi: 'लाभ और विनरेट देखें।',
+          bn: 'লাভ ও জয়ের হার দেখুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/stats_categories.png',
+        'title': tr(
+          context,
+          'Analyze Performance',
+          zhTw: '分析表現',
+          zhCn: '分析表现',
+          ko: '성과 분석',
+          ja: '成績分析',
+          de: 'Leistung analysieren',
+          fr: 'Analyser les performances',
+          ar: 'تحليل الأداء',
+          ru: 'Анализ результатов',
+          trk: 'Performansı Analiz Et',
+          es: 'Analizar rendimiento',
+          it: 'Analizza prestazioni',
+          pl: 'Analizuj wyniki',
+          pt: 'Analisar desempenho',
+          th: 'วิเคราะห์ผลลัพธ์',
+          id: 'Analisis performa',
+          hi: 'प्रदर्शन विश्लेषण',
+          bn: 'পারফরম্যান্স বিশ্লেষণ',
+        ),
+        'subtitle': tr(
+          context,
+          'View profits by game, location, week, and month.',
+          zhTw: '依照遊戲、地點、週與月份查看盈利。',
+          zhCn: '按照游戏、地点、周与月份查看盈利。',
+          ko: '게임과 기간별 수익을 분석하세요.',
+          ja: 'ゲームや期間ごとに分析。',
+          de: 'Analysiere Gewinne nach Kategorien.',
+          fr: 'Analyse des profits par catégorie.',
+          ar: 'عرض الأرباح حسب الفئة.',
+          ru: 'Просмотр прибыли по категориям.',
+          trk: 'Kazançları kategorilere göre görüntüle.',
+          es: 'Analiza ganancias por categorías.',
+          it: 'Analizza i profitti per categoria.',
+          pl: 'Analizuj zyski według kategorii.',
+          pt: 'Analise lucros por categoria.',
+          th: 'ดูผลกำไรแยกตามประเภท',
+          id: 'Lihat profit berdasarkan kategori.',
+          hi: 'श्रेणी अनुसार लाभ देखें।',
+          bn: 'বিভাগ অনুযায়ী লাভ দেখুন।',
+        ),
+      },
+
+      {
+        'image': 'assets/tutorial/add_game.png',
+        'title': tr(
+          context,
+          'Add Sessions',
+          zhTw: '新增牌局',
+          zhCn: '新增牌局',
+          ko: '세션 추가',
+          ja: 'セッション追加',
+          de: 'Session hinzufügen',
+          fr: 'Ajouter une session',
+          ar: 'إضافة جلسة',
+          ru: 'Добавить сессию',
+          trk: 'Oturum Ekle',
+          es: 'Agregar sesión',
+          it: 'Aggiungi sessione',
+          pl: 'Dodaj sesję',
+          pt: 'Adicionar sessão',
+          th: 'เพิ่มเซสชัน',
+          id: 'Tambah sesi',
+          hi: 'सेशन जोड़ें',
+          bn: 'সেশন যোগ করুন',
+        ),
+        'subtitle': tr(
+          context,
+          'Record poker sessions to build your statistics.',
+          zhTw: '記錄你的撲克場次來建立統計資料。',
+          zhCn: '记录你的扑克场次来建立统计资料。',
+          ko: '포커 세션을 기록하세요.',
+          ja: 'ポーカー履歴を記録。',
+          de: 'Poker-Sessions speichern.',
+          fr: 'Enregistrez vos sessions.',
+          ar: 'سجل جلسات البوكر.',
+          ru: 'Сохраняйте покерные сессии.',
+          trk: 'Poker oturumlarını kaydet.',
+          es: 'Guarda tus sesiones.',
+          it: 'Salva le sessioni.',
+          pl: 'Zapisuj sesje pokerowe.',
+          pt: 'Salve sessões de pôquer.',
+          th: 'บันทึกเซสชันโป๊กเกอร์',
+          id: 'Catat sesi poker.',
+          hi: 'अपने पोकर सेशन रिकॉर्ड करें।',
+          bn: 'আপনার পোকার সেশন সংরক্ষণ করুন।',
+        ),
+      },
+    ];
+  }
+
+  Future<void> _finishTutorial() async {
+    if (isSaving) return;
+
+    setState(() {
+      isSaving = true;
+    });
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .set({
+        'hasCompletedTutorial': true,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    }
+
+    if (!mounted) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => TableListPage(session: widget.session),
+      ),
+      (route) => false,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    final currentSlides =
+        widget.session.role == UserRole.host ? hostSlides : slides;
+
+    final isLastPage = currentPage == currentSlides.length - 1;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F6F8),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _finishTutorial,
+                child: Text(
+                  tr(
+                    context,
+                    'Skip',
+                    zhTw: '跳過',
+                    zhCn: '跳过',
+                    ko: '건너뛰기',
+                    ja: 'スキップ',
+                    de: 'Überspringen',
+                    fr: 'Passer',
+                    ar: 'تخطي',
+                    ru: 'Пропустить',
+                    trk: 'Atla',
+                    es: 'Omitir',
+                    it: 'Salta',
+                    pl: 'Pomiń',
+                    pt: 'Pular',
+                    th: 'ข้าม',
+                    id: 'Lewati',
+                    hi: 'छोड़ें',
+                    bn: 'এড়িয়ে যান',
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: Image.asset(
+                          currentSlides[currentPage]['image'],
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      currentSlides[currentPage]['title'],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    Text(
+                      currentSlides[currentPage]['subtitle'],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        color: Colors.black54,
+                        height: 1.5,
+                      ),
+                    ),
+
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(currentSlides.length, (index) {
+                final isActive = index == currentPage;
+
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: isActive ? 22 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: isActive ? Colors.green : Colors.grey.shade400,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                );
+              }),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  if (currentPage > 0)
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {
+                          setState(() {
+                            currentPage--;
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          child: Text(
+                            tr(
+                              context,
+                              'Back',
+                              zhTw: '上一頁',
+                              zhCn: '上一页',
+                              ko: '뒤로',
+                              ja: '戻る',
+                              de: 'Zurück',
+                              fr: 'Retour',
+                              ar: 'رجوع',
+                              ru: 'Назад',
+                              trk: 'Geri',
+                              es: 'Atrás',
+                              it: 'Indietro',
+                              pl: 'Wstecz',
+                              pt: 'Voltar',
+                              th: 'ย้อนกลับ',
+                              id: 'Kembali',
+                              hi: 'वापस',
+                              bn: 'পেছনে',
+                            ),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (currentPage > 0)
+                    const SizedBox(width: 12),
+
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: isSaving
+                          ? null
+                          : () {
+                              if (isLastPage) {
+                                _finishTutorial();
+                              } else {
+                                setState(() {
+                                  currentPage++;
+                                });
+                              }
+                            },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Text(
+                          isSaving
+                              ? tr(
+                                  context,
+                                  'Saving...',
+                                  zhTw: '儲存中...',
+                                  zhCn: '保存中...',
+                                  ko: '저장 중...',
+                                  ja: '保存中...',
+                                  de: 'Wird gespeichert...',
+                                  fr: 'Enregistrement...',
+                                  ar: 'جارٍ الحفظ...',
+                                  ru: 'Сохранение...',
+                                  trk: 'Kaydediliyor...',
+                                  es: 'Guardando...',
+                                  it: 'Salvataggio...',
+                                  pl: 'Zapisywanie...',
+                                  pt: 'Salvando...',
+                                  th: 'กำลังบันทึก...',
+                                  id: 'Menyimpan...',
+                                  hi: 'सेव हो रहा है...',
+                                  bn: 'সংরক্ষণ হচ্ছে...',
+                                )
+                              : isLastPage
+                                  ? widget.session.role == UserRole.host
+                                      ? tr(
+                                          context,
+                                          'Start Hosting',
+                                          zhTw: '開始當房主',
+                                          zhCn: '开始当房主',
+                                          ko: '호스트 시작',
+                                          ja: 'ホストを開始',
+                                          de: 'Hosting starten',
+                                          fr: 'Commencer à héberger',
+                                          ar: 'ابدأ الاستضافة',
+                                          ru: 'Начать как хост',
+                                          trk: 'Host olmaya başla',
+                                          es: 'Empezar como host',
+                                          it: 'Inizia come host',
+                                          pl: 'Zacznij hostować',
+                                          pt: 'Começar como host',
+                                          th: 'เริ่มเป็นโฮสต์',
+                                          id: 'Mulai menjadi host',
+                                          hi: 'Host शुरू करें',
+                                          bn: 'Host শুরু করুন',
+                                        )
+                                      : tr(
+                                          context,
+                                          'Start Playing',
+                                          zhTw: '開始使用',
+                                          zhCn: '开始使用',
+                                          ko: '시작하기',
+                                          ja: '開始する',
+                                          de: 'Loslegen',
+                                          fr: 'Commencer',
+                                          ar: 'ابدأ اللعب',
+                                          ru: 'Начать играть',
+                                          trk: 'Oynamaya başla',
+                                          es: 'Empezar',
+                                          it: 'Inizia',
+                                          pl: 'Zacznij',
+                                          pt: 'Começar',
+                                          th: 'เริ่มใช้งาน',
+                                          id: 'Mulai',
+                                          hi: 'शुरू करें',
+                                          bn: 'শুরু করুন',
+                                        )
+                                  : tr(
+                                      context,
+                                      'Next',
+                                      zhTw: '下一步',
+                                      zhCn: '下一步',
+                                      ko: '다음',
+                                      ja: '次へ',
+                                      de: 'Weiter',
+                                      fr: 'Suivant',
+                                      ar: 'التالي',
+                                      ru: 'Далее',
+                                      trk: 'İleri',
+                                      es: 'Siguiente',
+                                      it: 'Avanti',
+                                      pl: 'Dalej',
+                                      pt: 'Próximo',
+                                      th: 'ถัดไป',
+                                      id: 'Berikutnya',
+                                      hi: 'अगला',
+                                      bn: 'পরবর্তী',
+                                    ),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
 class UserSession {
   final String name;
   final String shortName;
   final UserRole role;
+  final bool hasCompletedTutorial;
 
   const UserSession({
     required this.name,
     required this.shortName,
     required this.role,
+    this.hasCompletedTutorial = false,
   });
+
+  UserSession copyWith({
+    String? name,
+    String? shortName,
+    UserRole? role,
+    bool? hasCompletedTutorial,
+  }) {
+    return UserSession(
+      name: name ?? this.name,
+      shortName: shortName ?? this.shortName,
+      role: role ?? this.role,
+      hasCompletedTutorial:
+          hasCompletedTutorial ?? this.hasCompletedTutorial,
+    );
+  }
 }
 
 class HostSubscriptionStatus {
@@ -3428,6 +4786,7 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
   final TextEditingController lastNameController = TextEditingController();
 
   bool isSaving = false;
+  String selectedLanguageCode = 'en';
 
   @override
   void initState() {
@@ -3487,7 +4846,9 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
         displayName: displayName,
         lastName: lastName,
         role: UserRole.player,
+        languageCode: selectedLanguageCode,
       );
+      AppLanguageController.of(context).updateLanguage(selectedLanguageCode);
 
       await setupPushNotifications();
 
@@ -3495,7 +4856,7 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => TableListPage(
+          builder: (_) => ChooseTutorialRolePage(
             session: UserSession(
               name: displayName,
               shortName: shortName,
@@ -3783,8 +5144,148 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedLanguageCode,
+
+                        decoration: InputDecoration(
+                          labelText: tr(
+                            context,
+                            'Language',
+                            zhTw: '語言',
+                            zhCn: '语言',
+                            ko: '언어',
+                            ja: '言語',
+                            de: 'Sprache',
+                            fr: 'Langue',
+                            ar: 'اللغة',
+                            ru: 'Язык',
+                            trk: 'Dil',
+                            es: 'Idioma',
+                            it: 'Lingua',
+                            pl: 'Język',
+                            pt: 'Idioma',
+                            th: 'ภาษา',
+                            id: 'Bahasa',
+                            hi: 'भाषा',
+                            bn: 'ভাষা',
+                          ),
+
+                          filled: true,
+                          fillColor: const Color(0xFFF9FAFB),
+
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'en',
+                            child: Text('English'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'zh_tw',
+                            child: Text('繁體中文'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'zh_cn',
+                            child: Text('简体中文'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'ko',
+                            child: Text('한국어'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'ja',
+                            child: Text('日本語'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'de',
+                            child: Text('Deutsch'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'fr',
+                            child: Text('Français'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'ar',
+                            child: Text('العربية'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'ru',
+                            child: Text('Русский'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'tr',
+                            child: Text('Türkçe'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'es',
+                            child: Text('Español'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'it',
+                            child: Text('Italiano'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'pl',
+                            child: Text('Polski'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'pt',
+                            child: Text('Português'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'th',
+                            child: Text('ไทย'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'id',
+                            child: Text('Indonesia'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'hi',
+                            child: Text('हिन्दी'),
+                          ),
+
+                          DropdownMenuItem(
+                            value: 'bn',
+                            child: Text('বাংলা'),
+                          ),
+                        ],
+
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setState(() {
+                            selectedLanguageCode = value;
+                          });
+
+                          AppLanguageController.of(context)
+                              .updateLanguage(value);
+                        },
+                      ),
+
+
+                      const SizedBox(height: 20),
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
@@ -3863,6 +5364,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final TextEditingController confirmPasswordController =
       TextEditingController();
 
+  String selectedLanguageCode = 'en';
+
   Future<void> _registerWithEmail() async {
     final displayName = displayNameController.text.trim();
     final lastName = lastNameController.text.trim();
@@ -3900,13 +5403,15 @@ class _RegisterPageState extends State<RegisterPage> {
         displayName: displayName,
         lastName: lastName,
         role: UserRole.player,
+        languageCode: selectedLanguageCode,
       );
+      AppLanguageController.of(context).updateLanguage(selectedLanguageCode);
 
       if (!mounted) return;
 
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => TableListPage(
+          builder: (_) => ChooseTutorialRolePage(
             session: UserSession(
               name: displayName,
               shortName: shortName,
@@ -4325,6 +5830,69 @@ class _RegisterPageState extends State<RegisterPage> {
                             borderRadius: BorderRadius.circular(16),
                           ),
                         ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedLanguageCode,
+                        decoration: InputDecoration(
+                          labelText: tr(
+                            context,
+                            'Language',
+                            zhTw: '語言',
+                            zhCn: '语言',
+                            ko: '언어',
+                            ja: '言語',
+                            de: 'Sprache',
+                            fr: 'Langue',
+                            ar: 'اللغة',
+                            ru: 'Язык',
+                            trk: 'Dil',
+                            es: 'Idioma',
+                            it: 'Lingua',
+                            pl: 'Język',
+                            pt: 'Idioma',
+                            th: 'ภาษา',
+                            id: 'Bahasa',
+                            hi: 'भाषा',
+                            bn: 'ভাষা',
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF9FAFB),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'en', child: Text('English')),
+                          DropdownMenuItem(value: 'zh_tw', child: Text('繁體中文')),
+                          DropdownMenuItem(value: 'zh_cn', child: Text('简体中文')),
+                          DropdownMenuItem(value: 'ko', child: Text('한국어')),
+                          DropdownMenuItem(value: 'ja', child: Text('日本語')),
+                          DropdownMenuItem(value: 'de', child: Text('Deutsch')),
+                          DropdownMenuItem(value: 'fr', child: Text('Français')),
+                          DropdownMenuItem(value: 'ar', child: Text('العربية')),
+                          DropdownMenuItem(value: 'ru', child: Text('Русский')),
+                          DropdownMenuItem(value: 'tr', child: Text('Türkçe')),
+                          DropdownMenuItem(value: 'es', child: Text('Español')),
+                          DropdownMenuItem(value: 'it', child: Text('Italiano')),
+                          DropdownMenuItem(value: 'pl', child: Text('Polski')),
+                          DropdownMenuItem(value: 'pt', child: Text('Português')),
+                          DropdownMenuItem(value: 'th', child: Text('ไทย')),
+                          DropdownMenuItem(value: 'id', child: Text('Indonesia')),
+                          DropdownMenuItem(value: 'hi', child: Text('हिन्दी')),
+                          DropdownMenuItem(value: 'bn', child: Text('বাংলা')),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setState(() {
+                            selectedLanguageCode = value;
+                          });
+
+                          AppLanguageController.of(context).updateLanguage(value);
+                        },
                       ),
 
                       const SizedBox(height: 20),
@@ -5932,6 +7500,244 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   }
 }
 
+class HelpPage extends StatelessWidget {
+  const HelpPage({super.key});
+
+  Widget _helpCard({
+    required IconData icon,
+    required String title,
+    required String body,
+  }) {
+    return Card(
+      color: Colors.white,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              icon,
+              color: Colors.green,
+              size: 26,
+            ),
+
+            const SizedBox(width: 14),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    body,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.45,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return forceLightTheme(
+      Scaffold(
+        appBar: AppBar(
+          title: Text(
+            tr(
+              context,
+              'Help',
+              zhTw: '使用說明',
+              zhCn: '使用说明',
+              ko: '도움말',
+              ja: 'ヘルプ',
+              de: 'Hilfe',
+              fr: 'Aide',
+              ar: 'المساعدة',
+              ru: 'Помощь',
+              trk: 'Yardım',
+              es: 'Ayuda',
+              it: 'Aiuto',
+              pl: 'Pomoc',
+              pt: 'Ajuda',
+              th: 'วิธีใช้งาน',
+              id: 'Bantuan',
+              hi: 'सहायता',
+              bn: 'সহায়তা',
+            ),
+          ),
+        ),
+
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _helpCard(
+              icon: Icons.badge_outlined,
+
+              title: tr(
+                context,
+                'What is Add Player by ID?',
+                zhTw: 'Add Player by ID 是什麼？',
+                zhCn: 'Add Player by ID 是什么？',
+                ko: 'Add Player by ID란 무엇인가요?',
+                ja: 'Add Player by IDとは？',
+                de: 'Was bedeutet Add Player by ID?',
+                fr: 'Que signifie Add Player by ID ?',
+                ar: 'ما معنى Add Player by ID؟',
+                ru: 'Что такое Add Player by ID?',
+                trk: 'Add Player by ID nedir?',
+                es: '¿Qué significa Add Player by ID?',
+                it: 'Che cos’è Add Player by ID?',
+                pl: 'Co oznacza Add Player by ID?',
+                pt: 'O que é Add Player by ID?',
+                th: 'Add Player by ID คืออะไร?',
+                id: 'Apa itu Add Player by ID?',
+                hi: 'Add Player by ID क्या है?',
+                bn: 'Add Player by ID কী?',
+              ),
+
+              body: tr(
+                context,
+                'Each user has an 8-character Player ID. A host can enter a player’s ID to allow that player to see the host’s tables.',
+                zhTw: '每個玩家都有一組 8 碼 Player ID。房主輸入玩家的 ID 後，該玩家就可以看到這位房主建立的牌桌。',
+                zhCn: '每个玩家都有一组 8 位 Player ID。房主输入玩家的 ID 后，该玩家就可以看到这位房主创建的牌桌。',
+                ko: '모든 플레이어는 8자리 Player ID를 가지고 있습니다. 호스트가 해당 ID를 추가하면 플레이어가 그 호스트의 테이블을 볼 수 있습니다.',
+                ja: '各プレイヤーには8文字のPlayer IDがあります。ホストがそのIDを追加すると、そのプレイヤーはホストのテーブルを見ることができます。',
+                de: 'Jeder Benutzer hat eine 8-stellige Player ID. Ein Host kann diese ID hinzufügen, damit der Spieler die Tische des Hosts sehen kann.',
+                fr: 'Chaque utilisateur possède un Player ID à 8 caractères. Un hôte peut ajouter cet ID pour permettre au joueur de voir ses tables.',
+                ar: 'لكل مستخدم معرف Player ID مكوّن من 8 أحرف. يمكن للمضيف إدخال هذا المعرف للسماح للاعب برؤية طاولاته.',
+                ru: 'У каждого пользователя есть 8-символьный Player ID. Хост может добавить этот ID, чтобы игрок видел его столы.',
+                trk: 'Her kullanıcının 8 karakterli bir Player ID’si vardır. Host bu ID’yi ekleyerek oyuncunun masaları görmesini sağlayabilir.',
+                es: 'Cada usuario tiene un Player ID de 8 caracteres. El anfitrión puede agregar este ID para permitir que el jugador vea sus mesas.',
+                it: 'Ogni utente ha un Player ID di 8 caratteri. L’host può aggiungere questo ID per consentire al giocatore di vedere i suoi tavoli.',
+                pl: 'Każdy użytkownik ma 8-znakowy Player ID. Host może dodać ten ID, aby gracz widział jego stoły.',
+                pt: 'Cada usuário possui um Player ID de 8 caracteres. O anfitrião pode adicionar esse ID para permitir que o jogador veja suas mesas.',
+                th: 'ผู้เล่นทุกคนจะมี Player ID 8 ตัวอักษร เจ้าของโต๊ะสามารถเพิ่ม ID นี้เพื่อให้ผู้เล่นเห็นโต๊ะของตนได้',
+                id: 'Setiap pengguna memiliki Player ID 8 karakter. Host dapat menambahkan ID tersebut agar pemain dapat melihat meja host.',
+                hi: 'हर उपयोगकर्ता के पास 8-अक्षरों का Player ID होता है। होस्ट इस ID को जोड़कर खिलाड़ी को अपनी टेबल दिखा सकता है।',
+                bn: 'প্রতিটি ব্যবহারকারীর একটি ৮ অক্ষরের Player ID থাকে। হোস্ট এই ID যোগ করে খেলোয়াড়কে তার টেবিল দেখতে দিতে পারে।',
+              ),
+            ),
+
+            _helpCard(
+              icon: Icons.person_search_outlined,
+
+              title: tr(
+                context,
+                'Where can I find my Player ID?',
+                zhTw: '我要去哪裡找到我的 Player ID？',
+                zhCn: '我要在哪里找到我的 Player ID？',
+                ko: '내 Player ID는 어디서 찾나요?',
+                ja: 'Player IDはどこで確認できますか？',
+                de: 'Wo finde ich meine Player ID?',
+                fr: 'Où trouver mon Player ID ?',
+                ar: 'أين أجد Player ID الخاص بي؟',
+                ru: 'Где найти мой Player ID?',
+                trk: 'Player ID nerede bulunur?',
+                es: '¿Dónde encuentro mi Player ID?',
+                it: 'Dove posso trovare il mio Player ID?',
+                pl: 'Gdzie znaleźć mój Player ID?',
+                pt: 'Onde encontro meu Player ID?',
+                th: 'ฉันจะหา Player ID ของฉันได้ที่ไหน?',
+                id: 'Di mana saya bisa menemukan Player ID saya?',
+                hi: 'मेरा Player ID कहाँ मिलेगा?',
+                bn: 'আমি আমার Player ID কোথায় পাব?',
+              ),
+
+              body: tr(
+                context,
+                'Open Edit Profile to find your Player ID, then share it with the host.',
+                zhTw: '打開 Edit Profile / 編輯個人資料，就可以看到你的 Player ID，然後把它傳給房主。',
+                zhCn: '打开 Edit Profile / 编辑个人资料，就可以看到你的 Player ID，然后把它发给房主。',
+                ko: 'Edit Profile에서 Player ID를 확인한 후 호스트에게 공유하세요.',
+                ja: 'Edit ProfileでPlayer IDを確認し、ホストに共有してください。',
+                de: 'Öffne Edit Profile, um deine Player ID zu finden, und teile sie dem Host mit.',
+                fr: 'Ouvrez Edit Profile pour trouver votre Player ID puis partagez-le avec l’hôte.',
+                ar: 'افتح Edit Profile للعثور على Player ID الخاص بك ثم شاركه مع المضيف.',
+                ru: 'Откройте Edit Profile, чтобы найти свой Player ID, и отправьте его хосту.',
+                trk: 'Player ID’nizi görmek için Edit Profile bölümünü açın ve host ile paylaşın.',
+                es: 'Abre Edit Profile para encontrar tu Player ID y compártelo con el anfitrión.',
+                it: 'Apri Edit Profile per trovare il tuo Player ID e condividerlo con l’host.',
+                pl: 'Otwórz Edit Profile, aby znaleźć swój Player ID i udostępnić go hostowi.',
+                pt: 'Abra Edit Profile para encontrar seu Player ID e compartilhá-lo com o anfitrião.',
+                th: 'เปิด Edit Profile เพื่อดู Player ID ของคุณ แล้วส่งให้เจ้าของโต๊ะ',
+                id: 'Buka Edit Profile untuk melihat Player ID Anda lalu bagikan ke host.',
+                hi: 'अपना Player ID देखने के लिए Edit Profile खोलें और उसे होस्ट के साथ साझा करें।',
+                bn: 'আপনার Player ID দেখতে Edit Profile খুলুন এবং হোস্টকে পাঠান।',
+              ),
+            ),
+
+            _helpCard(
+              icon: Icons.table_bar_outlined,
+
+              title: tr(
+                context,
+                'How do players join a table?',
+                zhTw: '玩家怎麼加入牌桌？',
+                zhCn: '玩家怎么加入牌桌？',
+                ko: '플레이어는 어떻게 테이블에 참가하나요?',
+                ja: 'プレイヤーはどうやってテーブルに参加しますか？',
+                de: 'Wie tritt man einem Tisch bei?',
+                fr: 'Comment rejoindre une table ?',
+                ar: 'كيف ينضم اللاعب إلى الطاولة؟',
+                ru: 'Как игрок присоединяется к столу?',
+                trk: 'Oyuncular masaya nasıl katılır?',
+                es: '¿Cómo se unen los jugadores a una mesa?',
+                it: 'Come si uniscono i giocatori a un tavolo?',
+                pl: 'Jak gracze dołączają do stołu?',
+                pt: 'Como os jogadores entram em uma mesa?',
+                th: 'ผู้เล่นเข้าร่วมโต๊ะได้อย่างไร?',
+                id: 'Bagaimana pemain bergabung ke meja?',
+                hi: 'खिलाड़ी टेबल में कैसे शामिल होते हैं?',
+                bn: 'খেলোয়াড় কীভাবে টেবিলে যোগ দেয়?',
+              ),
+
+              body: tr(
+                context,
+                'After the host adds your Player ID, you can see that host’s tables, choose an open seat, or join the waiting list if the table is full.',
+                zhTw: '房主新增你的 Player ID 後，你就能看到他的牌桌。你可以選空位入座；如果滿桌，可以加入等待區。',
+                zhCn: '房主添加你的 Player ID 后，你就能看到他的牌桌。你可以选择空位入座；如果满桌，可以加入等待区。',
+                ko: '호스트가 Player ID를 추가하면 해당 호스트의 테이블을 볼 수 있으며 빈 자리에 앉거나 대기열에 참가할 수 있습니다.',
+                ja: 'ホストがPlayer IDを追加すると、そのホストのテーブルが表示され、空席に座るかウェイティングリストに参加できます。',
+                de: 'Nachdem der Host deine Player ID hinzugefügt hat, kannst du die Tische sehen, einen freien Platz wählen oder der Warteliste beitreten.',
+                fr: 'Une fois votre Player ID ajouté par l’hôte, vous pouvez voir ses tables, choisir une place libre ou rejoindre la liste d’attente.',
+                ar: 'بعد أن يضيف المضيف Player ID الخاص بك، يمكنك رؤية طاولاته واختيار مقعد فارغ أو الانضمام إلى قائمة الانتظار.',
+                ru: 'После добавления вашего Player ID хостом вы сможете видеть его столы, выбрать свободное место или встать в очередь ожидания.',
+                trk: 'Host Player ID’nizi ekledikten sonra masaları görebilir, boş koltuk seçebilir veya bekleme listesine katılabilirsiniz.',
+                es: 'Después de que el anfitrión agregue tu Player ID, podrás ver sus mesas, elegir un asiento vacío o unirte a la lista de espera.',
+                it: 'Dopo che l’host ha aggiunto il tuo Player ID, potrai vedere i suoi tavoli, scegliere un posto libero o unirti alla lista d’attesa.',
+                pl: 'Po dodaniu Twojego Player ID przez hosta możesz zobaczyć jego stoły, wybrać wolne miejsce lub dołączyć do listy oczekujących.',
+                pt: 'Depois que o anfitrião adicionar seu Player ID, você poderá ver suas mesas, escolher um assento vazio ou entrar na fila de espera.',
+                th: 'หลังจากเจ้าของโต๊ะเพิ่ม Player ID ของคุณแล้ว คุณจะเห็นโต๊ะของเขา เลือกที่นั่งว่าง หรือเข้าคิวรอได้',
+                id: 'Setelah host menambahkan Player ID Anda, Anda dapat melihat meja host, memilih kursi kosong, atau masuk waiting list jika meja penuh.',
+                hi: 'होस्ट द्वारा आपका Player ID जोड़ने के बाद आप उसकी टेबल देख सकते हैं, खाली सीट चुन सकते हैं या वेटिंग लिस्ट में शामिल हो सकते हैं।',
+                bn: 'হোস্ট আপনার Player ID যোগ করার পরে আপনি তার টেবিল দেখতে পারবেন, খালি সিট নিতে পারবেন অথবা ওয়েটিং লিস্টে যোগ দিতে পারবেন।',
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class SettingsPage extends StatefulWidget {
   final UserSession session;
 
@@ -6508,6 +8314,48 @@ class _SettingsPageState extends State<SettingsPage> {
               );
             },
           ),
+
+          ListTile(
+            leading: const Icon(
+              Icons.help_outline,
+              color: Colors.green,
+            ),
+
+            title: Text(
+              tr(
+                context,
+                'Help',
+                zhTw: '使用說明',
+                zhCn: '使用说明',
+                ko: '도움말',
+                ja: 'ヘルプ',
+                de: 'Hilfe',
+                fr: 'Aide',
+                ar: 'المساعدة',
+                ru: 'Помощь',
+                trk: 'Yardım',
+                es: 'Ayuda',
+                it: 'Aiuto',
+                pl: 'Pomoc',
+                pt: 'Ajuda',
+                th: 'วิธีใช้งาน',
+                id: 'Bantuan',
+                hi: 'सहायता',
+                bn: 'সহায়তা',
+              ),
+            ),
+
+            trailing: const Icon(Icons.chevron_right),
+
+            onTap: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const HelpPage(),
+                ),
+              );
+            },
+          ),
+
           const Divider(height: 32),
           ListTile(
             leading: const Icon(
@@ -9440,6 +11288,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 
   Future<void> _startStripeCheckout() async {
+
     if (isAppleIapPlatform) {
       try {
         await AppleIapService.buy(
@@ -9713,6 +11562,13 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                   builder: (_) => ProfileEditPage(
                     session: widget.session,
                   ),
+                ),
+              );
+
+            } else if (value == 'help') {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => const HelpPage(),
                 ),
               );
 
@@ -10870,6 +12726,189 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                     ),
                   ),
                 ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  tr(
+                    context,
+                    'Host Pro Monthly Subscription\n'
+                    '\$9.99 / month\n\n'
+                    'Subscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
+
+                    zhTw:
+                        'Host Pro 每月訂閱\n'
+                        '\$9.99 / 月\n\n'
+                        '訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
+
+                    zhCn:
+                        'Host Pro 每月订阅\n'
+                        '\$9.99 / 月\n\n'
+                        '除非在当前订阅周期结束前至少 24 小时取消，否则订阅会自动续订。',
+
+                    ko:
+                        'Host Pro 월간 구독\n'
+                        '\$9.99 / 월\n\n'
+                        '현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다。',
+
+                    ja:
+                        'Host Pro 月額サブスクリプション\n'
+                        '\$9.99 / 月\n\n'
+                        '現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
+
+                    de:
+                        'Host Pro Monatsabo\n'
+                        '\$9.99 / Monat\n\n'
+                        'Das Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird。',
+
+                    fr:
+                        'Abonnement mensuel Host Pro\n'
+                        '\$9.99 / mois\n\n'
+                        'L’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période。',
+
+                    ar:
+                        'اشتراك Host Pro الشهري\n'
+                        '\$9.99 / شهرياً\n\n'
+                        'سيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية。',
+
+                    ru:
+                        'Ежемесячная подписка Host Pro\n'
+                        '\$9.99 / месяц\n\n'
+                        'Подписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода。',
+
+                    trk:
+                        'Host Pro Aylık Abonelik\n'
+                        '\$9.99 / ay\n\n'
+                        'Abonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir。',
+
+                    es:
+                        'Suscripción mensual Host Pro\n'
+                        '\$9.99 / mes\n\n'
+                        'La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período。',
+
+                    it:
+                        'Abbonamento mensile Host Pro\n'
+                        '\$9.99 / mese\n\n'
+                        'L’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo。',
+
+                    pl:
+                        'Subskrypcja miesięczna Host Pro\n'
+                        '\$9.99 / miesiąc\n\n'
+                        'Subskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej。',
+
+                    pt:
+                        'Assinatura mensal Host Pro\n'
+                        '\$9.99 / mês\n\n'
+                        'A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período。',
+
+                    th:
+                        'สมัครสมาชิก Host Pro รายเดือน\n'
+                        '\$9.99 / เดือน\n\n'
+                        'ระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
+
+                    id:
+                        'Langganan Bulanan Host Pro\n'
+                        '\$9.99 / bulan\n\n'
+                        'Langganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir。',
+
+                    hi:
+                        'Host Pro मासिक सदस्यता\n'
+                        '\$9.99 / महीना\n\n'
+                        'यदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
+
+                    bn:
+                        'Host Pro মাসিক সাবস্ক্রিপশন\n'
+                        '\$9.99 / মাস\n\n'
+                        'বর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.black54,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  children: [
+                    TextButton(
+                      onPressed: () async {
+                        final uri = Uri.parse(
+                          'https://pokerscheduler.web.app/terms.html',
+                        );
+
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      child: Text(
+                        tr(
+                          context,
+                          'Terms of Service',
+                          zhTw: '服務條款',
+                          zhCn: '服务条款',
+                          ko: '서비스 약관',
+                          ja: '利用規約',
+                          de: 'Nutzungsbedingungen',
+                          fr: 'Conditions d’utilisation',
+                          ar: 'شروط الخدمة',
+                          ru: 'Условия использования',
+                          trk: 'Hizmet Şartları',
+                          es: 'Términos del servicio',
+                          it: 'Termini di servizio',
+                          pl: 'Warunki korzystania',
+                          pt: 'Termos de serviço',
+                          th: 'ข้อกำหนดการใช้งาน',
+                          id: 'Syarat Layanan',
+                          hi: 'सेवा की शर्तें',
+                          bn: 'সেবার শর্তাবলী',
+                        ),
+                      ),
+                    ),
+
+                    TextButton(
+                      onPressed: () async {
+                        final uri = Uri.parse(
+                          'https://pokerscheduler.web.app/privacy.html',
+                        );
+
+                        await launchUrl(
+                          uri,
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      child: Text(
+                        tr(
+                          context,
+                          'Privacy Policy',
+                          zhTw: '隱私權政策',
+                          zhCn: '隐私政策',
+                          ko: '개인정보 처리방침',
+                          ja: 'プライバシーポリシー',
+                          de: 'Datenschutzrichtlinie',
+                          fr: 'Politique de confidentialité',
+                          ar: 'سياسة الخصوصية',
+                          ru: 'Политика конфиденциальности',
+                          trk: 'Gizlilik Politikası',
+                          es: 'Política de privacidad',
+                          it: 'Informativa sulla privacy',
+                          pl: 'Polityka prywatności',
+                          pt: 'Política de Privacidade',
+                          th: 'นโยบายความเป็นส่วนตัว',
+                          id: 'Kebijakan Privasi',
+                          hi: 'गोपनीयता नीति',
+                          bn: 'গোপনীয়তা নীতি',
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
               ],
             ),
 
@@ -27447,6 +29486,189 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),
+
+                  const SizedBox(height: 12),
+
+                  Text(
+                    tr(
+                      context,
+                      'Stats Pro Monthly Subscription\n'
+                      '\$9.99 / month\n\n'
+                      'Subscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
+
+                      zhTw:
+                          'Stats Pro 每月訂閱\n'
+                          '\$9.99 / 月\n\n'
+                          '訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
+
+                      zhCn:
+                          'Stats Pro 每月订阅\n'
+                          '\$9.99 / 月\n\n'
+                          '除非在当前订阅周期结束前至少 24 小时取消，否则订阅会自动续订。',
+
+                      ko:
+                          'Stats Pro 월간 구독\n'
+                          '\$9.99 / 월\n\n'
+                          '현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다.',
+
+                      ja:
+                          'Stats Pro 月額サブスクリプション\n'
+                          '\$9.99 / 月\n\n'
+                          '現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
+
+                      de:
+                          'Stats Pro Monatsabo\n'
+                          '\$9.99 / Monat\n\n'
+                          'Das Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird.',
+
+                      fr:
+                          'Abonnement mensuel Stats Pro\n'
+                          '\$9.99 / mois\n\n'
+                          'L’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période.',
+
+                      ar:
+                          'اشتراك Stats Pro الشهري\n'
+                          '\$9.99 / شهرياً\n\n'
+                          'سيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية.',
+
+                      ru:
+                          'Ежемесячная подписка Stats Pro\n'
+                          '\$9.99 / месяц\n\n'
+                          'Подписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода.',
+
+                      trk:
+                          'Stats Pro Aylık Abonelik\n'
+                          '\$9.99 / ay\n\n'
+                          'Abonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir.',
+
+                      es:
+                          'Suscripción mensual Stats Pro\n'
+                          '\$9.99 / mes\n\n'
+                          'La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período.',
+
+                      it:
+                          'Abbonamento mensile Stats Pro\n'
+                          '\$9.99 / mese\n\n'
+                          'L’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo.',
+
+                      pl:
+                          'Subskrypcja miesięczna Stats Pro\n'
+                          '\$9.99 / miesiąc\n\n'
+                          'Subskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej.',
+
+                      pt:
+                          'Assinatura mensal Stats Pro\n'
+                          '\$9.99 / mês\n\n'
+                          'A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período.',
+
+                      th:
+                          'สมัครสมาชิก Stats Pro รายเดือน\n'
+                          '\$9.99 / เดือน\n\n'
+                          'ระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
+
+                      id:
+                          'Langganan Bulanan Stats Pro\n'
+                          '\$9.99 / bulan\n\n'
+                          'Langganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir.',
+
+                      hi:
+                          'Stats Pro मासिक सदस्यता\n'
+                          '\$9.99 / महीना\n\n'
+                          'यदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
+
+                      bn:
+                          'Stats Pro মাসিক সাবস্ক্রিপশন\n'
+                          '\$9.99 / মাস\n\n'
+                          'বর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
+                    ),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black54,
+                      height: 1.5,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 12,
+                    children: [
+                      TextButton(
+                        onPressed: () async {
+                          final uri = Uri.parse(
+                            'https://pokerscheduler.web.app/terms.html',
+                          );
+
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        child: Text(
+                          tr(
+                            context,
+                            'Terms of Service',
+                            zhTw: '服務條款',
+                            zhCn: '服务条款',
+                            ko: '서비스 약관',
+                            ja: '利用規約',
+                            de: 'Nutzungsbedingungen',
+                            fr: 'Conditions d’utilisation',
+                            ar: 'شروط الخدمة',
+                            ru: 'Условия использования',
+                            trk: 'Hizmet Şartları',
+                            es: 'Términos del servicio',
+                            it: 'Termini di servizio',
+                            pl: 'Warunki korzystania',
+                            pt: 'Termos de serviço',
+                            th: 'ข้อกำหนดการใช้งาน',
+                            id: 'Syarat Layanan',
+                            hi: 'सेवा की शर्तें',
+                            bn: 'সেবার শর্তাবলী',
+                          ),
+                        ),
+                      ),
+
+                      TextButton(
+                        onPressed: () async {
+                          final uri = Uri.parse(
+                            'https://pokerscheduler.web.app/privacy.html',
+                          );
+
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        child: Text(
+                          tr(
+                            context,
+                            'Privacy Policy',
+                            zhTw: '隱私權政策',
+                            zhCn: '隐私政策',
+                            ko: '개인정보 처리방침',
+                            ja: 'プライバシーポリシー',
+                            de: 'Datenschutzrichtlinie',
+                            fr: 'Politique de confidentialité',
+                            ar: 'سياسة الخصوصية',
+                            ru: 'Политика конфиденциальности',
+                            trk: 'Gizlilik Politikası',
+                            es: 'Política de privacidad',
+                            it: 'Informativa sulla privacy',
+                            pl: 'Polityka prywatności',
+                            pt: 'Política de Privacidade',
+                            th: 'นโยบายความเป็นส่วนตัว',
+                            id: 'Kebijakan Privasi',
+                            hi: 'गोपनीयता नीति',
+                            bn: 'গোপনীয়তা নীতি',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
                 ],
               ),
         body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(

@@ -2,7 +2,7 @@ name: poker_scheduler
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.55+55
+version: 1.0.56+56
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -32,6 +32,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/tutorial/
 
 
 flutter_launcher_icons:
