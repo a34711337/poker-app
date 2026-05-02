@@ -9417,6 +9417,28 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   static const String _createStatsCheckoutUrl =
       'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createStatsCheckoutSession';
 
+  Future<void> _reloadCurrentUserAccess() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (uid.isEmpty) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+
+    final data = doc.data() ?? {};
+
+    if (!mounted) return;
+
+    setState(() {
+      _hostSubscriptionStatus =
+          resolveHostSubscriptionStatusFromUserData(data);
+
+      _statsSubscriptionStatus =
+          resolveStatsSubscriptionStatusFromUserData(data);
+    });
+  }
+
   Future<void> _startStripeCheckout() async {
     if (isAppleIapPlatform) {
       try {
@@ -9450,8 +9472,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         );
 
         if (mounted) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          setState(() {});
+          await _reloadCurrentUserAccess();
         }
       } catch (e) {
         _showSnack(e.toString().replaceFirst('Exception: ', ''));
@@ -9496,7 +9517,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         );
 
         if (mounted) {
-          setState(() {});
+          await _reloadCurrentUserAccess();
         }
       } catch (e) {
         _showSnack(e.toString().replaceFirst('Exception: ', ''));
@@ -10748,6 +10769,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           );
 
                           if (!mounted) return;
+                          await _reloadCurrentUserAccess();
 
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
@@ -24848,6 +24870,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -26760,7 +26784,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
           ),
         );
 
-        setState(() {});
+        if (mounted) {
+          setState(() {});
+        }
+        
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
