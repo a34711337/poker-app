@@ -8374,24 +8374,24 @@ class _SettingsPageState extends State<SettingsPage> {
         content: Text(
           tr(
             context,
-            'This will deactivate your account and remove your occupied seats. Access to paid features and subscriptions inside the app may also be removed. This cannot be undone.\n\nDo you want to continue?',
-            zhTw: '這會停用你的帳號，並移除你目前坐的位置。App 內的付費功能與訂閱權限也可能會被移除。這個動作無法復原。\n\n你確定要繼續嗎？',
-            zhCn: '这会停用你的账号，并移除你目前坐的位置。App 内的付费功能与订阅权限也可能会被移除。此操作无法恢复。\n\n你确定要继续吗？',
-            ko: '계정이 비활성화되며 현재 차지 중인 자리가 제거됩니다. 앱 내 유료 기능 및 구독 권한도 제거될 수 있습니다. 이 작업은 되돌릴 수 없습니다.\n\n계속하시겠습니까?',
-            ja: 'この操作を行うと、アカウントが無効化され、現在座っている席が削除されます。また、アプリ内の有料機能やサブスクリプション権限も削除される場合があります。この操作は元に戻せません。\n\n続行しますか？',
-            de: 'Dadurch wird dein Konto deaktiviert und deine belegten Plätze werden entfernt. Der Zugriff auf kostenpflichtige Funktionen und Abonnements in der App kann ebenfalls entfernt werden. Dies kann nicht rückgängig gemacht werden.\n\nMöchtest du fortfahren?',
-            fr: 'Cela désactivera votre compte et supprimera vos sièges occupés. L’accès aux fonctionnalités payantes et aux abonnements dans l’application peut également être supprimé. Cette action est irréversible.\n\nVoulez-vous continuer ?',
-            ar: 'سيؤدي هذا إلى تعطيل حسابك وإزالة مقاعدك الحالية. قد تتم أيضًا إزالة ميزات الاشتراك والميزات المدفوعة داخل التطبيق. لا يمكن التراجع عن هذا الإجراء.\n\nهل تريد المتابعة؟',
-            ru: 'Это деактивирует ваш аккаунт и удалит занятые вами места. Доступ к платным функциям и подпискам внутри приложения также может быть удалён. Это действие нельзя отменить.\n\nВы хотите продолжить?',
-            trk: 'Bu işlem hesabınızı devre dışı bırakacak ve oturduğunuz koltukları kaldıracaktır. Uygulama içindeki ücretli özelliklere ve aboneliklere erişim de kaldırılabilir. Bu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?',
-            es: 'Esto desactivará tu cuenta y eliminará tus asientos ocupados. El acceso a funciones y suscripciones pagas dentro de la aplicación también puede eliminarse. Esta acción no se puede deshacer.\n\n¿Deseas continuar?',
-            it: 'Questo disattiverà il tuo account e rimuoverà i posti occupati. Anche l’accesso alle funzionalità a pagamento e agli abbonamenti nell’app potrebbe essere rimosso. Questa azione non può essere annullata.\n\nVuoi continuare?',
-            pl: 'Spowoduje to dezaktywację konta i usunięcie zajętych miejsc. Dostęp do płatnych funkcji i subskrypcji w aplikacji może również zostać usunięty. Tego działania nie można cofnąć.\n\nCzy chcesz kontynuować?',
-            pt: 'Isso desativará sua conta e removerá seus assentos ocupados. O acesso a recursos pagos e assinaturas dentro do aplicativo também poderá ser removido. Esta ação não pode ser desfeita.\n\nDeseja continuar?',
-            th: 'การดำเนินการนี้จะปิดใช้งานบัญชีของคุณและนำที่นั่งที่คุณใช้อยู่ออก สิทธิ์การใช้งานฟีเจอร์แบบชำระเงินและการสมัครสมาชิกภายในแอปอาจถูกลบออกด้วย การดำเนินการนี้ไม่สามารถย้อนกลับได้\n\nคุณต้องการดำเนินการต่อหรือไม่?',
-            id: 'Ini akan menonaktifkan akun Anda dan menghapus kursi yang sedang Anda tempati. Akses ke fitur berbayar dan langganan di dalam aplikasi juga dapat dihapus. Tindakan ini tidak dapat dibatalkan.\n\nApakah Anda ingin melanjutkan?',
-            hi: 'इससे आपका अकाउंट निष्क्रिय हो जाएगा और आपकी वर्तमान सीटें हट जाएंगी। ऐप के अंदर की भुगतान सुविधाओं और सब्सक्रिप्शन की पहुँच भी हटाई जा सकती है। यह कार्रवाई वापस नहीं की जा सकती।\n\nक्या आप जारी रखना चाहते हैं?',
-            bn: 'এটি আপনার অ্যাকাউন্ট নিষ্ক্রিয় করবে এবং আপনার বর্তমান সিট সরিয়ে দেবে। অ্যাপের ভেতরের পেইড ফিচার ও সাবস্ক্রিপশনের অ্যাক্সেসও মুছে যেতে পারে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি চালিয়ে যেতে চান?',
+            'This will deactivate your account and remove your occupied seats. Deleting your account does not automatically cancel your Apple or Google subscription. If you have an active subscription, please cancel it from the App Store or Google Play. This cannot be undone.\n\nDo you want to continue?',
+            zhTw: '這會停用你的帳號，並移除你目前坐的位置。刪除帳號不會自動取消你的 Apple 或 Google 訂閱。如果你有啟用中的訂閱，請到 App Store 或 Google Play 取消。這個動作無法復原。\n\n你確定要繼續嗎？',
+            zhCn: '这会停用你的账号，并移除你目前坐的位置。删除账号不会自动取消你的 Apple 或 Google 订阅。如果你有启用中的订阅，请到 App Store 或 Google Play 取消。此操作无法恢复。\n\n你确定要继续吗？',
+            ko: '계정이 비활성화되고 현재 차지 중인 좌석이 제거됩니다. 계정을 삭제해도 Apple 또는 Google 구독은 자동으로 취소되지 않습니다. 활성 구독이 있는 경우 App Store 또는 Google Play에서 직접 취소해 주세요. 이 작업은 되돌릴 수 없습니다.\n\n계속하시겠습니까?',
+            ja: 'アカウントが無効化され、現在座っている席が削除されます。アカウントを削除しても、Apple または Google のサブスクリプションは自動的に解約されません。有効なサブスクリプションがある場合は、App Store または Google Play で解約してください。この操作は元に戻せません。\n\n続行しますか？',
+            de: 'Dadurch wird dein Konto deaktiviert und deine belegten Plätze werden entfernt. Durch das Löschen deines Kontos wird dein Apple- oder Google-Abonnement nicht automatisch gekündigt. Wenn du ein aktives Abonnement hast, kündige es bitte im App Store oder bei Google Play. Dies kann nicht rückgängig gemacht werden.\n\nMöchtest du fortfahren?',
+            fr: 'Cela désactivera votre compte et supprimera vos sièges occupés. La suppression de votre compte n’annule pas automatiquement votre abonnement Apple ou Google. Si vous avez un abonnement actif, veuillez l’annuler depuis l’App Store ou Google Play. Cette action est irréversible.\n\nVoulez-vous continuer ?',
+            ar: 'سيؤدي هذا إلى تعطيل حسابك وإزالة المقاعد التي تشغلها حاليًا. حذف حسابك لا يلغي اشتراك Apple أو Google تلقائيًا. إذا كان لديك اشتراك نشط، يرجى إلغاؤه من App Store أو Google Play. لا يمكن التراجع عن هذا الإجراء.\n\nهل تريد المتابعة؟',
+            ru: 'Это деактивирует ваш аккаунт и удалит занятые вами места. Удаление аккаунта не отменяет подписку Apple или Google автоматически. Если у вас есть активная подписка, отмените её в App Store или Google Play. Это действие нельзя отменить.\n\nВы хотите продолжить?',
+            trk: 'Bu işlem hesabınızı devre dışı bırakacak ve oturduğunuz koltukları kaldıracaktır. Hesabınızı silmek Apple veya Google aboneliğinizi otomatik olarak iptal etmez. Aktif bir aboneliğiniz varsa lütfen App Store veya Google Play üzerinden iptal edin. Bu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?',
+            es: 'Esto desactivará tu cuenta y eliminará tus asientos ocupados. Eliminar tu cuenta no cancela automáticamente tu suscripción de Apple o Google. Si tienes una suscripción activa, cancélala desde App Store o Google Play. Esta acción no se puede deshacer.\n\n¿Deseas continuar?',
+            it: 'Questo disattiverà il tuo account e rimuoverà i posti occupati. L’eliminazione dell’account non annulla automaticamente il tuo abbonamento Apple o Google. Se hai un abbonamento attivo, annullalo dall’App Store o da Google Play. Questa azione non può essere annullata.\n\nVuoi continuare?',
+            pl: 'Spowoduje to dezaktywację konta i usunięcie zajętych miejsc. Usunięcie konta nie anuluje automatycznie subskrypcji Apple ani Google. Jeśli masz aktywną subskrypcję, anuluj ją w App Store lub Google Play. Tego działania nie można cofnąć.\n\nCzy chcesz kontynuować?',
+            pt: 'Isso desativará sua conta e removerá seus assentos ocupados. Excluir sua conta não cancela automaticamente sua assinatura da Apple ou do Google. Se você tiver uma assinatura ativa, cancele-a na App Store ou no Google Play. Esta ação não pode ser desfeita.\n\nDeseja continuar?',
+            th: 'การดำเนินการนี้จะปิดใช้งานบัญชีของคุณและนำที่นั่งที่คุณใช้อยู่ในปัจจุบันออก การลบบัญชีจะไม่ยกเลิกการสมัครสมาชิก Apple หรือ Google โดยอัตโนมัติ หากคุณมีการสมัครสมาชิกที่ใช้งานอยู่ โปรดยกเลิกผ่าน App Store หรือ Google Play การดำเนินการนี้ไม่สามารถย้อนกลับได้\n\nคุณต้องการดำเนินการต่อหรือไม่?',
+            id: 'Ini akan menonaktifkan akun Anda dan menghapus kursi yang sedang Anda tempati. Menghapus akun tidak secara otomatis membatalkan langganan Apple atau Google Anda. Jika Anda memiliki langganan aktif, harap batalkan melalui App Store atau Google Play. Tindakan ini tidak dapat dibatalkan.\n\nApakah Anda ingin melanjutkan?',
+            hi: 'इससे आपका अकाउंट निष्क्रिय हो जाएगा और आपकी वर्तमान सीटें हट जाएंगी। अकाउंट हटाने से आपकी Apple या Google सब्सक्रिप्शन अपने-आप रद्द नहीं होती। यदि आपके पास सक्रिय सब्सक्रिप्शन है, तो कृपया इसे App Store या Google Play से रद्द करें। यह कार्रवाई वापस नहीं की जा सकती।\n\nक्या आप जारी रखना चाहते हैं?',
+            bn: 'এটি আপনার অ্যাকাউন্ট নিষ্ক্রিয় করবে এবং আপনার বর্তমান সিট সরিয়ে দেবে। অ্যাকাউন্ট মুছে ফেললে আপনার Apple বা Google সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে বাতিল হবে না। আপনার সক্রিয় সাবস্ক্রিপশন থাকলে App Store বা Google Play থেকে সেটি বাতিল করুন। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি চালিয়ে যেতে চান?',
           ),
         ),
         actions: [
@@ -29333,6 +29333,38 @@ class CashGameStatsHomePage extends StatefulWidget {
 
 class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
+  late bool _hasPaidAccess;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _hasPaidAccess = widget.hasPaidAccess;
+  }
+
+  Future<void> _reloadStatsAccess() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final data = doc.data() ?? {};
+
+    final hasAccess =
+        resolveStatsSubscriptionStatusFromUserData(data)
+            .isPaidActive;
+
+    if (!mounted) return;
+
+    setState(() {
+      _hasPaidAccess = hasAccess;
+    });
+  }
+
   CollectionReference<Map<String, dynamic>> _sessionsRef() {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
   
@@ -29401,7 +29433,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
         );
 
         if (mounted) {
-          setState(() {});
+          await _reloadStatsAccess();
         }
         
       } catch (e) {
@@ -30276,7 +30308,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
             ],
           ),
         ),
-        floatingActionButton: widget.hasPaidAccess
+        floatingActionButton: _hasPaidAccess
             ? PopupMenuButton<String>(
                 onSelected: (value) {
                   if (value == 'ongoing') {
