@@ -130,6 +130,43 @@ Future<void> openChatFromNotification(String chatId) async {
   );
 }
 
+Future<void> refreshAppBadgeCount() async {
+  if (kIsWeb) return;
+
+  final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+  if (currentUid.isEmpty) {
+    await FlutterAppBadger.removeBadge();
+    return;
+  }
+
+  final chatsSnapshot = await FirebaseFirestore.instance
+      .collection('direct_chats')
+      .where('memberUids', arrayContains: currentUid)
+      .get();
+
+  int unreadTotal = 0;
+
+  for (final doc in chatsSnapshot.docs) {
+    final data = doc.data();
+    final unreadCounts =
+        Map<String, dynamic>.from(data['unreadCounts'] ?? {});
+
+    final count = unreadCounts[currentUid] ?? 0;
+
+    if (count is int) {
+      unreadTotal += count;
+    } else {
+      unreadTotal += int.tryParse(count.toString()) ?? 0;
+    }
+  }
+
+  if (unreadTotal <= 0) {
+    await FlutterAppBadger.removeBadge();
+  } else {
+    await FlutterAppBadger.updateBadgeCount(unreadTotal);
+  }
+}
+
 Future<void> setupPushNotifications() async {
   if (kIsWeb) return;
 
@@ -537,6 +574,7 @@ class AuthGate extends StatelessWidget {
   
     await ensureUserProfile(user);
     await setupPushNotifications();
+    await refreshAppBadgeCount();
   
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
@@ -16713,13 +16751,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       await FirebaseFirestore.instance
           .collection('direct_chats')
           .doc(widget.chatId)
-          .update({
+          .set({
         'unreadCounts': {
           currentUid: 0,
         },
-        'lastReadAt.$currentUid': FieldValue.serverTimestamp(),
+        'lastReadAt': {
+          currentUid: FieldValue.serverTimestamp(),
+        },
         'updatedAt': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
+
+      await refreshAppBadgeCount();
     } catch (e) {
       debugPrint('mark read error: $e');
     }
@@ -16797,11 +16839,18 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'lastMessageAt': FieldValue.serverTimestamp(),
           'lastMessageSenderUid': currentUser.uid,
           'updatedAt': FieldValue.serverTimestamp(),
-          'unreadCounts': {
-            currentUser.uid: 0,
-            widget.otherUid: FieldValue.increment(1),
-          },
         }, SetOptions(merge: true));
+
+        tx.set(
+          chatRef,
+          {
+            'unreadCounts': {
+              currentUser.uid: 0,
+              widget.otherUid: FieldValue.increment(1),
+            },
+          },
+          SetOptions(merge: true),
+        );
 
         tx.set(
           FirebaseFirestore.instance.collection('friendships').doc(widget.chatId),
@@ -16815,6 +16864,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       messageController.clear();
 
       await _markChatAsRead();
+      await refreshAppBadgeCount();
     } catch (e) {
       if (!mounted) return;
 
