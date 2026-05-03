@@ -9044,7 +9044,58 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     );
 
     if (result == true) {
-      await _startStripeCheckout();
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        try {
+          await AppleIapService.buy(
+            productId: kAppleHostProProductId,
+            type: ApplePurchaseType.host,
+          );
+
+          if (!mounted) return;
+
+          await _reloadCurrentUserAccess();
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                tr(
+                  context,
+                  'Host Pro activated',
+                  zhTw: 'Host Pro 已啟用',
+                  zhCn: 'Host Pro 已启用',
+                  ko: 'Host Pro 활성화 완료',
+                  ja: 'Host Pro が有効になりました',
+                  de: 'Host Pro wurde aktiviert',
+                  fr: 'Host Pro activé',
+                  ar: 'تم تفعيل Host Pro',
+                  ru: 'Host Pro активирован',
+                  trk: 'Host Pro etkinleştirildi',
+                  es: 'Host Pro activado',
+                  it: 'Host Pro attivato',
+                  pl: 'Host Pro został aktywowany',
+                  pt: 'Host Pro ativado',
+                  th: 'เปิดใช้งาน Host Pro แล้ว',
+                  id: 'Host Pro berhasil diaktifkan',
+                  hi: 'Host Pro सक्रिय हो गया',
+                  bn: 'Host Pro সক্রিয় হয়েছে',
+                ),
+              ),
+            ),
+          );
+        } catch (e) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                e.toString().replaceFirst('Exception: ', ''),
+              ),
+            ),
+          );
+        }
+      } else {
+        await _startStripeCheckout();
+      }
     }
   }
 
@@ -29297,295 +29348,344 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
     return result;
   }
 
- Future<void> _showStatsProSubscribeDialog() async {
-   final result = await showDialog<bool>(
-     context: context,
-     builder: (context) {
-       return AlertDialog(
-         title: Text(
-           tr(
-             context,
-             'Stats Pro Monthly Subscription',
-             zhTw: 'Stats Pro 每月訂閱',
-             zhCn: 'Stats Pro 每月订阅',
-             ko: 'Stats Pro 월간 구독',
-             ja: 'Stats Pro 月額サブスクリプション',
-             de: 'Stats Pro Monatsabo',
-             fr: 'Abonnement mensuel Stats Pro',
-             ar: 'اشتراك Stats Pro الشهري',
-             ru: 'Ежемесячная подписка Stats Pro',
-             trk: 'Stats Pro Aylık Abonelik',
-             es: 'Suscripción mensual Stats Pro',
-             it: 'Abbonamento mensile Stats Pro',
-             pl: 'Subskrypcja miesięczna Stats Pro',
-             pt: 'Assinatura mensal Stats Pro',
-             th: 'สมัครสมาชิก Stats Pro รายเดือน',
-             id: 'Langganan Bulanan Stats Pro',
-             hi: 'Stats Pro मासिक सदस्यता',
-             bn: 'Stats Pro মাসিক সাবস্ক্রিপশন',
-           ),
-         ),
+  Future<void> _showStatsProSubscribeDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            tr(
+              context,
+              'Stats Pro Monthly Subscription',
+              zhTw: 'Stats Pro 每月訂閱',
+              zhCn: 'Stats Pro 每月订阅',
+              ko: 'Stats Pro 월간 구독',
+              ja: 'Stats Pro 月額サブスクリプション',
+              de: 'Stats Pro Monatsabo',
+              fr: 'Abonnement mensuel Stats Pro',
+              ar: 'اشتراك Stats Pro الشهري',
+              ru: 'Ежемесячная подписка Stats Pro',
+              trk: 'Stats Pro Aylık Abonelik',
+              es: 'Suscripción mensual Stats Pro',
+              it: 'Abbonamento mensile Stats Pro',
+              pl: 'Subskrypcja miesięczna Stats Pro',
+              pt: 'Assinatura mensal Stats Pro',
+              th: 'สมัครสมาชิก Stats Pro รายเดือน',
+              id: 'Langganan Bulanan Stats Pro',
+              hi: 'Stats Pro मासिक सदस्यता',
+              bn: 'Stats Pro মাসিক সাবস্ক্রিপশন',
+            ),
+          ),
 
-         content: Column(
-           mainAxisSize: MainAxisSize.min,
-           crossAxisAlignment: CrossAxisAlignment.start,
-           children: [
-             Text(
-               tr(
-                 context,
-                 '\$9.99 / month\n\nSubscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
-                 zhTw:
-                     '\$9.99 / 月\n\n訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
-                 zhCn:
-                     '\$9.99 / 月\n\n订阅将自动续订，除非在当前订阅周期结束前至少 24 小时取消。',
-                 ko:
-                     '\$9.99 / 월\n\n현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다.',
-                 ja:
-                     '\$9.99 / 月\n\n現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
-                 de:
-                     '\$9.99 / Monat\n\nDas Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird.',
-                 fr:
-                     '\$9.99 / mois\n\nL’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période.',
-                 ar:
-                     '\$9.99 / شهرياً\n\nسيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية.',
-                 ru:
-                     '\$9.99 / месяц\n\nПодписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода.',
-                 trk:
-                     '\$9.99 / ay\n\nAbonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir.',
-                 es:
-                     '\$9.99 / mes\n\nLa suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período.',
-                 it:
-                     '\$9.99 / mese\n\nL’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo.',
-                 pl:
-                     '\$9.99 / miesiąc\n\nSubskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej.',
-                 pt:
-                     '\$9.99 / mês\n\nA assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período.',
-                 th:
-                     '\$9.99 / เดือน\n\nระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
-                 id:
-                     '\$9.99 / bulan\n\nLangganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir.',
-                 hi:
-                     '\$9.99 / महीना\n\nयदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
-                 bn:
-                     '\$9.99 / মাস\n\nবর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
-               ),
-             ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                tr(
+                  context,
+                  '\$9.99 / month\n\nSubscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
+                  zhTw:
+                      '\$9.99 / 月\n\n訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
+                  zhCn:
+                      '\$9.99 / 月\n\n订阅将自动续订，除非在当前订阅周期结束前至少 24 小时取消。',
+                  ko:
+                      '\$9.99 / 월\n\n현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다.',
+                  ja:
+                      '\$9.99 / 月\n\n現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
+                  de:
+                      '\$9.99 / Monat\n\nDas Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird.',
+                  fr:
+                      '\$9.99 / mois\n\nL’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période.',
+                  ar:
+                      '\$9.99 / شهرياً\n\nسيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية.',
+                  ru:
+                      '\$9.99 / месяц\n\nПодписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода.',
+                  trk:
+                      '\$9.99 / ay\n\nAbonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir.',
+                  es:
+                      '\$9.99 / mes\n\nLa suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período.',
+                  it:
+                      '\$9.99 / mese\n\nL’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo.',
+                  pl:
+                      '\$9.99 / miesiąc\n\nSubskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej.',
+                  pt:
+                      '\$9.99 / mês\n\nA assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período.',
+                  th:
+                      '\$9.99 / เดือน\n\nระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
+                  id:
+                      '\$9.99 / bulan\n\nLangganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir.',
+                  hi:
+                      '\$9.99 / महीना\n\nयदि वर्तमान期間 समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
+                  bn:
+                      '\$9.99 / মাস\n\nবর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
+                ),
+              ),
 
-             const SizedBox(height: 12),
+              const SizedBox(height: 12),
 
-             Wrap(
-               spacing: 12,
-               children: [
-                 TextButton(
-                   onPressed: () async {
-                     await launchUrl(
-                       Uri.parse(
-                         'https://pokerscheduler.web.app/terms.html',
-                       ),
-                       mode: LaunchMode.externalApplication,
-                     );
-                   },
-                   child: Text(
-                     tr(
-                       context,
-                       'Terms of Service',
-                       zhTw: '服務條款',
-                       zhCn: '服务条款',
-                       ko: '서비스 약관',
-                       ja: '利用規約',
-                       de: 'Nutzungsbedingungen',
-                       fr: 'Conditions d’utilisation',
-                       ar: 'شروط الخدمة',
-                       ru: 'Условия использования',
-                       trk: 'Hizmet Şartları',
-                       es: 'Términos del servicio',
-                       it: 'Termini di servizio',
-                       pl: 'Warunki korzystania',
-                       pt: 'Termos de serviço',
-                       th: 'ข้อกำหนดการใช้งาน',
-                       id: 'Syarat Layanan',
-                       hi: 'सेवा की शर्तें',
-                       bn: 'সেবার শর্তাবলী',
-                     ),
-                   ),
-                 ),
+              Wrap(
+                spacing: 12,
+                children: [
+                  TextButton(
+                    onPressed: () async {
+                      await launchUrl(
+                        Uri.parse(
+                          'https://pokerscheduler.web.app/terms.html',
+                        ),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                    child: Text(
+                      tr(
+                        context,
+                        'Terms of Service',
+                        zhTw: '服務條款',
+                        zhCn: '服务条款',
+                        ko: '서비스 약관',
+                        ja: '利用規約',
+                        de: 'Nutzungsbedingungen',
+                        fr: 'Conditions d’utilisation',
+                        ar: 'شروط الخدمة',
+                        ru: 'Условия использования',
+                        trk: 'Hizmet Şartları',
+                        es: 'Términos del servicio',
+                        it: 'Termini di servizio',
+                        pl: 'Warunki korzystania',
+                        pt: 'Termos de serviço',
+                        th: 'ข้อกำหนดการใช้งาน',
+                        id: 'Syarat Layanan',
+                        hi: 'सेवा की शर्तें',
+                        bn: 'সেবার শর্তাবলী',
+                      ),
+                    ),
+                  ),
 
-                 TextButton(
-                   onPressed: () async {
-                     await launchUrl(
-                       Uri.parse(
-                         'https://pokerscheduler.web.app/privacy.html',
-                       ),
-                       mode: LaunchMode.externalApplication,
-                     );
-                   },
-                   child: Text(
-                     tr(
-                       context,
-                       'Privacy Policy',
-                       zhTw: '隱私權政策',
-                       zhCn: '隐私政策',
-                       ko: '개인정보 처리방침',
-                       ja: 'プライバシーポリシー',
-                       de: 'Datenschutzrichtlinie',
-                       fr: 'Politique de confidentialité',
-                       ar: 'سياسة الخصوصية',
-                       ru: 'Политика конфиденциальности',
-                       trk: 'Gizlilik Politikası',
-                       es: 'Política de privacidad',
-                       it: 'Informativa sulla privacy',
-                       pl: 'Polityka prywatności',
-                       pt: 'Política de Privacidade',
-                       th: 'นโยบายความเป็นส่วนตัว',
-                       id: 'Kebijakan Privasi',
-                       hi: 'गोपनीयता नीति',
-                       bn: 'গোপনীয়তা নীতি',
-                     ),
-                   ),
-                 ),
-               ],
-             ),
-           ],
-         ),
+                  TextButton(
+                    onPressed: () async {
+                      await launchUrl(
+                        Uri.parse(
+                          'https://pokerscheduler.web.app/privacy.html',
+                        ),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
+                    child: Text(
+                      tr(
+                        context,
+                        'Privacy Policy',
+                        zhTw: '隱私權政策',
+                        zhCn: '隐私政策',
+                        ko: '개인정보 처리방침',
+                        ja: 'プライバシーポリシー',
+                        de: 'Datenschutzrichtlinie',
+                        fr: 'Politique de confidentialité',
+                        ar: 'سياسة الخصوصية',
+                        ru: 'Политика конфиденциальности',
+                        trk: 'Gizlilik Politikası',
+                        es: 'Política de privacidad',
+                        it: 'Informativa sulla privacy',
+                        pl: 'Polityka prywatności',
+                        pt: 'Política de Privacidade',
+                        th: 'นโยบายความเป็นส่วนตัว',
+                        id: 'Kebijakan Privasi',
+                        hi: 'गोपनीयता नीति',
+                        bn: 'গোপনীয়তা নীতি',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
 
-         actions: [
-           TextButton(
-             onPressed: () async {
-               try {
-                 await AppleIapService.restore(
-                   type: ApplePurchaseType.stats,
-                 );
+          actions: [
+            TextButton(
+              onPressed: () async {
+                try {
+                  await AppleIapService.restore(
+                    type: ApplePurchaseType.stats,
+                  );
 
-                 if (!mounted) return;
+                  if (!mounted) return;
 
-                 Navigator.pop(context, false);
+                  Navigator.pop(context, false);
 
-                 ScaffoldMessenger.of(context).showSnackBar(
-                   SnackBar(
-                     content: Text(
-                       tr(
-                         context,
-                         'Purchase restored',
-                         zhTw: '購買已恢復',
-                         zhCn: '购买已恢复',
-                         ko: '구매가 복원되었습니다',
-                         ja: '購入が復元されました',
-                         de: 'Kauf wurde wiederhergestellt',
-                         fr: 'Achat restauré',
-                         ar: 'تمت استعادة عملية الشراء',
-                         ru: 'Покупка восстановлена',
-                         trk: 'Satın alma geri yüklendi',
-                         es: 'Compra restaurada',
-                         it: 'Acquisto ripristinato',
-                         pl: 'Zakup został przywrócony',
-                         pt: 'Compra restaurada',
-                         th: 'กู้คืนการซื้อแล้ว',
-                         id: 'Pembelian berhasil dipulihkan',
-                         hi: 'खरीद पुनर्स्थापित कर दी गई',
-                         bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
-                       ),
-                     ),
-                   ),
-                 );
-               } catch (e) {
-                 if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        tr(
+                          context,
+                          'Purchase restored',
+                          zhTw: '購買已恢復',
+                          zhCn: '购买已恢复',
+                          ko: '구매가 복원되었습니다',
+                          ja: '購入が復元されました',
+                          de: 'Kauf wurde wiederhergestellt',
+                          fr: 'Achat restauré',
+                          ar: 'تمت استعادة عملية الشراء',
+                          ru: 'Покупка восстановлена',
+                          trk: 'Satın alma geri yüklendi',
+                          es: 'Compra restaurada',
+                          it: 'Acquisto ripristinato',
+                          pl: 'Zakup został przywrócony',
+                          pt: 'Compra restaurada',
+                          th: 'กู้คืนการซื้อแล้ว',
+                          id: 'Pembelian berhasil dipulihkan',
+                          hi: 'खरीद पुनर्स्थापित कर दी गई',
+                          bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                        ),
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
 
-                 ScaffoldMessenger.of(context).showSnackBar(
-                   SnackBar(
-                     content: Text(
-                       e.toString().replaceFirst('Exception: ', ''),
-                     ),
-                   ),
-                 );
-               }
-             },
-             child: Text(
-               tr(
-                 context,
-                 'Restore Purchase',
-                 zhTw: '恢復購買',
-                 zhCn: '恢复购买',
-                 ko: '구매 복원',
-                 ja: '購入を復元',
-                 de: 'Kauf wiederherstellen',
-                 fr: 'Restaurer l’achat',
-                 ar: 'استعادة الشراء',
-                 ru: 'Восстановить покупку',
-                 trk: 'Satın Alımı Geri Yükle',
-                 es: 'Restaurar compra',
-                 it: 'Ripristina acquisto',
-                 pl: 'Przywróć zakup',
-                 pt: 'Restaurar compra',
-                 th: 'กู้คืนการซื้อ',
-                 id: 'Pulihkan Pembelian',
-                 hi: 'खरीद पुनर्स्थापित करें',
-                 bn: 'ক্রয় পুনরুদ্ধার করুন',
-               ),
-             ),
-           ),
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        e.toString().replaceFirst('Exception: ', ''),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                tr(
+                  context,
+                  'Restore Purchase',
+                  zhTw: '恢復購買',
+                  zhCn: '恢复购买',
+                  ko: '구매 복원',
+                  ja: '購入を復元',
+                  de: 'Kauf wiederherstellen',
+                  fr: 'Restaurer l’achat',
+                  ar: 'استعادة الشراء',
+                  ru: 'Восстановить покупку',
+                  trk: 'Satın Alımı Geri Yükle',
+                  es: 'Restaurar compra',
+                  it: 'Ripristina acquisto',
+                  pl: 'Przywróć zakup',
+                  pt: 'Restaurar compra',
+                  th: 'กู้คืนการซื้อ',
+                  id: 'Pulihkan Pembelian',
+                  hi: 'खरीद पुनर्स्थापित करें',
+                  bn: 'ক্রয় পুনরুদ্ধার করুন',
+                ),
+              ),
+            ),
 
-           TextButton(
-             onPressed: () => Navigator.pop(context, false),
-             child: Text(
-               tr(
-                 context,
-                 'Cancel',
-                 zhTw: '取消',
-                 zhCn: '取消',
-                 ko: '취소',
-                 ja: 'キャンセル',
-                 de: 'Abbrechen',
-                 fr: 'Annuler',
-                 ar: 'إلغاء',
-                 ru: 'Отмена',
-                 trk: 'İptal',
-                 es: 'Cancelar',
-                 it: 'Annulla',
-                 pl: 'Anuluj',
-                 pt: 'Cancelar',
-                 th: 'ยกเลิก',
-                 id: 'Batal',
-                 hi: 'रद्द करें',
-                 bn: 'বাতিল',
-               ),
-             ),
-           ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
+            ),
 
-           FilledButton(
-             onPressed: () => Navigator.pop(context, true),
-             child: Text(
-               tr(
-                 context,
-                 'Continue',
-                 zhTw: '繼續',
-                 zhCn: '继续',
-                 ko: '계속',
-                 ja: '続行',
-                 de: 'Weiter',
-                 fr: 'Continuer',
-                 ar: 'متابعة',
-                 ru: 'Продолжить',
-                 trk: 'Devam',
-                 es: 'Continuar',
-                 it: 'Continua',
-                 pl: 'Kontynuuj',
-                 pt: 'Continuar',
-                 th: 'ดำเนินการต่อ',
-                 id: 'Lanjutkan',
-                 hi: 'जारी रखें',
-                 bn: 'চালিয়ে যান',
-               ),
-             ),
-           ),
-         ],
-       );
-     },
-   );
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                tr(
+                  context,
+                  'Continue',
+                  zhTw: '繼續',
+                  zhCn: '继续',
+                  ko: '계속',
+                  ja: '続行',
+                  de: 'Weiter',
+                  fr: 'Continuer',
+                  ar: 'متابعة',
+                  ru: 'Продолжить',
+                  trk: 'Devam',
+                  es: 'Continuar',
+                  it: 'Continua',
+                  pl: 'Kontynuuj',
+                  pt: 'Continuar',
+                  th: 'ดำเนินการต่อ',
+                  id: 'Lanjutkan',
+                  hi: 'जारी रखें',
+                  bn: 'চালিয়ে যান',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
 
-   if (result == true) {
-     await _startStatsCheckout();
-   }
- }
+    if (result == true) {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        try {
+          await AppleIapService.buy(
+            productId: kAppleStatsProProductId,
+            type: ApplePurchaseType.stats,
+          );
+
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                tr(
+                  context,
+                  'Stats Pro activated',
+                  zhTw: 'Stats Pro 已啟用',
+                  zhCn: 'Stats Pro 已启用',
+                  ko: 'Stats Pro 활성화 완료',
+                  ja: 'Stats Pro が有効になりました',
+                  de: 'Stats Pro wurde aktiviert',
+                  fr: 'Stats Pro activé',
+                  ar: 'تم تفعيل Stats Pro',
+                  ru: 'Stats Pro активирован',
+                  trk: 'Stats Pro etkinleştirildi',
+                  es: 'Stats Pro activado',
+                  it: 'Stats Pro attivato',
+                  pl: 'Stats Pro został aktywowany',
+                  pt: 'Stats Pro ativado',
+                  th: 'เปิดใช้งาน Stats Pro แล้ว',
+                  id: 'Stats Pro berhasil diaktifkan',
+                  hi: 'Stats Pro सक्रिय हो गया',
+                  bn: 'Stats Pro সক্রিয় হয়েছে',
+                ),
+              ),
+            ),
+          );
+        } catch (e) {
+          if (!mounted) return;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                e.toString().replaceFirst('Exception: ', ''),
+              ),
+            ),
+          );
+        }
+      } else {
+        await _startStatsCheckout();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
