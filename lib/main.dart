@@ -2772,6 +2772,121 @@ bool get isAppleIapPlatform {
 class AppleIapService {
   static bool _isBuying = false;
 
+  static String _subscriptionDocId(PurchaseDetails purchase) {
+    final rawId = (purchase.purchaseID ?? '')
+        .trim()
+        .replaceAll('/', '_');
+
+    if (rawId.isEmpty) {
+      throw Exception(
+        tr(
+          appNavigatorKey.currentContext!,
+          'Unable to verify this purchase. Please try again.',
+          zhTw: '無法驗證此購買，請再試一次。',
+          zhCn: '无法验证此购买，请再试一次。',
+          ko: '구매를 확인할 수 없습니다. 다시 시도해주세요.',
+          ja: '購入を確認できません。もう一度お試しください。',
+          de: 'Dieser Kauf konnte nicht bestätigt werden. Bitte versuche es erneut.',
+          fr: 'Impossible de vérifier cet achat. Veuillez réessayer.',
+          ar: 'تعذر التحقق من عملية الشراء. يرجى المحاولة مرة أخرى.',
+          ru: 'Не удалось подтвердить покупку. Пожалуйста, попробуйте снова.',
+          trk: 'Satın alma doğrulanamadı. Lütfen tekrar deneyin.',
+          es: 'No se pudo verificar esta compra. Inténtalo de nuevo.',
+          it: 'Impossibile verificare questo acquisto. Riprova.',
+          pl: 'Nie można zweryfikować zakupu. Spróbuj ponownie.',
+          pt: 'Não foi possível verificar esta compra. Tente novamente.',
+          th: 'ไม่สามารถตรวจสอบการซื้อได้ กรุณาลองใหม่อีกครั้ง',
+          id: 'Tidak dapat memverifikasi pembelian ini. Silakan coba lagi.',
+          hi: 'इस खरीद को सत्यापित नहीं किया जा सका। कृपया पुनः प्रयास करें।',
+          bn: 'এই ক্রয় যাচাই করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।',
+        ),
+      );
+    }
+
+    return rawId;
+  }
+
+  static Future<void> _bindPurchaseToCurrentUser({
+    required PurchaseDetails purchase,
+    required ApplePurchaseType type,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception(
+        tr(
+          appNavigatorKey.currentContext!,
+          'Please login again',
+          zhTw: '請重新登入',
+          zhCn: '请重新登录',
+          ko: '다시 로그인해주세요',
+          ja: '再度ログインしてください',
+          de: 'Bitte erneut anmelden',
+          fr: 'Veuillez vous reconnecter',
+          ar: 'يرجى تسجيل الدخول مرة أخرى',
+          ru: 'Пожалуйста, войдите снова',
+          trk: 'Lütfen tekrar giriş yapın',
+          es: 'Por favor inicia sesión nuevamente',
+          it: 'Accedi di nuovo',
+          pl: 'Zaloguj się ponownie',
+          pt: 'Faça login novamente',
+          th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+          id: 'Silakan login kembali',
+          hi: 'कृपया फिर से लॉगिन करें',
+          bn: 'অনুগ্রহ করে আবার লগইন করুন',
+        ),
+      );
+    }
+
+    final docId = _subscriptionDocId(purchase);
+    final ref = FirebaseFirestore.instance
+        .collection('apple_subscriptions')
+        .doc(docId);
+
+    await FirebaseFirestore.instance.runTransaction((tx) async {
+      final snap = await tx.get(ref);
+      final data = snap.data();
+
+      if (data != null) {
+        final ownerUid = (data['ownerUid'] ?? '').toString();
+
+        if (ownerUid.isNotEmpty && ownerUid != user.uid) {
+          throw Exception(
+            tr(
+              appNavigatorKey.currentContext!,
+              'This subscription is already linked to another account.',
+              zhTw: '此訂閱已綁定到其他帳號。',
+              zhCn: '此订阅已绑定到其他账号。',
+              ko: '이 구독은 이미 다른 계정에 연결되어 있습니다.',
+              ja: 'このサブスクリプションは既に別のアカウントに紐付けされています。',
+              de: 'Dieses Abonnement ist bereits mit einem anderen Konto verknüpft.',
+              fr: 'Cet abonnement est déjà lié à un autre compte.',
+              ar: 'هذا الاشتراك مرتبط بالفعل بحساب آخر.',
+              ru: 'Эта подписка уже привязана к другому аккаунту.',
+              trk: 'Bu abonelik zaten başka bir hesaba bağlı.',
+              es: 'Esta suscripción ya está vinculada a otra cuenta.',
+              it: 'Questo abbonamento è già collegato a un altro account.',
+              pl: 'Ta subskrypcja jest już powiązana z innym kontem.',
+              pt: 'Esta assinatura já está vinculada a outra conta.',
+              th: 'การสมัครสมาชิกนี้เชื่อมกับบัญชีอื่นแล้ว',
+              id: 'Langganan ini sudah terhubung ke akun lain.',
+              hi: 'यह सदस्यता पहले से किसी अन्य खाते से जुड़ी हुई है।',
+              bn: 'এই সাবস্ক্রিপশন ইতোমধ্যে অন্য একটি অ্যাকাউন্টের সাথে যুক্ত আছে।',
+            ),
+          );
+        }
+      }
+
+      tx.set(ref, {
+        'ownerUid': user.uid,
+        'productId': purchase.productID,
+        'purchaseId': purchase.purchaseID,
+        'type': type.name,
+        'updatedAt': FieldValue.serverTimestamp(),
+        if (data == null) 'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    });
+  }
+
   static Future<void> buy({
     required String productId,
     required ApplePurchaseType type,
@@ -2852,6 +2967,12 @@ class AppleIapService {
 
             if (purchase.status == PurchaseStatus.purchased ||
                 purchase.status == PurchaseStatus.restored) {
+
+              await _bindPurchaseToCurrentUser(
+                purchase: purchase,
+                type: type,
+              );
+
               await _activateEntitlement(
                 uid: user.uid,
                 type: type,
@@ -12760,85 +12881,6 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                if (isAppleIapPlatform)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: TextButton(
-                      onPressed: () async {
-                        try {
-                          await AppleIapService.restore(
-                            type: ApplePurchaseType.host,
-                          );
-
-                          if (!mounted) return;
-                          await _reloadCurrentUserAccess();
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                tr(
-                                  context,
-                                  'Purchase restored',
-                                  zhTw: '購買已恢復',
-                                  zhCn: '购买已恢复',
-                                  ko: '구매가 복원되었습니다',
-                                  ja: '購入が復元されました',
-                                  de: 'Kauf wiederhergestellt',
-                                  fr: 'Achat restauré',
-                                  ar: 'تمت استعادة الشراء',
-                                  ru: 'Покупка восстановлена',
-                                  trk: 'Satın alma geri yüklendi',
-                                  es: 'Compra restaurada',
-                                  it: 'Acquisto ripristinato',
-                                  pl: 'Zakup został przywrócony',
-                                  pt: 'Compra restaurada',
-                                  th: 'กู้คืนการซื้อแล้ว',
-                                  id: 'Pembelian dipulihkan',
-                                  hi: 'खरीदारी पुनर्स्थापित हुई',
-                                  bn: 'ক্রয় পুনরুদ্ধার হয়েছে',
-                                ),
-                              ),
-                            ),
-                          );
-
-                          setState(() {});
-                        } catch (e) {
-                          if (!mounted) return;
-
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                e.toString().replaceFirst('Exception: ', ''),
-                              ),
-                            ),
-                          );
-                        }
-                      },
-                      child: Text(
-                        tr(
-                          context,
-                          'Restore Purchase',
-                          zhTw: '恢復購買',
-                          zhCn: '恢复购买',
-                          ko: '구매 복원',
-                          ja: '購入を復元',
-                          de: 'Kauf wiederherstellen',
-                          fr: 'Restaurer l’achat',
-                          ar: 'استعادة الشراء',
-                          ru: 'Восстановить покупку',
-                          trk: 'Satın Alımı Geri Yükle',
-                          es: 'Restaurar compra',
-                          it: 'Ripristina acquisto',
-                          pl: 'Przywróć zakup',
-                          pt: 'Restaurar compra',
-                          th: 'กู้คืนการซื้อ',
-                          id: 'Pulihkan pembelian',
-                          hi: 'खरीदारी पुनर्स्थापित करें',
-                          bn: 'ক্রয় পুনরুদ্ধার করুন',
-                        ),
-                      ),
-                    ),
-                  ),
 
                 FloatingActionButton.extended(
                   onPressed: _showHostProSubscribeDialog,
@@ -28727,6 +28769,15 @@ class CashGameStatsHomePage extends StatefulWidget {
 
 class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
 
+  CollectionReference<Map<String, dynamic>> _sessionsRef() {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+  
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('cash_game_sessions');
+  }
+
   static const String _statsProPriceId =
       'price_1TMRxVCeafvLbyRizC2lvERT';
 
@@ -28954,8 +29005,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
   }
 
   Future<void> _deleteSession(String docId) async {
-    await FirebaseFirestore.instance
-        .collection('cash_game_sessions')
+    await _sessionsRef()
         .doc(docId)
         .delete();
 
@@ -29053,6 +29103,211 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
     }
 
     return result;
+  }
+
+  Future<void> _showStatsProSubscribeDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            tr(
+              context,
+              'Stats Pro Monthly Subscription',
+              zhTw: 'Stats Pro 每月訂閱',
+              zhCn: 'Stats Pro 每月订阅',
+              ko: 'Stats Pro 월간 구독',
+              ja: 'Stats Pro 月額サブスクリプション',
+              de: 'Stats Pro Monatsabo',
+              fr: 'Abonnement mensuel Stats Pro',
+              ar: 'اشتراك Stats Pro الشهري',
+              ru: 'Ежемесячная подписка Stats Pro',
+              trk: 'Stats Pro Aylık Abonelik',
+              es: 'Suscripción mensual Stats Pro',
+              it: 'Abbonamento mensile Stats Pro',
+              pl: 'Subskrypcja miesięczna Stats Pro',
+              pt: 'Assinatura mensal Stats Pro',
+              th: 'สมัครสมาชิก Stats Pro รายเดือน',
+              id: 'Langganan Bulanan Stats Pro',
+              hi: 'Stats Pro मासिक सदस्यता',
+              bn: 'Stats Pro মাসিক সাবস্ক্রিপশন',
+            ),
+          ),
+          content: Text(
+            tr(
+              context,
+              '\$9.99 / month\n\nSubscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
+              zhTw:
+                  '\$9.99 / 月\n\n訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
+              zhCn:
+                  '\$9.99 / 月\n\n订阅将自动续订，除非在当前订阅周期结束前至少 24 小时取消。',
+              ko:
+                  '\$9.99 / 월\n\n현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다.',
+              ja:
+                  '\$9.99 / 月\n\n現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
+              de:
+                  '\$9.99 / Monat\n\nDas Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird.',
+              fr:
+                  '\$9.99 / mois\n\nL’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période.',
+              ar:
+                  '\$9.99 / شهرياً\n\nسيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية.',
+              ru:
+                  '\$9.99 / месяц\n\nПодписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода.',
+              trk:
+                  '\$9.99 / ay\n\nAbonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir.',
+              es:
+                  '\$9.99 / mes\n\nLa suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período.',
+              it:
+                  '\$9.99 / mese\n\nL’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo.',
+              pl:
+                  '\$9.99 / miesiąc\n\nSubskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej.',
+              pt:
+                  '\$9.99 / mês\n\nA assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período.',
+              th:
+                  '\$9.99 / เดือน\n\nระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
+              id:
+                  '\$9.99 / bulan\n\nLangganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir.',
+              hi:
+                  '\$9.99 / महीना\n\nयदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
+              bn:
+                  '\$9.99 / মাস\n\nবর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                try {
+                  await AppleIapService.restore(
+                    type: ApplePurchaseType.stats,
+                  );
+
+                  if (!mounted) return;
+
+                  Navigator.pop(context, false);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        tr(
+                          context,
+                          'Purchase restored',
+                          zhTw: '購買已恢復',
+                          zhCn: '购买已恢复',
+                          ko: '구매가 복원되었습니다',
+                          ja: '購入が復元されました',
+                          de: 'Kauf wurde wiederhergestellt',
+                          fr: 'Achat restauré',
+                          ar: 'تمت استعادة عملية الشراء',
+                          ru: 'Покупка восстановлена',
+                          trk: 'Satın alma geri yüklendi',
+                          es: 'Compra restaurada',
+                          it: 'Acquisto ripristinato',
+                          pl: 'Zakup został przywrócony',
+                          pt: 'Compra restaurada',
+                          th: 'กู้คืนการซื้อแล้ว',
+                          id: 'Pembelian berhasil dipulihkan',
+                          hi: 'खरीद पुनर्स्थापित कर दी गई',
+                          bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                        ),
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  if (!mounted) return;
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        e.toString().replaceFirst('Exception: ', ''),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                tr(
+                  context,
+                  'Restore Purchase',
+                  zhTw: '恢復購買',
+                  zhCn: '恢复购买',
+                  ko: '구매 복원',
+                  ja: '購入を復元',
+                  de: 'Kauf wiederherstellen',
+                  fr: 'Restaurer l’achat',
+                  ar: 'استعادة الشراء',
+                  ru: 'Восстановить покупку',
+                  trk: 'Satın Alımı Geri Yükle',
+                  es: 'Restaurar compra',
+                  it: 'Ripristina acquisto',
+                  pl: 'Przywróć zakup',
+                  pt: 'Restaurar compra',
+                  th: 'กู้คืนการซื้อ',
+                  id: 'Pulihkan Pembelian',
+                  hi: 'खरीद पुनर्स्थापित करें',
+                  bn: 'ক্রয় পুনরুদ্ধার করুন',
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                tr(
+                  context,
+                  'Continue',
+                  zhTw: '繼續',
+                  zhCn: '继续',
+                  ko: '계속',
+                  ja: '続行',
+                  de: 'Weiter',
+                  fr: 'Continuer',
+                  ar: 'متابعة',
+                  ru: 'Продолжить',
+                  trk: 'Devam',
+                  es: 'Continuar',
+                  it: 'Continua',
+                  pl: 'Kontynuuj',
+                  pt: 'Continuar',
+                  th: 'ดำเนินการต่อ',
+                  id: 'Lanjutkan',
+                  hi: 'जारी रखें',
+                  bn: 'চালিয়ে যান',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _startStatsCheckout();
+    }
   }
 
   @override
@@ -29340,84 +29595,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (isAppleIapPlatform)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: TextButton(
-                        onPressed: () async {
-                          try {
-                            await AppleIapService.restore(
-                              type: ApplePurchaseType.stats,
-                            );
 
-                            if (!mounted) return;
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  tr(
-                                    context,
-                                    'Purchase restored',
-                                    zhTw: '購買已恢復',
-                                    zhCn: '购买已恢复',
-                                    ko: '구매가 복원되었습니다',
-                                    ja: '購入が復元されました',
-                                    de: 'Kauf wiederhergestellt',
-                                    fr: 'Achat restauré',
-                                    ar: 'تمت استعادة الشراء',
-                                    ru: 'Покупка восстановлена',
-                                    trk: 'Satın alma geri yüklendi',
-                                    es: 'Compra restaurada',
-                                    it: 'Acquisto ripristinato',
-                                    pl: 'Zakup przywrócony',
-                                    pt: 'Compra restaurada',
-                                    th: 'กู้คืนการซื้อแล้ว',
-                                    id: 'Pembelian dipulihkan',
-                                    hi: 'खरीद पुनर्स्थापित हुई',
-                                    bn: 'ক্রয় পুনরুদ্ধার হয়েছে',
-                                  ),
-                                ),
-                              ),
-                            );
-
-                            setState(() {});
-                          } catch (e) {
-                            if (!mounted) return;
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  e.toString().replaceFirst('Exception: ', ''),
-                                ),
-                              ),
-                            );
-                          }
-                        },
-                        child: Text(
-                          tr(
-                            context,
-                            'Restore Purchase',
-                            zhTw: '恢復購買',
-                            zhCn: '恢复购买',
-                            ko: '구매 복원',
-                            ja: '購入を復元',
-                            de: 'Kauf wiederherstellen',
-                            fr: 'Restaurer l’achat',
-                            ar: 'استعادة الشراء',
-                            ru: 'Восстановить покупку',
-                            trk: 'Satın almayı geri yükle',
-                            es: 'Restaurar compra',
-                            it: 'Ripristina acquisto',
-                            pl: 'Przywróć zakup',
-                            pt: 'Restaurar compra',
-                            th: 'กู้คืนการซื้อ',
-                            id: 'Pulihkan pembelian',
-                            hi: 'खरीद पुनर्स्थापित करें',
-                            bn: 'ক্রয় পুনরুদ্ধার করুন',
-                          ),
-                        ),
-                      ),
-                    ),
                   FloatingActionButton.extended(
                     onPressed: _startStatsCheckout,
                     backgroundColor: const Color(0xFFDBEAFE),
@@ -29634,9 +29812,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                 ],
               ),
         body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('cash_game_sessions')
-              .where('userUid', isEqualTo: _currentUid)
+          stream: _sessionsRef()
               .orderBy('startedAt', descending: true)
               .snapshots(),
           builder: (context, snapshot) {
@@ -30317,6 +30493,8 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
   Future<void> _deleteGame() async {
     if (widget.item == null) return;
 
+    final userUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -30428,6 +30606,8 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     if (confirmed != true) return;
 
     await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userUid)
         .collection('cash_game_sessions')
         .doc(widget.item!.id)
         .delete();
@@ -30559,12 +30739,18 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
     try {
       if (widget.item == null) {
-        await FirebaseFirestore.instance.collection('cash_game_sessions').add({
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userUid)
+            .collection('cash_game_sessions')
+            .add({
           ...data,
           'createdAt': FieldValue.serverTimestamp(),
         });
       } else {
         await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userUid)
             .collection('cash_game_sessions')
             .doc(widget.item!.id)
             .set(data, SetOptions(merge: true));
