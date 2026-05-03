@@ -27365,7 +27365,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
         'unreadCounts': {
           currentUser.uid: 0,
         },
-        'lastReadAt.${currentUser.uid}': FieldValue.serverTimestamp(),
+        'lastReadAt': {
+          currentUser.uid: FieldValue.serverTimestamp(),
+        },
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     }
