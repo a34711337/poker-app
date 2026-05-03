@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_app_badger/flutter_app_badger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
@@ -227,6 +228,7 @@ Future<void> main() async {
 
   // 🔥🔥🔥 加這一行（超重要）
   await Future.delayed(const Duration(seconds: 2));
+
   setupPushNotifications();
   setupNotificationTapHandler();
 
@@ -3202,7 +3204,29 @@ class AppleIapService {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
-      throw Exception('Please login again');
+      throw Exception(
+        tr(
+          appNavigatorKey.currentContext!,
+          'Please login again',
+          zhTw: '請重新登入',
+          zhCn: '请重新登录',
+          ko: '다시 로그인해주세요',
+          ja: '再度ログインしてください',
+          de: 'Bitte erneut anmelden',
+          fr: 'Veuillez vous reconnecter',
+          ar: 'يرجى تسجيل الدخول مرة أخرى',
+          ru: 'Пожалуйста, войдите снова',
+          trk: 'Lütfen tekrar giriş yapın',
+          es: 'Por favor inicia sesión nuevamente',
+          it: 'Accedi di nuovo',
+          pl: 'Zaloguj się ponownie',
+          pt: 'Faça login novamente',
+          th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+          id: 'Silakan login kembali',
+          hi: 'कृपया फिर से लॉगिन करें',
+          bn: 'অনুগ্রহ করে আবার লগইন করুন',
+        ),
+      );
     }
 
     final iap = InAppPurchase.instance;
@@ -3212,7 +3236,29 @@ class AppleIapService {
       final available = await iap.isAvailable();
 
       if (!available) {
-        throw Exception('In-App Purchase is not available on this device.');
+        throw Exception(
+          tr(
+            appNavigatorKey.currentContext!,
+            'In-App Purchase is not available on this device.',
+            zhTw: '此裝置無法使用 App 內購買。',
+            zhCn: '此设备无法使用应用内购买。',
+            ko: '이 기기에서는 인앱 구매를 사용할 수 없습니다.',
+            ja: 'このデバイスではアプリ内課金を利用できません。',
+            de: 'In-App-Käufe sind auf diesem Gerät nicht verfügbar.',
+            fr: 'Les achats intégrés ne sont pas disponibles sur cet appareil.',
+            ar: 'عمليات الشراء داخل التطبيق غير متوفرة على هذا الجهاز.',
+            ru: 'Встроенные покупки недоступны на этом устройстве.',
+            trk: 'Bu cihazda uygulama içi satın alma kullanılamıyor.',
+            es: 'Las compras dentro de la app no están disponibles en este dispositivo.',
+            it: 'Gli acquisti in-app non sono disponibili su questo dispositivo.',
+            pl: 'Zakupy w aplikacji nie są dostępne na tym urządzeniu.',
+            pt: 'Compras no aplicativo não estão disponíveis neste dispositivo.',
+            th: 'อุปกรณ์นี้ไม่รองรับการซื้อภายในแอป',
+            id: 'Pembelian dalam aplikasi tidak tersedia di perangkat ini.',
+            hi: 'इस डिवाइस पर इन-ऐप खरीदारी उपलब्ध नहीं है।',
+            bn: 'এই ডিভাইসে ইন-অ্যাপ ক্রয় উপলব্ধ নয়।',
+          ),
+        );
       }
 
       final completer = Completer<void>();
@@ -3220,47 +3266,53 @@ class AppleIapService {
 
       subscription = iap.purchaseStream.listen(
         (purchases) async {
-          for (final purchase in purchases) {
-            if (purchase.status != PurchaseStatus.restored &&
-                purchase.status != PurchaseStatus.purchased) {
-              continue;
+          try {
+            for (final purchase in purchases) {
+              if (purchase.status != PurchaseStatus.restored &&
+                  purchase.status != PurchaseStatus.purchased) {
+                continue;
+              }
+
+              if (purchase.productID == kAppleHostProProductId) {
+                await _bindPurchaseToCurrentUser(
+                  purchase: purchase,
+                  type: ApplePurchaseType.host,
+                );
+
+                restoredAny = true;
+
+                await _activateEntitlement(
+                  uid: user.uid,
+                  type: ApplePurchaseType.host,
+                );
+              }
+
+              if (purchase.productID == kAppleStatsProProductId) {
+                await _bindPurchaseToCurrentUser(
+                  purchase: purchase,
+                  type: ApplePurchaseType.stats,
+                );
+
+                restoredAny = true;
+
+                await _activateEntitlement(
+                  uid: user.uid,
+                  type: ApplePurchaseType.stats,
+                );
+              }
+
+              if (purchase.pendingCompletePurchase) {
+                await iap.completePurchase(purchase);
+              }
             }
 
-            if (purchase.productID == kAppleHostProProductId) {
-              await _bindPurchaseToCurrentUser(
-                purchase: purchase,
-                type: ApplePurchaseType.host,
-              );
-
-              restoredAny = true;
-
-              await _activateEntitlement(
-                uid: user.uid,
-                type: ApplePurchaseType.host,
-              );
+            if (!completer.isCompleted) {
+              completer.complete();
             }
-
-            if (purchase.productID == kAppleStatsProProductId) {
-              await _bindPurchaseToCurrentUser(
-                purchase: purchase,
-                type: ApplePurchaseType.stats,
-              );
-
-              restoredAny = true;
-
-              await _activateEntitlement(
-                uid: user.uid,
-                type: ApplePurchaseType.stats,
-              );
+          } catch (e) {
+            if (!completer.isCompleted) {
+              completer.completeError(e);
             }
-
-            if (purchase.pendingCompletePurchase) {
-              await iap.completePurchase(purchase);
-            }
-          }
-
-          if (!completer.isCompleted) {
-            completer.complete();
           }
         },
         onError: (error) {
@@ -8184,7 +8236,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     try {
       final uid = user.uid;
-      
+
       await removeAppleSubscriptionBindingsForUid(uid);
 
       await FirebaseFirestore.instance
@@ -9226,7 +9278,18 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 Row(
                   children: [
                     Expanded(
-                      child: TextButton(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2E7D32),
+                          side: const BorderSide(
+                            color: Color(0xFF2E7D32),
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
                         onPressed: () => Navigator.pop(context, false),
                         child: Text(
                           tr(
@@ -16231,6 +16294,16 @@ class UnreadChatIconButton extends StatelessWidget {
             unreadTotal += int.tryParse(count.toString()) ?? 0;
           }
         }
+
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (kIsWeb) return;
+
+          if (unreadTotal <= 0) {
+            await FlutterAppBadger.removeBadge();
+          } else {
+            await FlutterAppBadger.updateBadgeCount(unreadTotal);
+          }
+        });
 
         return Stack(
           clipBehavior: Clip.none,
@@ -29747,134 +29820,213 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
             ],
           ),
 
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
           actions: [
-            TextButton(
-              onPressed: () async {
-                try {
-                  await AppleIapService.restore(
-                    type: ApplePurchaseType.stats,
-                  );
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    try {
+                      await AppleIapService.restore(
+                        type: ApplePurchaseType.stats,
+                      );
 
-                  if (!mounted) return;
+                      if (!mounted) return;
 
-                  Navigator.pop(context, false);
+                      Navigator.pop(context, false);
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        tr(
-                          context,
-                          'Purchase restored',
-                          zhTw: '購買已恢復',
-                          zhCn: '购买已恢复',
-                          ko: '구매가 복원되었습니다',
-                          ja: '購入が復元されました',
-                          de: 'Kauf wurde wiederhergestellt',
-                          fr: 'Achat restauré',
-                          ar: 'تمت استعادة عملية الشراء',
-                          ru: 'Покупка восстановлена',
-                          trk: 'Satın alma geri yüklendi',
-                          es: 'Compra restaurada',
-                          it: 'Acquisto ripristinato',
-                          pl: 'Zakup został przywrócony',
-                          pt: 'Compra restaurada',
-                          th: 'กู้คืนการซื้อแล้ว',
-                          id: 'Pembelian berhasil dipulihkan',
-                          hi: 'खरीद पुनर्स्थापित कर दी गई',
-                          bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            tr(
+                              context,
+                              'Purchase restored',
+                              zhTw: '購買已恢復',
+                              zhCn: '购买已恢复',
+                              ko: '구매가 복원되었습니다',
+                              ja: '購入が復元されました',
+                              de: 'Kauf wurde wiederhergestellt',
+                              fr: 'Achat restauré',
+                              ar: 'تمت استعادة عملية الشراء',
+                              ru: 'Покупка восстановлена',
+                              trk: 'Satın alma geri yüklendi',
+                              es: 'Compra restaurada',
+                              it: 'Acquisto ripristinato',
+                              pl: 'Zakup został przywrócony',
+                              pt: 'Compra restaurada',
+                              th: 'กู้คืนการซื้อแล้ว',
+                              id: 'Pembelian berhasil dipulihkan',
+                              hi: 'खरीद पुनर्स्थापित कर दी गई',
+                              bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                            ),
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
+
+                      await showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(
+                            tr(
+                              context,
+                              'Restore Failed',
+                              zhTw: '恢復購買失敗',
+                              zhCn: '恢复购买失败',
+                              ko: '구매 복원 실패',
+                              ja: '購入の復元に失敗しました',
+                              de: 'Wiederherstellung fehlgeschlagen',
+                              fr: 'Échec de la restauration',
+                              ar: 'فشلت استعادة الشراء',
+                              ru: 'Не удалось восстановить покупку',
+                              trk: 'Geri yükleme başarısız',
+                              es: 'Error al restaurar',
+                              it: 'Ripristino non riuscito',
+                              pl: 'Przywracanie nie powiodło się',
+                              pt: 'Falha ao restaurar',
+                              th: 'กู้คืนการซื้อไม่สำเร็จ',
+                              id: 'Pemulihan gagal',
+                              hi: 'पुनर्स्थापना विफल',
+                              bn: 'পুনরুদ্ধার ব্যর্থ হয়েছে',
+                            ),
+                          ),
+                          content: Text(
+                            e.toString().replaceFirst('Exception: ', ''),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                tr(
+                                  context,
+                                  'OK',
+                                  zhTw: '確定',
+                                  zhCn: '确定',
+                                  ko: '확인',
+                                  ja: 'OK',
+                                  de: 'OK',
+                                  fr: 'OK',
+                                  ar: 'حسناً',
+                                  ru: 'ОК',
+                                  trk: 'Tamam',
+                                  es: 'OK',
+                                  it: 'OK',
+                                  pl: 'OK',
+                                  pt: 'OK',
+                                  th: 'ตกลง',
+                                  id: 'OK',
+                                  hi: 'ठीक है',
+                                  bn: 'ঠিক আছে',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(
+                    tr(
+                      context,
+                      'Restore Purchase',
+                      zhTw: '恢復購買',
+                      zhCn: '恢复购买',
+                      ko: '구매 복원',
+                      ja: '購入を復元',
+                      de: 'Kauf wiederherstellen',
+                      fr: 'Restaurer l’achat',
+                      ar: 'استعادة الشراء',
+                      ru: 'Восстановить покупку',
+                      trk: 'Satın Alımı Geri Yükle',
+                      es: 'Restaurar compra',
+                      it: 'Ripristina acquisto',
+                      pl: 'Przywróć zakup',
+                      pt: 'Restaurar compra',
+                      th: 'กู้คืนการซื้อ',
+                      id: 'Pulihkan Pembelian',
+                      hi: 'खरीद पुनर्स्थापित करें',
+                      bn: 'ক্রয় পুনরুদ্ধার করুন',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2E7D32),
+                          side: const BorderSide(
+                            color: Color(0xFF2E7D32),
+                            width: 1.5,
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          tr(
+                            context,
+                            'Cancel',
+                            zhTw: '取消',
+                            zhCn: '取消',
+                            ko: '취소',
+                            ja: 'キャンセル',
+                            de: 'Abbrechen',
+                            fr: 'Annuler',
+                            ar: 'إلغاء',
+                            ru: 'Отмена',
+                            trk: 'İptal',
+                            es: 'Cancelar',
+                            it: 'Annulla',
+                            pl: 'Anuluj',
+                            pt: 'Cancelar',
+                            th: 'ยกเลิก',
+                            id: 'Batal',
+                            hi: 'रद्द करें',
+                            bn: 'বাতিল',
+                          ),
                         ),
                       ),
                     ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.toString().replaceFirst('Exception: ', ''),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(
+                          tr(
+                            context,
+                            'Continue',
+                            zhTw: '繼續',
+                            zhCn: '继续',
+                            ko: '계속',
+                            ja: '続行',
+                            de: 'Weiter',
+                            fr: 'Continuer',
+                            ar: 'متابعة',
+                            ru: 'Продолжить',
+                            trk: 'Devam',
+                            es: 'Continuar',
+                            it: 'Continua',
+                            pl: 'Kontynuuj',
+                            pt: 'Continuar',
+                            th: 'ดำเนินการต่อ',
+                            id: 'Lanjutkan',
+                            hi: 'जारी रखें',
+                            bn: 'চালিয়ে যান',
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                }
-              },
-              child: Text(
-                tr(
-                  context,
-                  'Restore Purchase',
-                  zhTw: '恢復購買',
-                  zhCn: '恢复购买',
-                  ko: '구매 복원',
-                  ja: '購入を復元',
-                  de: 'Kauf wiederherstellen',
-                  fr: 'Restaurer l’achat',
-                  ar: 'استعادة الشراء',
-                  ru: 'Восстановить покупку',
-                  trk: 'Satın Alımı Geri Yükle',
-                  es: 'Restaurar compra',
-                  it: 'Ripristina acquisto',
-                  pl: 'Przywróć zakup',
-                  pt: 'Restaurar compra',
-                  th: 'กู้คืนการซื้อ',
-                  id: 'Pulihkan Pembelian',
-                  hi: 'खरीद पुनर्स्थापित करें',
-                  bn: 'ক্রয় পুনরুদ্ধার করুন',
+                  ],
                 ),
-              ),
-            ),
-
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                tr(
-                  context,
-                  'Cancel',
-                  zhTw: '取消',
-                  zhCn: '取消',
-                  ko: '취소',
-                  ja: 'キャンセル',
-                  de: 'Abbrechen',
-                  fr: 'Annuler',
-                  ar: 'إلغاء',
-                  ru: 'Отмена',
-                  trk: 'İptal',
-                  es: 'Cancelar',
-                  it: 'Annulla',
-                  pl: 'Anuluj',
-                  pt: 'Cancelar',
-                  th: 'ยกเลิก',
-                  id: 'Batal',
-                  hi: 'रद्द करें',
-                  bn: 'বাতিল',
-                ),
-              ),
-            ),
-
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                tr(
-                  context,
-                  'Continue',
-                  zhTw: '繼續',
-                  zhCn: '继续',
-                  ko: '계속',
-                  ja: '続行',
-                  de: 'Weiter',
-                  fr: 'Continuer',
-                  ar: 'متابعة',
-                  ru: 'Продолжить',
-                  trk: 'Devam',
-                  es: 'Continuar',
-                  it: 'Continua',
-                  pl: 'Kontynuuj',
-                  pt: 'Continuar',
-                  th: 'ดำเนินการต่อ',
-                  id: 'Lanjutkan',
-                  hi: 'जारी रखें',
-                  bn: 'চালিয়ে যান',
-                ),
-              ),
+              ],
             ),
           ],
         );
