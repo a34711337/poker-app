@@ -474,6 +474,75 @@ exports.createBundleCheckoutSession = functions.https.onRequest(async (req, res)
   }
 });
 
+exports.createCustomerPortalSession = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).send("");
+  }
+
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
+
+    const authHeader = req.headers.authorization || "";
+
+    const idToken = authHeader.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : "";
+
+    if (!idToken) {
+      return res.status(401).json({
+        error: "Missing auth token",
+      });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    const subSnap = await db
+      .collection("stripe_subscriptions")
+      .where("uid", "==", uid)
+      .limit(1)
+      .get();
+
+    if (subSnap.empty) {
+      return res.status(404).json({
+        error: "No subscription found",
+      });
+    }
+
+    const stripeCustomerId =
+      (subSnap.docs[0].data().stripeCustomerId || "").toString().trim();
+
+    if (!stripeCustomerId) {
+      return res.status(404).json({
+        error: "Missing Stripe customer id",
+      });
+    }
+
+    const stripe = getStripe();
+
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: "https://tablescheduler.web.app/",
+    });
+
+    return res.status(200).json({
+      url: portalSession.url,
+    });
+  } catch (error) {
+    console.error("createCustomerPortalSession error:", error);
+
+    return res.status(500).json({
+      error: error.message || "Internal Server Error",
+    });
+  }
+});
+
 exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
   const sig = req.headers["stripe-signature"];
 

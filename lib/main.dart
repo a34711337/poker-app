@@ -627,11 +627,128 @@ const String kCreateStatsCheckoutUrl =
 const String kCreateBundleCheckoutUrl =
     'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createBundleCheckoutSession';
 
+const String kCustomerPortalUrl =
+    'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createCustomerPortalSession';
+
 const String kAppleHostProProductId =
     'com.pokerscheduler.hostpro.monthly';
 
 const String kAppleStatsProProductId =
     'com.pokerscheduler.statspro.monthly';
+
+
+Future<void> openStripeCustomerPortal(
+  BuildContext context,
+) async {
+
+  if (!kIsWeb &&
+      defaultTargetPlatform == TargetPlatform.iOS) {
+    return;
+  }
+
+  final user = FirebaseAuth.instance.currentUser;
+
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Please login again',
+            zhTw: '請重新登入',
+            zhCn: '请重新登录',
+            ko: '다시 로그인해주세요',
+            ja: '再度ログインしてください',
+            de: 'Bitte erneut anmelden',
+            fr: 'Veuillez vous reconnecter',
+            ar: 'يرجى تسجيل الدخول مرة أخرى',
+            ru: 'Пожалуйста, войдите снова',
+            trk: 'Lütfen tekrar giriş yapın',
+            es: 'Por favor inicia sesión nuevamente',
+            it: 'Accedi di nuovo',
+            pl: 'Zaloguj się ponownie',
+            pt: 'Faça login novamente',
+            th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+            id: 'Silakan login kembali',
+            hi: 'कृपया फिर से लॉगिन करें',
+            bn: 'অনুগ্রহ করে আবার লগইন করুন',
+          ),
+        ),
+      ),
+    );
+
+    return;
+  }
+
+  try {
+
+    final idToken = await user.getIdToken();
+
+    final response = await http.post(
+      Uri.parse(kCustomerPortalUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+    );
+
+    if (response.statusCode < 200 ||
+        response.statusCode >= 300) {
+      throw Exception(response.body);
+    }
+
+    final data =
+        jsonDecode(response.body)
+            as Map<String, dynamic>;
+
+    final portalUrl =
+        (data['url'] ?? '').toString();
+
+    if (portalUrl.isEmpty) {
+      throw Exception(
+        tr(
+          context,
+          'Customer portal URL is empty',
+          zhTw: 'Customer Portal 網址為空',
+          zhCn: 'Customer Portal 网址为空',
+          ko: '고객 포털 URL이 비어 있습니다',
+          ja: 'カスタマーポータルURLが空です',
+          de: 'Customer-Portal-URL ist leer',
+          fr: 'L’URL du portail client est vide',
+          ar: 'رابط بوابة العميل فارغ',
+          ru: 'URL клиентского портала пуст',
+          trk: 'Müşteri portalı bağlantısı boş',
+          es: 'La URL del portal está vacía',
+          it: 'L’URL del portale clienti è vuoto',
+          pl: 'Adres URL portalu klienta jest pusty',
+          pt: 'A URL do portal do cliente está vazia',
+          th: 'ลิงก์ Customer Portal ว่างเปล่า',
+          id: 'URL portal pelanggan kosong',
+          hi: 'कस्टमर पोर्टल URL खाली है',
+          bn: 'কাস্টমার পোর্টালের URL খালি',
+        ),
+      );
+    }
+
+    await launchUrl(
+      Uri.parse(portalUrl),
+      mode: LaunchMode.externalApplication,
+    );
+
+  } catch (e) {
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          e.toString().replaceFirst(
+            'Exception: ',
+            '',
+          ),
+        ),
+      ),
+    );
+  }
+}    
 
 
 mixin AppVersionChecker<T extends StatefulWidget> on State<T> {
@@ -3700,8 +3817,10 @@ Future<void> acceptFriendRequest(Map<String, dynamic> requestData) async {
       'lastMessage': '',
       'lastMessageAt': FieldValue.serverTimestamp(),
       'lastMessageSenderUid': '',
-      'unreadCounts.$toUid': 0,
-      'unreadCounts.$fromUid': 0,
+      'unreadCounts': {
+        toUid: 0,
+        fromUid: 0,
+      },
     }, SetOptions(merge: true));
 
     tx.set(requestRef, {
@@ -8716,6 +8835,38 @@ class _SettingsPageState extends State<SettingsPage> {
             },
           ),
 
+          if (kIsWeb ||
+              defaultTargetPlatform != TargetPlatform.iOS)
+            ListTile(
+              leading: const Icon(Icons.manage_accounts),
+
+              title: Text(
+                tr(
+                  context,
+                  'Manage Subscription',
+                  zhTw: '管理訂閱',
+                  zhCn: '管理订阅',
+                  ko: '구독 관리',
+                  ja: 'サブスクリプション管理',
+                  de: 'Abo verwalten',
+                  fr: 'Gérer l’abonnement',
+                  ar: 'إدارة الاشتراك',
+                  ru: 'Управление подпиской',
+                  trk: 'Aboneliği Yönet',
+                  es: 'Gestionar suscripción',
+                  it: 'Gestisci abbonamento',
+                  pl: 'Zarządzaj subskrypcją',
+                  pt: 'Gerenciar assinatura',
+                  th: 'จัดการการสมัครสมาชิก',
+                  id: 'Kelola Langganan',
+                  hi: 'सब्सक्रिप्शन प्रबंधित करें',
+                  bn: 'সাবস্ক্রিপশন পরিচালনা করুন',
+                ),
+              ),
+
+              onTap: () => openStripeCustomerPortal(context),
+            ),
+
           ListTile(
             leading: const Icon(
               Icons.help_outline,
@@ -9278,13 +9429,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2E7D32),
-                          side: const BorderSide(
-                            color: Color(0xFF2E7D32),
-                            width: 1.5,
-                          ),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
@@ -16566,7 +16714,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           .collection('direct_chats')
           .doc(widget.chatId)
           .update({
-        'unreadCounts.$currentUid': 0,
+        'unreadCounts': {
+          currentUid: 0,
+        },
         'lastReadAt.$currentUid': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -16647,8 +16797,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'lastMessageAt': FieldValue.serverTimestamp(),
           'lastMessageSenderUid': currentUser.uid,
           'updatedAt': FieldValue.serverTimestamp(),
-          'unreadCounts.${currentUser.uid}': 0,
-          'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
+          'unreadCounts': {
+            currentUser.uid: 0,
+            widget.otherUid: FieldValue.increment(1),
+          },
         }, SetOptions(merge: true));
 
         tx.set(
@@ -27160,7 +27312,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
           .collection('direct_chats')
           .doc(chatId)
           .set({
-        'unreadCounts.${currentUser.uid}': 0,
+        'unreadCounts': {
+          currentUser.uid: 0,
+        },
         'lastReadAt.${currentUser.uid}': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -29989,13 +30143,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2E7D32),
-                          side: const BorderSide(
-                            color: Color(0xFF2E7D32),
-                            width: 1.5,
-                          ),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
