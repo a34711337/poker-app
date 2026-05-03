@@ -8907,136 +8907,152 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               ),
             ],
           ),
+          actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
           actions: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextButton(
+                  onPressed: () async {
+                    try {
+                      await AppleIapService.restore(
+                        type: ApplePurchaseType.host,
+                      );
 
-            TextButton(
-              onPressed: () async {
-                try {
-                  await AppleIapService.restore(
-                    type: ApplePurchaseType.host,
-                  );
+                      if (!mounted) return;
 
-                  if (!mounted) return;
+                      await _reloadCurrentUserAccess();
 
-                  await _reloadCurrentUserAccess();
+                      Navigator.pop(context, false);
 
-                  Navigator.pop(context, false);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            tr(
+                              context,
+                              'Purchase restored',
+                              zhTw: '購買已恢復',
+                              zhCn: '购买已恢复',
+                              ko: '구매가 복원되었습니다',
+                              ja: '購入が復元されました',
+                              de: 'Kauf wurde wiederhergestellt',
+                              fr: 'Achat restauré',
+                              ar: 'تمت استعادة عملية الشراء',
+                              ru: 'Покупка восстановлена',
+                              trk: 'Satın alma geri yüklendi',
+                              es: 'Compra restaurada',
+                              it: 'Acquisto ripristinato',
+                              pl: 'Zakup został przywrócony',
+                              pt: 'Compra restaurada',
+                              th: 'กู้คืนการซื้อแล้ว',
+                              id: 'Pembelian berhasil dipulihkan',
+                              hi: 'खरीद पुनर्स्थापित कर दी गई',
+                              bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                            ),
+                          ),
+                        ),
+                      );
+                    } catch (e) {
+                      if (!mounted) return;
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        tr(
-                          context,
-                          'Purchase restored',
-                          zhTw: '購買已恢復',
-                          zhCn: '购买已恢复',
-                          ko: '구매가 복원되었습니다',
-                          ja: '購入が復元されました',
-                          de: 'Kauf wurde wiederhergestellt',
-                          fr: 'Achat restauré',
-                          ar: 'تمت استعادة عملية الشراء',
-                          ru: 'Покупка восстановлена',
-                          trk: 'Satın alma geri yüklendi',
-                          es: 'Compra restaurada',
-                          it: 'Acquisto ripristinato',
-                          pl: 'Zakup został przywrócony',
-                          pt: 'Compra restaurada',
-                          th: 'กู้คืนการซื้อแล้ว',
-                          id: 'Pembelian berhasil dipulihkan',
-                          hi: 'खरीद पुनर्स्थापित कर दी गई',
-                          bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            e.toString().replaceFirst('Exception: ', ''),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Text(
+                    tr(
+                      context,
+                      'Restore Purchase',
+                      zhTw: '恢復購買',
+                      zhCn: '恢复购买',
+                      ko: '구매 복원',
+                      ja: '購入を復元',
+                      de: 'Kauf wiederherstellen',
+                      fr: 'Restaurer l’achat',
+                      ar: 'استعادة الشراء',
+                      ru: 'Восстановить покупку',
+                      trk: 'Satın Alımı Geri Yükle',
+                      es: 'Restaurar compra',
+                      it: 'Ripristina acquisto',
+                      pl: 'Przywróć zakup',
+                      pt: 'Restaurar compra',
+                      th: 'กู้คืนการซื้อ',
+                      id: 'Pulihkan Pembelian',
+                      hi: 'खरीद पुनर्स्थापित करें',
+                      bn: 'ক্রয় পুনরুদ্ধার করুন',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: Text(
+                          tr(
+                            context,
+                            'Cancel',
+                            zhTw: '取消',
+                            zhCn: '取消',
+                            ko: '취소',
+                            ja: 'キャンセル',
+                            de: 'Abbrechen',
+                            fr: 'Annuler',
+                            ar: 'إلغاء',
+                            ru: 'Отмена',
+                            trk: 'İptal',
+                            es: 'Cancelar',
+                            it: 'Annulla',
+                            pl: 'Anuluj',
+                            pt: 'Cancelar',
+                            th: 'ยกเลิก',
+                            id: 'Batal',
+                            hi: 'रद्द करें',
+                            bn: 'বাতিল',
+                          ),
                         ),
                       ),
                     ),
-                  );
-                } catch (e) {
-                  if (!mounted) return;
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        e.toString().replaceFirst('Exception: ', ''),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: Text(
+                          tr(
+                            context,
+                            'Continue',
+                            zhTw: '繼續',
+                            zhCn: '继续',
+                            ko: '계속',
+                            ja: '続行',
+                            de: 'Weiter',
+                            fr: 'Continuer',
+                            ar: 'متابعة',
+                            ru: 'Продолжить',
+                            trk: 'Devam',
+                            es: 'Continuar',
+                            it: 'Continua',
+                            pl: 'Kontynuuj',
+                            pt: 'Continuar',
+                            th: 'ดำเนินการต่อ',
+                            id: 'Lanjutkan',
+                            hi: 'जारी रखें',
+                            bn: 'চালিয়ে যান',
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                }
-              },
-              child: Text(
-                tr(
-                  context,
-                  'Restore Purchase',
-                  zhTw: '恢復購買',
-                  zhCn: '恢复购买',
-                  ko: '구매 복원',
-                  ja: '購入を復元',
-                  de: 'Kauf wiederherstellen',
-                  fr: 'Restaurer l’achat',
-                  ar: 'استعادة الشراء',
-                  ru: 'Восстановить покупку',
-                  trk: 'Satın Alımı Geri Yükle',
-                  es: 'Restaurar compra',
-                  it: 'Ripristina acquisto',
-                  pl: 'Przywróć zakup',
-                  pt: 'Restaurar compra',
-                  th: 'กู้คืนการซื้อ',
-                  id: 'Pulihkan Pembelian',
-                  hi: 'खरीद पुनर्स्थापित करें',
-                  bn: 'ক্রয় পুনরুদ্ধার করুন',
+                  ],
                 ),
-              ),
-            ),
-            
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                tr(
-                  context,
-                  'Cancel',
-                  zhTw: '取消',
-                  zhCn: '取消',
-                  ko: '취소',
-                  ja: 'キャンセル',
-                  de: 'Abbrechen',
-                  fr: 'Annuler',
-                  ar: 'إلغاء',
-                  ru: 'Отмена',
-                  trk: 'İptal',
-                  es: 'Cancelar',
-                  it: 'Annulla',
-                  pl: 'Anuluj',
-                  pt: 'Cancelar',
-                  th: 'ยกเลิก',
-                  id: 'Batal',
-                  hi: 'रद्द करें',
-                  bn: 'বাতিল',
-                ),
-              ),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text(
-                tr(
-                  context,
-                  'Continue',
-                  zhTw: '繼續',
-                  zhCn: '继续',
-                  ko: '계속',
-                  ja: '続行',
-                  de: 'Weiter',
-                  fr: 'Continuer',
-                  ar: 'متابعة',
-                  ru: 'Продолжить',
-                  trk: 'Devam',
-                  es: 'Continuar',
-                  it: 'Continua',
-                  pl: 'Kontynuuj',
-                  pt: 'Continuar',
-                  th: 'ดำเนินการต่อ',
-                  id: 'Lanjutkan',
-                  hi: 'जारी रखें',
-                  bn: 'চালিয়ে যান',
-                ),
-              ),
+              ],
             ),
           ],
         );
@@ -29974,7 +29990,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                 children: [
 
                   FloatingActionButton.extended(
-                    onPressed: _startStatsCheckout,
+                    onPressed: _showStatsProSubscribeDialog,
                     backgroundColor: const Color(0xFFDBEAFE),
                     foregroundColor: const Color(0xFF1D4ED8),
                     icon: const Icon(Icons.workspace_premium),
@@ -30001,108 +30017,6 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                         bn: 'Stats Pro-তে আপগ্রেড করুন',
                       ),
                       style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Text(
-                    tr(
-                      context,
-                      'Stats Pro Monthly Subscription\n'
-                      '\$9.99 / month\n\n'
-                      'Subscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
-
-                      zhTw:
-                          'Stats Pro 每月訂閱\n'
-                          '\$9.99 / 月\n\n'
-                          '訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
-
-                      zhCn:
-                          'Stats Pro 每月订阅\n'
-                          '\$9.99 / 月\n\n'
-                          '除非在当前订阅周期结束前至少 24 小时取消，否则订阅会自动续订。',
-
-                      ko:
-                          'Stats Pro 월간 구독\n'
-                          '\$9.99 / 월\n\n'
-                          '현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다.',
-
-                      ja:
-                          'Stats Pro 月額サブスクリプション\n'
-                          '\$9.99 / 月\n\n'
-                          '現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
-
-                      de:
-                          'Stats Pro Monatsabo\n'
-                          '\$9.99 / Monat\n\n'
-                          'Das Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird.',
-
-                      fr:
-                          'Abonnement mensuel Stats Pro\n'
-                          '\$9.99 / mois\n\n'
-                          'L’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période.',
-
-                      ar:
-                          'اشتراك Stats Pro الشهري\n'
-                          '\$9.99 / شهرياً\n\n'
-                          'سيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية.',
-
-                      ru:
-                          'Ежемесячная подписка Stats Pro\n'
-                          '\$9.99 / месяц\n\n'
-                          'Подписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода.',
-
-                      trk:
-                          'Stats Pro Aylık Abonelik\n'
-                          '\$9.99 / ay\n\n'
-                          'Abonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir.',
-
-                      es:
-                          'Suscripción mensual Stats Pro\n'
-                          '\$9.99 / mes\n\n'
-                          'La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período.',
-
-                      it:
-                          'Abbonamento mensile Stats Pro\n'
-                          '\$9.99 / mese\n\n'
-                          'L’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo.',
-
-                      pl:
-                          'Subskrypcja miesięczna Stats Pro\n'
-                          '\$9.99 / miesiąc\n\n'
-                          'Subskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej.',
-
-                      pt:
-                          'Assinatura mensal Stats Pro\n'
-                          '\$9.99 / mês\n\n'
-                          'A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período.',
-
-                      th:
-                          'สมัครสมาชิก Stats Pro รายเดือน\n'
-                          '\$9.99 / เดือน\n\n'
-                          'ระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
-
-                      id:
-                          'Langganan Bulanan Stats Pro\n'
-                          '\$9.99 / bulan\n\n'
-                          'Langganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir.',
-
-                      hi:
-                          'Stats Pro मासिक सदस्यता\n'
-                          '\$9.99 / महीना\n\n'
-                          'यदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
-
-                      bn:
-                          'Stats Pro মাসিক সাবস্ক্রিপশন\n'
-                          '\$9.99 / মাস\n\n'
-                          'বর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
-                    ),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.black54,
-                      height: 1.5,
                     ),
                   ),
 
