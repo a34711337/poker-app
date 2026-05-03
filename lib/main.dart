@@ -2913,7 +2913,7 @@ class AppleIapService {
     required ApplePurchaseType type,
   }) async {
     if (_isBuying) {
-      throw Exception('Purchase is already in progress. Please wait.');
+      _isBuying = false;
     }
 
     _isBuying = true;
@@ -3016,9 +3016,13 @@ class AppleIapService {
         },
       );
 
+      debugPrint('STARTING IAP PURCHASE...');
+
       final started = await iap.buyNonConsumable(
         purchaseParam: purchaseParam,
       );
+
+      debugPrint('IAP STARTED: $started');
 
       if (!started) {
         throw Exception('Failed to start purchase');
@@ -30018,86 +30022,6 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
                       ),
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 12,
-                    children: [
-                      TextButton(
-                        onPressed: () async {
-                          final uri = Uri.parse(
-                            'https://pokerscheduler.web.app/terms.html',
-                          );
-
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                        child: Text(
-                          tr(
-                            context,
-                            'Terms of Service',
-                            zhTw: '服務條款',
-                            zhCn: '服务条款',
-                            ko: '서비스 약관',
-                            ja: '利用規約',
-                            de: 'Nutzungsbedingungen',
-                            fr: 'Conditions d’utilisation',
-                            ar: 'شروط الخدمة',
-                            ru: 'Условия использования',
-                            trk: 'Hizmet Şartları',
-                            es: 'Términos del servicio',
-                            it: 'Termini di servizio',
-                            pl: 'Warunki korzystania',
-                            pt: 'Termos de serviço',
-                            th: 'ข้อกำหนดการใช้งาน',
-                            id: 'Syarat Layanan',
-                            hi: 'सेवा की शर्तें',
-                            bn: 'সেবার শর্তাবলী',
-                          ),
-                        ),
-                      ),
-
-                      TextButton(
-                        onPressed: () async {
-                          final uri = Uri.parse(
-                            'https://pokerscheduler.web.app/privacy.html',
-                          );
-
-                          await launchUrl(
-                            uri,
-                            mode: LaunchMode.externalApplication,
-                          );
-                        },
-                        child: Text(
-                          tr(
-                            context,
-                            'Privacy Policy',
-                            zhTw: '隱私權政策',
-                            zhCn: '隐私政策',
-                            ko: '개인정보 처리방침',
-                            ja: 'プライバシーポリシー',
-                            de: 'Datenschutzrichtlinie',
-                            fr: 'Politique de confidentialité',
-                            ar: 'سياسة الخصوصية',
-                            ru: 'Политика конфиденциальности',
-                            trk: 'Gizlilik Politikası',
-                            es: 'Política de privacidad',
-                            it: 'Informativa sulla privacy',
-                            pl: 'Polityka prywatności',
-                            pt: 'Política de Privacidade',
-                            th: 'นโยบายความเป็นส่วนตัว',
-                            id: 'Kebijakan Privasi',
-                            hi: 'गोपनीयता नीति',
-                            bn: 'গোপনীয়তা নীতি',
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                   
                 ],
