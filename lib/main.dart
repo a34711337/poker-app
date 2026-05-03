@@ -16863,7 +16863,6 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
 
       messageController.clear();
 
-      await _markChatAsRead();
       await refreshAppBadgeCount();
     } catch (e) {
       if (!mounted) return;
