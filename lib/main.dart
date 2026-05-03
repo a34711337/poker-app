@@ -2922,7 +2922,30 @@ class AppleIapService {
 
     if (user == null) {
       _isBuying = false;
-      throw Exception('Please login again');
+
+      throw Exception(
+        tr(
+          appNavigatorKey.currentContext!,
+          'Please login again',
+          zhTw: '請重新登入',
+          zhCn: '请重新登录',
+          ko: '다시 로그인해주세요',
+          ja: '再度ログインしてください',
+          de: 'Bitte erneut anmelden',
+          fr: 'Veuillez vous reconnecter',
+          ar: 'يرجى تسجيل الدخول مرة أخرى',
+          ru: 'Пожалуйста, войдите снова',
+          trk: 'Lütfen tekrar giriş yapın',
+          es: 'Por favor inicia sesión nuevamente',
+          it: 'Accedi di nuovo',
+          pl: 'Zaloguj się ponownie',
+          pt: 'Faça login novamente',
+          th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+          id: 'Silakan login kembali',
+          hi: 'कृपया फिर से लॉगिन करें',
+          bn: 'অনুগ্রহ করে আবার লগইন করুন',
+        ),
+      );
     }
 
     final iap = InAppPurchase.instance;
@@ -2935,7 +2958,29 @@ class AppleIapService {
       debugPrint('IAP productId: $productId');
 
       if (!available) {
-        throw Exception('In-App Purchase is not available on this device.');
+        throw Exception(
+          tr(
+            appNavigatorKey.currentContext!,
+            'In-App Purchase is not available on this device.',
+            zhTw: '此裝置無法使用 App 內購買。',
+            zhCn: '此设备无法使用应用内购买。',
+            ko: '이 기기에서는 인앱 구매를 사용할 수 없습니다.',
+            ja: 'このデバイスではアプリ内課金を利用できません。',
+            de: 'In-App-Käufe sind auf diesem Gerät nicht verfügbar.',
+            fr: 'Les achats intégrés ne sont pas disponibles sur cet appareil.',
+            ar: 'عمليات الشراء داخل التطبيق غير متوفرة على هذا الجهاز.',
+            ru: 'Встроенные покупки недоступны на этом устройстве.',
+            trk: 'Bu cihazda uygulama içi satın alma kullanılamıyor.',
+            es: 'Las compras dentro de la app no están disponibles en este dispositivo.',
+            it: 'Gli acquisti in-app non sono disponibili su questo dispositivo.',
+            pl: 'Zakupy w aplikacji nie są dostępne na tym urządzeniu.',
+            pt: 'Compras no aplicativo não estão disponíveis neste dispositivo.',
+            th: 'อุปกรณ์นี้ไม่รองรับการซื้อภายในแอป',
+            id: 'Pembelian dalam aplikasi tidak tersedia di perangkat ini.',
+            hi: 'इस डिवाइस पर इन-ऐप खरीदारी उपलब्ध नहीं है।',
+            bn: 'এই ডিভাইসে ইন-অ্যাপ ক্রয় উপলব্ধ নয়।',
+          ),
+        );
       }
 
       final productResponse = await iap.queryProductDetails({productId});
@@ -2950,7 +2995,27 @@ class AppleIapService {
 
       if (productResponse.productDetails.isEmpty) {
         throw Exception(
-          'Product not found. Please make sure this subscription is added to the app version and available in App Store Connect.',
+          tr(
+            appNavigatorKey.currentContext!,
+            'Product not found. Please make sure this subscription is added to the app version and available in App Store Connect.',
+            zhTw: '找不到商品。請確認此訂閱已加入 App 版本並在 App Store Connect 中可用。',
+            zhCn: '找不到商品。请确认此订阅已加入 App 版本并在 App Store Connect 中可用。',
+            ko: '상품을 찾을 수 없습니다. App Store Connect에 추가되었는지 확인하세요.',
+            ja: '商品が見つかりません。App Store Connectに追加されているか確認してください。',
+            de: 'Produkt nicht gefunden. Bitte überprüfe App Store Connect.',
+            fr: 'Produit introuvable. Vérifiez App Store Connect.',
+            ar: 'لم يتم العثور على المنتج. يرجى التحقق من App Store Connect.',
+            ru: 'Товар не найден. Проверьте App Store Connect.',
+            trk: 'Ürün bulunamadı. App Store Connect’i kontrol edin.',
+            es: 'Producto no encontrado. Verifica App Store Connect.',
+            it: 'Prodotto non trovato. Controlla App Store Connect.',
+            pl: 'Nie znaleziono produktu. Sprawdź App Store Connect.',
+            pt: 'Produto não encontrado. Verifique o App Store Connect.',
+            th: 'ไม่พบสินค้า กรุณาตรวจสอบ App Store Connect',
+            id: 'Produk tidak ditemukan. Periksa App Store Connect.',
+            hi: 'उत्पाद नहीं मिला। कृपया App Store Connect जांचें।',
+            bn: 'পণ্য খুঁজে পাওয়া যায়নি। App Store Connect পরীক্ষা করুন।',
+          ),
         );
       }
 
@@ -2973,7 +3038,30 @@ class AppleIapService {
             if (purchase.status == PurchaseStatus.error) {
               if (!completer.isCompleted) {
                 completer.completeError(
-                  Exception(purchase.error?.message ?? 'Purchase failed'),
+                  Exception(
+                    purchase.error?.message ??
+                        tr(
+                          appNavigatorKey.currentContext!,
+                          'Purchase failed',
+                          zhTw: '購買失敗',
+                          zhCn: '购买失败',
+                          ko: '구매 실패',
+                          ja: '購入に失敗しました',
+                          de: 'Kauf fehlgeschlagen',
+                          fr: 'Échec de l’achat',
+                          ar: 'فشل الشراء',
+                          ru: 'Ошибка покупки',
+                          trk: 'Satın alma başarısız',
+                          es: 'Compra fallida',
+                          it: 'Acquisto non riuscito',
+                          pl: 'Zakup nie powiódł się',
+                          pt: 'Falha na compra',
+                          th: 'การซื้อไม่สำเร็จ',
+                          id: 'Pembelian gagal',
+                          hi: 'खरीद विफल',
+                          bn: 'ক্রয় ব্যর্থ হয়েছে',
+                        ),
+                  ),
                 );
               }
               continue;
@@ -2981,7 +3069,31 @@ class AppleIapService {
 
             if (purchase.status == PurchaseStatus.canceled) {
               if (!completer.isCompleted) {
-                completer.completeError(Exception('Purchase cancelled'));
+                completer.completeError(
+                  Exception(
+                    tr(
+                      appNavigatorKey.currentContext!,
+                      'Purchase cancelled',
+                      zhTw: '購買已取消',
+                      zhCn: '购买已取消',
+                      ko: '구매가 취소되었습니다',
+                      ja: '購入がキャンセルされました',
+                      de: 'Kauf abgebrochen',
+                      fr: 'Achat annulé',
+                      ar: 'تم إلغاء الشراء',
+                      ru: 'Покупка отменена',
+                      trk: 'Satın alma iptal edildi',
+                      es: 'Compra cancelada',
+                      it: 'Acquisto annullato',
+                      pl: 'Zakup anulowany',
+                      pt: 'Compra cancelada',
+                      th: 'ยกเลิกการซื้อแล้ว',
+                      id: 'Pembelian dibatalkan',
+                      hi: 'खरीद रद्द कर दी गई',
+                      bn: 'ক্রয় বাতিল করা হয়েছে',
+                    ),
+                  ),
+                );
               }
               continue;
             }
@@ -3025,13 +3137,57 @@ class AppleIapService {
       debugPrint('IAP STARTED: $started');
 
       if (!started) {
-        throw Exception('Failed to start purchase');
+        throw Exception(
+          tr(
+            appNavigatorKey.currentContext!,
+            'Failed to start purchase',
+            zhTw: '無法開始購買',
+            zhCn: '无法开始购买',
+            ko: '구매를 시작할 수 없습니다',
+            ja: '購入を開始できませんでした',
+            de: 'Kauf konnte nicht gestartet werden',
+            fr: 'Impossible de démarrer l’achat',
+            ar: 'تعذر بدء عملية الشراء',
+            ru: 'Не удалось начать покупку',
+            trk: 'Satın alma başlatılamadı',
+            es: 'No se pudo iniciar la compra',
+            it: 'Impossibile avviare l’acquisto',
+            pl: 'Nie udało się rozpocząć zakupu',
+            pt: 'Não foi possível iniciar a compra',
+            th: 'ไม่สามารถเริ่มการซื้อได้',
+            id: 'Gagal memulai pembelian',
+            hi: 'खरीद शुरू नहीं हो सकी',
+            bn: 'ক্রয় শুরু করা যায়নি',
+          ),
+        );
       }
 
       await completer.future.timeout(
         const Duration(minutes: 3),
         onTimeout: () {
-          throw Exception('Purchase timeout. Please try again.');
+          throw Exception(
+            tr(
+              appNavigatorKey.currentContext!,
+              'Purchase timeout. Please try again.',
+              zhTw: '購買逾時，請再試一次。',
+              zhCn: '购买超时，请再试一次。',
+              ko: '구매 시간이 초과되었습니다. 다시 시도해주세요.',
+              ja: '購入がタイムアウトしました。もう一度お試しください。',
+              de: 'Zeitüberschreitung beim Kauf. Bitte erneut versuchen.',
+              fr: 'Temps d’achat dépassé. Réessayez.',
+              ar: 'انتهت مهلة الشراء. حاول مرة أخرى.',
+              ru: 'Время покупки истекло. Попробуйте снова.',
+              trk: 'Satın alma zaman aşımına uğradı. Tekrar deneyin.',
+              es: 'Tiempo de compra agotado. Inténtalo de nuevo.',
+              it: 'Tempo di acquisto scaduto. Riprova.',
+              pl: 'Przekroczono limit czasu zakupu. Spróbuj ponownie.',
+              pt: 'Tempo de compra esgotado. Tente novamente.',
+              th: 'หมดเวลาการซื้อ กรุณาลองใหม่อีกครั้ง',
+              id: 'Waktu pembelian habis. Silakan coba lagi.',
+              hi: 'खरीद का समय समाप्त हो गया। कृपया पुनः प्रयास करें।',
+              bn: 'ক্রয়ের সময় শেষ হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
+            ),
+          );
         },
       );
     } finally {
@@ -7974,6 +8130,24 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
+  Future<void> removeAppleSubscriptionBindingsForUid(
+    String uid,
+  ) async {
+  
+    final snapshot = await FirebaseFirestore.instance
+        .collection('apple_subscriptions')
+        .where('ownerUid', isEqualTo: uid)
+        .get();
+  
+    final batch = FirebaseFirestore.instance.batch();
+  
+    for (final doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+  
+    await batch.commit();
+  }
+
   Future<void> _deleteMyAccount() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -8010,6 +8184,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
     try {
       final uid = user.uid;
+      
+      await removeAppleSubscriptionBindingsForUid(uid);
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -8959,11 +9135,63 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                     } catch (e) {
                       if (!mounted) return;
 
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
+                      await showDialog<void>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: Text(
+                            tr(
+                              context,
+                              'Restore Failed',
+                              zhTw: '恢復購買失敗',
+                              zhCn: '恢复购买失败',
+                              ko: '구매 복원 실패',
+                              ja: '購入の復元に失敗しました',
+                              de: 'Wiederherstellung fehlgeschlagen',
+                              fr: 'Échec de la restauration',
+                              ar: 'فشلت استعادة الشراء',
+                              ru: 'Не удалось восстановить покупку',
+                              trk: 'Geri yükleme başarısız',
+                              es: 'Error al restaurar',
+                              it: 'Ripristino non riuscito',
+                              pl: 'Przywracanie nie powiodło się',
+                              pt: 'Falha ao restaurar',
+                              th: 'กู้คืนการซื้อไม่สำเร็จ',
+                              id: 'Pemulihan gagal',
+                              hi: 'पुनर्स्थापना विफल',
+                              bn: 'পুনরুদ্ধার ব্যর্থ হয়েছে',
+                            ),
+                          ),
                           content: Text(
                             e.toString().replaceFirst('Exception: ', ''),
                           ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                tr(
+                                  context,
+                                  'OK',
+                                  zhTw: '確定',
+                                  zhCn: '确定',
+                                  ko: '확인',
+                                  ja: 'OK',
+                                  de: 'OK',
+                                  fr: 'OK',
+                                  ar: 'حسناً',
+                                  ru: 'ОК',
+                                  trk: 'Tamam',
+                                  es: 'OK',
+                                  it: 'OK',
+                                  pl: 'OK',
+                                  pt: 'OK',
+                                  th: 'ตกลง',
+                                  id: 'OK',
+                                  hi: 'ठीक है',
+                                  bn: 'ঠিক আছে',
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     }
