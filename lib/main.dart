@@ -6741,85 +6741,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     }
   }
 
-  Future<void> _deactivateMyAccount() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-  
-    try {
-      final uid = user.uid;
-  
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        'isActive': false,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-  
-      final tables = await FirebaseFirestore.instance.collection('tables').get();
-  
-      for (final doc in tables.docs) {
-        final data = doc.data();
-  
-        final rawSeatsDynamic = List<dynamic>.from(data['seats'] ?? []);
-        final List<Map<String, dynamic>> newSeats = [];
-        bool changed = false;
-  
-        for (final raw in rawSeatsDynamic) {
-          if (raw is Map) {
-            final seat = Map<String, dynamic>.from(raw);
-  
-            if ((seat['playerUid'] ?? '').toString() == uid) {
-              newSeats.add(_buildEmptySeatMap());
-              changed = true;
-            } else {
-              newSeats.add(seat);
-            }
 
-          } else if (raw is String) {
-            newSeats.add({
-              'playerName': raw,
-              'playerLastName': null,
-              'playerShortName': raw,
-              'playerUid': null,
-              'playerPhotoUrl': null,
-              'playerId': null,
-            });
-          } else {
-            newSeats.add({
-              'playerName': null,
-              'playerLastName': null,
-              'playerShortName': null,
-              'playerUid': null,
-              'playerPhotoUrl': null,
-              'playerId': null,
-            });
-          }
-        }
-  
-        if (changed) {
-          await doc.reference.update({
-            'seats': newSeats,
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        }
-      }
-  
-      await user.delete();
-  
-      if (!mounted) return;
-  
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-        (route) => false,
-      );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'requires-recent-login') {
-        _showSnack('Please logout and login again before deleting your account');
-      } else {
-        _showSnack(e.message ?? 'Failed to delete account');
-      }
-    } catch (e) {
-      _showSnack('Failed to delete account');
-    }
-  }
 
   void _showSnack(String text) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -7751,6 +7673,7 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+
   Future<void> _saveLanguage(String languageCode) async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -7893,7 +7816,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _deactivateMyAccount(BuildContext context) async {
+  Future<void> _deleteMyAccount() async {
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
@@ -7927,20 +7850,112 @@ class _SettingsPageState extends State<SettingsPage> {
       return;
     }
 
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-      'isActive': false,
-      'deactivatedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    try {
+      final uid = user.uid;
 
-    await FirebaseAuth.instance.signOut();
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .delete();
 
-    if (!context.mounted) return;
+      await user.delete();
 
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-      (route) => false,
-    );
+      if (!mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) => const LoginPage(),
+        ),
+        (route) => false,
+      );
+
+    } on FirebaseAuthException catch (e) {
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.code == 'requires-recent-login'
+                ? tr(
+                    context,
+                    'Please logout and login again before deleting your account',
+                    zhTw: '請先登出並重新登入後再刪除帳號',
+                    zhCn: '请先退出并重新登录后再删除账号',
+                    ko: '계정을 삭제하기 전에 로그아웃 후 다시 로그인해주세요',
+                    ja: 'アカウント削除前に再ログインしてください',
+                    de: 'Bitte melde dich erneut an, bevor du dein Konto löschst',
+                    fr: 'Veuillez vous reconnecter avant de supprimer votre compte',
+                    ar: 'يرجى تسجيل الدخول مرة أخرى قبل حذف الحساب',
+                    ru: 'Пожалуйста, войдите снова перед удалением аккаунта',
+                    trk: 'Hesabı silmeden önce tekrar giriş yapın',
+                    es: 'Vuelve a iniciar sesión antes de eliminar tu cuenta',
+                    it: 'Accedi nuovamente prima di eliminare il tuo account',
+                    pl: 'Zaloguj się ponownie przed usunięciem konta',
+                    pt: 'Faça login novamente antes de excluir sua conta',
+                    th: 'กรุณาออกจากระบบและเข้าสู่ระบบใหม่ก่อนลบบัญชี',
+                    id: 'Silakan logout dan login kembali sebelum menghapus akun',
+                    hi: 'अकाउंट हटाने से पहले फिर से लॉगिन करें',
+                    bn: 'অ্যাকাউন্ট মুছার আগে আবার লগইন করুন',
+                  )
+                : (e.message ??
+                    tr(
+                      context,
+                      'Failed to delete account',
+                      zhTw: '刪除帳號失敗',
+                      zhCn: '删除账号失败',
+                      ko: '계정 삭제 실패',
+                      ja: 'アカウント削除失敗',
+                      de: 'Konto konnte nicht gelöscht werden',
+                      fr: 'Échec de la suppression du compte',
+                      ar: 'فشل حذف الحساب',
+                      ru: 'Не удалось удалить аккаунт',
+                      trk: 'Hesap silinemedi',
+                      es: 'No se pudo eliminar la cuenta',
+                      it: 'Impossibile eliminare l’account',
+                      pl: 'Nie udało się usunąć konta',
+                      pt: 'Falha ao excluir conta',
+                      th: 'ลบบัญชีไม่สำเร็จ',
+                      id: 'Gagal menghapus akun',
+                      hi: 'अकाउंट हटाना विफल',
+                      bn: 'অ্যাকাউন্ট মুছতে ব্যর্থ হয়েছে',
+                    )),
+          ),
+        ),
+      );
+
+    } catch (e) {
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Failed to delete account',
+              zhTw: '刪除帳號失敗',
+              zhCn: '删除账号失败',
+              ko: '계정 삭제 실패',
+              ja: 'アカウント削除失敗',
+              de: 'Konto konnte nicht gelöscht werden',
+              fr: 'Échec de la suppression du compte',
+              ar: 'فشل حذف الحساب',
+              ru: 'Не удалось удалить аккаунт',
+              trk: 'Hesap silinemedi',
+              es: 'No se pudo eliminar la cuenta',
+              it: 'Impossibile eliminare l’account',
+              pl: 'Nie udało się usunąć konta',
+              pt: 'Falha ao excluir conta',
+              th: 'ลบบัญชีไม่สำเร็จ',
+              id: 'Gagal menghapus akun',
+              hi: 'अकाउंट हटाना विफल',
+              bn: 'অ্যাকাউন্ট মুছতে ব্যর্থ হয়েছে',
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context) async {
@@ -7973,24 +7988,24 @@ class _SettingsPageState extends State<SettingsPage> {
         content: Text(
           tr(
             context,
-            'This will deactivate your account and remove your occupied seats. This cannot be undone.\n\nDo you want to continue?',
-            zhTw: '這會停用你的帳號，並移除你目前坐的位置。這個動作無法復原。\n\n你確定要繼續嗎？',
-            zhCn: '这会停用你的账号，并移除你目前坐的位置。此操作无法恢复。\n\n你确定要继续吗？',
-            ko: '계정이 비활성화되며 현재 차지 중인 자리가 제거됩니다. 이 작업은 되돌릴 수 없습니다.\n\n계속하시겠습니까?',
-            ja: 'この操作を行うと、アカウントが無効化され、現在座っている席が削除されます。この操作は元に戻せません。\n\n続行しますか？',
-            de: 'Dadurch wird dein Konto deaktiviert und deine belegten Plätze werden entfernt. Dies kann nicht rückgängig gemacht werden.\n\nMöchtest du fortfahren?',
-            fr: 'Cela désactivera votre compte et supprimera vos sièges occupés. Cette action est irréversible.\n\nVoulez-vous continuer ?',
-            ar: 'سيؤدي هذا إلى تعطيل حسابك وإزالة مقاعدك الحالية. لا يمكن التراجع عن هذا الإجراء.\n\nهل تريد المتابعة؟',
-            ru: 'Это деактивирует ваш аккаунт и удалит занятые вами места. Это действие нельзя отменить.\n\nВы хотите продолжить?',
-            trk: 'Bu işlem hesabınızı devre dışı bırakacak ve oturduğunuz koltukları kaldıracaktır. Bu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?',
-            es: 'Esto desactivará tu cuenta y eliminará tus asientos ocupados. Esta acción no se puede deshacer.\n\n¿Deseas continuar?',
-            it: 'Questo disattiverà il tuo account e rimuoverà i posti occupati. Questa azione non può essere annullata.\n\nVuoi continuare?',
-            pl: 'Spowoduje to dezaktywację konta i usunięcie zajętych miejsc. Tego działania nie można cofnąć.\n\nCzy chcesz kontynuować?',
-            pt: 'Isso desativará sua conta e removerá seus assentos ocupados. Esta ação não pode ser desfeita.\n\nDeseja continuar?',
-            th: 'การดำเนินการนี้จะปิดใช้งานบัญชีของคุณและนำที่นั่งที่คุณใช้อยู่ออก การดำเนินการนี้ไม่สามารถย้อนกลับได้\n\nคุณต้องการดำเนินการต่อหรือไม่?',
-            id: 'Ini akan menonaktifkan akun Anda dan menghapus kursi yang sedang Anda tempati. Tindakan ini tidak dapat dibatalkan.\n\nApakah Anda ingin melanjutkan?',
-            hi: 'इससे आपका अकाउंट निष्क्रिय हो जाएगा और आपकी वर्तमान सीटें हट जाएंगी। यह कार्रवाई वापस नहीं की जा सकती।\n\nक्या आप जारी रखना चाहते हैं?',
-            bn: 'এটি আপনার অ্যাকাউন্ট নিষ্ক্রিয় করবে এবং আপনার বর্তমান সিট সরিয়ে দেবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি চালিয়ে যেতে চান?',
+            'This will deactivate your account and remove your occupied seats. Access to paid features and subscriptions inside the app may also be removed. This cannot be undone.\n\nDo you want to continue?',
+            zhTw: '這會停用你的帳號，並移除你目前坐的位置。App 內的付費功能與訂閱權限也可能會被移除。這個動作無法復原。\n\n你確定要繼續嗎？',
+            zhCn: '这会停用你的账号，并移除你目前坐的位置。App 内的付费功能与订阅权限也可能会被移除。此操作无法恢复。\n\n你确定要继续吗？',
+            ko: '계정이 비활성화되며 현재 차지 중인 자리가 제거됩니다. 앱 내 유료 기능 및 구독 권한도 제거될 수 있습니다. 이 작업은 되돌릴 수 없습니다.\n\n계속하시겠습니까?',
+            ja: 'この操作を行うと、アカウントが無効化され、現在座っている席が削除されます。また、アプリ内の有料機能やサブスクリプション権限も削除される場合があります。この操作は元に戻せません。\n\n続行しますか？',
+            de: 'Dadurch wird dein Konto deaktiviert und deine belegten Plätze werden entfernt. Der Zugriff auf kostenpflichtige Funktionen und Abonnements in der App kann ebenfalls entfernt werden. Dies kann nicht rückgängig gemacht werden.\n\nMöchtest du fortfahren?',
+            fr: 'Cela désactivera votre compte et supprimera vos sièges occupés. L’accès aux fonctionnalités payantes et aux abonnements dans l’application peut également être supprimé. Cette action est irréversible.\n\nVoulez-vous continuer ?',
+            ar: 'سيؤدي هذا إلى تعطيل حسابك وإزالة مقاعدك الحالية. قد تتم أيضًا إزالة ميزات الاشتراك والميزات المدفوعة داخل التطبيق. لا يمكن التراجع عن هذا الإجراء.\n\nهل تريد المتابعة؟',
+            ru: 'Это деактивирует ваш аккаунт и удалит занятые вами места. Доступ к платным функциям и подпискам внутри приложения также может быть удалён. Это действие нельзя отменить.\n\nВы хотите продолжить?',
+            trk: 'Bu işlem hesabınızı devre dışı bırakacak ve oturduğunuz koltukları kaldıracaktır. Uygulama içindeki ücretli özelliklere ve aboneliklere erişim de kaldırılabilir. Bu işlem geri alınamaz.\n\nDevam etmek istiyor musunuz?',
+            es: 'Esto desactivará tu cuenta y eliminará tus asientos ocupados. El acceso a funciones y suscripciones pagas dentro de la aplicación también puede eliminarse. Esta acción no se puede deshacer.\n\n¿Deseas continuar?',
+            it: 'Questo disattiverà il tuo account e rimuoverà i posti occupati. Anche l’accesso alle funzionalità a pagamento e agli abbonamenti nell’app potrebbe essere rimosso. Questa azione non può essere annullata.\n\nVuoi continuare?',
+            pl: 'Spowoduje to dezaktywację konta i usunięcie zajętych miejsc. Dostęp do płatnych funkcji i subskrypcji w aplikacji może również zostać usunięty. Tego działania nie można cofnąć.\n\nCzy chcesz kontynuować?',
+            pt: 'Isso desativará sua conta e removerá seus assentos ocupados. O acesso a recursos pagos e assinaturas dentro do aplicativo também poderá ser removido. Esta ação não pode ser desfeita.\n\nDeseja continuar?',
+            th: 'การดำเนินการนี้จะปิดใช้งานบัญชีของคุณและนำที่นั่งที่คุณใช้อยู่ออก สิทธิ์การใช้งานฟีเจอร์แบบชำระเงินและการสมัครสมาชิกภายในแอปอาจถูกลบออกด้วย การดำเนินการนี้ไม่สามารถย้อนกลับได้\n\nคุณต้องการดำเนินการต่อหรือไม่?',
+            id: 'Ini akan menonaktifkan akun Anda dan menghapus kursi yang sedang Anda tempati. Akses ke fitur berbayar dan langganan di dalam aplikasi juga dapat dihapus. Tindakan ini tidak dapat dibatalkan.\n\nApakah Anda ingin melanjutkan?',
+            hi: 'इससे आपका अकाउंट निष्क्रिय हो जाएगा और आपकी वर्तमान सीटें हट जाएंगी। ऐप के अंदर की भुगतान सुविधाओं और सब्सक्रिप्शन की पहुँच भी हटाई जा सकती है। यह कार्रवाई वापस नहीं की जा सकती।\n\nक्या आप जारी रखना चाहते हैं?',
+            bn: 'এটি আপনার অ্যাকাউন্ট নিষ্ক্রিয় করবে এবং আপনার বর্তমান সিট সরিয়ে দেবে। অ্যাপের ভেতরের পেইড ফিচার ও সাবস্ক্রিপশনের অ্যাক্সেসও মুছে যেতে পারে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।\n\nআপনি কি চালিয়ে যেতে চান?',
           ),
         ),
         actions: [
@@ -8051,7 +8066,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
 
     if (confirmed == true) {
-      await _deactivateMyAccount(context);
+      await _deleteMyAccount();
     }
   }
 
@@ -8587,6 +8602,137 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         bn: 'Host পেমেন্ট সফলভাবে আপডেট হয়েছে',
       ),
     );
+  }
+
+  Future<void> _showHostProSubscribeDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            tr(
+              context,
+              'Host Pro Monthly Subscription',
+              zhTw: 'Host Pro 每月訂閱',
+              zhCn: 'Host Pro 每月订阅',
+              ko: 'Host Pro 월간 구독',
+              ja: 'Host Pro 月額サブスクリプション',
+              de: 'Host Pro Monatsabo',
+              fr: 'Abonnement mensuel Host Pro',
+              ar: 'اشتراك Host Pro الشهري',
+              ru: 'Ежемесячная подписка Host Pro',
+              trk: 'Host Pro Aylık Abonelik',
+              es: 'Suscripción mensual Host Pro',
+              it: 'Abbonamento mensile Host Pro',
+              pl: 'Subskrypcja miesięczna Host Pro',
+              pt: 'Assinatura mensal Host Pro',
+              th: 'สมัครสมาชิก Host Pro รายเดือน',
+              id: 'Langganan Bulanan Host Pro',
+              hi: 'Host Pro मासिक सदस्यता',
+              bn: 'Host Pro মাসিক সাবস্ক্রিপশন',
+            ),
+          ),
+          content: Text(
+            tr(
+              context,
+              '\$9.99 / month\n\nSubscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
+              zhTw:
+                  '\$9.99 / 月\n\n訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
+              zhCn:
+                  '\$9.99 / 月\n\n订阅将自动续订，除非在当前订阅周期结束前至少 24 小时取消。',
+              ko:
+                  '\$9.99 / 월\n\n현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다.',
+              ja:
+                  '\$9.99 / 月\n\n現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
+              de:
+                  '\$9.99 / Monat\n\nDas Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird.',
+              fr:
+                  '\$9.99 / mois\n\nL’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période.',
+              ar:
+                  '\$9.99 / شهرياً\n\nسيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية.',
+              ru:
+                  '\$9.99 / месяц\n\nПодписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода.',
+              trk:
+                  '\$9.99 / ay\n\nAbonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir.',
+              es:
+                  '\$9.99 / mes\n\nLa suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período.',
+              it:
+                  '\$9.99 / mese\n\nL’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo.',
+              pl:
+                  '\$9.99 / miesiąc\n\nSubskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej.',
+              pt:
+                  '\$9.99 / mês\n\nA assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período.',
+              th:
+                  '\$9.99 / เดือน\n\nระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
+              id:
+                  '\$9.99 / bulan\n\nLangganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir.',
+              hi:
+                  '\$9.99 / महीना\n\nयदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
+              bn:
+                  '\$9.99 / মাস\n\nবর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                tr(
+                  context,
+                  'Continue',
+                  zhTw: '繼續',
+                  zhCn: '继续',
+                  ko: '계속',
+                  ja: '続行',
+                  de: 'Weiter',
+                  fr: 'Continuer',
+                  ar: 'متابعة',
+                  ru: 'Продолжить',
+                  trk: 'Devam',
+                  es: 'Continuar',
+                  it: 'Continua',
+                  pl: 'Kontynuuj',
+                  pt: 'Continuar',
+                  th: 'ดำเนินการต่อ',
+                  id: 'Lanjutkan',
+                  hi: 'जारी रखें',
+                  bn: 'চালিয়ে যান',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == true) {
+      await _startStripeCheckout();
+    }
   }
 
   Future<void> _showUpdatePaymentDialog() async {
@@ -12695,7 +12841,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                   ),
 
                 FloatingActionButton.extended(
-                  onPressed: _startStripeCheckout,
+                  onPressed: _showHostProSubscribeDialog,
                   backgroundColor: const Color(0xFFDBEAFE),
                   foregroundColor: const Color(0xFF1D4ED8),
                   icon: const Icon(Icons.workspace_premium),
@@ -12726,192 +12872,8 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                     ),
                   ),
                 ),
-
-                const SizedBox(height: 12),
-
-                Text(
-                  tr(
-                    context,
-                    'Host Pro Monthly Subscription\n'
-                    '\$9.99 / month\n\n'
-                    'Subscription automatically renews unless canceled at least 24 hours before the end of the current billing period.',
-
-                    zhTw:
-                        'Host Pro 每月訂閱\n'
-                        '\$9.99 / 月\n\n'
-                        '訂閱將自動續訂，除非在目前訂閱週期結束前至少 24 小時取消。',
-
-                    zhCn:
-                        'Host Pro 每月订阅\n'
-                        '\$9.99 / 月\n\n'
-                        '除非在当前订阅周期结束前至少 24 小时取消，否则订阅会自动续订。',
-
-                    ko:
-                        'Host Pro 월간 구독\n'
-                        '\$9.99 / 월\n\n'
-                        '현재 구독 기간 종료 최소 24시간 전에 취소하지 않으면 자동으로 갱신됩니다。',
-
-                    ja:
-                        'Host Pro 月額サブスクリプション\n'
-                        '\$9.99 / 月\n\n'
-                        '現在の購読期間終了の24時間前までにキャンセルしない限り、自動更新されます。',
-
-                    de:
-                        'Host Pro Monatsabo\n'
-                        '\$9.99 / Monat\n\n'
-                        'Das Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ablauf gekündigt wird。',
-
-                    fr:
-                        'Abonnement mensuel Host Pro\n'
-                        '\$9.99 / mois\n\n'
-                        'L’abonnement se renouvelle automatiquement sauf annulation au moins 24 heures avant la fin de la période。',
-
-                    ar:
-                        'اشتراك Host Pro الشهري\n'
-                        '\$9.99 / شهرياً\n\n'
-                        'سيتم تجديد الاشتراك تلقائياً ما لم يتم إلغاؤه قبل 24 ساعة على الأقل من نهاية الفترة الحالية。',
-
-                    ru:
-                        'Ежемесячная подписка Host Pro\n'
-                        '\$9.99 / месяц\n\n'
-                        'Подписка автоматически продлевается, если не отменена минимум за 24 часа до окончания периода。',
-
-                    trk:
-                        'Host Pro Aylık Abonelik\n'
-                        '\$9.99 / ay\n\n'
-                        'Abonelik, mevcut dönem bitmeden en az 24 saat önce iptal edilmezse otomatik yenilenir。',
-
-                    es:
-                        'Suscripción mensual Host Pro\n'
-                        '\$9.99 / mes\n\n'
-                        'La suscripción se renueva automáticamente a menos que se cancele al menos 24 horas antes del final del período。',
-
-                    it:
-                        'Abbonamento mensile Host Pro\n'
-                        '\$9.99 / mese\n\n'
-                        'L’abbonamento si rinnova automaticamente salvo cancellazione almeno 24 ore prima della fine del periodo。',
-
-                    pl:
-                        'Subskrypcja miesięczna Host Pro\n'
-                        '\$9.99 / miesiąc\n\n'
-                        'Subskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny wcześniej。',
-
-                    pt:
-                        'Assinatura mensal Host Pro\n'
-                        '\$9.99 / mês\n\n'
-                        'A assinatura será renovada automaticamente, a menos que seja cancelada pelo menos 24 horas antes do fim do período。',
-
-                    th:
-                        'สมัครสมาชิก Host Pro รายเดือน\n'
-                        '\$9.99 / เดือน\n\n'
-                        'ระบบจะต่ออายุอัตโนมัติ เว้นแต่จะยกเลิกก่อนสิ้นสุดรอบปัจจุบันอย่างน้อย 24 ชั่วโมง',
-
-                    id:
-                        'Langganan Bulanan Host Pro\n'
-                        '\$9.99 / bulan\n\n'
-                        'Langganan akan diperpanjang otomatis kecuali dibatalkan minimal 24 jam sebelum periode berakhir。',
-
-                    hi:
-                        'Host Pro मासिक सदस्यता\n'
-                        '\$9.99 / महीना\n\n'
-                        'यदि वर्तमान अवधि समाप्त होने से कम से कम 24 घंटे पहले रद्द नहीं किया गया तो सदस्यता स्वतः नवीनीकृत होगी।',
-
-                    bn:
-                        'Host Pro মাসিক সাবস্ক্রিপশন\n'
-                        '\$9.99 / মাস\n\n'
-                        'বর্তমান সময়সীমা শেষ হওয়ার অন্তত ২৪ ঘণ্টা আগে বাতিল না করলে সাবস্ক্রিপশন স্বয়ংক্রিয়ভাবে নবায়ন হবে।',
-                  ),
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black54,
-                    height: 1.5,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  children: [
-                    TextButton(
-                      onPressed: () async {
-                        final uri = Uri.parse(
-                          'https://pokerscheduler.web.app/terms.html',
-                        );
-
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      },
-                      child: Text(
-                        tr(
-                          context,
-                          'Terms of Service',
-                          zhTw: '服務條款',
-                          zhCn: '服务条款',
-                          ko: '서비스 약관',
-                          ja: '利用規約',
-                          de: 'Nutzungsbedingungen',
-                          fr: 'Conditions d’utilisation',
-                          ar: 'شروط الخدمة',
-                          ru: 'Условия использования',
-                          trk: 'Hizmet Şartları',
-                          es: 'Términos del servicio',
-                          it: 'Termini di servizio',
-                          pl: 'Warunki korzystania',
-                          pt: 'Termos de serviço',
-                          th: 'ข้อกำหนดการใช้งาน',
-                          id: 'Syarat Layanan',
-                          hi: 'सेवा की शर्तें',
-                          bn: 'সেবার শর্তাবলী',
-                        ),
-                      ),
-                    ),
-
-                    TextButton(
-                      onPressed: () async {
-                        final uri = Uri.parse(
-                          'https://pokerscheduler.web.app/privacy.html',
-                        );
-
-                        await launchUrl(
-                          uri,
-                          mode: LaunchMode.externalApplication,
-                        );
-                      },
-                      child: Text(
-                        tr(
-                          context,
-                          'Privacy Policy',
-                          zhTw: '隱私權政策',
-                          zhCn: '隐私政策',
-                          ko: '개인정보 처리방침',
-                          ja: 'プライバシーポリシー',
-                          de: 'Datenschutzrichtlinie',
-                          fr: 'Politique de confidentialité',
-                          ar: 'سياسة الخصوصية',
-                          ru: 'Политика конфиденциальности',
-                          trk: 'Gizlilik Politikası',
-                          es: 'Política de privacidad',
-                          it: 'Informativa sulla privacy',
-                          pl: 'Polityka prywatności',
-                          pt: 'Política de Privacidade',
-                          th: 'นโยบายความเป็นส่วนตัว',
-                          id: 'Kebijakan Privasi',
-                          hi: 'गोपनीयता नीति',
-                          bn: 'গোপনীয়তা নীতি',
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                
               ],
             ),
-
       body: SafeArea(
         child: Column(
           children: [
