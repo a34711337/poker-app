@@ -621,7 +621,6 @@ async function sendPush({ tokens, title, body, data }) {
       payload: {
         aps: {
           sound: "default",
-          badge: 1,
         },
       },
     },
