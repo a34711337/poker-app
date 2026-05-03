@@ -20,6 +20,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
+
 
 final GlobalKey<NavigatorState> appNavigatorKey =
     GlobalKey<NavigatorState>();
@@ -2773,9 +2775,28 @@ class AppleIapService {
   static bool _isBuying = false;
 
   static String _subscriptionDocId(PurchaseDetails purchase) {
-    final rawId = (purchase.purchaseID ?? '')
-        .trim()
-        .replaceAll('/', '_');
+    String rawId = '';
+
+    if (purchase is AppStorePurchaseDetails) {
+      final originalTransaction =
+          purchase.skPaymentTransaction.originalTransaction;
+
+      rawId = (originalTransaction?.transactionIdentifier ??
+              purchase.skPaymentTransaction.transactionIdentifier ??
+              purchase.purchaseID ??
+              '')
+          .toString()
+          .trim();
+    } else {
+      rawId = (purchase.purchaseID ?? '')
+          .toString()
+          .trim();
+    }
+
+    rawId = rawId.replaceAll(
+      RegExp(r'[^a-zA-Z0-9_\-\.]'),
+      '_',
+    );
 
     if (rawId.isEmpty) {
       throw Exception(
@@ -2803,7 +2824,7 @@ class AppleIapService {
       );
     }
 
-    return rawId;
+    return '${purchase.productID}_$rawId';
   }
 
   static Future<void> _bindPurchaseToCurrentUser({
@@ -3046,7 +3067,13 @@ class AppleIapService {
             }
 
             if (purchase.productID == kAppleHostProProductId) {
+              await _bindPurchaseToCurrentUser(
+                purchase: purchase,
+                type: ApplePurchaseType.host,
+              );
+
               restoredAny = true;
+
               await _activateEntitlement(
                 uid: user.uid,
                 type: ApplePurchaseType.host,
@@ -3054,7 +3081,13 @@ class AppleIapService {
             }
 
             if (purchase.productID == kAppleStatsProProductId) {
+              await _bindPurchaseToCurrentUser(
+                purchase: purchase,
+                type: ApplePurchaseType.stats,
+              );
+
               restoredAny = true;
+
               await _activateEntitlement(
                 uid: user.uid,
                 type: ApplePurchaseType.stats,
