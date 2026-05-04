@@ -16877,26 +16877,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       final messageRef = chatRef.collection('messages').doc();
 
       await FirebaseFirestore.instance.runTransaction((tx) async {
-        tx.set(messageRef, {
-          'messageId': messageRef.id,
-          'chatId': widget.chatId,
-          'senderUid': currentUser.uid,
-          'senderName': senderName,
-          'senderPhotoUrl': senderPhotoUrl,
-          'text': text,
-          'createdAt': FieldValue.serverTimestamp(),
-        });
 
-        tx.set(chatRef, {
-          'chatId': widget.chatId,
-          'type': 'direct',
-          'memberUids': [currentUser.uid, widget.otherUid],
-          'lastMessage': text,
-          'lastMessageAt': FieldValue.serverTimestamp(),
-          'lastMessageSenderUid': currentUser.uid,
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-
+        // ✅ 一定要最前面
         final chatSnap = await tx.get(chatRef);
         final chatData = chatSnap.data() ?? {};
         final oldUnreadCounts =
@@ -16908,14 +16890,30 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         oldUnreadCounts[currentUser.uid] = 0;
         oldUnreadCounts[widget.otherUid] = oldOtherCount + 1;
 
-        tx.set(
-          chatRef,
-          {
-            'unreadCounts': oldUnreadCounts,
-          },
-          SetOptions(merge: true),
-        );       
+        // ✅ 再寫 message
+        tx.set(messageRef, {
+          'messageId': messageRef.id,
+          'chatId': widget.chatId,
+          'senderUid': currentUser.uid,
+          'senderName': senderName,
+          'senderPhotoUrl': senderPhotoUrl,
+          'text': text,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
 
+        // ✅ 再寫 chat（包含 unreadCounts）
+        tx.set(chatRef, {
+          'chatId': widget.chatId,
+          'type': 'direct',
+          'memberUids': [currentUser.uid, widget.otherUid],
+          'lastMessage': text,
+          'lastMessageAt': FieldValue.serverTimestamp(),
+          'lastMessageSenderUid': currentUser.uid,
+          'updatedAt': FieldValue.serverTimestamp(),
+          'unreadCounts': oldUnreadCounts,
+        }, SetOptions(merge: true));
+
+        // ✅ 最後 friendship
         tx.set(
           FirebaseFirestore.instance.collection('friendships').doc(widget.chatId),
           {
