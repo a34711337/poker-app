@@ -8413,6 +8413,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await removeAppleSubscriptionBindingsForUid(uid);
 
       await deleteAllUserFriendData(uid);
+      await deleteFriendRequestsForUser(uid);
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -11697,6 +11698,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       return;
     }
 
+    await deleteNotificationsForTable(tableId);
     await tablesRef.doc(tableId).delete();
 
     _showSnack(
@@ -32432,6 +32434,80 @@ Future<void> deleteAllUserFriendData(String uid) async {
       .get();
 
   for (final doc in receivedRequestsSnap.docs) {
+    refsToDelete.add(doc.reference);
+  }
+
+  var batch = firestore.batch();
+  var count = 0;
+
+  for (final ref in refsToDelete) {
+    batch.delete(ref);
+    count++;
+
+    if (count >= 450) {
+      await batch.commit();
+      batch = firestore.batch();
+      count = 0;
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+}
+
+Future<void> deleteNotificationsForTable(String tableId) async {
+  final cleanTableId = tableId.trim();
+  if (cleanTableId.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+
+  final notificationsSnap = await firestore
+      .collection('notifications')
+      .where('tableId', isEqualTo: cleanTableId)
+      .get();
+
+  var batch = firestore.batch();
+  var count = 0;
+
+  for (final doc in notificationsSnap.docs) {
+    batch.delete(doc.reference);
+    count++;
+
+    if (count >= 450) {
+      await batch.commit();
+      batch = firestore.batch();
+      count = 0;
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+}
+
+Future<void> deleteFriendRequestsForUser(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+  final refsToDelete = <DocumentReference>{};
+
+  final sentSnap = await firestore
+      .collection('friend_requests')
+      .where('fromUid', isEqualTo: cleanUid)
+      .get();
+
+  for (final doc in sentSnap.docs) {
+    refsToDelete.add(doc.reference);
+  }
+
+  final receivedSnap = await firestore
+      .collection('friend_requests')
+      .where('toUid', isEqualTo: cleanUid)
+      .get();
+
+  for (final doc in receivedSnap.docs) {
     refsToDelete.add(doc.reference);
   }
 
