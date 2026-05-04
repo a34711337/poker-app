@@ -8414,6 +8414,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
       await deleteAllUserFriendData(uid);
       await deleteFriendRequestsForUser(uid);
+      await deleteTablesCreatedByUser(uid);
 
       await FirebaseFirestore.instance
           .collection('users')
@@ -32389,9 +32390,10 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 }
 
 Future<void> deleteAllUserFriendData(String uid) async {
-  final firestore = FirebaseFirestore.instance;
   final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
 
+  final firestore = FirebaseFirestore.instance;
   final refsToDelete = <DocumentReference>{};
 
   final friendshipsSnap = await firestore
@@ -32417,24 +32419,6 @@ Future<void> deleteAllUserFriendData(String uid) async {
     }
 
     refsToDelete.add(chatDoc.reference);
-  }
-
-  final sentRequestsSnap = await firestore
-      .collection('friend_requests')
-      .where('fromUid', isEqualTo: cleanUid)
-      .get();
-
-  for (final doc in sentRequestsSnap.docs) {
-    refsToDelete.add(doc.reference);
-  }
-
-  final receivedRequestsSnap = await firestore
-      .collection('friend_requests')
-      .where('toUid', isEqualTo: cleanUid)
-      .get();
-
-  for (final doc in receivedRequestsSnap.docs) {
-    refsToDelete.add(doc.reference);
   }
 
   var batch = firestore.batch();
@@ -32498,14 +32482,14 @@ Future<void> deleteFriendRequestsForUser(String uid) async {
       .where('fromUid', isEqualTo: cleanUid)
       .get();
 
-  for (final doc in sentSnap.docs) {
-    refsToDelete.add(doc.reference);
-  }
-
   final receivedSnap = await firestore
       .collection('friend_requests')
       .where('toUid', isEqualTo: cleanUid)
       .get();
+
+  for (final doc in sentSnap.docs) {
+    refsToDelete.add(doc.reference);
+  }
 
   for (final doc in receivedSnap.docs) {
     refsToDelete.add(doc.reference);
@@ -32516,6 +32500,36 @@ Future<void> deleteFriendRequestsForUser(String uid) async {
 
   for (final ref in refsToDelete) {
     batch.delete(ref);
+    count++;
+
+    if (count >= 450) {
+      await batch.commit();
+      batch = firestore.batch();
+      count = 0;
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit();
+  }
+}
+
+Future<void> deleteTablesCreatedByUser(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+
+  final tablesSnap = await firestore
+      .collection('tables')
+      .where('createdByUid', isEqualTo: cleanUid)
+      .get();
+
+  var batch = firestore.batch();
+  var count = 0;
+
+  for (final doc in tablesSnap.docs) {
+    batch.delete(doc.reference);
     count++;
 
     if (count >= 450) {
