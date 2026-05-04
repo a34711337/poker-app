@@ -5058,6 +5058,10 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
                       TextField(
                         controller: emailController,
+                        textInputAction: TextInputAction.next,
+                        onSubmitted: (_) {
+                          FocusScope.of(context).nextFocus();
+                        },
                         decoration: InputDecoration(
                           labelText: tr(
                             context,
@@ -5114,6 +5118,8 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                       TextField(
                         controller: passwordController,
                         obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) => _loginWithEmail(),
                         decoration: InputDecoration(
                           labelText: tr(
                             context,
@@ -14555,39 +14561,84 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
     if (confirmed != true) return;
 
-    await deleteFriend(
-      currentUid: currentUser.uid,
-      otherUid: (otherUser['uid'] ?? '').toString(),
-    );
+    try {
+      final otherUid = (otherUser['uid'] ?? '').toString().trim();
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
+      if (otherUid.isEmpty) {
+        throw Exception(
           tr(
             context,
-            'Friend deleted',
-            zhTw: '好友已刪除',
-            zhCn: '好友已删除',
-            ko: '친구가 삭제되었습니다',
-            ja: '友達を削除しました',
-            de: 'Freund gelöscht',
-            fr: 'Ami supprimé',
-            ar: 'تم حذف الصديق',
-            ru: 'Друг удалён',
-            trk: 'Arkadaş silindi',
-            es: 'Amigo eliminado',
-            it: 'Amico eliminato',
-            pl: 'Znajomy usunięty',
-            pt: 'Amigo excluído',
-            th: 'ลบเพื่อนแล้ว',
-            id: 'Teman dihapus',
-            hi: 'दोस्त हटा दिया गया',
-            bn: 'বন্ধু মুছে ফেলা হয়েছে',
+            'Friend user id is empty',
+            zhTw: '好友使用者 ID 是空的',
+            zhCn: '好友用户 ID 是空的',
+            ko: '친구 사용자 ID가 비어 있습니다',
+            ja: '友達のユーザーIDが空です',
+            de: 'Freund-Benutzer-ID ist leer',
+            fr: 'L’ID utilisateur de l’ami est vide',
+            ar: 'معرّف المستخدم للصديق فارغ',
+            ru: 'ID пользователя друга пуст',
+            trk: 'Arkadaş kullanıcı kimliği boş',
+            es: 'El ID del amigo está vacío',
+            it: 'L’ID utente dell’amico è vuoto',
+            pl: 'ID użytkownika znajomego jest puste',
+            pt: 'O ID do amigo está vazio',
+            th: 'ID ผู้ใช้ของเพื่อนว่างเปล่า',
+            id: 'ID pengguna teman kosong',
+            hi: 'दोस्त का यूज़र ID खाली है',
+            bn: 'বন্ধুর ব্যবহারকারী ID খালি',
+          ),
+        );
+      }
+
+      await deleteFriend(
+        currentUid: currentUser.uid,
+        otherUid: otherUid,
+      );
+
+      await refreshAppBadgeCount();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Friend deleted',
+              zhTw: '好友已刪除',
+              zhCn: '好友已删除',
+              ko: '친구가 삭제되었습니다',
+              ja: '友達を削除しました',
+              de: 'Freund gelöscht',
+              fr: 'Ami supprimé',
+              ar: 'تم حذف الصديق',
+              ru: 'Друг удалён',
+              trk: 'Arkadaş silindi',
+              es: 'Amigo eliminado',
+              it: 'Amico eliminato',
+              pl: 'Znajomy usunięty',
+              pt: 'Amigo excluído',
+              th: 'ลบเพื่อนแล้ว',
+              id: 'Teman dihapus',
+              hi: 'दोस्त हटा दिया गया',
+              bn: 'বন্ধু মুছে ফেলা হয়েছে',
+            ),
           ),
         ),
-      ),
-    );
+      );
+
+      setState(() {});
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _blockFriend(Map<String, dynamic> friendshipData) async {
@@ -17420,8 +17471,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   Expanded(
                     child: TextField(
                       controller: messageController,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _sendMessage(),
                       minLines: 1,
-                      maxLines: 4,
+                      maxLines: 1,
                       style: const TextStyle(
                         color: Colors.black87,
                         fontWeight: FontWeight.w500,
@@ -17452,14 +17505,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                           color: Colors.black38,
                         ),
                         border: OutlineInputBorder(
-                          borderRadius:
-                              BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         filled: true,
-                        fillColor:
-                            const Color(0xFFF9FAFB),
+                        fillColor: const Color(0xFFF9FAFB),
                       ),
-                      onSubmitted: (_) => _sendMessage(),
                     ),
                   ),
 
