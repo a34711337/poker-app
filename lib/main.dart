@@ -16904,10 +16904,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         tx.set(
           chatRef,
           {
-            'unreadCounts': {
-              currentUser.uid: 0,
-              widget.otherUid: FieldValue.increment(1),
-            },
+            'unreadCounts.${currentUser.uid}': 0,
+            'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
           },
           SetOptions(merge: true),
         );
