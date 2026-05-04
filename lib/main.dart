@@ -6840,9 +6840,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
       _showSnack('Profile updated');
 
-      if (mounted) {
-        setState(() {});
-      }
+      if (!mounted) return;
+
+      // ⭐ 回傳給上一頁，告訴他「資料更新了」
+      Navigator.pop(context, true);
     } on FirebaseAuthException catch (e) {
       _showSnack(e.message ?? 'Failed to update profile');
     } catch (e) {
@@ -12585,13 +12586,17 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           offset: const Offset(0, 50),
           onSelected: (value) async {
             if (value == 'edit_profile') {
-              await Navigator.of(context).push(
+              final result = await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (_) => ProfileEditPage(
                     session: widget.session,
                   ),
                 ),
               );
+
+              if (result == true && mounted) {
+                setState(() {});
+              }
 
             } else if (value == 'help') {
               await Navigator.of(context).push(
@@ -32394,7 +32399,6 @@ Future<void> deleteAllUserFriendData(String uid) async {
   if (cleanUid.isEmpty) return;
 
   final firestore = FirebaseFirestore.instance;
-  final refsToDelete = <DocumentReference>{};
 
   final friendshipsSnap = await firestore
       .collection('friendships')
@@ -32402,7 +32406,7 @@ Future<void> deleteAllUserFriendData(String uid) async {
       .get();
 
   for (final doc in friendshipsSnap.docs) {
-    refsToDelete.add(doc.reference);
+    await doc.reference.delete();
   }
 
   final chatsSnap = await firestore
@@ -32411,32 +32415,55 @@ Future<void> deleteAllUserFriendData(String uid) async {
       .get();
 
   for (final chatDoc in chatsSnap.docs) {
-    final messagesSnap =
-        await chatDoc.reference.collection('messages').get();
+    final messagesSnap = await chatDoc.reference.collection('messages').get();
 
     for (final messageDoc in messagesSnap.docs) {
-      refsToDelete.add(messageDoc.reference);
+      await messageDoc.reference.delete();
     }
 
-    refsToDelete.add(chatDoc.reference);
+    await chatDoc.reference.delete();
+  }
+}
+
+Future<void> deleteFriendRequestsForUser(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+
+  final sentSnap = await firestore
+      .collection('friend_requests')
+      .where('fromUid', isEqualTo: cleanUid)
+      .get();
+
+  final receivedSnap = await firestore
+      .collection('friend_requests')
+      .where('toUid', isEqualTo: cleanUid)
+      .get();
+
+  for (final doc in sentSnap.docs) {
+    await doc.reference.delete();
   }
 
-  var batch = firestore.batch();
-  var count = 0;
-
-  for (final ref in refsToDelete) {
-    batch.delete(ref);
-    count++;
-
-    if (count >= 450) {
-      await batch.commit();
-      batch = firestore.batch();
-      count = 0;
-    }
+  for (final doc in receivedSnap.docs) {
+    await doc.reference.delete();
   }
+}
 
-  if (count > 0) {
-    await batch.commit();
+Future<void> deleteTablesCreatedByUser(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+
+  final tablesSnap = await firestore
+      .collection('tables')
+      .where('createdByUid', isEqualTo: cleanUid)
+      .get();
+
+  for (final doc in tablesSnap.docs) {
+    await deleteNotificationsForTable(doc.id);
+    await doc.reference.delete();
   }
 }
 
@@ -32455,80 +32482,6 @@ Future<void> deleteNotificationsForTable(String tableId) async {
   var count = 0;
 
   for (final doc in notificationsSnap.docs) {
-    batch.delete(doc.reference);
-    count++;
-
-    if (count >= 450) {
-      await batch.commit();
-      batch = firestore.batch();
-      count = 0;
-    }
-  }
-
-  if (count > 0) {
-    await batch.commit();
-  }
-}
-
-Future<void> deleteFriendRequestsForUser(String uid) async {
-  final cleanUid = uid.trim();
-  if (cleanUid.isEmpty) return;
-
-  final firestore = FirebaseFirestore.instance;
-  final refsToDelete = <DocumentReference>{};
-
-  final sentSnap = await firestore
-      .collection('friend_requests')
-      .where('fromUid', isEqualTo: cleanUid)
-      .get();
-
-  final receivedSnap = await firestore
-      .collection('friend_requests')
-      .where('toUid', isEqualTo: cleanUid)
-      .get();
-
-  for (final doc in sentSnap.docs) {
-    refsToDelete.add(doc.reference);
-  }
-
-  for (final doc in receivedSnap.docs) {
-    refsToDelete.add(doc.reference);
-  }
-
-  var batch = firestore.batch();
-  var count = 0;
-
-  for (final ref in refsToDelete) {
-    batch.delete(ref);
-    count++;
-
-    if (count >= 450) {
-      await batch.commit();
-      batch = firestore.batch();
-      count = 0;
-    }
-  }
-
-  if (count > 0) {
-    await batch.commit();
-  }
-}
-
-Future<void> deleteTablesCreatedByUser(String uid) async {
-  final cleanUid = uid.trim();
-  if (cleanUid.isEmpty) return;
-
-  final firestore = FirebaseFirestore.instance;
-
-  final tablesSnap = await firestore
-      .collection('tables')
-      .where('createdByUid', isEqualTo: cleanUid)
-      .get();
-
-  var batch = firestore.batch();
-  var count = 0;
-
-  for (final doc in tablesSnap.docs) {
     batch.delete(doc.reference);
     count++;
 
