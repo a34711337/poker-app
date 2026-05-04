@@ -15746,7 +15746,8 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                         final otherUid =
                             (otherUser['uid'] ?? '').toString().trim();
 
-                        return !blockedUids.contains(otherUid);
+                        return otherUid.isNotEmpty &&
+                            !blockedUids.contains(otherUid);
                       })
                       .toList()
                     ..sort((a, b) {
@@ -15876,318 +15877,367 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                 .toString();
 
                         final subtitleName =
-                            (otherUser['displayName'] ?? '')
-                                .toString()
-                                .trim();
+                            (otherUser['displayName'] ?? '').toString().trim();
 
                         final chatId = (data['chatId'] ?? '').toString();
 
-                        return FutureBuilder<bool>(
-                          future: isBlockedEitherWay(
-                            currentUid: currentUid,
-                            otherUid: otherUid,
-                          ),
-                          builder: (context, blockedSnapshot) {
-                            if (blockedSnapshot.data == true) {
-                              return const SizedBox();
+                        return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                          future: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(otherUid)
+                              .get(),
+                          builder: (context, userCheckSnapshot) {
+                            if (userCheckSnapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const SizedBox.shrink();
                             }
 
-                            return StreamBuilder<
-                                DocumentSnapshot<Map<String, dynamic>>>(
-                              stream: FirebaseFirestore.instance
-                                  .collection('direct_chats')
-                                  .doc(chatId)
-                                  .snapshots(),
-                              builder: (context, chatSnapshot) {
-                                final chatData = chatSnapshot.data?.data() ?? {};
-                                final unreadCounts = Map<String, dynamic>.from(
-                                  chatData['unreadCounts'] ?? {},
-                                );
+                            final userExists =
+                                userCheckSnapshot.data != null &&
+                                userCheckSnapshot.data!.exists &&
+                                userCheckSnapshot.data!.data()?['isActive'] !=
+                                    false;
 
-                                final rawUnread =
-                                    unreadCounts[currentUid] ?? 0;
+                            if (!userExists) {
+                              Future.microtask(() async {
+                                try {
+                                  final firestore =
+                                      FirebaseFirestore.instance;
 
-                                final unreadCount = rawUnread is int
-                                    ? rawUnread
-                                    : int.tryParse(rawUnread.toString()) ?? 0;
+                                  final cleanChatId = chatId.trim();
 
-                                return ListTile(
-                                  contentPadding: EdgeInsets.zero,
-                                  onTap: () => _openChatFromFriendship(data),
-                                  leading: FutureBuilder<
-                                      DocumentSnapshot<Map<String, dynamic>>>(
-                                    future: FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(otherUid)
-                                        .get(),
-                                    builder: (context, userSnap) {
-                                      final userData =
-                                          userSnap.data?.data() ?? otherUser;
+                                  await doc.reference.delete();
 
-                                      final avatar =
-                                          resolveAvatarSnapshotFromMap(
-                                        userData,
-                                      );
+                                  if (cleanChatId.isNotEmpty) {
+                                    final chatRef = firestore
+                                        .collection('direct_chats')
+                                        .doc(cleanChatId);
 
-                                      return buildAppAvatar(
+                                    final messagesSnap =
+                                        await chatRef.collection('messages').get();
+
+                                    for (final messageDoc
+                                        in messagesSnap.docs) {
+                                      await messageDoc.reference.delete();
+                                    }
+
+                                    await chatRef.delete();
+                                  }
+                                } catch (e) {
+                                  debugPrint(
+                                    'cleanup deleted friend error: $e',
+                                  );
+                                }
+                              });
+
+                              return const SizedBox.shrink();
+                            }
+
+                            return FutureBuilder<bool>(
+                              future: isBlockedEitherWay(
+                                currentUid: currentUid,
+                                otherUid: otherUid,
+                              ),
+                              builder: (context, blockedSnapshot) {
+                                if (blockedSnapshot.data == true) {
+                                  return const SizedBox();
+                                }
+
+                                return StreamBuilder<
+                                    DocumentSnapshot<Map<String, dynamic>>>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('direct_chats')
+                                      .doc(chatId)
+                                      .snapshots(),
+                                  builder: (context, chatSnapshot) {
+                                    final chatData =
+                                        chatSnapshot.data?.data() ?? {};
+                                    final unreadCounts =
+                                        Map<String, dynamic>.from(
+                                      chatData['unreadCounts'] ?? {},
+                                    );
+
+                                    final rawUnread =
+                                        unreadCounts[currentUid] ?? 0;
+
+                                    final unreadCount = rawUnread is int
+                                        ? rawUnread
+                                        : int.tryParse(
+                                              rawUnread.toString(),
+                                            ) ??
+                                            0;
+
+                                    return ListTile(
+                                      contentPadding: EdgeInsets.zero,
+                                      onTap: () =>
+                                          _openChatFromFriendship(data),
+                                      leading: buildAppAvatar(
                                         radius: 20,
-                                        avatar: avatar,
+                                        avatar: resolveAvatarSnapshotFromMap(
+                                          userCheckSnapshot.data!.data() ??
+                                              otherUser,
+                                        ),
                                         displayName: displayName,
                                         iconSize: 18,
                                         textSize: 14,
-                                      );
-                                    },
-                                  ),
-                                  title: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          displayName,
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                            fontWeight: FontWeight.w700,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
                                       ),
-                                      if (unreadCount > 0)
-                                        Container(
-                                          margin:
-                                              const EdgeInsets.only(left: 8),
-                                          padding:
-                                              const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 3,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFDC2626),
-                                            borderRadius:
-                                                BorderRadius.circular(999),
-                                          ),
-                                          constraints: const BoxConstraints(
-                                            minWidth: 22,
-                                            minHeight: 22,
-                                          ),
-                                          child: Text(
-                                            unreadCount > 99
-                                                ? '99+'
-                                                : unreadCount.toString(),
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w800,
+                                      title: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              displayName,
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
-                                        ),
-                                    ],
-                                  ),
-                                  subtitle: subtitleName.isNotEmpty &&
-                                          subtitleName != displayName
-                                      ? Text(
-                                          subtitleName,
-                                          style: const TextStyle(
-                                            color: Colors.black54,
-                                          ),
-                                        )
-                                      : Text(
-                                          unreadCount > 0
-                                              ? tr(
-                                                  context,
-                                                  '$unreadCount unread message${unreadCount > 1 ? 's' : ''}',
-                                                  zhTw:
-                                                      '$unreadCount 則未讀訊息',
-                                                  zhCn:
-                                                      '$unreadCount 条未读消息',
-                                                  ko:
-                                                      '읽지 않은 메시지 $unreadCount개',
-                                                  ja:
-                                                      '未読メッセージ $unreadCount 件',
-                                                  de:
-                                                      '$unreadCount ungelesene Nachricht${unreadCount > 1 ? 'en' : ''}',
-                                                  fr:
-                                                      '$unreadCount message${unreadCount > 1 ? 's' : ''} non lu${unreadCount > 1 ? 's' : ''}',
-                                                  ar:
-                                                      '$unreadCount رسالة غير مقروءة',
-                                                  ru:
-                                                      '$unreadCount непрочитанных сообщений',
-                                                  trk:
-                                                      '$unreadCount okunmamış mesaj',
-                                                  es:
-                                                      '$unreadCount mensaje${unreadCount > 1 ? 's' : ''} sin leer',
-                                                  it:
-                                                      '$unreadCount messagg${unreadCount > 1 ? 'i' : 'io'} non lett${unreadCount > 1 ? 'i' : 'o'}',
-                                                  pl:
-                                                      '$unreadCount nieprzeczytanych wiadomości',
-                                                  pt:
-                                                      '$unreadCount mensagem${unreadCount > 1 ? 'ens' : ''} não lida${unreadCount > 1 ? 's' : ''}',
-                                                  th:
-                                                      '$unreadCount ข้อความที่ยังไม่ได้อ่าน',
-                                                  id:
-                                                      '$unreadCount pesan belum dibaca',
-                                                  hi:
-                                                      '$unreadCount अपठित संदेश',
-                                                  bn:
-                                                      '$unreadCount টি অপঠিত বার্তা',
-                                                )
-                                              : tr(
-                                                  context,
-                                                  'Tap to open chat',
-                                                  zhTw: '點擊開啟聊天',
-                                                  zhCn: '点击打开聊天',
-                                                  ko: '눌러서 채팅 열기',
-                                                  ja: 'タップしてチャットを開く',
-                                                  de: 'Tippen zum Öffnen des Chats',
-                                                  fr: 'Touchez pour ouvrir le chat',
-                                                  ar: 'اضغط لفتح الدردشة',
-                                                  ru: 'Нажмите, чтобы открыть чат',
-                                                  trk: 'Sohbeti açmak için dokun',
-                                                  es: 'Toca para abrir el chat',
-                                                  it: 'Tocca per aprire la chat',
-                                                  pl: 'Kliknij, aby otworzyć czat',
-                                                  pt: 'Toque para abrir o chat',
-                                                  th: 'แตะเพื่อเปิดแชท',
-                                                  id: 'Ketuk untuk membuka chat',
-                                                  hi: 'चैट खोलने के लिए टैप करें',
-                                                  bn: 'চ্যাট খুলতে চাপুন',
+                                          if (unreadCount > 0)
+                                            Container(
+                                              margin:
+                                                  const EdgeInsets.only(left: 8),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 3,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFDC2626),
+                                                borderRadius:
+                                                    BorderRadius.circular(999),
+                                              ),
+                                              constraints:
+                                                  const BoxConstraints(
+                                                minWidth: 22,
+                                                minHeight: 22,
+                                              ),
+                                              child: Text(
+                                                unreadCount > 99
+                                                    ? '99+'
+                                                    : unreadCount.toString(),
+                                                textAlign: TextAlign.center,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w800,
                                                 ),
-                                          style: const TextStyle(
-                                            color: Colors.black54,
-                                          ),
-                                        ),
-                                  trailing: PopupMenuButton<String>(
-                                    color: Colors.white,
-                                    surfaceTintColor: Colors.white,
-                                    onSelected: (value) async {
-                                      if (value == 'chat') {
-                                        await _openChatFromFriendship(data);
-                                      } else if (value == 'edit_name') {
-                                        await _editFriendNickname(data);
-                                      } else if (value == 'delete_friend') {
-                                        await _deleteFriendship(data);
-                                      } else if (value == 'block') {
-                                        await _blockFriend(data);
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'chat',
-                                        child: Text(
-                                          tr(
-                                            context,
-                                            'Open chat',
-                                            zhTw: '開啟聊天',
-                                            zhCn: '打开聊天',
-                                            ko: '채팅 열기',
-                                            ja: 'チャットを開く',
-                                            de: 'Chat öffnen',
-                                            fr: 'Ouvrir le chat',
-                                            ar: 'فتح الدردشة',
-                                            ru: 'Открыть чат',
-                                            trk: 'Sohbeti Aç',
-                                            es: 'Abrir chat',
-                                            it: 'Apri chat',
-                                            pl: 'Otwórz czat',
-                                            pt: 'Abrir chat',
-                                            th: 'เปิดแชท',
-                                            id: 'Buka chat',
-                                            hi: 'चैट खोलें',
-                                            bn: 'চ্যাট খুলুন',
-                                          ),
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
-                                      PopupMenuItem(
-                                        value: 'edit_name',
-                                        child: Text(
-                                          tr(
-                                            context,
-                                            'Edit name',
-                                            zhTw: '編輯名稱',
-                                            zhCn: '编辑名称',
-                                            ko: '이름 수정',
-                                            ja: '名前を編集',
-                                            de: 'Namen bearbeiten',
-                                            fr: 'Modifier le nom',
-                                            ar: 'تعديل الاسم',
-                                            ru: 'Изменить имя',
-                                            trk: 'Adı Düzenle',
-                                            es: 'Editar nombre',
-                                            it: 'Modifica nome',
-                                            pl: 'Edytuj nazwę',
-                                            pt: 'Editar nome',
-                                            th: 'แก้ไขชื่อ',
-                                            id: 'Edit nama',
-                                            hi: 'नाम संपादित करें',
-                                            bn: 'নাম সম্পাদনা',
+                                      subtitle: subtitleName.isNotEmpty &&
+                                              subtitleName != displayName
+                                          ? Text(
+                                              subtitleName,
+                                              style: const TextStyle(
+                                                color: Colors.black54,
+                                              ),
+                                            )
+                                          : Text(
+                                              unreadCount > 0
+                                                  ? tr(
+                                                      context,
+                                                      '$unreadCount unread message${unreadCount > 1 ? 's' : ''}',
+                                                      zhTw:
+                                                          '$unreadCount 則未讀訊息',
+                                                      zhCn:
+                                                          '$unreadCount 条未读消息',
+                                                      ko:
+                                                          '읽지 않은 메시지 $unreadCount개',
+                                                      ja:
+                                                          '未読メッセージ $unreadCount 件',
+                                                      de:
+                                                          '$unreadCount ungelesene Nachricht${unreadCount > 1 ? 'en' : ''}',
+                                                      fr:
+                                                          '$unreadCount message${unreadCount > 1 ? 's' : ''} non lu${unreadCount > 1 ? 's' : ''}',
+                                                      ar:
+                                                          '$unreadCount رسالة غير مقروءة',
+                                                      ru:
+                                                          '$unreadCount непрочитанных сообщений',
+                                                      trk:
+                                                          '$unreadCount okunmamış mesaj',
+                                                      es:
+                                                          '$unreadCount mensaje${unreadCount > 1 ? 's' : ''} sin leer',
+                                                      it:
+                                                          '$unreadCount messagg${unreadCount > 1 ? 'i' : 'io'} non lett${unreadCount > 1 ? 'i' : 'o'}',
+                                                      pl:
+                                                          '$unreadCount nieprzeczytanych wiadomości',
+                                                      pt:
+                                                          '$unreadCount mensagem${unreadCount > 1 ? 'ens' : ''} não lida${unreadCount > 1 ? 's' : ''}',
+                                                      th:
+                                                          '$unreadCount ข้อความที่ยังไม่ได้อ่าน',
+                                                      id:
+                                                          '$unreadCount pesan belum dibaca',
+                                                      hi:
+                                                          '$unreadCount अपठित संदेश',
+                                                      bn:
+                                                          '$unreadCount টি অপঠিত বার্তা',
+                                                    )
+                                                  : tr(
+                                                      context,
+                                                      'Tap to open chat',
+                                                      zhTw: '點擊開啟聊天',
+                                                      zhCn: '点击打开聊天',
+                                                      ko: '눌러서 채팅 열기',
+                                                      ja: 'タップしてチャットを開く',
+                                                      de:
+                                                          'Tippen zum Öffnen des Chats',
+                                                      fr:
+                                                          'Touchez pour ouvrir le chat',
+                                                      ar: 'اضغط لفتح الدردشة',
+                                                      ru:
+                                                          'Нажмите, чтобы открыть чат',
+                                                      trk:
+                                                          'Sohbeti açmak için dokun',
+                                                      es: 'Toca para abrir el chat',
+                                                      it: 'Tocca per aprire la chat',
+                                                      pl: 'Kliknij, aby otworzyć czat',
+                                                      pt: 'Toque para abrir o chat',
+                                                      th: 'แตะเพื่อเปิดแชท',
+                                                      id: 'Ketuk untuk membuka chat',
+                                                      hi: 'चैट खोलने के लिए टैप करें',
+                                                      bn: 'চ্যাট খুলতে চাপুন',
+                                                    ),
+                                              style: const TextStyle(
+                                                color: Colors.black54,
+                                              ),
+                                            ),
+                                      trailing: PopupMenuButton<String>(
+                                        color: Colors.white,
+                                        surfaceTintColor: Colors.white,
+                                        onSelected: (value) async {
+                                          if (value == 'chat') {
+                                            await _openChatFromFriendship(data);
+                                          } else if (value == 'edit_name') {
+                                            await _editFriendNickname(data);
+                                          } else if (value == 'delete_friend') {
+                                            await _deleteFriendship(data);
+                                          } else if (value == 'block') {
+                                            await _blockFriend(data);
+                                          }
+                                        },
+                                        itemBuilder: (context) => [
+                                          PopupMenuItem(
+                                            value: 'chat',
+                                            child: Text(
+                                              tr(
+                                                context,
+                                                'Open chat',
+                                                zhTw: '開啟聊天',
+                                                zhCn: '打开聊天',
+                                                ko: '채팅 열기',
+                                                ja: 'チャットを開く',
+                                                de: 'Chat öffnen',
+                                                fr: 'Ouvrir le chat',
+                                                ar: 'فتح الدردشة',
+                                                ru: 'Открыть чат',
+                                                trk: 'Sohbeti Aç',
+                                                es: 'Abrir chat',
+                                                it: 'Apri chat',
+                                                pl: 'Otwórz czat',
+                                                pt: 'Abrir chat',
+                                                th: 'เปิดแชท',
+                                                id: 'Buka chat',
+                                                hi: 'चैट खोलें',
+                                                bn: 'চ্যাট খুলুন',
+                                              ),
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                              ),
+                                            ),
                                           ),
-                                          style: const TextStyle(
-                                            color: Colors.black87,
+                                          PopupMenuItem(
+                                            value: 'edit_name',
+                                            child: Text(
+                                              tr(
+                                                context,
+                                                'Edit name',
+                                                zhTw: '編輯名稱',
+                                                zhCn: '编辑名称',
+                                                ko: '이름 수정',
+                                                ja: '名前を編集',
+                                                de: 'Namen bearbeiten',
+                                                fr: 'Modifier le nom',
+                                                ar: 'تعديل الاسم',
+                                                ru: 'Изменить имя',
+                                                trk: 'Adı Düzenle',
+                                                es: 'Editar nombre',
+                                                it: 'Modifica nome',
+                                                pl: 'Edytuj nazwę',
+                                                pt: 'Editar nome',
+                                                th: 'แก้ไขชื่อ',
+                                                id: 'Edit nama',
+                                                hi: 'नाम संपादित करें',
+                                                bn: 'নাম সম্পাদনা',
+                                              ),
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                              ),
+                                            ),
                                           ),
-                                        ),
+                                          PopupMenuItem(
+                                            value: 'delete_friend',
+                                            child: Text(
+                                              tr(
+                                                context,
+                                                'Delete friend',
+                                                zhTw: '刪除好友',
+                                                zhCn: '删除好友',
+                                                ko: '친구 삭제',
+                                                ja: '友達を削除',
+                                                de: 'Freund löschen',
+                                                fr: 'Supprimer l’ami',
+                                                ar: 'حذف الصديق',
+                                                ru: 'Удалить друга',
+                                                trk: 'Arkadaşı Sil',
+                                                es: 'Eliminar amigo',
+                                                it: 'Elimina amico',
+                                                pl: 'Usuń znajomego',
+                                                pt: 'Excluir amigo',
+                                                th: 'ลบเพื่อน',
+                                                id: 'Hapus teman',
+                                                hi: 'दोस्त हटाएं',
+                                                bn: 'বন্ধু মুছুন',
+                                              ),
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                          PopupMenuItem(
+                                            value: 'block',
+                                            child: Text(
+                                              tr(
+                                                context,
+                                                'Blacklist',
+                                                zhTw: '加入黑名單',
+                                                zhCn: '加入黑名单',
+                                                ko: '차단 목록',
+                                                ja: 'ブラックリスト',
+                                                de: 'Blacklist',
+                                                fr: 'Liste noire',
+                                                ar: 'القائمة السوداء',
+                                                ru: 'Чёрный список',
+                                                trk: 'Kara Liste',
+                                                es: 'Lista negra',
+                                                it: 'Blacklist',
+                                                pl: 'Czarna lista',
+                                                pt: 'Lista negra',
+                                                th: 'บัญชีดำ',
+                                                id: 'Daftar hitam',
+                                                hi: 'ब्लैकलिस्ट',
+                                                bn: 'ব্ল্যাকলिस्ट',
+                                              ),
+                                              style: const TextStyle(
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      PopupMenuItem(
-                                        value: 'delete_friend',
-                                        child: Text(
-                                          tr(
-                                            context,
-                                            'Delete friend',
-                                            zhTw: '刪除好友',
-                                            zhCn: '删除好友',
-                                            ko: '친구 삭제',
-                                            ja: '友達を削除',
-                                            de: 'Freund löschen',
-                                            fr: 'Supprimer l’ami',
-                                            ar: 'حذف الصديق',
-                                            ru: 'Удалить друга',
-                                            trk: 'Arkadaşı Sil',
-                                            es: 'Eliminar amigo',
-                                            it: 'Elimina amico',
-                                            pl: 'Usuń znajomego',
-                                            pt: 'Excluir amigo',
-                                            th: 'ลบเพื่อน',
-                                            id: 'Hapus teman',
-                                            hi: 'दोस्त हटाएं',
-                                            bn: 'বন্ধু মুছুন',
-                                          ),
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                      PopupMenuItem(
-                                        value: 'block',
-                                        child: Text(
-                                          tr(
-                                            context,
-                                            'Blacklist',
-                                            zhTw: '加入黑名單',
-                                            zhCn: '加入黑名单',
-                                            ko: '차단 목록',
-                                            ja: 'ブラックリスト',
-                                            de: 'Blacklist',
-                                            fr: 'Liste noire',
-                                            ar: 'القائمة السوداء',
-                                            ru: 'Чёрный список',
-                                            trk: 'Kara Liste',
-                                            es: 'Lista negra',
-                                            it: 'Blacklist',
-                                            pl: 'Czarna lista',
-                                            pt: 'Lista negra',
-                                            th: 'บัญชีดำ',
-                                            id: 'Daftar hitam',
-                                            hi: 'ब्लैकलिस्ट',
-                                            bn: 'ব্ল্যাকলিস্ট',
-                                          ),
-                                          style: const TextStyle(
-                                            color: Colors.black87,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 );
                               },
                             );
