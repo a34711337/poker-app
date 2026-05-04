@@ -16897,10 +16897,24 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
-        tx.update(chatRef, {
-          'unreadCounts.${currentUser.uid}': 0,
-          'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
-        });        
+        final chatSnap = await tx.get(chatRef);
+        final chatData = chatSnap.data() ?? {};
+        final oldUnreadCounts =
+            Map<String, dynamic>.from(chatData['unreadCounts'] ?? {});
+
+        final oldOtherCount =
+            int.tryParse((oldUnreadCounts[widget.otherUid] ?? 0).toString()) ?? 0;
+
+        oldUnreadCounts[currentUser.uid] = 0;
+        oldUnreadCounts[widget.otherUid] = oldOtherCount + 1;
+
+        tx.set(
+          chatRef,
+          {
+            'unreadCounts': oldUnreadCounts,
+          },
+          SetOptions(merge: true),
+        );       
 
         tx.set(
           FirebaseFirestore.instance.collection('friendships').doc(widget.chatId),
