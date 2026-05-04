@@ -476,10 +476,20 @@ class _PokerReservationAppState
   void initState() {
     super.initState();
 
-    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
-      if (user != null) {
-        _loadSettings();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user == null) {
+        currentAppSession = null;
+
+        if (!kIsWeb) {
+          await FlutterAppBadger.removeBadge();
+        }
+
+        return;
       }
+
+      await _loadSettings();
+      await setupPushNotifications();
+      await refreshAppBadgeCount();
     });
   }
 
@@ -17225,20 +17235,24 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       : 0;
 
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (messagesScrollController.hasClients &&
-                        chatKeyword.isEmpty &&
-                        snapshot.connectionState != ConnectionState.waiting) {
-                      if (showUnreadDivider && unreadIndex > 0) {
-                        messagesScrollController.animateTo(
-                          unreadIndex * 72.0,
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeOut,
-                        );
-                      } else {
-                        messagesScrollController.jumpTo(
-                          messagesScrollController.position.maxScrollExtent,
-                        );
-                      }
+                    if (!messagesScrollController.hasClients) return;
+                    if (chatKeyword.isNotEmpty) return;
+
+                    final maxScroll = messagesScrollController.position.maxScrollExtent;
+
+                    /// ✅ 有未讀 → 滑到未讀位置
+                    if (showUnreadDivider && unreadIndex >= 0) {
+                      final targetOffset = unreadIndex * 80.0; // 比72安全一點
+
+                      messagesScrollController.animateTo(
+                        targetOffset.clamp(0, maxScroll),
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeOut,
+                      );
+                    } 
+                    /// ✅ 沒未讀 → 滑到底
+                    else {
+                      messagesScrollController.jumpTo(maxScroll);
                     }
                   });
 
@@ -27491,9 +27505,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final otherUser =
         (userA['uid'] ?? '').toString() == currentUser.uid ? userB : userA;
 
+    final otherUid = (otherUser['uid'] ?? '').toString();    
+
     final myNickname = (nicknames[currentUser.uid] ?? '').toString().trim();
 
-    final chatId = (friendshipData['chatId'] ?? '').toString();
+    final chatId = buildDirectChatId(currentUser.uid, otherUid);
 
     if (chatId.isNotEmpty) {
       await FirebaseFirestore.instance

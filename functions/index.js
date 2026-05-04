@@ -835,31 +835,20 @@ exports.sendChatPush = functionsV1.firestore
     const targets = members.filter((uid) => uid && uid !== senderUid);
     const tokens = await getTokensForUserIds(targets);
 
-    let badge = 1;
+    let badge = 0;
 
     if (targets.length > 0) {
       const targetUid = targets[0];
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const chatsSnap = await db
+      const chatDocFresh = await db
         .collection("direct_chats")
-        .where("memberUids", "array-contains", targetUid)
+        .doc(chatId)
         .get();
 
-      let unreadTotal = 0;
+      const chatDataFresh = chatDocFresh.data() || {};
+      const unreadCounts = chatDataFresh.unreadCounts || {};
 
-      chatsSnap.forEach((doc) => {
-        const data = doc.data() || {};
-        const unreadCounts = data.unreadCounts || {};
-        const count = Number(unreadCounts[targetUid] || 0);
-
-        if (!Number.isNaN(count)) {
-          unreadTotal += count;
-        }
-      });
-
-      badge = unreadTotal > 0 ? unreadTotal : 1;
+      badge = Number(unreadCounts[targetUid] || 0);
     }
 
     const senderDoc = await db.collection("users").doc(senderUid).get();
