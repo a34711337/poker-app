@@ -800,6 +800,16 @@ exports.sendNewTablePush = functionsV1.firestore
         title = `${hostName} একটি নতুন টেবিল তৈরি করেছে`;
       }
 
+      await db.collection("notifications").add({
+        targetUid,
+        title,
+        message: bodyParts.join(" · "),
+        type: "new_table",
+        tableId: tableId.toString(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        read: false,
+      });
+
       await sendPush({
         tokens,
         title,

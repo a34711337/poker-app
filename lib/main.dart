@@ -562,10 +562,70 @@ class _PokerReservationAppState
 
           darkTheme: ThemeData(
             useMaterial3: true,
-            colorSchemeSeed: Colors.green,
             brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: Colors.green,
+              brightness: Brightness.dark,
+            ).copyWith(
+              surface: Colors.white,
+              onSurface: Colors.black87,
+              primary: const Color(0xFF2E7D32),
+              onPrimary: Colors.white,
+            ),
             scaffoldBackgroundColor: const Color(0xFF111827),
-            cardColor: const Color(0xFF1F2937),
+            cardColor: Colors.white,
+
+            cardTheme: CardThemeData(
+              color: Colors.white,
+              surfaceTintColor: Colors.white,
+            ),
+
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              titleTextStyle: TextStyle(
+                color: Colors.black87,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+              ),
+              contentTextStyle: TextStyle(
+                color: Colors.black87,
+                fontSize: 16,
+              ),
+            ),
+
+            listTileTheme: const ListTileThemeData(
+              textColor: Colors.black87,
+              iconColor: Colors.black87,
+              titleTextStyle: TextStyle(
+                color: Colors.black87,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+              subtitleTextStyle: TextStyle(
+                color: Colors.black54,
+                fontSize: 14,
+              ),
+            ),
+
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: const Color(0xFFF9FAFB),
+              labelStyle: const TextStyle(color: Colors.black87),
+              hintStyle: const TextStyle(color: Colors.black54),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+
+            textTheme: const TextTheme(
+              bodyLarge: TextStyle(color: Colors.black87),
+              bodyMedium: TextStyle(color: Colors.black87),
+              bodySmall: TextStyle(color: Colors.black54),
+              titleLarge: TextStyle(color: Colors.black87),
+              titleMedium: TextStyle(color: Colors.black87),
+              titleSmall: TextStyle(color: Colors.black87),
+            ),
           ),
 
           home: const AuthGate(),
@@ -12595,7 +12655,41 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               );
 
               if (result == true && mounted) {
-                setState(() {});
+                final user = FirebaseAuth.instance.currentUser;
+
+                if (user != null) {
+                  final doc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .get();
+
+                  final data = doc.data() ?? {};
+
+                  final newName =
+                      (data['displayName'] ?? widget.session.name).toString();
+
+                  final newShortName =
+                      (data['shortName'] ?? newName).toString();
+
+                  final newSession = UserSession(
+                    name: newName,
+                    shortName: newShortName,
+                    role: widget.session.role,
+                    hasCompletedTutorial: widget.session.hasCompletedTutorial,
+                  );
+
+                  currentAppSession = newSession;
+
+                  if (!mounted) return;
+
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(
+                      builder: (_) => TableListPage(
+                        session: newSession,
+                      ),
+                    ),
+                  );
+                }
               }
 
             } else if (value == 'help') {
@@ -13941,6 +14035,11 @@ class NewTableNotificationsPage extends StatelessWidget {
               return ListTile(
                 title: Text(title),
                 subtitle: Text(message),
+
+                // ⭐ 這行是關鍵
+                onTap: () async {
+                  await handleNotificationTap(data);
+                },
               );
             },
           );
@@ -29814,6 +29913,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
     super.initState();
 
     _hasPaidAccess = widget.hasPaidAccess;
+
+    // ⭐ 進頁面就同步一次
+    Future.microtask(() => _reloadStatsAccess());
   }
 
   Future<void> _reloadStatsAccess() async {
@@ -30041,6 +30143,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
         Uri.parse(checkoutUrl),
         mode: LaunchMode.externalApplication,
       );
+
+      // ⭐ 等使用者付款完回來後刷新
+      await Future.delayed(const Duration(seconds: 2));
+      await _reloadStatsAccess();
     } catch (e) {
       if (!mounted) return;
 
