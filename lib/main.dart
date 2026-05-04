@@ -16811,15 +16811,11 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
       await FirebaseFirestore.instance
           .collection('direct_chats')
           .doc(widget.chatId)
-          .set({
-        'unreadCounts': {
-          currentUid: 0,
-        },
-        'lastReadAt': {
-          currentUid: FieldValue.serverTimestamp(),
-        },
+          .update({
+        'unreadCounts.$currentUid': 0,
+        'lastReadAt.$currentUid': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      });
 
       await refreshAppBadgeCount();
     } catch (e) {
@@ -16901,14 +16897,10 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
 
-        tx.set(
-          chatRef,
-          {
-            'unreadCounts.${currentUser.uid}': 0,
-            'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
-          },
-          SetOptions(merge: true),
-        );
+        tx.update(chatRef, {
+          'unreadCounts.${currentUser.uid}': 0,
+          'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
+        });        
 
         tx.set(
           FirebaseFirestore.instance.collection('friendships').doc(widget.chatId),
