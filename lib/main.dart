@@ -16732,15 +16732,65 @@ class ChatRoomPage extends StatefulWidget {
 class _ChatRoomPageState extends State<ChatRoomPage> {
   final TextEditingController messageController = TextEditingController();
   final TextEditingController chatSearchController = TextEditingController();
+  final ScrollController messagesScrollController = ScrollController();
 
   bool isSending = false;
   bool isSearchMode = false;
   String chatKeyword = '';
+  Timestamp? openedLastReadAt;
 
   @override
   void initState() {
     super.initState();
-    _markChatAsRead();
+    _loadLastReadThenMarkRead();
+  }
+
+  Future<void> _loadLastReadThenMarkRead() async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (currentUid.isEmpty) return;
+
+    final chatDoc = await FirebaseFirestore.instance
+        .collection('direct_chats')
+        .doc(widget.chatId)
+        .get();
+
+    final data = chatDoc.data() ?? {};
+    final lastReadAt = Map<String, dynamic>.from(data['lastReadAt'] ?? {});
+
+    if (mounted) {
+      setState(() {
+        openedLastReadAt = lastReadAt[currentUid] is Timestamp
+            ? lastReadAt[currentUid] as Timestamp
+            : null;
+      });
+    }
+
+    await _markChatAsRead();
+
+    // Optional debug / localized log (18 languages example)
+    debugPrint(
+      tr(
+        context,
+        'Last read synced',
+        zhTw: '已同步最後閱讀時間',
+        zhCn: '已同步最后阅读时间',
+        ko: '마지막 읽은 시간 동기화됨',
+        ja: '最終既読時間を同期しました',
+        de: 'Letzter Lesezeitpunkt synchronisiert',
+        fr: 'Dernière lecture synchronisée',
+        ar: 'تمت مزامنة آخر وقت قراءة',
+        ru: 'Время последнего прочтения синхронизировано',
+        trk: 'Son okuma zamanı senkronize edildi',
+        es: 'Última lectura sincronizada',
+        it: 'Ultima lettura sincronizzata',
+        pl: 'Ostatni odczyt zsynchronizowany',
+        pt: 'Última leitura sincronizada',
+        th: 'ซิงค์เวลาอ่านล่าสุดแล้ว',
+        id: 'Waktu baca terakhir disinkronkan',
+        hi: 'अंतिम पढ़ने का समय सिंक हो गया',
+        bn: 'শেষ পড়ার সময় সিঙ্ক হয়েছে',
+      ),
+    );
   }
 
   Future<void> _markChatAsRead() async {
@@ -16844,10 +16894,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
         tx.set(
           chatRef,
           {
-            'unreadCounts': {
-              currentUser.uid: 0,
-              widget.otherUid: FieldValue.increment(1),
-            },
+            'unreadCounts.${currentUser.uid}': 0,
+            'unreadCounts.${widget.otherUid}': FieldValue.increment(1),
           },
           SetOptions(merge: true),
         );
@@ -16942,6 +16990,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
     _markChatAsRead();
     messageController.dispose();
     chatSearchController.dispose();
+    messagesScrollController.dispose();
     super.dispose();
   }
 
@@ -17152,42 +17201,140 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     );
                   }
 
+                  int unreadIndex = -1;
+
+                  if (openedLastReadAt != null) {
+                    for (int i = 0; i < docs.length; i++) {
+                      final data = docs[i].data();
+                      final senderUid = (data['senderUid'] ?? '').toString();
+                      final createdAt = data['createdAt'];
+
+                      if (senderUid != currentUid &&
+                          createdAt is Timestamp &&
+                          createdAt.compareTo(openedLastReadAt!) > 0) {
+                        unreadIndex = i;
+                        break;
+                      }
+                    }
+                  }
+
+                  final showUnreadDivider = unreadIndex >= 0;
+
+                  final unreadMessageCount = showUnreadDivider
+                      ? docs.length - unreadIndex
+                      : 0;
+
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (messagesScrollController.hasClients &&
+                        chatKeyword.isEmpty &&
+                        snapshot.connectionState != ConnectionState.waiting) {
+                      if (showUnreadDivider && unreadIndex > 0) {
+                        messagesScrollController.animateTo(
+                          unreadIndex * 72.0,
+                          duration: const Duration(milliseconds: 350),
+                          curve: Curves.easeOut,
+                        );
+                      } else {
+                        messagesScrollController.jumpTo(
+                          messagesScrollController.position.maxScrollExtent,
+                        );
+                      }
+                    }
+                  });
+
+
+
                   return ListView.builder(
+                    controller: messagesScrollController,
                     padding: const EdgeInsets.all(16),
-                    itemCount: docs.length,
+                    itemCount: docs.length + (showUnreadDivider ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final data = docs[index].data();
+
+                      /// ⭐ 未讀分隔線
+                      if (showUnreadDivider && index == unreadIndex) {
+                        return TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0.0, end: 1.0),
+                          duration: const Duration(milliseconds: 450),
+                          builder: (context, value, child) {
+                            return Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 10 * (1 - value)),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: Row(
+                              children: [
+                                const Expanded(child: Divider()),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  child: Text(
+                                    tr(
+                                      context,
+                                      '$unreadMessageCount unread',
+                                      zhTw: '$unreadMessageCount 則未讀',
+                                      zhCn: '$unreadMessageCount 条未读',
+                                      ko: '$unreadMessageCount개 읽지 않음',
+                                      ja: '$unreadMessageCount件の未読',
+                                      de: '$unreadMessageCount ungelesen',
+                                      fr: '$unreadMessageCount non lus',
+                                      ar: '$unreadMessageCount غير مقروء',
+                                      ru: '$unreadMessageCount непрочитанных',
+                                      trk: '$unreadMessageCount okunmamış',
+                                      es: '$unreadMessageCount no leídos',
+                                      it: '$unreadMessageCount non letti',
+                                      pl: '$unreadMessageCount nieprzeczytane',
+                                      pt: '$unreadMessageCount não lidas',
+                                      th: '$unreadMessageCount ข้อความที่ยังไม่ได้อ่าน',
+                                      id: '$unreadMessageCount belum dibaca',
+                                      hi: '$unreadMessageCount अपठित',
+                                      bn: '$unreadMessageCount অপঠিত',
+                                    ),
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                                const Expanded(child: Divider()),
+                              ],
+                            ),
+                          ),
+                        );
+                      }
+
+                      /// ⭐ 正常訊息 index 修正
+                      final realIndex =
+                          showUnreadDivider && index > unreadIndex ? index - 1 : index;
+
+                      final data = docs[realIndex].data();
 
                       final isMine =
-                          (data['senderUid'] ?? '').toString() ==
-                              currentUid;
+                          (data['senderUid'] ?? '').toString() == currentUid;
 
-                      final text =
-                          (data['text'] ?? '').toString();
+                      final text = (data['text'] ?? '').toString();
 
                       return Align(
-                        alignment: isMine
-                            ? Alignment.centerRight
-                            : Alignment.centerLeft,
+                        alignment:
+                            isMine ? Alignment.centerRight : Alignment.centerLeft,
                         child: GestureDetector(
                           onLongPress: () => _copyMessage(text),
                           child: Container(
-                            margin: const EdgeInsets.only(
-                              bottom: 10,
-                            ),
+                            margin: const EdgeInsets.only(bottom: 10),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,
                               vertical: 10,
                             ),
-                            constraints: const BoxConstraints(
-                              maxWidth: 320,
-                            ),
+                            constraints: const BoxConstraints(maxWidth: 320),
                             decoration: BoxDecoration(
                               color: isMine
                                   ? const Color(0xFFDDF6E3)
                                   : Colors.white,
-                              borderRadius:
-                                  BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isMine
                                     ? const Color(0xFFBBE7C6)
@@ -17202,34 +17349,26 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                               ],
                             ),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 if (!isMine)
                                   Padding(
-                                    padding:
-                                        const EdgeInsets.only(
-                                      bottom: 4,
-                                    ),
+                                    padding: const EdgeInsets.only(bottom: 4),
                                     child: Text(
-                                      (data['senderName'] ?? '')
-                                          .toString(),
+                                      (data['senderName'] ?? '').toString(),
                                       style: const TextStyle(
                                         fontSize: 12,
-                                        fontWeight:
-                                            FontWeight.w700,
+                                        fontWeight: FontWeight.w700,
                                         color: Colors.black54,
                                       ),
                                     ),
                                   ),
-
                                 SelectableText(
                                   text,
                                   style: const TextStyle(
                                     color: Colors.black87,
                                     fontSize: 15,
-                                    fontWeight:
-                                        FontWeight.w500,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],

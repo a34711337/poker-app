@@ -670,7 +670,7 @@ async function getTokensForUserIds(userIds) {
   return [...tokenSet];
 }
 
-async function sendPush({ tokens, title, body, data }) {
+async function sendPush({ tokens, title, body, data, badge }) {
   if (!tokens || tokens.length === 0) {
     console.log("No FCM tokens found");
     return;
@@ -690,6 +690,7 @@ async function sendPush({ tokens, title, body, data }) {
       payload: {
         aps: {
           sound: "default",
+          ...(badge != null ? { badge } : {}),
         },
       },
     },
@@ -834,6 +835,33 @@ exports.sendChatPush = functionsV1.firestore
     const targets = members.filter((uid) => uid && uid !== senderUid);
     const tokens = await getTokensForUserIds(targets);
 
+    let badge = 1;
+
+    if (targets.length > 0) {
+      const targetUid = targets[0];
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      const chatsSnap = await db
+        .collection("direct_chats")
+        .where("memberUids", "array-contains", targetUid)
+        .get();
+
+      let unreadTotal = 0;
+
+      chatsSnap.forEach((doc) => {
+        const data = doc.data() || {};
+        const unreadCounts = data.unreadCounts || {};
+        const count = Number(unreadCounts[targetUid] || 0);
+
+        if (!Number.isNaN(count)) {
+          unreadTotal += count;
+        }
+      });
+
+      badge = unreadTotal > 0 ? unreadTotal : 1;
+    }
+
     const senderDoc = await db.collection("users").doc(senderUid).get();
     const senderData = senderDoc.data() || {};
     const senderName =
@@ -847,6 +875,7 @@ exports.sendChatPush = functionsV1.firestore
         type: "chat",
         chatId,
       },
+      badge,
     });
 
     return null;
