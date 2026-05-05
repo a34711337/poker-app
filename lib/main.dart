@@ -3081,81 +3081,9 @@ class AppleIapService {
     required PurchaseDetails purchase,
     required ApplePurchaseType type,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw Exception(
-        tr(
-          appNavigatorKey.currentContext!,
-          'Please login again',
-          zhTw: '請重新登入',
-          zhCn: '请重新登录',
-          ko: '다시 로그인해주세요',
-          ja: '再度ログインしてください',
-          de: 'Bitte erneut anmelden',
-          fr: 'Veuillez vous reconnecter',
-          ar: 'يرجى تسجيل الدخول مرة أخرى',
-          ru: 'Пожалуйста, войдите снова',
-          trk: 'Lütfen tekrar giriş yapın',
-          es: 'Por favor inicia sesión nuevamente',
-          it: 'Accedi di nuovo',
-          pl: 'Zaloguj się ponownie',
-          pt: 'Faça login novamente',
-          th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
-          id: 'Silakan login kembali',
-          hi: 'कृपया फिर से लॉगिन करें',
-          bn: 'অনুগ্রহ করে আবার লগইন করুন',
-        ),
-      );
-    }
-
-    final docId = _subscriptionDocId(purchase);
-    final ref = FirebaseFirestore.instance
-        .collection('apple_subscriptions')
-        .doc(docId);
-
-    await FirebaseFirestore.instance.runTransaction((tx) async {
-      final snap = await tx.get(ref);
-      final data = snap.data();
-
-      if (data != null) {
-        final ownerUid = (data['ownerUid'] ?? '').toString();
-
-        if (ownerUid.isNotEmpty && ownerUid != user.uid) {
-          throw Exception(
-            tr(
-              appNavigatorKey.currentContext!,
-              'This subscription is already linked to another account.',
-              zhTw: '此訂閱已綁定到其他帳號。',
-              zhCn: '此订阅已绑定到其他账号。',
-              ko: '이 구독은 이미 다른 계정에 연결되어 있습니다.',
-              ja: 'このサブスクリプションは既に別のアカウントに紐付けされています。',
-              de: 'Dieses Abonnement ist bereits mit einem anderen Konto verknüpft.',
-              fr: 'Cet abonnement est déjà lié à un autre compte.',
-              ar: 'هذا الاشتراك مرتبط بالفعل بحساب آخر.',
-              ru: 'Эта подписка уже привязана к другому аккаунту.',
-              trk: 'Bu abonelik zaten başka bir hesaba bağlı.',
-              es: 'Esta suscripción ya está vinculada a otra cuenta.',
-              it: 'Questo abbonamento è già collegato a un altro account.',
-              pl: 'Ta subskrypcja jest już powiązana z innym kontem.',
-              pt: 'Esta assinatura já está vinculada a outra conta.',
-              th: 'การสมัครสมาชิกนี้เชื่อมกับบัญชีอื่นแล้ว',
-              id: 'Langganan ini sudah terhubung ke akun lain.',
-              hi: 'यह सदस्यता पहले से किसी अन्य खाते से जुड़ी हुई है।',
-              bn: 'এই সাবস্ক্রিপশন ইতোমধ্যে অন্য একটি অ্যাকাউন্টের সাথে যুক্ত আছে।',
-            ),
-          );
-        }
-      }
-
-      tx.set(ref, {
-        'ownerUid': user.uid,
-        'productId': purchase.productID,
-        'purchaseId': purchase.purchaseID,
-        'type': type.name,
-        'updatedAt': FieldValue.serverTimestamp(),
-        if (data == null) 'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-    });
+    throw Exception(
+      '_bindPurchaseToCurrentUser is disabled. Use _verifyApplePurchaseOnServer instead.',
+    );
   }
 
   static Future<void> buy({
@@ -3351,11 +3279,6 @@ class AppleIapService {
             if (purchase.status == PurchaseStatus.purchased ||
                 purchase.status == PurchaseStatus.restored) {
 
-              await _bindPurchaseToCurrentUser(
-                purchase: purchase,
-                type: type,
-              );
-
               await _activateEntitlement(
                 uid: user.uid,
                 type: type,
@@ -3523,10 +3446,6 @@ class AppleIapService {
               }
 
               if (purchase.productID == kAppleHostProProductId) {
-                await _bindPurchaseToCurrentUser(
-                  purchase: purchase,
-                  type: ApplePurchaseType.host,
-                );
 
                 restoredAny = true;
 
@@ -3538,10 +3457,6 @@ class AppleIapService {
               }
 
               if (purchase.productID == kAppleStatsProProductId) {
-                await _bindPurchaseToCurrentUser(
-                  purchase: purchase,
-                  type: ApplePurchaseType.stats,
-                );
 
                 restoredAny = true;
 
