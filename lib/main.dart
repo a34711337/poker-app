@@ -660,8 +660,11 @@ class AuthGate extends StatelessWidget {
         (data['displayName'] ?? user.displayName ?? user.email ?? 'User')
             .toString();
 
-    final roleText = (data['role'] ?? 'player').toString();
-    final role = roleText == 'host' ? UserRole.host : UserRole.player;
+    final hostStatus = resolveHostSubscriptionStatusFromUserData(data);
+
+    final role = hostStatus.canCreateTable
+        ? UserRole.host
+        : UserRole.player;
   
     return UserSession(
       name: name,
@@ -742,6 +745,9 @@ const String kCustomerPortalUrl =
 
 const String kVerifyAppleSubscriptionUrl =
     'https://verifyapplesubscription-q6hgvxthlq-uc.a.run.app';
+
+const String kTransferAppleSubscriptionUrl =
+    'https://transferapplesubscription-q6hgvxthlq-uc.a.run.app';    
 
 const String kAppleHostProProductId =
     'com.pokerscheduler.hostpro.monthly';
@@ -8888,6 +8894,226 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
 
+  Future<void> _showTransferSubscriptionDialog() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final email = user?.email ?? '';
+
+    if (user == null || email.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please login again')),
+      );
+      return;
+    }
+
+    final transactionController = TextEditingController();
+    final emailController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          tr(
+            context,
+            'Transfer Subscription',
+            zhTw: '轉移訂閱',
+            zhCn: '转移订阅',
+            ko: '구독 이전',
+            ja: 'サブスクリプション移行',
+            de: 'Abonnement übertragen',
+            fr: 'Transférer l’abonnement',
+            ar: 'نقل الاشتراك',
+            ru: 'Перенести подписку',
+            trk: 'Aboneliği aktar',
+            es: 'Transferir suscripción',
+            it: 'Trasferisci abbonamento',
+            pl: 'Przenieś subskrypcję',
+            pt: 'Transferir assinatura',
+            th: 'โอนการสมัครสมาชิก',
+            id: 'Transfer langganan',
+            hi: 'सदस्यता स्थानांतरित करें',
+            bn: 'সাবস্ক্রিপশন স্থানান্তর করুন',
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              tr(
+                context,
+                'Enter the original transaction ID and your current account email to transfer the Apple subscription to this account.',
+                zhTw: '請輸入原始交易 ID，並輸入目前帳號 Email，將 Apple 訂閱轉移到這個帳號。',
+                zhCn: '请输入原始交易 ID，并输入当前账号 Email，将 Apple 订阅转移到这个账号。',
+                ko: '원본 거래 ID와 현재 계정 이메일을 입력하여 Apple 구독을 이 계정으로 이전하세요',
+                ja: '元の取引IDと現在のアカウントのメールアドレスを入力して、Appleサブスクリプションをこのアカウントに移行してください',
+                de: 'Geben Sie die ursprüngliche Transaktions-ID und Ihre aktuelle E-Mail-Adresse ein, um das Apple-Abonnement auf dieses Konto zu übertragen',
+                fr: 'Entrez l’ID de transaction d’origine et l’e-mail de votre compte actuel pour transférer l’abonnement Apple vers ce compte',
+                ar: 'أدخل معرف المعاملة الأصلي والبريد الإلكتروني الحالي لنقل اشتراك Apple إلى هذا الحساب',
+                ru: 'Введите исходный ID транзакции и текущий адрес электронной почты, чтобы перенести подписку Apple на этот аккаунт',
+                trk: 'Apple aboneliğini bu hesaba aktarmak için orijinal işlem kimliğini ve mevcut e-posta adresinizi girin',
+                es: 'Ingrese el ID de transacción original y el correo electrónico de su cuenta actual para transferir la suscripción de Apple a esta cuenta',
+                it: 'Inserisci l’ID della transazione originale e l’email del tuo account attuale per trasferire l’abbonamento Apple a questo account',
+                pl: 'Wprowadź oryginalny identyfikator transakcji oraz adres e-mail bieżącego konta, aby przenieść subskrypcję Apple na to konto',
+                pt: 'Insira o ID da transação original e o e-mail da sua conta atual para transferir a assinatura Apple para esta conta',
+                th: 'กรอกหมายเลขธุรกรรมเดิมและอีเมลบัญชีปัจจุบันเพื่อโอนการสมัคร Apple มายังบัญชีนี้',
+                id: 'Masukkan ID transaksi asli dan email akun Anda saat ini untuk mentransfer langganan Apple ke akun ini',
+                hi: 'मूल लेनदेन आईडी और वर्तमान खाते का ईमेल दर्ज करें ताकि Apple सदस्यता इस खाते में स्थानांतरित की जा सके',
+                bn: 'Apple সাবস্ক্রিপশন এই অ্যাকাউন্টে স্থানান্তর করতে মূল ট্রানজ্যাকশন আইডি এবং বর্তমান অ্যাকাউন্ট ইমেল লিখুন',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: transactionController,
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Original Transaction ID',
+                  zhTw: '原始交易 ID',
+                  zhCn: '原始交易 ID',
+                  ko: '원본 거래 ID',
+                  ja: '元の取引ID',
+                  de: 'Ursprüngliche Transaktions-ID',
+                  fr: 'ID de transaction d’origine',
+                  ar: 'معرّف المعاملة الأصلي',
+                  ru: 'Исходный ID транзакции',
+                  trk: 'Orijinal işlem kimliği',
+                  es: 'ID de transacción original',
+                  it: 'ID transazione originale',
+                  pl: 'Oryginalny identyfikator transakcji',
+                  pt: 'ID da transação original',
+                  th: 'รหัสธุรกรรมต้นฉบับ',
+                  id: 'ID transaksi asli',
+                  hi: 'मूल लेनदेन आईडी',
+                  bn: 'মূল ট্রানজ্যাকশন আইডি',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: email,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(
+              tr(
+                context,
+                'Cancel',
+                zhTw: '取消',
+                zhCn: '取消',
+                ko: '취소',
+                ja: 'キャンセル',
+                de: 'Abbrechen',
+                fr: 'Annuler',
+                ar: 'إلغاء',
+                ru: 'Отмена',
+                trk: 'İptal',
+                es: 'Cancelar',
+                it: 'Annulla',
+                pl: 'Anuluj',
+                pt: 'Cancelar',
+                th: 'ยกเลิก',
+                id: 'Batal',
+                hi: 'रद्द करें',
+                bn: 'বাতিল',
+              ),
+            ),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(
+              tr(
+                context,
+                'Transfer',
+                zhTw: '轉移',
+                zhCn: '转移',
+                ko: '이전',
+                ja: '移行',
+                de: 'Übertragen',
+                fr: 'Transférer',
+                ar: 'نقل',
+                ru: 'Перенести',
+                trk: 'Aktar',
+                es: 'Transferir',
+                it: 'Trasferisci',
+                pl: 'Przenieś',
+                pt: 'Transferir',
+                th: 'โอน',
+                id: 'Transfer',
+                hi: 'स्थानांतरित करें',
+                bn: 'স্থানান্তর করুন',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final idToken = await user.getIdToken();
+
+      final response = await http.post(
+        Uri.parse(kTransferAppleSubscriptionUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode({
+          'originalTransactionId': transactionController.text.trim(),
+          'confirmEmail': emailController.text.trim(),
+        }),
+      );
+
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw Exception(response.body);
+      }
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'Subscription transferred successfully',
+              zhTw: '訂閱轉移成功',
+              zhCn: '订阅转移成功',
+              ko: '구독이 성공적으로 이전되었습니다',
+              ja: 'サブスクリプションの移行に成功しました',
+              de: 'Abonnement erfolgreich übertragen',
+              fr: 'Abonnement transféré avec succès',
+              ar: 'تم نقل الاشتراك بنجاح',
+              ru: 'Подписка успешно перенесена',
+              trk: 'Abonelik başarıyla aktarıldı',
+              es: 'Suscripción transferida con éxito',
+              it: 'Abbonamento trasferito con successo',
+              pl: 'Subskrypcja została pomyślnie przeniesiona',
+              pt: 'Assinatura transferida com sucesso',
+              th: 'โอนการสมัครสมาชิกสำเร็จ',
+              id: 'Langganan berhasil dipindahkan',
+              hi: 'सदस्यता सफलतापूर्वक स्थानांतरित की गई',
+              bn: 'সাবস্ক্রিপশন সফলভাবে স্থানান্তর করা হয়েছে',
+            ),
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+        ),
+      );
+    }
+  }
+
   Future<void> _saveLanguage(String languageCode) async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -9575,9 +9801,10 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   ),
 
+                  /// 🌐 Web / Android → Stripe
                   if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS)
                     ListTile(
-                      leading: const Icon(Icons.manage_accounts),
+                      leading: const Icon(Icons.settings),
                       title: Text(
                         tr(
                           context,
@@ -9601,7 +9828,92 @@ class _SettingsPageState extends State<SettingsPage> {
                           bn: 'সাবস্ক্রিপশন পরিচালনা করুন',
                         ),
                       ),
+
+                      subtitle: Text(
+                        tr(
+                          context,
+                          'Manage billing, cancel or update payment',
+                          zhTw: '管理付款、取消或更新付款方式',
+                          zhCn: '管理付款、取消或更新支付方式',
+                          ko: '결제 관리, 취소 또는 결제 수단 업데이트',
+                          ja: '請求の管理、解約、支払い方法の更新',
+                          de: 'Zahlungen verwalten, kündigen oder Zahlungsmethode aktualisieren',
+                          fr: 'Gérer la facturation, annuler ou mettre à jour le paiement',
+                          ar: 'إدارة الفوترة أو الإلغاء أو تحديث طريقة الدفع',
+                          ru: 'Управление оплатой, отмена или обновление способа оплаты',
+                          trk: 'Faturalandırmayı yönetin, iptal edin veya ödeme yöntemini güncelleyin',
+                          es: 'Administrar pagos, cancelar o actualizar el método de pago',
+                          it: 'Gestisci pagamenti, annulla o aggiorna il metodo di pagamento',
+                          pl: 'Zarządzaj płatnościami, anuluj lub zaktualizuj metodę płatności',
+                          pt: 'Gerencie pagamentos, cancele ou atualize o método de pagamento',
+                          th: 'จัดการการชำระเงิน ยกเลิก หรืออัปเดตวิธีชำระเงิน',
+                          id: 'Kelola pembayaran, batalkan, atau perbarui metode pembayaran',
+                          hi: 'भुगतान प्रबंधित करें, रद्द करें या भुगतान विधि अपडेट करें',
+                          bn: 'পেমেন্ট পরিচালনা করুন, বাতিল করুন বা পেমেন্ট পদ্ধতি আপডেট করুন',
+                        ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
                       onTap: () => openStripeCustomerPortal(context),
+                    ),
+
+                  /// 🍎 iOS → Apple 官方頁
+                  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS)
+                    ListTile(
+                      leading: const Icon(Icons.settings),
+                      title: Text(
+                        tr(
+                          context,
+                          'Manage Subscription',
+                          zhTw: '管理訂閱',
+                          zhCn: '管理订阅',
+                          ko: '구독 관리',
+                          ja: 'サブスクリプション管理',
+                          de: 'Abonnement verwalten',
+                          fr: 'Gérer l’abonnement',
+                          ar: 'إدارة الاشتراك',
+                          ru: 'Управление подпиской',
+                          trk: 'Aboneliği yönet',
+                          es: 'Administrar suscripción',
+                          it: 'Gestisci abbonamento',
+                          pl: 'Zarządzaj subskrypcją',
+                          pt: 'Gerenciar assinatura',
+                          th: 'จัดการการสมัครสมาชิก',
+                          id: 'Kelola langganan',
+                          hi: 'सदस्यता प्रबंधित करें',
+                          bn: 'সাবস্ক্রিপশন পরিচালনা করুন',
+                        ),
+                      ),
+
+                      subtitle: Text(
+                        tr(
+                          context,
+                          'Manage via Apple Settings',
+                          zhTw: '請到 Apple 設定中管理',
+                          zhCn: '请到 Apple 设置中管理',
+                          ko: 'Apple 설정에서 관리하세요',
+                          ja: 'Appleの設定で管理してください',
+                          de: 'In den Apple-Einstellungen verwalten',
+                          fr: 'Gérer via les réglages Apple',
+                          ar: 'الإدارة عبر إعدادات Apple',
+                          ru: 'Управляйте через настройки Apple',
+                          trk: 'Apple Ayarları üzerinden yönetin',
+                          es: 'Gestionar desde Ajustes de Apple',
+                          it: 'Gestisci tramite Impostazioni Apple',
+                          pl: 'Zarządzaj w ustawieniach Apple',
+                          pt: 'Gerencie nas Configurações da Apple',
+                          th: 'จัดการผ่านการตั้งค่า Apple',
+                          id: 'Kelola melalui Pengaturan Apple',
+                          hi: 'Apple सेटिंग्स के माध्यम से प्रबंधित करें',
+                          bn: 'Apple সেটিংসের মাধ্যমে পরিচালনা করুন',
+                        ),
+                      ),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () {
+                        launchUrl(
+                          Uri.parse('https://apps.apple.com/account/subscriptions'),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
                     ),
 
                   ListTile(
@@ -9637,6 +9949,59 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                       );
                     },
+                  ),
+
+                  ListTile(
+                    leading: const Icon(Icons.swap_horiz_outlined),
+                    title: Text(
+                      tr(
+                        context,
+                        'Transfer Subscription',
+                        zhTw: '轉移訂閱',
+                        zhCn: '转移订阅',
+                        ko: '구독 이전',
+                        ja: 'サブスクリプション移行',
+                        de: 'Abonnement übertragen',
+                        fr: 'Transférer l’abonnement',
+                        ar: 'نقل الاشتراك',
+                        ru: 'Перенести подписку',
+                        trk: 'Aboneliği aktar',
+                        es: 'Transferir suscripción',
+                        it: 'Trasferisci abbonamento',
+                        pl: 'Przenieś subskrypcję',
+                        pt: 'Transferir assinatura',
+                        th: 'โอนการสมัครสมาชิก',
+                        id: 'Transfer langganan',
+                        hi: 'सदस्यता स्थानांतरित करें',
+                        bn: 'সাবস্ক্রিপশন স্থানান্তর করুন',
+                      ),
+                    ),
+
+                    subtitle: Text(
+                      tr(
+                        context,
+                        'Move your Apple subscription to this account',
+                        zhTw: '將你的 Apple 訂閱轉移到目前帳號',
+                        zhCn: '将你的 Apple 订阅转移到当前账号',
+                        ko: 'Apple 구독을 이 계정으로 이전합니다',
+                        ja: 'Appleサブスクリプションをこのアカウントに移行します',
+                        de: 'Übertragen Sie Ihr Apple-Abonnement auf dieses Konto',
+                        fr: 'Transférez votre abonnement Apple vers ce compte',
+                        ar: 'انقل اشتراك Apple إلى هذا الحساب',
+                        ru: 'Перенесите подписку Apple на этот аккаунт',
+                        trk: 'Apple aboneliğinizi bu hesaba taşıyın',
+                        es: 'Transfiere tu suscripción de Apple a esta cuenta',
+                        it: 'Trasferisci il tuo abbonamento Apple a questo account',
+                        pl: 'Przenieś subskrypcję Apple na to konto',
+                        pt: 'Transfira sua assinatura Apple para esta conta',
+                        th: 'โอนการสมัคร Apple ของคุณมายังบัญชีนี้',
+                        id: 'Pindahkan langganan Apple Anda ke akun ini',
+                        hi: 'अपनी Apple सदस्यता इस खाते में स्थानांतरित करें',
+                        bn: 'আপনার Apple সাবস্ক্রিপশন এই অ্যাকাউন্টে স্থানান্তর করুন',
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _showTransferSubscriptionDialog,
                   ),
 
                   ListTile(

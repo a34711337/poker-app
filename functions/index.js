@@ -261,6 +261,82 @@ async function recomputeUserEntitlements(uid) {
   await db.collection("users").doc(uid).set(updateData, { merge: true });
 }
 
+async function recomputeAppleEntitlements(uid) {
+  const subsSnap = await db
+    .collection("apple_subscriptions")
+    .where("ownerUid", "==", uid)
+    .get();
+
+  let hostExpiresAt = null;
+  let statsExpiresAt = null;
+
+  for (const doc of subsSnap.docs) {
+    const data = doc.data() || {};
+    const planType = (data.planType || "").toString();
+    const expiresAtRaw = data.expiresAt;
+
+    if (!expiresAtRaw) continue;
+
+    const expiresAt = expiresAtRaw.toDate
+      ? expiresAtRaw.toDate()
+      : new Date(expiresAtRaw);
+
+    if (Number.isNaN(expiresAt.getTime())) continue;
+
+    if (planType === "host") {
+      if (!hostExpiresAt || expiresAt > hostExpiresAt) {
+        hostExpiresAt = expiresAt;
+      }
+    }
+
+    if (planType === "stats") {
+      if (!statsExpiresAt || expiresAt > statsExpiresAt) {
+        statsExpiresAt = expiresAt;
+      }
+    }
+  }
+
+  const now = new Date();
+
+  const hasHost =
+    hostExpiresAt && hostExpiresAt.getTime() > now.getTime();
+
+  const hasStats =
+    statsExpiresAt && statsExpiresAt.getTime() > now.getTime();
+
+  const updateData = {
+    role: hasHost ? "host" : "player",
+
+    isHostPro: hasHost === true,
+    isStatsPro: hasStats === true,
+
+    hostProActive: hasHost === true,
+    statsProActive: hasStats === true,
+
+    hostExpiresAt: hasHost
+      ? admin.firestore.Timestamp.fromDate(hostExpiresAt)
+      : null,
+
+    statsExpiresAt: hasStats
+      ? admin.firestore.Timestamp.fromDate(statsExpiresAt)
+      : null,
+
+    updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  if (hasHost) {
+    updateData.hostLastPaidAt =
+      admin.firestore.FieldValue.serverTimestamp();
+  }
+
+  if (hasStats) {
+    updateData.statsLastPaidAt =
+      admin.firestore.FieldValue.serverTimestamp();
+  }
+
+  await db.collection("users").doc(uid).set(updateData, { merge: true });
+}
+
 async function syncSubscriptionById(subscriptionId, uidOverride = null) {
   const { planType, subscription } =
     await inferPlanTypeFromSubscription(subscriptionId);
@@ -644,9 +720,104 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// =======================
-// 🔥 PUSH NOTIFICATION - 1st Gen
-// =======================
+exports.transferAppleSubscription = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).send("");
+  }
+
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
+    const authHeader = req.headers.authorization || "";
+    const idToken = authHeader.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : "";
+
+    if (!idToken) {
+      return res.status(401).json({ error: "Missing auth token" });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const newOwnerUid = decodedToken.uid;
+    const newOwnerEmailLower = normalizeEmail(decodedToken.email || "");
+
+    const originalTransactionId =
+      (req.body.originalTransactionId || "").toString().trim();
+
+    const confirmEmail =
+      normalizeEmail(req.body.confirmEmail || "");
+
+    if (!originalTransactionId) {
+      return res.status(400).json({
+        error: "Missing original transaction id",
+      });
+    }
+
+    if (!newOwnerEmailLower || confirmEmail !== newOwnerEmailLower) {
+      return res.status(400).json({
+        error: "Email confirmation does not match",
+      });
+    }
+
+    const subRef = db
+      .collection("apple_subscriptions")
+      .doc(originalTransactionId);
+
+    let oldOwnerUid = "";
+
+    await db.runTransaction(async (tx) => {
+      const subDoc = await tx.get(subRef);
+
+      if (!subDoc.exists) {
+        throw new Error("Subscription not found");
+      }
+
+      const data = subDoc.data() || {};
+
+      oldOwnerUid = (data.ownerUid || "")
+        .toString()
+        .trim();
+
+      if (oldOwnerUid === newOwnerUid) {
+        throw new Error("This subscription is already linked to this account");
+      }
+
+      tx.set(
+        subRef,
+        {
+          ownerUid: newOwnerUid,
+          ownerEmailLower: newOwnerEmailLower,
+          previousOwnerUid: oldOwnerUid,
+          transferredAt: admin.firestore.FieldValue.serverTimestamp(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    });
+
+    if (oldOwnerUid) {
+      await recomputeAppleEntitlements(oldOwnerUid);
+    }
+
+    await recomputeAppleEntitlements(newOwnerUid);
+
+    return res.status(200).json({
+      ok: true,
+    });
+  } catch (error) {
+    console.error("transferAppleSubscription error:", error);
+
+    return res.status(500).json({
+      error: error.message || "Internal Server Error",
+    });
+  }
+});
 
 async function getTokensForUserIds(userIds) {
   const tokenSet = new Set();
@@ -1120,22 +1291,40 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
       .collection("apple_subscriptions")
       .doc(originalTransactionId);
 
-    await subRef.set(
-      {
-        ownerUid: uid,
-        productId,
-        planType,
-        originalTransactionId,
-        transactionId,
-        expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
-        isActive,
-        environment,
-        source,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      },
-      { merge: true }
-    );
+    await db.runTransaction(async (tx) => {
+      const subDoc = await tx.get(subRef);
+
+      if (subDoc.exists) {
+        const existingOwnerUid = (subDoc.data().ownerUid || "")
+          .toString()
+          .trim();
+
+        if (existingOwnerUid && existingOwnerUid !== uid) {
+          throw new Error(
+            "This subscription is already linked to another account."
+          );
+        }
+      }
+
+      tx.set(
+        subRef,
+        {
+          ownerUid: uid,
+          ownerEmailLower: normalizeEmail(decodedToken.email || ""),
+          productId,
+          planType,
+          originalTransactionId,
+          transactionId,
+          expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+          isActive,
+          environment,
+          source,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    });
 
     const userUpdate = {
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1166,7 +1355,7 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
       }
     }
 
-    await db.collection("users").doc(uid).set(userUpdate, { merge: true });
+    await recomputeAppleEntitlements(uid);
 
     return res.status(200).json({
       ok: true,
