@@ -7275,28 +7275,64 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (authProvider == 'google.com') {
+    if (authProvider == 'google.com' || authProvider == 'apple.com') {
       _showSnack(
         tr(
           context,
-          'Google login account cannot change password here',
-          zhTw: '使用 Google 登入的帳號無法在此更改密碼',
-          zhCn: '使用 Google 登录的账号无法在此修改密码',
-          ko: 'Google 로그인 계정은 여기에서 비밀번호를 변경할 수 없습니다',
-          ja: 'Googleログインアカウントはここでパスワードを変更できません',
-          de: 'Google-Anmeldekonten können hier kein Passwort ändern',
-          fr: 'Les comptes Google ne peuvent pas modifier le mot de passe ici',
-          ar: 'لا يمكن لحسابات Google تغيير كلمة المرور هنا',
-          ru: 'Аккаунт Google не может изменить пароль здесь',
-          trk: 'Google ile giriş yapan hesaplar burada şifre değiştiremez',
-          es: 'Las cuentas de Google no pueden cambiar la contraseña aquí',
-          it: 'Gli account Google non possono cambiare la password qui',
-          pl: 'Konta Google nie mogą zmienić hasła tutaj',
-          pt: 'Contas Google não podem alterar a senha aqui',
-          th: 'บัญชี Google ไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
-          id: 'Akun Google tidak dapat mengubah kata sandi di sini',
-          hi: 'Google लॉगिन खाता यहाँ पासवर्ड नहीं बदल सकता',
-          bn: 'Google লগইন অ্যাকাউন্ট এখানে পাসওয়ার্ড পরিবর্তন করতে পারে না',
+          authProvider == 'apple.com'
+              ? 'Apple Sign In account cannot change password here'
+              : 'Google login account cannot change password here',
+          zhTw: authProvider == 'apple.com'
+              ? 'Apple 登入帳號無法在這裡更改密碼'
+              : 'Google 登入帳號無法在這裡更改密碼',
+          zhCn: authProvider == 'apple.com'
+              ? 'Apple 登录账号无法在这里更改密码'
+              : 'Google 登录账号无法在这里更改密码',
+          ko: authProvider == 'apple.com'
+              ? 'Apple 로그인 계정은 여기에서 비밀번호를 변경할 수 없습니다'
+              : 'Google 로그인 계정은 여기에서 비밀번호를 변경할 수 없습니다',
+          ja: authProvider == 'apple.com'
+              ? 'Appleログインアカウントはここでパスワードを変更できません'
+              : 'Googleログインアカウントはここでパスワードを変更できません',
+          de: authProvider == 'apple.com'
+              ? 'Apple-Anmeldekonten können hier kein Passwort ändern'
+              : 'Google-Anmeldekonten können hier kein Passwort ändern',
+          fr: authProvider == 'apple.com'
+              ? 'Les comptes Apple ne peuvent pas modifier le mot de passe ici'
+              : 'Les comptes Google ne peuvent pas modifier le mot de passe ici',
+          ar: authProvider == 'apple.com'
+              ? 'حساب Apple لا يمكنه تغيير كلمة المرور هنا'
+              : 'حساب Google لا يمكنه تغيير كلمة المرور هنا',
+          ru: authProvider == 'apple.com'
+              ? 'Аккаунт Apple не может изменить пароль здесь'
+              : 'Аккаунт Google не может изменить пароль здесь',
+          trk: authProvider == 'apple.com'
+              ? 'Apple hesabı burada şifre değiştiremez'
+              : 'Google hesabı burada şifre değiştiremez',
+          es: authProvider == 'apple.com'
+              ? 'Las cuentas de Apple no pueden cambiar la contraseña aquí'
+              : 'Las cuentas de Google no pueden cambiar la contraseña aquí',
+          it: authProvider == 'apple.com'
+              ? 'Gli account Apple non possono cambiare la password qui'
+              : 'Gli account Google non possono cambiare la password qui',
+          pl: authProvider == 'apple.com'
+              ? 'Konta Apple nie mogą zmienić hasła tutaj'
+              : 'Konta Google nie mogą zmienić hasła tutaj',
+          pt: authProvider == 'apple.com'
+              ? 'Contas Apple não podem alterar a senha aqui'
+              : 'Contas Google não podem alterar a senha aqui',
+          th: authProvider == 'apple.com'
+              ? 'บัญชี Apple ไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้'
+              : 'บัญชี Google ไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
+          id: authProvider == 'apple.com'
+              ? 'Akun Apple tidak dapat mengubah kata sandi di sini'
+              : 'Akun Google tidak dapat mengubah kata sandi di sini',
+          hi: authProvider == 'apple.com'
+              ? 'Apple खाता यहाँ पासवर्ड नहीं बदल सकता'
+              : 'Google खाता यहाँ पासवर्ड नहीं बदल सकता',
+          bn: authProvider == 'apple.com'
+              ? 'Apple অ্যাকাউন্ট এখানে পাসওয়ার্ড পরিবর্তন করতে পারে না'
+              : 'Google অ্যাকাউন্ট এখানে পাসওয়ার্ড পরিবর্তন করতে পারে না',
         ),
       );
       return;
@@ -8468,7 +8504,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               ),
                             ),
                             const SizedBox(height: 12),
-                            if (authProvider == 'google.com')
+                            if (authProvider == 'google.com' || authProvider == 'apple.com')
                               Container(
                                 padding: const EdgeInsets.all(14),
                                 decoration: BoxDecoration(
@@ -8481,24 +8517,60 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 child: Text(
                                   tr(
                                     context,
-                                    'This account uses Google login, so password cannot be changed here.',
-                                    zhTw: '此帳號使用 Google 登入，因此無法在這裡更改密碼。',
-                                    zhCn: '此账号使用 Google 登录，因此无法在这里更改密码。',
-                                    ko: '이 계정은 Google 로그인을 사용하므로 여기서 비밀번호를 변경할 수 없습니다.',
-                                    ja: 'このアカウントはGoogleログインを使用しているため、ここでパスワードを変更できません。',
-                                    de: 'Dieses Konto verwendet Google Login, daher kann das Passwort hier nicht geändert werden.',
-                                    fr: 'Ce compte utilise Google, le mot de passe ne peut donc pas être modifié ici.',
-                                    ar: 'يستخدم هذا الحساب تسجيل الدخول عبر Google، لذلك لا يمكن تغيير كلمة المرور هنا.',
-                                    ru: 'Этот аккаунт использует вход через Google, поэтому пароль нельзя изменить здесь.',
-                                    trk: 'Bu hesap Google girişi kullanıyor, bu yüzden şifre burada değiştirilemez.',
-                                    es: 'Esta cuenta usa Google, por eso no puedes cambiar la contraseña aquí.',
-                                    it: 'Questo account usa Google, quindi la password non può essere cambiata qui.',
-                                    pl: 'To konto używa logowania Google, więc hasła nie można tu zmienić.',
-                                    pt: 'Esta conta usa Google, então a senha não pode ser alterada aqui.',
-                                    th: 'บัญชีนี้ใช้ Google login จึงไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
-                                    id: 'Akun ini memakai login Google, jadi kata sandi tidak bisa diubah di sini.',
-                                    hi: 'यह अकाउंट Google लॉगिन का उपयोग करता है, इसलिए पासवर्ड यहाँ नहीं बदला जा सकता।',
-                                    bn: 'এই অ্যাকাউন্ট Google লগইন ব্যবহার করে, তাই এখানে পাসওয়ার্ড বদলানো যাবে না।',
+                                    authProvider == 'apple.com'
+                                        ? 'This account uses Apple Sign In, so password cannot be changed here.'
+                                        : 'This account uses Google login, so password cannot be changed here.',
+                                    zhTw: authProvider == 'apple.com'
+                                        ? '此帳號使用 Apple 登入，因此無法在這裡更改密碼。'
+                                        : '此帳號使用 Google 登入，因此無法在這裡更改密碼。',
+                                    zhCn: authProvider == 'apple.com'
+                                        ? '此账号使用 Apple 登录，因此无法在这里更改密码。'
+                                        : '此账号使用 Google 登录，因此无法在这里更改密码。',
+                                    ko: authProvider == 'apple.com'
+                                        ? '이 계정은 Apple 로그인으로 사용되므로 여기서 비밀번호를 변경할 수 없습니다.'
+                                        : '이 계정은 Google 로그인으로 사용되므로 여기서 비밀번호를 변경할 수 없습니다.',
+                                    ja: authProvider == 'apple.com'
+                                        ? 'このアカウントはAppleサインインを使用しているため、ここではパスワードを変更できません。'
+                                        : 'このアカウントはGoogleログインを使用しているため、ここではパスワードを変更できません。',
+                                    de: authProvider == 'apple.com'
+                                        ? 'Dieses Konto verwendet Apple-Anmeldung, daher kann das Passwort hier nicht geändert werden.'
+                                        : 'Dieses Konto verwendet Google-Anmeldung, daher kann das Passwort hier nicht geändert werden.',
+                                    fr: authProvider == 'apple.com'
+                                        ? 'Ce compte utilise la connexion Apple, vous ne pouvez donc pas modifier le mot de passe ici.'
+                                        : 'Ce compte utilise la connexion Google, vous ne pouvez donc pas modifier le mot de passe ici.',
+                                    ar: authProvider == 'apple.com'
+                                        ? 'هذا الحساب يستخدم تسجيل الدخول عبر Apple، لذلك لا يمكن تغيير كلمة المرور هنا.'
+                                        : 'هذا الحساب يستخدم تسجيل الدخول عبر Google، لذلك لا يمكن تغيير كلمة المرور هنا.',
+                                    ru: authProvider == 'apple.com'
+                                        ? 'Этот аккаунт использует вход через Apple, поэтому пароль нельзя изменить здесь.'
+                                        : 'Этот аккаунт использует вход через Google, поэтому пароль нельзя изменить здесь.',
+                                    trk: authProvider == 'apple.com'
+                                        ? 'Bu hesap Apple ile giriş kullanıyor, bu yüzden şifre burada değiştirilemez.'
+                                        : 'Bu hesap Google ile giriş kullanıyor, bu yüzden şifre burada değiştirilemez.',
+                                    es: authProvider == 'apple.com'
+                                        ? 'Esta cuenta usa inicio de sesión con Apple, por lo que no se puede cambiar la contraseña aquí.'
+                                        : 'Esta cuenta usa inicio de sesión con Google, por lo que no se puede cambiar la contraseña aquí.',
+                                    it: authProvider == 'apple.com'
+                                        ? 'Questo account utilizza l’accesso Apple, quindi la password non può essere modificata qui.'
+                                        : 'Questo account utilizza l’accesso Google, quindi la password non può essere modificata qui.',
+                                    pl: authProvider == 'apple.com'
+                                        ? 'To konto korzysta z logowania Apple, dlatego nie można tutaj zmienić hasła.'
+                                        : 'To konto korzysta z logowania Google, dlatego nie można tutaj zmienić hasła.',
+                                    pt: authProvider == 'apple.com'
+                                        ? 'Esta conta usa login Apple, portanto a senha não pode ser alterada aqui.'
+                                        : 'Esta conta usa login Google, portanto a senha não pode ser alterada aqui.',
+                                    th: authProvider == 'apple.com'
+                                        ? 'บัญชีนี้ใช้การเข้าสู่ระบบ Apple จึงไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้'
+                                        : 'บัญชีนี้ใช้การเข้าสู่ระบบ Google จึงไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
+                                    id: authProvider == 'apple.com'
+                                        ? 'Akun ini menggunakan login Apple, sehingga kata sandi tidak dapat diubah di sini.'
+                                        : 'Akun ini menggunakan login Google, sehingga kata sandi tidak dapat diubah di sini.',
+                                    hi: authProvider == 'apple.com'
+                                        ? 'यह खाता Apple साइन-इन का उपयोग करता है, इसलिए यहाँ पासवर्ड नहीं बदला जा सकता।'
+                                        : 'यह खाता Google लॉगिन का उपयोग करता है, इसलिए यहाँ पासवर्ड नहीं बदला जा सकता।',
+                                    bn: authProvider == 'apple.com'
+                                        ? 'এই অ্যাকাউন্ট Apple সাইন-ইন ব্যবহার করে, তাই এখানে পাসওয়ার্ড পরিবর্তন করা যাবে না।'
+                                        : 'এই অ্যাকাউন্ট Google লগইন ব্যবহার করে, তাই এখানে পাসওয়ার্ড পরিবর্তন করা যাবে না।',
                                   ),
                                   style: const TextStyle(
                                     fontWeight: FontWeight.w600,
@@ -8894,224 +8966,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
 
-  Future<void> _showTransferSubscriptionDialog() async {
+  Future<void> _reloadCurrentUserAccess() async {
     final user = FirebaseAuth.instance.currentUser;
-    final email = user?.email ?? '';
+    if (user == null) return;
 
-    if (user == null || email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please login again')),
-      );
-      return;
-    }
-
-    final transactionController = TextEditingController();
-    final emailController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          tr(
-            context,
-            'Transfer Subscription',
-            zhTw: '轉移訂閱',
-            zhCn: '转移订阅',
-            ko: '구독 이전',
-            ja: 'サブスクリプション移行',
-            de: 'Abonnement übertragen',
-            fr: 'Transférer l’abonnement',
-            ar: 'نقل الاشتراك',
-            ru: 'Перенести подписку',
-            trk: 'Aboneliği aktar',
-            es: 'Transferir suscripción',
-            it: 'Trasferisci abbonamento',
-            pl: 'Przenieś subskrypcję',
-            pt: 'Transferir assinatura',
-            th: 'โอนการสมัครสมาชิก',
-            id: 'Transfer langganan',
-            hi: 'सदस्यता स्थानांतरित करें',
-            bn: 'সাবস্ক্রিপশন স্থানান্তর করুন',
-          ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              tr(
-                context,
-                'Enter the original transaction ID and your current account email to transfer the Apple subscription to this account.',
-                zhTw: '請輸入原始交易 ID，並輸入目前帳號 Email，將 Apple 訂閱轉移到這個帳號。',
-                zhCn: '请输入原始交易 ID，并输入当前账号 Email，将 Apple 订阅转移到这个账号。',
-                ko: '원본 거래 ID와 현재 계정 이메일을 입력하여 Apple 구독을 이 계정으로 이전하세요',
-                ja: '元の取引IDと現在のアカウントのメールアドレスを入力して、Appleサブスクリプションをこのアカウントに移行してください',
-                de: 'Geben Sie die ursprüngliche Transaktions-ID und Ihre aktuelle E-Mail-Adresse ein, um das Apple-Abonnement auf dieses Konto zu übertragen',
-                fr: 'Entrez l’ID de transaction d’origine et l’e-mail de votre compte actuel pour transférer l’abonnement Apple vers ce compte',
-                ar: 'أدخل معرف المعاملة الأصلي والبريد الإلكتروني الحالي لنقل اشتراك Apple إلى هذا الحساب',
-                ru: 'Введите исходный ID транзакции и текущий адрес электронной почты, чтобы перенести подписку Apple на этот аккаунт',
-                trk: 'Apple aboneliğini bu hesaba aktarmak için orijinal işlem kimliğini ve mevcut e-posta adresinizi girin',
-                es: 'Ingrese el ID de transacción original y el correo electrónico de su cuenta actual para transferir la suscripción de Apple a esta cuenta',
-                it: 'Inserisci l’ID della transazione originale e l’email del tuo account attuale per trasferire l’abbonamento Apple a questo account',
-                pl: 'Wprowadź oryginalny identyfikator transakcji oraz adres e-mail bieżącego konta, aby przenieść subskrypcję Apple na to konto',
-                pt: 'Insira o ID da transação original e o e-mail da sua conta atual para transferir a assinatura Apple para esta conta',
-                th: 'กรอกหมายเลขธุรกรรมเดิมและอีเมลบัญชีปัจจุบันเพื่อโอนการสมัคร Apple มายังบัญชีนี้',
-                id: 'Masukkan ID transaksi asli dan email akun Anda saat ini untuk mentransfer langganan Apple ke akun ini',
-                hi: 'मूल लेनदेन आईडी और वर्तमान खाते का ईमेल दर्ज करें ताकि Apple सदस्यता इस खाते में स्थानांतरित की जा सके',
-                bn: 'Apple সাবস্ক্রিপশন এই অ্যাকাউন্টে স্থানান্তর করতে মূল ট্রানজ্যাকশন আইডি এবং বর্তমান অ্যাকাউন্ট ইমেল লিখুন',
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: transactionController,
-              decoration: InputDecoration(
-                labelText: tr(
-                  context,
-                  'Original Transaction ID',
-                  zhTw: '原始交易 ID',
-                  zhCn: '原始交易 ID',
-                  ko: '원본 거래 ID',
-                  ja: '元の取引ID',
-                  de: 'Ursprüngliche Transaktions-ID',
-                  fr: 'ID de transaction d’origine',
-                  ar: 'معرّف المعاملة الأصلي',
-                  ru: 'Исходный ID транзакции',
-                  trk: 'Orijinal işlem kimliği',
-                  es: 'ID de transacción original',
-                  it: 'ID transazione originale',
-                  pl: 'Oryginalny identyfikator transakcji',
-                  pt: 'ID da transação original',
-                  th: 'รหัสธุรกรรมต้นฉบับ',
-                  id: 'ID transaksi asli',
-                  hi: 'मूल लेनदेन आईडी',
-                  bn: 'মূল ট্রানজ্যাকশন আইডি',
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: emailController,
-              decoration: InputDecoration(
-                labelText: email,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              tr(
-                context,
-                'Cancel',
-                zhTw: '取消',
-                zhCn: '取消',
-                ko: '취소',
-                ja: 'キャンセル',
-                de: 'Abbrechen',
-                fr: 'Annuler',
-                ar: 'إلغاء',
-                ru: 'Отмена',
-                trk: 'İptal',
-                es: 'Cancelar',
-                it: 'Annulla',
-                pl: 'Anuluj',
-                pt: 'Cancelar',
-                th: 'ยกเลิก',
-                id: 'Batal',
-                hi: 'रद्द करें',
-                bn: 'বাতিল',
-              ),
-            ),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              tr(
-                context,
-                'Transfer',
-                zhTw: '轉移',
-                zhCn: '转移',
-                ko: '이전',
-                ja: '移行',
-                de: 'Übertragen',
-                fr: 'Transférer',
-                ar: 'نقل',
-                ru: 'Перенести',
-                trk: 'Aktar',
-                es: 'Transferir',
-                it: 'Trasferisci',
-                pl: 'Przenieś',
-                pt: 'Transferir',
-                th: 'โอน',
-                id: 'Transfer',
-                hi: 'स्थानांतरित करें',
-                bn: 'স্থানান্তর করুন',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    try {
-      final idToken = await user.getIdToken();
-
-      final response = await http.post(
-        Uri.parse(kTransferAppleSubscriptionUrl),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $idToken',
-        },
-        body: jsonEncode({
-          'originalTransactionId': transactionController.text.trim(),
-          'confirmEmail': emailController.text.trim(),
-        }),
-      );
-
-      if (response.statusCode < 200 || response.statusCode >= 300) {
-        throw Exception(response.body);
-      }
-
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            tr(
-              context,
-              'Subscription transferred successfully',
-              zhTw: '訂閱轉移成功',
-              zhCn: '订阅转移成功',
-              ko: '구독이 성공적으로 이전되었습니다',
-              ja: 'サブスクリプションの移行に成功しました',
-              de: 'Abonnement erfolgreich übertragen',
-              fr: 'Abonnement transféré avec succès',
-              ar: 'تم نقل الاشتراك بنجاح',
-              ru: 'Подписка успешно перенесена',
-              trk: 'Abonelik başarıyla aktarıldı',
-              es: 'Suscripción transferida con éxito',
-              it: 'Abbonamento trasferito con successo',
-              pl: 'Subskrypcja została pomyślnie przeniesiona',
-              pt: 'Assinatura transferida com sucesso',
-              th: 'โอนการสมัครสมาชิกสำเร็จ',
-              id: 'Langganan berhasil dipindahkan',
-              hi: 'सदस्यता सफलतापूर्वक स्थानांतरित की गई',
-              bn: 'সাবস্ক্রিপশন সফলভাবে স্থানান্তর করা হয়েছে',
-            ),
-          ),
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceFirst('Exception: ', '')),
-        ),
-      );
-    }
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
   }
 
   Future<void> _saveLanguage(String languageCode) async {
@@ -10001,7 +9863,111 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: _showTransferSubscriptionDialog,
+                    onTap: () async {
+                      try {
+                        await AppleIapService.restore(
+                          type: ApplePurchaseType.host,
+                        );
+
+                        await _reloadCurrentUserAccess();
+
+                        final user = FirebaseAuth.instance.currentUser;
+                        if (user == null) {
+                          throw Exception(
+                            tr(
+                              context,
+                              'Please login again',
+                              zhTw: '請重新登入',
+                              zhCn: '请重新登录',
+                              ko: '다시 로그인해주세요',
+                              ja: '再度ログインしてください',
+                              de: 'Bitte erneut anmelden',
+                              fr: 'Veuillez vous reconnecter',
+                              ar: 'يرجى تسجيل الدخول مرة أخرى',
+                              ru: 'Пожалуйста, войдите снова',
+                              trk: 'Lütfen tekrar giriş yapın',
+                              es: 'Por favor inicia sesión nuevamente',
+                              it: 'Accedi di nuovo',
+                              pl: 'Zaloguj się ponownie',
+                              pt: 'Faça login novamente',
+                              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+                              id: 'Silakan login kembali',
+                              hi: 'कृपया फिर से लॉगिन करें',
+                              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+                            ),
+                          );
+                        }
+
+                        final doc = await FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(user.uid)
+                            .get();
+
+                        final data = doc.data() ?? {};
+                        final status =
+                            resolveHostSubscriptionStatusFromUserData(data);
+
+                        if (!status.isPaidActive) {
+                          throw Exception(
+                            tr(
+                              context,
+                              'No subscription found to transfer',
+                              zhTw: '沒有可轉移的訂閱',
+                              zhCn: '没有可转移的订阅',
+                              ko: '이전할 구독이 없습니다',
+                              ja: '移行できるサブスクリプションが見つかりません',
+                              de: 'Kein Abonnement zum Übertragen gefunden',
+                              fr: 'Aucun abonnement à transférer',
+                              ar: 'لا يوجد اشتراك لنقله',
+                              ru: 'Нет подписки для переноса',
+                              trk: 'Aktarılacak abonelik bulunamadı',
+                              es: 'No hay suscripción para transferir',
+                              it: 'Nessun abbonamento da trasferire',
+                              pl: 'Brak subskrypcji do przeniesienia',
+                              pt: 'Nenhuma assinatura para transferir',
+                              th: 'ไม่มีการสมัครสมาชิกให้โอน',
+                              id: 'Tidak ada langganan untuk dipindahkan',
+                              hi: 'स्थानांतरित करने के लिए कोई सदस्यता नहीं मिली',
+                              bn: 'স্থানান্তরের জন্য কোনো সাবস্ক্রিপশন পাওয়া যায়নি',
+                            ),
+                          );
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              tr(
+                                context,
+                                'Subscription transferred successfully',
+                                zhTw: '訂閱轉移成功',
+                                zhCn: '订阅转移成功',
+                                ko: '구독이 성공적으로 이전되었습니다',
+                                ja: 'サブスクリプションの移行に成功しました',
+                                de: 'Abonnement erfolgreich übertragen',
+                                fr: 'Abonnement transféré avec succès',
+                                ar: 'تم نقل الاشتراك بنجاح',
+                                ru: 'Подписка успешно перенесена',
+                                trk: 'Abonelik başarıyla aktarıldı',
+                                es: 'Suscripción transferida con éxito',
+                                it: 'Abbonamento trasferito con successo',
+                                pl: 'Subskrypcja została pomyślnie przeniesiona',
+                                pt: 'Assinatura transferida com sucesso',
+                                th: 'โอนการสมัครสมาชิกสำเร็จ',
+                                id: 'Langganan berhasil dipindahkan',
+                                hi: 'सदस्यता सफलतापूर्वक स्थानांतरित की गई',
+                                bn: 'সাবস্ক্রিপশন সফলভাবে স্থানান্তর করা হয়েছে',
+                              ),
+                            ),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString()),
+                          ),
+                        );
+                      }
+                    }
                   ),
 
                   ListTile(
@@ -10402,6 +10368,46 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
                       await _reloadCurrentUserAccess();
 
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        throw Exception('Please login again');
+                      }
+
+                      final userDoc = await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .get();
+
+                      final data = userDoc.data() ?? {};
+                      final hostStatus =
+                          resolveHostSubscriptionStatusFromUserData(data);
+
+                      if (!hostStatus.isPaidActive) {
+                        throw Exception(
+                          tr(
+                            context,
+                            'This subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+                            zhTw: '此訂閱已綁定到另一個帳號。請到設定中使用「轉移訂閱」。',
+                            zhCn: '此订阅已绑定到另一个账号。请到设置中使用“转移订阅”。',
+                            ko: '이 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+                            ja: 'このサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+                            de: 'Dieses Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+                            fr: 'Cet abonnement est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+                            ar: 'هذا الاشتراك مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+                            ru: 'Эта подписка уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+                            trk: 'Bu abonelik zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+                            es: 'Esta suscripción ya está vinculada a otra cuenta. Utiliza “Transferir suscripción” en Configuración.',
+                            it: 'Questo abbonamento è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+                            pl: 'Ta subskrypcja jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+                            pt: 'Esta assinatura já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+                            th: 'การสมัครสมาชิกนี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+                            id: 'Langganan ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+                            hi: 'यह सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+                            bn: 'এই সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+                          ),
+                        );
+                      }
+
                       Navigator.pop(context, false);
 
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -10414,19 +10420,19 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                               zhCn: '购买已恢复',
                               ko: '구매가 복원되었습니다',
                               ja: '購入が復元されました',
-                              de: 'Kauf wurde wiederhergestellt',
+                              de: 'Kauf wiederhergestellt',
                               fr: 'Achat restauré',
-                              ar: 'تمت استعادة عملية الشراء',
+                              ar: 'تمت استعادة الشراء',
                               ru: 'Покупка восстановлена',
                               trk: 'Satın alma geri yüklendi',
                               es: 'Compra restaurada',
                               it: 'Acquisto ripristinato',
-                              pl: 'Zakup został przywrócony',
+                              pl: 'Zakup przywrócony',
                               pt: 'Compra restaurada',
                               th: 'กู้คืนการซื้อแล้ว',
-                              id: 'Pembelian berhasil dipulihkan',
-                              hi: 'खरीद पुनर्स्थापित कर दी गई',
-                              bn: 'ক্রয় পুনরুদ্ধার করা হয়েছে',
+                              id: 'Pembelian dipulihkan',
+                              hi: 'खरीद बहाल की गई',
+                              bn: 'ক্রয় পুনরুদ্ধার হয়েছে',
                             ),
                           ),
                         ),
@@ -10443,21 +10449,21 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                               'Restore Failed',
                               zhTw: '恢復購買失敗',
                               zhCn: '恢复购买失败',
-                              ko: '구매 복원 실패',
-                              ja: '購入の復元に失敗しました',
+                              ko: '복원 실패',
+                              ja: '復元に失敗しました',
                               de: 'Wiederherstellung fehlgeschlagen',
                               fr: 'Échec de la restauration',
-                              ar: 'فشلت استعادة الشراء',
+                              ar: 'فشل الاستعادة',
                               ru: 'Не удалось восстановить покупку',
                               trk: 'Geri yükleme başarısız',
-                              es: 'Error al restaurar',
+                              es: 'Error al restaurar la compra',
                               it: 'Ripristino non riuscito',
                               pl: 'Przywracanie nie powiodło się',
-                              pt: 'Falha ao restaurar',
+                              pt: 'Falha na restauração',
                               th: 'กู้คืนการซื้อไม่สำเร็จ',
                               id: 'Pemulihan gagal',
                               hi: 'पुनर्स्थापना विफल',
-                              bn: 'পুনরুদ্ধার ব্যর্থ হয়েছে',
+                              bn: 'পুনরুদ্ধার ব্যর্থ',
                             ),
                           ),
                           content: Text(
@@ -10525,10 +10531,13 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 Row(
                   children: [
                     Expanded(
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
-                          foregroundColor: Colors.white,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2E7D32),
+                          side: const BorderSide(
+                            color: Color(0xFF2E7D32),
+                            width: 1.5,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
@@ -13354,13 +13363,78 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 
   Future<void> _startStripeCheckout() async {
-
     if (isAppleIapPlatform) {
       try {
         await AppleIapService.buy(
           productId: kAppleHostProProductId,
           type: ApplePurchaseType.host,
         );
+
+        if (!mounted) return;
+
+        await _reloadCurrentUserAccess();
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          throw Exception(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해주세요',
+              ja: '再度ログインしてください',
+              de: 'Bitte erneut anmelden',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Por favor inicia sesión nuevamente',
+              it: 'Accedi di nuovo',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Faça login novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan login kembali',
+              hi: 'कृपया फिर से लॉगिन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          );
+        }
+
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        final data = doc.data() ?? {};
+        final hostStatus =
+            resolveHostSubscriptionStatusFromUserData(data);
+
+        if (!hostStatus.isPaidActive) {
+          throw Exception(
+            tr(
+              context,
+              'This subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+              zhTw: '此訂閱已綁定到另一個帳號。請到設定中使用「轉移訂閱」。',
+              zhCn: '此订阅已绑定到另一个账号。请到设置中使用“转移订阅”。',
+              ko: '이 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+              ja: 'このサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+              de: 'Dieses Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+              fr: 'Cet abonnement est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+              ar: 'هذا الاشتراك مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+              ru: 'Эта подписка уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+              trk: 'Bu abonelik zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+              es: 'Esta suscripción ya está vinculada a otra cuenta. Utiliza “Transferir suscripción” en Configuración.',
+              it: 'Questo abbonamento è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+              pl: 'Ta subskrypcja jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+              pt: 'Esta assinatura já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+              th: 'การสมัครสมาชิกนี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+              id: 'Langganan ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+              hi: 'यह सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+              bn: 'এই সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+            ),
+          );
+        }
 
         _showSnack(
           tr(
@@ -13369,7 +13443,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             zhTw: 'Host Pro 已啟用',
             zhCn: 'Host Pro 已启用',
             ko: 'Host Pro가 활성화되었습니다',
-            ja: 'Host Pro が有効になりました',
+            ja: 'Host Proが有効になりました',
             de: 'Host Pro aktiviert',
             fr: 'Host Pro activé',
             ar: 'تم تفعيل Host Pro',
@@ -13382,13 +13456,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             th: 'เปิดใช้งาน Host Pro แล้ว',
             id: 'Host Pro diaktifkan',
             hi: 'Host Pro सक्रिय हो गया',
-            bn: 'Host Pro চালু হয়েছে',
+            bn: 'Host Pro সক্রিয় হয়েছে',
           ),
         );
-
-        if (mounted) {
-          await _reloadCurrentUserAccess();
-        }
       } catch (e) {
         _showSnack(e.toString().replaceFirst('Exception: ', ''));
       }
@@ -13407,6 +13477,72 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           type: ApplePurchaseType.stats,
         );
 
+        if (!mounted) return;
+
+        await _reloadCurrentUserAccess();
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          throw Exception(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해주세요',
+              ja: '再度ログインしてください',
+              de: 'Bitte erneut anmelden',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Por favor inicia sesión nuevamente',
+              it: 'Accedi di nuovo',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Faça login novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan login kembali',
+              hi: 'कृपया फिर से लॉगिन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          );
+        }
+
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        final data = doc.data() ?? {};
+        final statsStatus =
+            resolveStatsSubscriptionStatusFromUserData(data);
+
+        if (!statsStatus.isPaidActive) {
+          throw Exception(
+            tr(
+              context,
+              'This subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+              zhTw: '此訂閱已綁定到另一個帳號。請到設定中使用「轉移訂閱」。',
+              zhCn: '此订阅已绑定到另一个账号。请到设置中使用“转移订阅”。',
+              ko: '이 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+              ja: 'このサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+              de: 'Dieses Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+              fr: 'Cet abonnement est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+              ar: 'هذا الاشتراك مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+              ru: 'Эта подписка уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+              trk: 'Bu abonelik zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+              es: 'Esta suscripción ya está vinculada a otra cuenta. Utiliza “Transferir suscripción” en Configuración.',
+              it: 'Questo abbonamento è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+              pl: 'Ta subskrypcja jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+              pt: 'Esta assinatura já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+              th: 'การสมัครสมาชิกนี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+              id: 'Langganan ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+              hi: 'यह सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+              bn: 'এই সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+            ),
+          );
+        }
+
         _showSnack(
           tr(
             context,
@@ -13414,7 +13550,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             zhTw: 'Stats Pro 已啟用',
             zhCn: 'Stats Pro 已启用',
             ko: 'Stats Pro가 활성화되었습니다',
-            ja: 'Stats Pro が有効になりました',
+            ja: 'Stats Proが有効になりました',
             de: 'Stats Pro aktiviert',
             fr: 'Stats Pro activé',
             ar: 'تم تفعيل Stats Pro',
@@ -13427,13 +13563,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             th: 'เปิดใช้งาน Stats Pro แล้ว',
             id: 'Stats Pro diaktifkan',
             hi: 'Stats Pro सक्रिय हो गया',
-            bn: 'Stats Pro চালু হয়েছে',
+            bn: 'Stats Pro সক্রিয় হয়েছে',
           ),
         );
-
-        if (mounted) {
-          await _reloadCurrentUserAccess();
-        }
       } catch (e) {
         _showSnack(e.toString().replaceFirst('Exception: ', ''));
       }
@@ -30997,6 +31129,71 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         );
 
         if (!mounted) return;
+
+        await _reloadStatsAccess();
+
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          throw Exception(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해주세요',
+              ja: '再度ログインしてください',
+              de: 'Bitte erneut anmelden',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Por favor inicia sesión nuevamente',
+              it: 'Accedi di nuovo',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Faça login novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan login kembali',
+              hi: 'कृपया फिर से लॉगिन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          );
+        }
+
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        final data = doc.data() ?? {};
+        final statsStatus =
+            resolveStatsSubscriptionStatusFromUserData(data);
+
+        if (!statsStatus.isPaidActive) {
+          throw Exception(
+            tr(
+              context,
+              'This subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+              zhTw: '此訂閱已綁定到另一個帳號。請到設定中使用「轉移訂閱」。',
+              zhCn: '此订阅已绑定到另一个账号。请到设置中使用“转移订阅”。',
+              ko: '이 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+              ja: 'このサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+              de: 'Dieses Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+              fr: 'Cet abonnement est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+              ar: 'هذا الاشتراك مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+              ru: 'Эта подписка уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+              trk: 'Bu abonelik zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+              es: 'Esta suscripción ya está vinculada a otra cuenta. Utiliza “Transferir suscripción” en Configuración.',
+              it: 'Questo abbonamento è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+              pl: 'Ta subskrypcja jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+              pt: 'Esta assinatura já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+              th: 'การสมัครสมาชิกนี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+              id: 'Langganan ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+              hi: 'यह सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+              bn: 'এই সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+            ),
+          );
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -31005,8 +31202,8 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 'Stats Pro activated',
                 zhTw: 'Stats Pro 已啟用',
                 zhCn: 'Stats Pro 已启用',
-                ko: 'Stats Pro 활성화됨',
-                ja: 'Stats Pro が有効化されました',
+                ko: 'Stats Pro가 활성화되었습니다',
+                ja: 'Stats Proが有効になりました',
                 de: 'Stats Pro aktiviert',
                 fr: 'Stats Pro activé',
                 ar: 'تم تفعيل Stats Pro',
@@ -31024,15 +31221,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
             ),
           ),
         );
-
-        await _waitAndReloadStatsAccess();
-
-        if (mounted) {
-          setState(() {});
-        }
-        
       } catch (e) {
-        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(e.toString().replaceFirst('Exception: ', '')),
@@ -31587,10 +31776,13 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 Row(
                   children: [
                     Expanded(
-                      child: FilledButton(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: const Color(0xFF2E7D32),
-                          foregroundColor: Colors.white,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF2E7D32),
+                          side: const BorderSide(
+                            color: Color(0xFF2E7D32),
+                            width: 1.5,
+                          ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
