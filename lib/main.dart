@@ -23,6 +23,8 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
+import 'purchase_history_page.dart';
+
 
 final GlobalKey<NavigatorState> appNavigatorKey =
     GlobalKey<NavigatorState>();
@@ -2845,6 +2847,26 @@ class HostSubscriptionStatus {
         graceEndsAt = null;
 }
 
+class StatsSubscriptionStatus {
+  final bool isPaidActive;
+  final DateTime? expiresAt;
+  final bool willAutoRenew;
+  final bool showRenewBanner;
+
+  const StatsSubscriptionStatus({
+    required this.isPaidActive,
+    required this.expiresAt,
+    this.willAutoRenew = true,
+    this.showRenewBanner = false,
+  });
+
+  const StatsSubscriptionStatus.unpaid()
+      : isPaidActive = false,
+        expiresAt = null,
+        willAutoRenew = false,
+        showRenewBanner = false;
+}
+
 DateTime? firestoreDateTime(dynamic value) {
   if (value is Timestamp) return value.toDate();
   if (value is DateTime) return value;
@@ -2882,8 +2904,10 @@ HostSubscriptionStatus resolveHostSubscriptionStatusFromUserData(
   }
 
   final now = DateTime.now();
-  final reminderStart = expiresAt.subtract(const Duration(days: 3));
   final graceEndsAt = expiresAt.add(const Duration(days: 14));
+
+  final hostWillAutoRenew =
+      (data['hostWillAutoRenew'] ?? true) == true;
 
   if (now.isAfter(graceEndsAt)) {
     return HostSubscriptionStatus(
@@ -2904,7 +2928,7 @@ HostSubscriptionStatus resolveHostSubscriptionStatusFromUserData(
       isPaidActive: true,
       isGracePeriod: false,
       canCreateTable: true,
-      showRenewBanner: !now.isBefore(reminderStart),
+      showRenewBanner: !hostWillAutoRenew,
       expiresAt: expiresAt,
       graceEndsAt: graceEndsAt,
       shouldDowngradeToPlayer: false,
@@ -2932,20 +2956,6 @@ Future<void> activateHostSubscriptionForUserUid(
   );
 }
 
-class StatsSubscriptionStatus {
-  final bool isPaidActive;
-  final DateTime? expiresAt;
-
-  const StatsSubscriptionStatus({
-    required this.isPaidActive,
-    required this.expiresAt,
-  });
-
-  const StatsSubscriptionStatus.unpaid()
-      : isPaidActive = false,
-        expiresAt = null;
-}
-
 StatsSubscriptionStatus resolveStatsSubscriptionStatusFromUserData(
   Map<String, dynamic>? rawData,
 ) {
@@ -2957,6 +2967,8 @@ StatsSubscriptionStatus resolveStatsSubscriptionStatusFromUserData(
   }
 
   final now = DateTime.now();
+  final statsWillAutoRenew =
+      (data['statsWillAutoRenew'] ?? true) == true;
 
   if (now.isAfter(expiresAt)) {
     return const StatsSubscriptionStatus.unpaid();
@@ -2965,6 +2977,8 @@ StatsSubscriptionStatus resolveStatsSubscriptionStatusFromUserData(
   return StatsSubscriptionStatus(
     isPaidActive: true,
     expiresAt: expiresAt,
+    willAutoRenew: statsWillAutoRenew,
+    showRenewBanner: !statsWillAutoRenew,
   );
 }
 
@@ -4380,7 +4394,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
       final data = userDoc.data();
       if (data == null) {
-        _showSnack('User profile not found');
+        _showSnack(
+          tr(
+            context,
+            'User profile not found',
+            zhTw: '找不到使用者資料',
+            zhCn: '找不到用户资料',
+            ko: '사용자 정보를 찾을 수 없습니다',
+            ja: 'ユーザープロフィールが見つかりません',
+            de: 'Benutzerprofil nicht gefunden',
+            fr: 'Profil utilisateur introuvable',
+            ar: 'تعذر العثور على ملف المستخدم',
+            ru: 'Профиль пользователя не найден',
+            trk: 'Kullanıcı profili bulunamadı',
+            es: 'Perfil de usuario no encontrado',
+            it: 'Profilo utente non trovato',
+            pl: 'Nie znaleziono profilu użytkownika',
+            pt: 'Perfil do usuário não encontrado',
+            th: 'ไม่พบข้อมูลผู้ใช้',
+            id: 'Profil pengguna tidak ditemukan',
+            hi: 'उपयोगकर्ता प्रोफ़ाइल नहीं मिला',
+            bn: 'ব্যবহারকারীর প্রোফাইল পাওয়া যায়নি',
+          ),
+        );
         return;
       }
 
@@ -4403,11 +4439,79 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
         ),
       );
     } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? 'Login failed');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Login failed',
+              zhTw: '登入失敗',
+              zhCn: '登录失败',
+              ko: '로그인 실패',
+              ja: 'ログインに失敗しました',
+              de: 'Anmeldung fehlgeschlagen',
+              fr: 'Échec de la connexion',
+              ar: 'فشل تسجيل الدخول',
+              ru: 'Ошибка входа',
+              trk: 'Giriş başarısız',
+              es: 'Error al iniciar sesión',
+              it: 'Accesso non riuscito',
+              pl: 'Logowanie nie powiodło się',
+              pt: 'Falha no login',
+              th: 'เข้าสู่ระบบล้มเหลว',
+              id: 'Gagal masuk',
+              hi: 'लॉगिन विफल',
+              bn: 'লগইন ব্যর্থ',
+            ),
+      );
     } on FirebaseException catch (e) {
-      _showSnack(e.message ?? 'Firestore error');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Firestore error',
+              zhTw: '資料庫錯誤',
+              zhCn: '数据库错误',
+              ko: '데이터베이스 오류',
+              ja: 'データベースエラー',
+              de: 'Datenbankfehler',
+              fr: 'Erreur de base de données',
+              ar: 'خطأ في قاعدة البيانات',
+              ru: 'Ошибка базы данных',
+              trk: 'Veritabanı hatası',
+              es: 'Error de base de datos',
+              it: 'Errore del database',
+              pl: 'Błąd bazy danych',
+              pt: 'Erro de banco de dados',
+              th: 'ข้อผิดพลาดฐานข้อมูล',
+              id: 'Kesalahan database',
+              hi: 'डेटाबेस त्रुटि',
+              bn: 'ডাটাবেস ত্রুটি',
+            ),
+      );
     } catch (e) {
-      _showSnack('Something went wrong');
+      _showSnack(
+        tr(
+          context,
+          'Something went wrong',
+          zhTw: '發生錯誤',
+          zhCn: '发生错误',
+          ko: '문제가 발생했습니다',
+          ja: '問題が発生しました',
+          de: 'Etwas ist schief gelaufen',
+          fr: 'Une erreur est survenue',
+          ar: 'حدث خطأ ما',
+          ru: 'Что-то пошло не так',
+          trk: 'Bir hata oluştu',
+          es: 'Algo salió mal',
+          it: 'Qualcosa è andato storto',
+          pl: 'Coś poszło nie tak',
+          pt: 'Algo deu errado',
+          th: 'เกิดข้อผิดพลาด',
+          id: 'Terjadi kesalahan',
+          hi: 'कुछ गलत हो गया',
+          bn: 'কিছু ভুল হয়েছে',
+        ),
+      );
     }
   }
 
@@ -4536,7 +4640,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
   Future<void> _signInWithApple() async {
     try {
       if (!await SignInWithApple.isAvailable()) {
-        _showSnack('Apple Sign-In is not available on this device');
+        _showSnack(
+          tr(
+            context,
+            'Apple Sign-In is not available on this device',
+            zhTw: '此裝置不支援 Apple 登入',
+            zhCn: '此设备不支持 Apple 登录',
+            ko: '이 기기에서는 Apple 로그인을 사용할 수 없습니다',
+            ja: 'このデバイスではAppleサインインは利用できません',
+            de: 'Apple-Anmeldung ist auf diesem Gerät nicht verfügbar',
+            fr: 'La connexion Apple n’est pas disponible sur cet appareil',
+            ar: 'تسجيل الدخول باستخدام Apple غير متاح على هذا الجهاز',
+            ru: 'Вход через Apple недоступен на этом устройстве',
+            trk: 'Apple ile giriş bu cihazda kullanılamıyor',
+            es: 'El inicio de sesión con Apple no está disponible en este dispositivo',
+            it: 'L’accesso con Apple non è disponibile su questo dispositivo',
+            pl: 'Logowanie przez Apple nie jest dostępne na tym urządzeniu',
+            pt: 'O login com Apple não está disponível neste dispositivo',
+            th: 'ไม่รองรับการเข้าสู่ระบบด้วย Apple บนอุปกรณ์นี้',
+            id: 'Masuk dengan Apple tidak tersedia di perangkat ini',
+            hi: 'इस डिवाइस पर Apple साइन-इन उपलब्ध नहीं है',
+            bn: 'এই ডিভাইসে Apple সাইন-ইন উপলব্ধ নয়',
+          ),
+        );
         return;
       }
 
@@ -4549,7 +4675,29 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
       final user = userCredential.user;
       if (user == null) {
-        _showSnack('Apple login failed: user is null');
+        _showSnack(
+          tr(
+            context,
+            'Apple login failed: user is null',
+            zhTw: 'Apple 登入失敗：使用者為空',
+            zhCn: 'Apple 登录失败：用户为空',
+            ko: 'Apple 로그인 실패: 사용자 정보가 없습니다',
+            ja: 'Appleログイン失敗：ユーザーが取得できません',
+            de: 'Apple-Anmeldung fehlgeschlagen: Benutzer ist null',
+            fr: 'Échec de la connexion Apple : utilisateur nul',
+            ar: 'فشل تسجيل الدخول عبر Apple: المستخدم غير موجود',
+            ru: 'Ошибка входа через Apple: пользователь отсутствует',
+            trk: 'Apple girişi başarısız: kullanıcı boş',
+            es: 'Error de inicio de sesión con Apple: usuario nulo',
+            it: 'Accesso Apple non riuscito: utente nullo',
+            pl: 'Logowanie Apple nie powiodło się: użytkownik jest pusty',
+            pt: 'Falha no login Apple: usuário nulo',
+            th: 'เข้าสู่ระบบ Apple ล้มเหลว: ไม่พบผู้ใช้',
+            id: 'Login Apple gagal: pengguna kosong',
+            hi: 'Apple लॉगिन विफल: उपयोगकर्ता null है',
+            bn: 'Apple লগইন ব্যর্থ: ব্যবহারকারী নেই',
+          ),
+        );
         return;
       }
 
@@ -4598,11 +4746,57 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
       debugPrint('code: ${e.code}');
       debugPrint('message: ${e.message}');
       debugPrintStack(stackTrace: st);
-      _showSnack('Apple login failed: ${e.code}');
+
+      _showSnack(
+        tr(
+          context,
+          'Apple login failed. Please try again.',
+          zhTw: 'Apple 登入失敗，請再試一次',
+          zhCn: 'Apple 登录失败，请重试',
+          ko: 'Apple 로그인에 실패했습니다. 다시 시도해주세요',
+          ja: 'Appleログインに失敗しました。もう一度お試しください',
+          de: 'Apple-Anmeldung fehlgeschlagen. Bitte erneut versuchen',
+          fr: 'Échec de la connexion Apple. Veuillez réessayer',
+          ar: 'فشل تسجيل الدخول عبر Apple. يرجى المحاولة مرة أخرى',
+          ru: 'Не удалось войти через Apple. Попробуйте снова',
+          trk: 'Apple ile giriş başarısız. Lütfen tekrar deneyin',
+          es: 'Error al iniciar sesión con Apple. Inténtalo de nuevo',
+          it: 'Accesso Apple non riuscito. Riprova',
+          pl: 'Logowanie przez Apple nie powiodło się. Spróbuj ponownie',
+          pt: 'Falha no login com Apple. Tente novamente',
+          th: 'เข้าสู่ระบบ Apple ล้มเหลว กรุณาลองใหม่',
+          id: 'Login Apple gagal. Silakan coba lagi',
+          hi: 'Apple लॉगिन विफल हुआ। कृपया फिर से प्रयास करें',
+          bn: 'Apple লগইন ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+        ),
+      );
     } catch (e, st) {
       debugPrint('APPLE LOGIN UNKNOWN ERROR: $e');
       debugPrintStack(stackTrace: st);
-      _showSnack('Apple login failed: $e');
+
+      _showSnack(
+        tr(
+          context,
+          'Something went wrong. Please try again.',
+          zhTw: '發生錯誤，請再試一次',
+          zhCn: '发生错误，请重试',
+          ko: '문제가 발생했습니다. 다시 시도해주세요',
+          ja: '問題が発生しました。もう一度お試しください',
+          de: 'Etwas ist schief gelaufen. Bitte erneut versuchen',
+          fr: 'Une erreur est survenue. Veuillez réessayer',
+          ar: 'حدث خطأ ما. يرجى المحاولة مرة أخرى',
+          ru: 'Что-то пошло не так. Попробуйте снова',
+          trk: 'Bir hata oluştu. Lütfen tekrar deneyin',
+          es: 'Algo salió mal. Inténtalo de nuevo',
+          it: 'Qualcosa è andato storto. Riprova',
+          pl: 'Coś poszło nie tak. Spróbuj ponownie',
+          pt: 'Algo deu errado. Tente novamente',
+          th: 'เกิดข้อผิดพลาด กรุณาลองใหม่',
+          id: 'Terjadi kesalahan. Silakan coba lagi',
+          hi: 'कुछ गलत हुआ। कृपया फिर से प्रयास करें',
+          bn: 'কিছু ভুল হয়েছে। আবার চেষ্টা করুন',
+        ),
+      );
     }
   }
 
@@ -5908,12 +6102,56 @@ class _RegisterPageState extends State<RegisterPage> {
         email.isEmpty ||
         password.isEmpty ||
         confirmPassword.isEmpty) {
-      _showSnack('Please fill in all required fields');
+      _showSnack(
+        tr(
+          context,
+          'Please fill in all required fields',
+          zhTw: '請填寫所有必填欄位',
+          zhCn: '请填写所有必填项',
+          ko: '모든 필수 항목을 입력해주세요',
+          ja: 'すべての必須項目を入力してください',
+          de: 'Bitte alle Pflichtfelder ausfüllen',
+          fr: 'Veuillez remplir tous les champs obligatoires',
+          ar: 'يرجى ملء جميع الحقول المطلوبة',
+          ru: 'Пожалуйста, заполните все обязательные поля',
+          trk: 'Lütfen tüm gerekli alanları doldurun',
+          es: 'Por favor complete todos los campos obligatorios',
+          it: 'Compila tutti i campi obbligatori',
+          pl: 'Wypełnij wszystkie wymagane pola',
+          pt: 'Preencha todos os campos obrigatórios',
+          th: 'กรุณากรอกข้อมูลให้ครบทุกช่อง',
+          id: 'Harap isi semua kolom yang wajib',
+          hi: 'कृपया सभी आवश्यक फ़ील्ड भरें',
+          bn: 'অনুগ্রহ করে সব প্রয়োজনীয় ঘর পূরণ করুন',
+        ),
+      );
       return;
     }
 
     if (password != confirmPassword) {
-      _showSnack('Passwords do not match');
+      _showSnack(
+        tr(
+          context,
+          'Passwords do not match',
+          zhTw: '密碼不一致',
+          zhCn: '密码不一致',
+          ko: '비밀번호가 일치하지 않습니다',
+          ja: 'パスワードが一致しません',
+          de: 'Passwörter stimmen nicht überein',
+          fr: 'Les mots de passe ne correspondent pas',
+          ar: 'كلمات المرور غير متطابقة',
+          ru: 'Пароли не совпадают',
+          trk: 'Şifreler eşleşmiyor',
+          es: 'Las contraseñas no coinciden',
+          it: 'Le password non coincidono',
+          pl: 'Hasła nie są zgodne',
+          pt: 'As senhas não coincidem',
+          th: 'รหัสผ่านไม่ตรงกัน',
+          id: 'Kata sandi tidak cocok',
+          hi: 'पासवर्ड मेल नहीं खाते',
+          bn: 'পাসওয়ার্ড মেলেনি',
+        ),
+      );
       return;
     }
 
@@ -5925,7 +6163,29 @@ class _RegisterPageState extends State<RegisterPage> {
 
       final user = cred.user;
       if (user == null) {
-        _showSnack('Registration failed');
+        _showSnack(
+          tr(
+            context,
+            'Registration failed',
+            zhTw: '註冊失敗',
+            zhCn: '注册失败',
+            ko: '회원가입에 실패했습니다',
+            ja: '登録に失敗しました',
+            de: 'Registrierung fehlgeschlagen',
+            fr: 'Échec de l’inscription',
+            ar: 'فشل التسجيل',
+            ru: 'Ошибка регистрации',
+            trk: 'Kayıt başarısız',
+            es: 'Registro fallido',
+            it: 'Registrazione non riuscita',
+            pl: 'Rejestracja nie powiodła się',
+            pt: 'Falha no registro',
+            th: 'สมัครสมาชิกไม่สำเร็จ',
+            id: 'Pendaftaran gagal',
+            hi: 'पंजीकरण विफल',
+            bn: 'নিবন্ধন ব্যর্থ',
+          ),
+        );
         return;
       }
 
@@ -5953,9 +6213,54 @@ class _RegisterPageState extends State<RegisterPage> {
         (route) => false,
       );
     } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? 'Registration failed');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Registration failed. Please try again.',
+              zhTw: '註冊失敗，請再試一次',
+              zhCn: '注册失败，请重试',
+              ko: '회원가입에 실패했습니다. 다시 시도해주세요',
+              ja: '登録に失敗しました。もう一度お試しください',
+              de: 'Registrierung fehlgeschlagen. Bitte erneut versuchen',
+              fr: 'Échec de l’inscription. Veuillez réessayer',
+              ar: 'فشل التسجيل. يرجى المحاولة مرة أخرى',
+              ru: 'Ошибка регистрации. Попробуйте снова',
+              trk: 'Kayıt başarısız. Lütfen tekrar deneyin',
+              es: 'Registro fallido. Inténtalo de nuevo',
+              it: 'Registrazione non riuscita. Riprova',
+              pl: 'Rejestracja nie powiodła się. Spróbuj ponownie',
+              pt: 'Falha no registro. Tente novamente',
+              th: 'สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่',
+              id: 'Pendaftaran gagal. Silakan coba lagi',
+              hi: 'पंजीकरण विफल हुआ। कृपया फिर से प्रयास करें',
+              bn: 'নিবন্ধন ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+            ),
+      );
     } catch (e) {
-      _showSnack('Registration failed');
+      _showSnack(
+        tr(
+          context,
+          'Registration failed. Please try again.',
+          zhTw: '註冊失敗，請再試一次',
+          zhCn: '注册失败，请重试',
+          ko: '회원가입에 실패했습니다. 다시 시도해주세요',
+          ja: '登録に失敗しました。もう一度お試しください',
+          de: 'Registrierung fehlgeschlagen. Bitte erneut versuchen',
+          fr: 'Échec de l’inscription. Veuillez réessayer',
+          ar: 'فشل التسجيل. يرجى المحاولة مرة أخرى',
+          ru: 'Ошибка регистрации. Попробуйте снова',
+          trk: 'Kayıt başarısız. Lütfen tekrar deneyin',
+          es: 'Registro fallido. Inténtalo de nuevo',
+          it: 'Registrazione non riuscita. Riprova',
+          pl: 'Rejestracja nie powiodła się. Spróbuj ponownie',
+          pt: 'Falha no registro. Tente novamente',
+          th: 'สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่',
+          id: 'Pendaftaran gagal. Silakan coba lagi',
+          hi: 'पंजीकरण विफल हुआ। कृपया फिर से प्रयास करें',
+          bn: 'নিবন্ধন ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+        ),
+      );
     }
   }
 
@@ -6605,7 +6910,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         photoUrl = user.photoURL;
         isLoading = false;
       });
-      _showSnack('Failed to load profile');
+      _showSnack(
+        tr(
+          context,
+          'Failed to load profile',
+          zhTw: '載入使用者資料失敗',
+          zhCn: '加载用户资料失败',
+          ko: '프로필을 불러오지 못했습니다',
+          ja: 'プロフィールの読み込みに失敗しました',
+          de: 'Profil konnte nicht geladen werden',
+          fr: 'Échec du chargement du profil',
+          ar: 'فشل تحميل الملف الشخصي',
+          ru: 'Не удалось загрузить профиль',
+          trk: 'Profil yüklenemedi',
+          es: 'Error al cargar el perfil',
+          it: 'Impossibile caricare il profilo',
+          pl: 'Nie udało się załadować profilu',
+          pt: 'Falha ao carregar o perfil',
+          th: 'โหลดโปรไฟล์ไม่สำเร็จ',
+          id: 'Gagal memuat profil',
+          hi: 'प्रोफ़ाइल लोड करने में विफल',
+          bn: 'প্রোফাইল লোড করতে ব্যর্থ',
+        ),
+      );
     }
   }
 
@@ -6778,7 +7105,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     final lastName = lastNameController.text.trim();
 
     if (firstName.isEmpty) {
-      _showSnack('Display name cannot be empty');
+      _showSnack(
+        tr(
+          context,
+          'Display name cannot be empty',
+          zhTw: '顯示名稱不能為空',
+          zhCn: '显示名称不能为空',
+          ko: '표시 이름은 비워둘 수 없습니다',
+          ja: '表示名は空にできません',
+          de: 'Anzeigename darf nicht leer sein',
+          fr: 'Le nom affiché ne peut pas être vide',
+          ar: 'لا يمكن أن يكون اسم العرض فارغًا',
+          ru: 'Отображаемое имя не может быть пустым',
+          trk: 'Görünen ad boş olamaz',
+          es: 'El nombre visible no puede estar vacío',
+          it: 'Il nome visualizzato non può essere vuoto',
+          pl: 'Nazwa wyświetlana nie może być pusta',
+          pt: 'O nome de exibição não pode estar vazio',
+          th: 'ชื่อที่แสดงต้องไม่ว่างเปล่า',
+          id: 'Nama tampilan tidak boleh kosong',
+          hi: 'डिस्प्ले नाम खाली नहीं हो सकता',
+          bn: 'ডিসপ্লে নাম খালি হতে পারে না',
+        ),
+      );
       return;
     }
 
@@ -6830,16 +7179,83 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
       if (!mounted) return;
 
-      _showSnack('Profile updated');
+      _showSnack(
+        tr(
+          context,
+          'Profile updated',
+          zhTw: '個人資料已更新',
+          zhCn: '个人资料已更新',
+          ko: '프로필이 업데이트되었습니다',
+          ja: 'プロフィールが更新されました',
+          de: 'Profil aktualisiert',
+          fr: 'Profil mis à jour',
+          ar: 'تم تحديث الملف الشخصي',
+          ru: 'Профиль обновлён',
+          trk: 'Profil güncellendi',
+          es: 'Perfil actualizado',
+          it: 'Profilo aggiornato',
+          pl: 'Profil zaktualizowany',
+          pt: 'Perfil atualizado',
+          th: 'อัปเดตโปรไฟล์แล้ว',
+          id: 'Profil diperbarui',
+          hi: 'प्रोफ़ाइल अपडेट हो गई',
+          bn: 'প্রোফাইল আপডেট হয়েছে',
+        ),
+      );
 
       if (!mounted) return;
 
       // ⭐ 回傳給上一頁，告訴他「資料更新了」
       Navigator.pop(context, true);
     } on FirebaseAuthException catch (e) {
-      _showSnack(e.message ?? 'Failed to update profile');
+      _showSnack(
+        e.message ??
+            tr(
+              context,
+              'Failed to update profile. Please try again.',
+              zhTw: '更新個人資料失敗，請再試一次',
+              zhCn: '更新个人资料失败，请重试',
+              ko: '프로필 업데이트에 실패했습니다. 다시 시도해주세요',
+              ja: 'プロフィールの更新に失敗しました。もう一度お試しください',
+              de: 'Profil konnte nicht aktualisiert werden. Bitte erneut versuchen',
+              fr: 'Échec de la mise à jour du profil. Veuillez réessayer',
+              ar: 'فشل تحديث الملف الشخصي. يرجى المحاولة مرة أخرى',
+              ru: 'Не удалось обновить профиль. Попробуйте снова',
+              trk: 'Profil güncellenemedi. Lütfen tekrar deneyin',
+              es: 'Error al actualizar el perfil. Inténtalo de nuevo',
+              it: 'Aggiornamento del profilo non riuscito. Riprova',
+              pl: 'Nie udało się zaktualizować profilu. Spróbuj ponownie',
+              pt: 'Falha ao atualizar o perfil. Tente novamente',
+              th: 'อัปเดตโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่',
+              id: 'Gagal memperbarui profil. Silakan coba lagi',
+              hi: 'प्रोफ़ाइल अपडेट करने में विफल। कृपया फिर से प्रयास करें',
+              bn: 'প্রোফাইল আপডেট করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+            ),
+      );
     } catch (e) {
-      _showSnack('Failed to update profile');
+      _showSnack(
+        tr(
+          context,
+          'Failed to update profile. Please try again.',
+          zhTw: '更新個人資料失敗，請再試一次',
+          zhCn: '更新个人资料失败，请重试',
+          ko: '프로필 업데이트에 실패했습니다. 다시 시도해주세요',
+          ja: 'プロフィールの更新に失敗しました。もう一度お試しください',
+          de: 'Profil konnte nicht aktualisiert werden. Bitte erneut versuchen',
+          fr: 'Échec de la mise à jour du profil. Veuillez réessayer',
+          ar: 'فشل تحديث الملف الشخصي. يرجى المحاولة مرة أخرى',
+          ru: 'Не удалось обновить профиль. Попробуйте снова',
+          trk: 'Profil güncellenemedi. Lütfen tekrar deneyin',
+          es: 'Error al actualizar el perfil. Inténtalo de nuevo',
+          it: 'Aggiornamento del profilo non riuscito. Riprova',
+          pl: 'Nie udało się zaktualizować profilu. Spróbuj ponownie',
+          pt: 'Falha ao atualizar o perfil. Tente novamente',
+          th: 'อัปเดตโปรไฟล์ไม่สำเร็จ กรุณาลองใหม่',
+          id: 'Gagal memperbarui profil. Silakan coba lagi',
+          hi: 'प्रोफ़ाइल अपडेट करने में विफल। कृपया फिर से प्रयास करें',
+          bn: 'প্রোফাইল আপডেট করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+        ),
+      );
     }
 
     if (mounted) {
@@ -6854,7 +7270,29 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     if (user == null) return;
 
     if (authProvider == 'google.com') {
-      _showSnack('Google login account cannot change password here');
+      _showSnack(
+        tr(
+          context,
+          'Google login account cannot change password here',
+          zhTw: '使用 Google 登入的帳號無法在此更改密碼',
+          zhCn: '使用 Google 登录的账号无法在此修改密码',
+          ko: 'Google 로그인 계정은 여기에서 비밀번호를 변경할 수 없습니다',
+          ja: 'Googleログインアカウントはここでパスワードを変更できません',
+          de: 'Google-Anmeldekonten können hier kein Passwort ändern',
+          fr: 'Les comptes Google ne peuvent pas modifier le mot de passe ici',
+          ar: 'لا يمكن لحسابات Google تغيير كلمة المرور هنا',
+          ru: 'Аккаунт Google не может изменить пароль здесь',
+          trk: 'Google ile giriş yapan hesaplar burada şifre değiştiremez',
+          es: 'Las cuentas de Google no pueden cambiar la contraseña aquí',
+          it: 'Gli account Google non possono cambiare la password qui',
+          pl: 'Konta Google nie mogą zmienić hasła tutaj',
+          pt: 'Contas Google não podem alterar a senha aqui',
+          th: 'บัญชี Google ไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
+          id: 'Akun Google tidak dapat mengubah kata sandi di sini',
+          hi: 'Google लॉगिन खाता यहाँ पासवर्ड नहीं बदल सकता',
+          bn: 'Google লগইন অ্যাকাউন্ট এখানে পাসওয়ার্ড পরিবর্তন করতে পারে না',
+        ),
+      );
       return;
     }
 
@@ -6862,17 +7300,83 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     final confirmPassword = confirmPasswordController.text.trim();
 
     if (newPassword.isEmpty || confirmPassword.isEmpty) {
-      _showSnack('Please fill in both password fields');
+      _showSnack(
+        tr(
+          context,
+          'Please fill in both password fields',
+          zhTw: '請填寫兩個密碼欄位',
+          zhCn: '请填写两个密码字段',
+          ko: '두 개의 비밀번호 필드를 모두 입력해주세요',
+          ja: '両方のパスワード欄を入力してください',
+          de: 'Bitte beide Passwortfelder ausfüllen',
+          fr: 'Veuillez remplir les deux champs de mot de passe',
+          ar: 'يرجى ملء حقلي كلمة المرور',
+          ru: 'Пожалуйста, заполните оба поля пароля',
+          trk: 'Lütfen her iki şifre alanını da doldurun',
+          es: 'Por favor complete ambos campos de contraseña',
+          it: 'Compila entrambi i campi password',
+          pl: 'Wypełnij oba pola hasła',
+          pt: 'Preencha ambos os campos de senha',
+          th: 'กรุณากรอกช่องรหัสผ่านทั้งสองช่อง',
+          id: 'Harap isi kedua kolom kata sandi',
+          hi: 'कृपया दोनों पासवर्ड फ़ील्ड भरें',
+          bn: 'অনুগ্রহ করে উভয় পাসওয়ার্ড ঘর পূরণ করুন',
+        ),
+      );
       return;
     }
 
     if (newPassword != confirmPassword) {
-      _showSnack('Passwords do not match');
+      _showSnack(
+        tr(
+          context,
+          'Passwords do not match',
+          zhTw: '密碼不一致',
+          zhCn: '密码不一致',
+          ko: '비밀번호가 일치하지 않습니다',
+          ja: 'パスワードが一致しません',
+          de: 'Passwörter stimmen nicht überein',
+          fr: 'Les mots de passe ne correspondent pas',
+          ar: 'كلمات المرور غير متطابقة',
+          ru: 'Пароли не совпадают',
+          trk: 'Şifreler eşleşmiyor',
+          es: 'Las contraseñas no coinciden',
+          it: 'Le password non coincidono',
+          pl: 'Hasła nie są zgodne',
+          pt: 'As senhas não coincidem',
+          th: 'รหัสผ่านไม่ตรงกัน',
+          id: 'Kata sandi tidak cocok',
+          hi: 'पासवर्ड मेल नहीं खाते',
+          bn: 'পাসওয়ার্ড মেলেনি',
+        ),
+      );
       return;
     }
 
     if (newPassword.length < 6) {
-      _showSnack('Password must be at least 6 characters');
+      _showSnack(
+        tr(
+          context,
+          'Password must be at least 6 characters',
+          zhTw: '密碼至少需要 6 個字元',
+          zhCn: '密码至少需要6个字符',
+          ko: '비밀번호는 최소 6자 이상이어야 합니다',
+          ja: 'パスワードは6文字以上である必要があります',
+          de: 'Das Passwort muss mindestens 6 Zeichen lang sein',
+          fr: 'Le mot de passe doit contenir au moins 6 caractères',
+          ar: 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل',
+          ru: 'Пароль должен содержать не менее 6 символов',
+          trk: 'Şifre en az 6 karakter olmalıdır',
+          es: 'La contraseña debe tener al menos 6 caracteres',
+          it: 'La password deve contenere almeno 6 caratteri',
+          pl: 'Hasło musi mieć co najmniej 6 znaków',
+          pt: 'A senha deve ter pelo menos 6 caracteres',
+          th: 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร',
+          id: 'Kata sandi harus minimal 6 karakter',
+          hi: 'पासवर्ड कम से कम 6 अक्षरों का होना चाहिए',
+          bn: 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে',
+        ),
+      );
       return;
     }
 
@@ -6884,15 +7388,105 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       await user.updatePassword(newPassword);
       newPasswordController.clear();
       confirmPasswordController.clear();
-      _showSnack('Password updated');
+
+      _showSnack(
+        tr(
+          context,
+          'Password updated',
+          zhTw: '密碼已更新',
+          zhCn: '密码已更新',
+          ko: '비밀번호가 업데이트되었습니다',
+          ja: 'パスワードが更新されました',
+          de: 'Passwort aktualisiert',
+          fr: 'Mot de passe mis à jour',
+          ar: 'تم تحديث كلمة المرور',
+          ru: 'Пароль обновлён',
+          trk: 'Şifre güncellendi',
+          es: 'Contraseña actualizada',
+          it: 'Password aggiornata',
+          pl: 'Hasło zostało zaktualizowane',
+          pt: 'Senha atualizada',
+          th: 'อัปเดตรหัสผ่านแล้ว',
+          id: 'Kata sandi diperbarui',
+          hi: 'पासवर्ड अपडेट हो गया',
+          bn: 'পাসওয়ার্ড আপডেট হয়েছে',
+        ),
+      );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'requires-recent-login') {
-        _showSnack('Please logout and login again first, then change password');
+        _showSnack(
+          tr(
+            context,
+            'Please logout and login again first, then change password',
+            zhTw: '請先登出並重新登入後再更改密碼',
+            zhCn: '请先退出登录并重新登录后再更改密码',
+            ko: '먼저 로그아웃 후 다시 로그인한 뒤 비밀번호를 변경해주세요',
+            ja: '一度ログアウトして再度ログインしてからパスワードを変更してください',
+            de: 'Bitte zuerst abmelden und erneut anmelden, dann Passwort ändern',
+            fr: 'Veuillez vous déconnecter puis vous reconnecter avant de changer le mot de passe',
+            ar: 'يرجى تسجيل الخروج ثم تسجيل الدخول مرة أخرى قبل تغيير كلمة المرور',
+            ru: 'Пожалуйста, выйдите и войдите снова перед сменой пароля',
+            trk: 'Lütfen önce çıkış yapıp tekrar giriş yapın, ardından şifreyi değiştirin',
+            es: 'Por favor, cierra sesión y vuelve a iniciar sesión antes de cambiar la contraseña',
+            it: 'Effettua prima il logout e poi accedi di nuovo prima di cambiare la password',
+            pl: 'Najpierw wyloguj się i zaloguj ponownie, a następnie zmień hasło',
+            pt: 'Faça logout e login novamente antes de alterar a senha',
+            th: 'กรุณาออกจากระบบแล้วเข้าสู่ระบบใหม่ก่อนเปลี่ยนรหัสผ่าน',
+            id: 'Silakan logout lalu login kembali sebelum mengubah kata sandi',
+            hi: 'पहले लॉगआउट करें और फिर लॉगिन करके पासवर्ड बदलें',
+            bn: 'প্রথমে লগআউট করে আবার লগইন করে তারপর পাসওয়ার্ড পরিবর্তন করুন',
+          ),
+        );
       } else {
-        _showSnack(e.message ?? 'Failed to update password');
+        _showSnack(
+          e.message ??
+              tr(
+                context,
+                'Failed to update password. Please try again.',
+                zhTw: '更新密碼失敗，請再試一次',
+                zhCn: '更新密码失败，请重试',
+                ko: '비밀번호 업데이트에 실패했습니다. 다시 시도해주세요',
+                ja: 'パスワードの更新に失敗しました。もう一度お試しください',
+                de: 'Passwort konnte nicht aktualisiert werden. Bitte erneut versuchen',
+                fr: 'Échec de la mise à jour du mot de passe. Veuillez réessayer',
+                ar: 'فشل تحديث كلمة المرور. يرجى المحاولة مرة أخرى',
+                ru: 'Не удалось обновить пароль. Попробуйте снова',
+                trk: 'Şifre güncellenemedi. Lütfen tekrar deneyin',
+                es: 'Error al actualizar la contraseña. Inténtalo de nuevo',
+                it: 'Aggiornamento della password non riuscito. Riprova',
+                pl: 'Nie udało się zaktualizować hasła. Spróbuj ponownie',
+                pt: 'Falha ao atualizar a senha. Tente novamente',
+                th: 'อัปเดตรหัสผ่านไม่สำเร็จ กรุณาลองใหม่',
+                id: 'Gagal memperbarui kata sandi. Silakan coba lagi',
+                hi: 'पासवर्ड अपडेट करने में विफल। कृपया फिर से प्रयास करें',
+                bn: 'পাসওয়ার্ড আপডেট করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+              ),
+        );
       }
     } catch (e) {
-      _showSnack('Failed to update password');
+      _showSnack(
+        tr(
+          context,
+          'Failed to update password. Please try again.',
+          zhTw: '更新密碼失敗，請再試一次',
+          zhCn: '更新密码失败，请重试',
+          ko: '비밀번호 업데이트에 실패했습니다. 다시 시도해주세요',
+          ja: 'パスワードの更新に失敗しました。もう一度お試しください',
+          de: 'Passwort konnte nicht aktualisiert werden. Bitte erneut versuchen',
+          fr: 'Échec de la mise à jour du mot de passe. Veuillez réessayer',
+          ar: 'فشل تحديث كلمة المرور. يرجى المحاولة مرة أخرى',
+          ru: 'Не удалось обновить пароль. Попробуйте снова',
+          trk: 'Şifre güncellenemedi. Lütfen tekrar deneyin',
+          es: 'Error al actualizar la contraseña. Inténtalo de nuevo',
+          it: 'Aggiornamento della password non riuscito. Riprova',
+          pl: 'Nie udało się zaktualizować hasła. Spróbuj ponownie',
+          pt: 'Falha ao atualizar a senha. Tente novamente',
+          th: 'อัปเดตรหัสผ่านไม่สำเร็จ กรุณาลองใหม่',
+          id: 'Gagal memperbarui kata sandi. Silakan coba lagi',
+          hi: 'पासवर्ड अपडेट करने में विफल। कृपया फिर से प्रयास करें',
+          bn: 'পাসওয়ার্ড আপডেট করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+        ),
+      );
     }
 
     if (mounted) {
@@ -6972,13 +7566,57 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         isUploadingAvatar = false;
       });
 
-      _showSnack('Avatar updated');
+      _showSnack(
+        tr(
+          context,
+          'Avatar updated',
+          zhTw: '頭像已更新',
+          zhCn: '头像已更新',
+          ko: '프로필 사진이 업데이트되었습니다',
+          ja: 'アバターが更新されました',
+          de: 'Avatar aktualisiert',
+          fr: 'Avatar mis à jour',
+          ar: 'تم تحديث الصورة الرمزية',
+          ru: 'Аватар обновлён',
+          trk: 'Avatar güncellendi',
+          es: 'Avatar actualizado',
+          it: 'Avatar aggiornato',
+          pl: 'Awatar zaktualizowany',
+          pt: 'Avatar atualizado',
+          th: 'อัปเดตรูปโปรไฟล์แล้ว',
+          id: 'Avatar diperbarui',
+          hi: 'अवतार अपडेट हो गया',
+          bn: 'অ্যাভাটার আপডেট হয়েছে',
+        ),
+      );
     } catch (e) {
       setState(() {
         isUploadingAvatar = false;
       });
 
-      _showSnack('Failed to upload avatar');
+      _showSnack(
+        tr(
+          context,
+          'Failed to upload avatar',
+          zhTw: '上傳頭像失敗',
+          zhCn: '上传头像失败',
+          ko: '프로필 사진 업로드에 실패했습니다',
+          ja: 'アバターのアップロードに失敗しました',
+          de: 'Avatar konnte nicht hochgeladen werden',
+          fr: 'Échec du téléchargement de l’avatar',
+          ar: 'فشل تحميل الصورة الرمزية',
+          ru: 'Не удалось загрузить аватар',
+          trk: 'Avatar yüklenemedi',
+          es: 'Error al subir el avatar',
+          it: 'Caricamento avatar non riuscito',
+          pl: 'Nie udało się przesłać awatara',
+          pt: 'Falha ao enviar o avatar',
+          th: 'อัปโหลดรูปโปรไฟล์ไม่สำเร็จ',
+          id: 'Gagal mengunggah avatar',
+          hi: 'अवतार अपलोड करने में विफल',
+          bn: 'অ্যাভাটার আপলোড করতে ব্যর্থ',
+        ),
+      );
     }
   }
 
@@ -7000,9 +7638,53 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         avatar: avatar,
       );
 
-      _showSnack('Avatar removed');
+      _showSnack(
+        tr(
+          context,
+          'Avatar removed',
+          zhTw: '頭像已移除',
+          zhCn: '头像已移除',
+          ko: '프로필 사진이 제거되었습니다',
+          ja: 'アバターが削除されました',
+          de: 'Avatar entfernt',
+          fr: 'Avatar supprimé',
+          ar: 'تمت إزالة الصورة الرمزية',
+          ru: 'Аватар удалён',
+          trk: 'Avatar kaldırıldı',
+          es: 'Avatar eliminado',
+          it: 'Avatar rimosso',
+          pl: 'Awatar usunięty',
+          pt: 'Avatar removido',
+          th: 'ลบรูปโปรไฟล์แล้ว',
+          id: 'Avatar dihapus',
+          hi: 'अवतार हटा दिया गया',
+          bn: 'অ্যাভাটার সরানো হয়েছে',
+        ),
+      );
     } catch (e) {
-      _showSnack('Failed to remove avatar');
+      _showSnack(
+        tr(
+          context,
+          'Failed to remove avatar',
+          zhTw: '移除頭像失敗',
+          zhCn: '移除头像失败',
+          ko: '프로필 사진 제거에 실패했습니다',
+          ja: 'アバターの削除に失敗しました',
+          de: 'Avatar konnte nicht entfernt werden',
+          fr: 'Échec de la suppression de l’avatar',
+          ar: 'فشل إزالة الصورة الرمزية',
+          ru: 'Не удалось удалить аватар',
+          trk: 'Avatar kaldırılamadı',
+          es: 'Error al eliminar el avatar',
+          it: 'Rimozione avatar non riuscita',
+          pl: 'Nie udało się usunąć awatara',
+          pt: 'Falha ao remover o avatar',
+          th: 'ลบรูปโปรไฟล์ไม่สำเร็จ',
+          id: 'Gagal menghapus avatar',
+          hi: 'अवतार हटाने में विफल',
+          bn: 'অ্যাভাটার সরাতে ব্যর্থ',
+        ),
+      );
     }
   }
 
@@ -8921,6 +9603,41 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       onTap: () => openStripeCustomerPortal(context),
                     ),
+
+                  ListTile(
+                    leading: const Icon(Icons.receipt_long_outlined),
+                    title: Text(
+                      tr(
+                        context,
+                        'Purchase History',
+                        zhTw: '購買紀錄',
+                        zhCn: '购买记录',
+                        ko: '구매 기록',
+                        ja: '購入履歴',
+                        de: 'Kaufverlauf',
+                        fr: 'Historique des achats',
+                        ar: 'سجل المشتريات',
+                        ru: 'История покупок',
+                        trk: 'Satın alma geçmişi',
+                        es: 'Historial de compras',
+                        it: 'Cronologia acquisti',
+                        pl: 'Historia zakupów',
+                        pt: 'Histórico de compras',
+                        th: 'ประวัติการซื้อ',
+                        id: 'Riwayat pembelian',
+                        hi: 'खरीद इतिहास',
+                        bn: 'ক্রয়ের ইতিহাস',
+                      ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const PurchaseHistoryPage(),
+                        ),
+                      );
+                    },
+                  ),
 
                   ListTile(
                     leading: const Icon(Icons.help_outline, color: Colors.green),
@@ -31059,10 +31776,30 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                     (b.value['profit'] ?? 0).compareTo(a.value['profit'] ?? 0));
 
               if (entries.isEmpty) {
-                return const Center(
+                return Center(
                   child: Text(
-                    'No data yet',
-                    style: TextStyle(
+                    tr(
+                      context,
+                      'No data yet',
+                      zhTw: '尚無資料',
+                      zhCn: '暂无数据',
+                      ko: '데이터가 없습니다',
+                      ja: 'データがありません',
+                      de: 'Noch keine Daten',
+                      fr: 'Aucune donnée pour le moment',
+                      ar: 'لا توجد بيانات بعد',
+                      ru: 'Пока нет данных',
+                      trk: 'Henüz veri yok',
+                      es: 'Aún no hay datos',
+                      it: 'Nessun dato disponibile',
+                      pl: 'Brak danych',
+                      pt: 'Ainda não há dados',
+                      th: 'ยังไม่มีข้อมูล',
+                      id: 'Belum ada data',
+                      hi: 'अभी कोई डेटा नहीं है',
+                      bn: 'এখনও কোনো ডেটা নেই',
+                    ),
+                    style: const TextStyle(
                       color: Colors.white70,
                       fontWeight: FontWeight.w600,
                     ),
@@ -31587,16 +32324,22 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
       initialDate: startedAt,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: _lightPickerTheme,
     );
 
     if (!mounted || date == null) return;
 
+    FocusScope.of(context).unfocus();
+
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(startedAt),
+      builder: _lightPickerTheme,
     );
 
     if (!mounted || time == null) return;
+
+    FocusScope.of(context).unfocus();
 
     setState(() {
       startedAt = DateTime(
@@ -31619,16 +32362,22 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
       initialDate: initial,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      builder: _lightPickerTheme,
     );
 
     if (!mounted || date == null) return;
 
+    FocusScope.of(context).unfocus();
+
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
+      builder: _lightPickerTheme,
     );
 
     if (!mounted || time == null) return;
+
+    FocusScope.of(context).unfocus();
 
     setState(() {
       endedAt = DateTime(
@@ -31640,6 +32389,23 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
       );
     });
   }
+
+  Widget _lightPickerTheme(BuildContext context, Widget? child) {
+    return Theme(
+      data: ThemeData.light().copyWith(
+        colorScheme: const ColorScheme.light(
+          primary: Color(0xFF2E7D32),
+          onPrimary: Colors.white,
+          surface: Colors.white,
+          onSurface: Colors.black87,
+        ),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Colors.white,
+        ),
+      ),
+      child: child!,
+    );
+  }  
 
   Future<void> _deleteGame() async {
     if (widget.item == null) return;
@@ -32148,6 +32914,10 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                   hi: 'बाय-इन',
                   bn: 'বাই-ইন',
                 ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
               ),
 
               _buildField(
@@ -32173,6 +32943,10 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                   hi: 'कैश आउट',
                   bn: 'ক্যাশ আউট',
                 ),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d{0,2}')),
+                ],
               ),
 
               _buildField(
@@ -32366,12 +33140,22 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     );
   }
 
-  Widget _buildField(TextEditingController controller, String label) {
+  Widget _buildField(
+    TextEditingController controller,
+    String label, {
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    TextInputAction textInputAction = TextInputAction.done,
+  }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: controller,
-        style: const TextStyle(color: Colors.black),
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        textInputAction: textInputAction,
+        onSubmitted: (_) => FocusScope.of(context).unfocus(),
+        style: const TextStyle(color: Colors.black87),
         decoration: InputDecoration(
           labelText: label,
           filled: true,
@@ -32379,6 +33163,13 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
           ),
+          suffixIcon: keyboardType.toString().contains('number')
+              ? IconButton(
+                  icon: const Icon(Icons.check_circle_outline),
+                  color: Colors.green,
+                  onPressed: () => FocusScope.of(context).unfocus(),
+                )
+              : null,
         ),
       ),
     );
