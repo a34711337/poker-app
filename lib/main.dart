@@ -739,7 +739,7 @@ const String kCustomerPortalUrl =
     'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createCustomerPortalSession';
 
 const String kVerifyAppleSubscriptionUrl =
-    'https://verifyapplesubscription-6ghxvthlq-uc.a.run.app';
+    'https://verifyapplesubscription-q6hgvxthlq-uc.a.run.app';
 
 const String kAppleHostProProductId =
     'com.pokerscheduler.hostpro.monthly';
