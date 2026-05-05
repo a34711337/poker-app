@@ -3013,7 +3013,9 @@ class AppleIapService {
         'productId': purchase.productID,
         'purchaseId': purchase.purchaseID ?? '',
         'verificationData':
-            purchase.verificationData.serverVerificationData,
+            purchase.verificationData.localVerificationData.isNotEmpty
+                ? purchase.verificationData.localVerificationData
+                : purchase.verificationData.serverVerificationData,
         'source': purchase.verificationData.source,
         'type': type.name,
       }),

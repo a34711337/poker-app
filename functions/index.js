@@ -972,9 +972,21 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
     }
 
     if (appleResult.status !== 0) {
+      console.error("Apple receipt verification failed:", {
+        status: appleResult.status,
+        environment: appleResult.environment,
+        productIdFromClient: req.body.productId,
+        purchaseIdFromClient: req.body.purchaseId,
+        sourceFromClient: req.body.source,
+        typeFromClient: req.body.type,
+        receiptLength: receiptData.length,
+        receiptStart: receiptData.substring(0, 40),
+      });
+
       return res.status(400).json({
         error: "Apple receipt verification failed",
         status: appleResult.status,
+        environment: appleResult.environment || "",
       });
     }
 
