@@ -905,3 +905,186 @@ exports.sendFriendRequestPush = functionsV1.firestore
 
     return null;
   });
+
+exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).send("");
+  }
+
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+
+    const authHeader = req.headers.authorization || "";
+    const idToken = authHeader.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : "";
+
+    if (!idToken) {
+      return res.status(401).json({ error: "Missing auth token" });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const uid = decodedToken.uid;
+
+    const receiptData = (req.body.verificationData || "").toString();
+    const clientType = (req.body.type || "").toString();
+
+    if (!receiptData) {
+      return res.status(400).json({ error: "Missing receipt data" });
+    }
+
+    const sharedSecret = process.env.APPLE_SHARED_SECRET || "";
+
+    if (!sharedSecret) {
+      return res.status(500).json({ error: "Missing APPLE_SHARED_SECRET" });
+    }
+
+    async function verifyReceipt(url) {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          "receipt-data": receiptData,
+          "password": sharedSecret,
+          "exclude-old-transactions": true,
+        }),
+      });
+
+      return await response.json();
+    }
+
+    let appleResult = await verifyReceipt(
+      "https://buy.itunes.apple.com/verifyReceipt"
+    );
+
+    if (appleResult.status === 21007) {
+      appleResult = await verifyReceipt(
+        "https://sandbox.itunes.apple.com/verifyReceipt"
+      );
+    }
+
+    if (appleResult.status !== 0) {
+      return res.status(400).json({
+        error: "Apple receipt verification failed",
+        status: appleResult.status,
+      });
+    }
+
+    const latest = Array.isArray(appleResult.latest_receipt_info)
+      ? appleResult.latest_receipt_info
+      : [];
+
+    if (latest.length === 0) {
+      return res.status(400).json({ error: "No subscription found" });
+    }
+
+    latest.sort((a, b) => {
+      const aExp = Number(a.expires_date_ms || 0);
+      const bExp = Number(b.expires_date_ms || 0);
+      return bExp - aExp;
+    });
+
+    const item = latest[0];
+
+    const productId = (item.product_id || "").toString();
+    const originalTransactionId =
+      (item.original_transaction_id || item.transaction_id || "").toString();
+
+    const expiresMs = Number(item.expires_date_ms || 0);
+    const expiresAt = new Date(expiresMs);
+
+    if (!originalTransactionId || !productId || !expiresMs) {
+      return res.status(400).json({ error: "Invalid Apple subscription data" });
+    }
+
+    const now = new Date();
+    const isActive = expiresAt.getTime() > now.getTime();
+
+    let planType = "";
+
+    if (productId.includes("hostpro")) {
+      planType = "host";
+    } else if (productId.includes("statspro")) {
+      planType = "stats";
+    } else {
+      planType = clientType;
+    }
+
+    if (planType !== "host" && planType !== "stats") {
+      return res.status(400).json({
+        error: "Unknown Apple product",
+        productId,
+      });
+    }
+
+    const subRef = db
+      .collection("apple_subscriptions")
+      .doc(originalTransactionId);
+
+    await subRef.set(
+      {
+        ownerUid: uid,
+        productId,
+        planType,
+        originalTransactionId,
+        transactionId: (item.transaction_id || "").toString(),
+        expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
+        isActive,
+        environment: (appleResult.environment || "").toString(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    const userUpdate = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    if (planType === "host") {
+      userUpdate.role = isActive ? "host" : "player";
+      userUpdate.isHostPro = isActive;
+      userUpdate.hostProActive = isActive;
+      userUpdate.hostExpiresAt = admin.firestore.Timestamp.fromDate(expiresAt);
+      if (isActive) {
+        userUpdate.hostLastPaidAt =
+          admin.firestore.FieldValue.serverTimestamp();
+      }
+    }
+
+    if (planType === "stats") {
+      userUpdate.isStatsPro = isActive;
+      userUpdate.statsProActive = isActive;
+      userUpdate.statsExpiresAt =
+        admin.firestore.Timestamp.fromDate(expiresAt);
+      if (isActive) {
+        userUpdate.statsLastPaidAt =
+          admin.firestore.FieldValue.serverTimestamp();
+      }
+    }
+
+    await db.collection("users").doc(uid).set(userUpdate, { merge: true });
+
+    return res.status(200).json({
+      ok: true,
+      productId,
+      planType,
+      originalTransactionId,
+      expiresAt: expiresAt.toISOString(),
+      isActive,
+    });
+  } catch (error) {
+    console.error("verifyAppleSubscription error:", error);
+    return res.status(500).json({
+      error: error.message || "Internal Server Error",
+    });
+  }
+});

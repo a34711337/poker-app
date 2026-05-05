@@ -738,6 +738,9 @@ const String kCreateBundleCheckoutUrl =
 const String kCustomerPortalUrl =
     'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/createCustomerPortalSession';
 
+const String kVerifyAppleSubscriptionUrl =
+    'https://us-central1-poker-scheduler-fd8c7.cloudfunctions.net/verifyAppleSubscription';
+
 const String kAppleHostProProductId =
     'com.pokerscheduler.hostpro.monthly';
 
@@ -2924,16 +2927,9 @@ Future<void> activateHostSubscriptionForUserUid(
   String uid, {
   int durationDays = 30,
 }) async {
-  final now = DateTime.now();
-  final expiresAt = now.add(Duration(days: durationDays));
-
-  await FirebaseFirestore.instance.collection('users').doc(uid).set({
-    'role': 'host',
-    'hostActivatedAt': Timestamp.fromDate(now),
-    'hostLastPaidAt': Timestamp.fromDate(now),
-    'hostExpiresAt': Timestamp.fromDate(expiresAt),
-    'updatedAt': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
+  throw Exception(
+    'activateHostSubscriptionForUserUid is disabled. Use verifyAppleSubscription Cloud Function or Stripe webhook.',
+  );
 }
 
 class StatsSubscriptionStatus {
@@ -2976,15 +2972,9 @@ Future<void> activateStatsSubscriptionForUserUid(
   String uid, {
   int durationDays = 30,
 }) async {
-  final now = DateTime.now();
-  final expiresAt = now.add(Duration(days: durationDays));
-
-  await FirebaseFirestore.instance.collection('users').doc(uid).set({
-    'statsActivatedAt': Timestamp.fromDate(now),
-    'statsLastPaidAt': Timestamp.fromDate(now),
-    'statsExpiresAt': Timestamp.fromDate(expiresAt),
-    'updatedAt': FieldValue.serverTimestamp(),
-  }, SetOptions(merge: true));
+  throw Exception(
+    'activateStatsSubscriptionForUserUid is disabled. Use verifyAppleSubscription Cloud Function or Stripe webhook.',
+  );
 }
 
 enum ApplePurchaseType {
@@ -3000,6 +2990,39 @@ bool get isAppleIapPlatform {
 
 class AppleIapService {
   static bool _isBuying = false;
+
+  static Future<void> _verifyApplePurchaseOnServer({
+    required PurchaseDetails purchase,
+    required ApplePurchaseType type,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('Please login again');
+    }
+
+    final idToken = await user.getIdToken();
+
+    final response = await http.post(
+      Uri.parse(kVerifyAppleSubscriptionUrl),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+      },
+      body: jsonEncode({
+        'productId': purchase.productID,
+        'purchaseId': purchase.purchaseID ?? '',
+        'verificationData':
+            purchase.verificationData.serverVerificationData,
+        'source': purchase.verificationData.source,
+        'type': type.name,
+      }),
+    );
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(response.body);
+    }
+  }  
 
   static String _subscriptionDocId(PurchaseDetails purchase) {
     String rawId = '';
@@ -3336,6 +3359,7 @@ class AppleIapService {
               await _activateEntitlement(
                 uid: user.uid,
                 type: type,
+                purchase: purchase,
               );
 
               if (purchase.pendingCompletePurchase) {
@@ -3509,6 +3533,7 @@ class AppleIapService {
                 await _activateEntitlement(
                   uid: user.uid,
                   type: ApplePurchaseType.host,
+                  purchase: purchase,
                 );
               }
 
@@ -3523,6 +3548,7 @@ class AppleIapService {
                 await _activateEntitlement(
                   uid: user.uid,
                   type: ApplePurchaseType.stats,
+                  purchase: purchase,
                 );
               }
 
@@ -3565,22 +3591,12 @@ class AppleIapService {
   static Future<void> _activateEntitlement({
     required String uid,
     required ApplePurchaseType type,
+    required PurchaseDetails purchase,
   }) async {
-    if (type == ApplePurchaseType.host) {
-      await activateHostSubscriptionForUserUid(uid);
-      return;
-    }
-
-    if (type == ApplePurchaseType.stats) {
-      await activateStatsSubscriptionForUserUid(uid);
-      return;
-    }
-
-    if (type == ApplePurchaseType.bundle) {
-      await activateHostSubscriptionForUserUid(uid);
-      await activateStatsSubscriptionForUserUid(uid);
-      return;
-    }
+    await _verifyApplePurchaseOnServer(
+      purchase: purchase,
+      type: type,
+    );
   }
 }
 class SeatReservation {
@@ -8416,24 +8432,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> removeAppleSubscriptionBindingsForUid(
-    String uid,
-  ) async {
-  
-    final snapshot = await FirebaseFirestore.instance
-        .collection('apple_subscriptions')
-        .where('ownerUid', isEqualTo: uid)
-        .get();
-  
-    final batch = FirebaseFirestore.instance.batch();
-  
-    for (final doc in snapshot.docs) {
-      batch.delete(doc.reference);
-    }
-  
-    await batch.commit();
-  }
-
   Future<void> _deleteMyAccount() async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -8470,8 +8468,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
     try {
       final uid = user.uid;
-
-      await removeAppleSubscriptionBindingsForUid(uid);
 
       await deleteAllUserFriendData(uid);
       await deleteFriendRequestsForUser(uid);
@@ -8730,350 +8726,354 @@ class _SettingsPageState extends State<SettingsPage> {
           ),
         ),
       ),
-      body: Theme(
-        data: ThemeData(
-          useMaterial3: true,
-          brightness: Brightness.light,
-          colorSchemeSeed: Colors.green,
-          scaffoldBackgroundColor: Colors.transparent,
-          listTileTheme: const ListTileThemeData(
-            textColor: Colors.black87,
-            iconColor: Colors.black87,
-            titleTextStyle: TextStyle(
-              color: Colors.black87,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            ),
-            subtitleTextStyle: TextStyle(
-              color: Colors.black54,
-              fontSize: 14,
-            ),
-          ),
-          dividerColor: Colors.black26,
-        ),
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            ListTile(
-              leading: const Icon(Icons.language),
-              title: Text(
-                tr(
-                  context,
-                  'Language',
-                  zhTw: '語言',
-                  zhCn: '语言',
-                  ko: '언어',
-                  ja: '言語',
-                  de: 'Sprache',
-                  fr: 'Langue',
-                  ar: 'اللغة',
-                  ru: 'Язык',
-                  trk: 'Dil',
-                  es: 'Idioma',
-                  it: 'Lingua',
-                  pl: 'Język',
-                  pt: 'Idioma',
-                  th: 'ภาษา',
-                  id: 'Bahasa',
-                  hi: 'भाषा',
-                  bn: 'ভাষা',
-                ),
-              ),
-              subtitle: Text(languageName(languageCode)),
-              onTap: _showLanguageDialog,
-            ),
-            StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(FirebaseAuth.instance.currentUser?.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                final data = snapshot.data?.data() ?? {};
-                final isDark = data['darkMode'] == true;
+      body: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser?.uid)
+            .snapshots(),
+        builder: (context, snapshot) {
+          final data = snapshot.data?.data() ?? {};
+          final isDark = data['darkMode'] == true;
 
-                return SwitchListTile(
-                  secondary: const Icon(Icons.dark_mode_outlined),
-                  title: Text(
-                    tr(
-                      context,
-                      'Dark Mode',
-                      zhTw: '深色模式',
-                      zhCn: '深色模式',
-                      ko: '다크 모드',
-                      ja: 'ダークモード',
-                      de: 'Dunkelmodus',
-                      fr: 'Mode sombre',
-                      ar: 'الوضع الداكن',
-                      ru: 'Тёмный режим',
-                      trk: 'Karanlık Mod',
-                      es: 'Modo oscuro',
-                      it: 'Modalità scura',
-                      pl: 'Tryb ciemny',
-                      pt: 'Modo escuro',
-                      th: 'โหมดมืด',
-                      id: 'Mode gelap',
-                      hi: 'डार्क मोड',
-                      bn: 'ডার্ক মোড',
+          final bgColor = isDark ? const Color(0xFF111827) : Colors.white;
+          final textColor = isDark ? Colors.white : Colors.black87;
+          final subTextColor = isDark ? Colors.white70 : Colors.black54;
+          final dividerColor = isDark ? Colors.white38 : Colors.black26;    
+
+          return Container(
+            color: bgColor,
+            child: Theme(
+              data: ThemeData(
+                useMaterial3: true,
+                brightness: isDark ? Brightness.dark : Brightness.light,
+                colorSchemeSeed: Colors.green,
+                scaffoldBackgroundColor: bgColor,
+                listTileTheme: ListTileThemeData(
+                  textColor: textColor,
+                  iconColor: textColor,
+                  titleTextStyle: TextStyle(
+                    color: textColor,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  subtitleTextStyle: TextStyle(
+                    color: subTextColor,
+                    fontSize: 14,
+                  ),
+                ),
+                dividerColor: dividerColor,
+              ),
+
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.language),
+                    title: Text(
+                      tr(
+                        context,
+                        'Language',
+                        zhTw: '語言',
+                        zhCn: '语言',
+                        ko: '언어',
+                        ja: '言語',
+                        de: 'Sprache',
+                        fr: 'Langue',
+                        ar: 'اللغة',
+                        ru: 'Язык',
+                        trk: 'Dil',
+                        es: 'Idioma',
+                        it: 'Lingua',
+                        pl: 'Język',
+                        pt: 'Idioma',
+                        th: 'ภาษา',
+                        id: 'Bahasa',
+                        hi: 'भाषा',
+                        bn: 'ভাষা',
+                      ),
                     ),
+                    subtitle: Text(languageName(languageCode)),
+                    onTap: _showLanguageDialog,
                   ),
-                  subtitle: Text(
-                    isDark
-                        ? tr(
-                            context,
-                            'Dark',
-                            zhTw: '深色',
-                            zhCn: '深色',
-                            ko: '어두움',
-                            ja: 'ダーク',
-                            de: 'Dunkel',
-                            fr: 'Sombre',
-                            ar: 'داكن',
-                            ru: 'Тёмный',
-                            trk: 'Karanlık',
-                            es: 'Oscuro',
-                            it: 'Scuro',
-                            pl: 'Ciemny',
-                            pt: 'Escuro',
-                            th: 'มืด',
-                            id: 'Gelap',
-                            hi: 'डार्क',
-                            bn: 'ডার্ক',
-                          )
-                        : tr(
-                            context,
-                            'Light',
-                            zhTw: '淺色',
-                            zhCn: '浅色',
-                            ko: '밝음',
-                            ja: 'ライト',
-                            de: 'Hell',
-                            fr: 'Clair',
-                            ar: 'فاتح',
-                            ru: 'Светлый',
-                            trk: 'Açık',
-                            es: 'Claro',
-                            it: 'Chiaro',
-                            pl: 'Jasny',
-                            pt: 'Claro',
-                            th: 'สว่าง',
-                            id: 'Terang',
-                            hi: 'लाइट',
-                            bn: 'লাইট',
-                          ),
-                  ),
-                  value: isDark,
-                  onChanged: (value) async {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) return;
 
-                    await FirebaseFirestore.instance
-                        .collection('users')
-                        .doc(user.uid)
-                        .set({
-                      'darkMode': value,
-                      'updatedAt': FieldValue.serverTimestamp(),
-                    }, SetOptions(merge: true));
+                  SwitchListTile(
+                    secondary: const Icon(Icons.dark_mode_outlined),
+                    title: Text(
+                      tr(
+                        context,
+                        'Dark Mode',
+                        zhTw: '深色模式',
+                        zhCn: '深色模式',
+                        ko: '다크 모드',
+                        ja: 'ダークモード',
+                        de: 'Dunkelmodus',
+                        fr: 'Mode sombre',
+                        ar: 'الوضع الداكن',
+                        ru: 'Тёмный режим',
+                        trk: 'Karanlık mod',
+                        es: 'Modo oscuro',
+                        it: 'Modalità scura',
+                        pl: 'Tryb ciemny',
+                        pt: 'Modo escuro',
+                        th: 'โหมดมืด',
+                        id: 'Mode gelap',
+                        hi: 'डार्क मोड',
+                        bn: 'ডার্ক মোড',
+                      ),
+                    ),
+                    subtitle: Text(
+                      isDark
+                          ? tr(
+                              context,
+                              'Dark',
+                              zhTw: '深色',
+                              zhCn: '深色',
+                              ko: '다크',
+                              ja: 'ダーク',
+                              de: 'Dunkel',
+                              fr: 'Sombre',
+                              ar: 'داكن',
+                              ru: 'Тёмный',
+                              trk: 'Karanlık',
+                              es: 'Oscuro',
+                              it: 'Scuro',
+                              pl: 'Ciemny',
+                              pt: 'Escuro',
+                              th: 'มืด',
+                              id: 'Gelap',
+                              hi: 'डार्क',
+                              bn: 'ডার্ক',
+                            )
+                          : tr(
+                              context,
+                              'Light',
+                              zhTw: '淺色',
+                              zhCn: '浅色',
+                              ko: '라이트',
+                              ja: 'ライト',
+                              de: 'Hell',
+                              fr: 'Clair',
+                              ar: 'فاتح',
+                              ru: 'Светлый',
+                              trk: 'Açık',
+                              es: 'Claro',
+                              it: 'Chiaro',
+                              pl: 'Jasny',
+                              pt: 'Claro',
+                              th: 'สว่าง',
+                              id: 'Terang',
+                              hi: 'लाइट',
+                              bn: 'লাইট',
+                            ),
+                    ),
+                    value: isDark,
+                    onChanged: (value) async {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) return;
 
-                    if (!context.mounted) return;
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .set({
+                        'darkMode': value,
+                        'updatedAt': FieldValue.serverTimestamp(),
+                      }, SetOptions(merge: true));
 
-                    AppThemeController.of(context).updateTheme(value);
-                  },
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.home_outlined),
-              title: Text(
-                tr(
-                  context,
-                  'Home',
-                  zhTw: '首頁',
-                  zhCn: '首页',
-                  ko: '홈',
-                  ja: 'ホーム',
-                  de: 'Startseite',
-                  fr: 'Accueil',
-                  ar: 'الرئيسية',
-                  ru: 'Главная',
-                  trk: 'Ana Sayfa',
-                  es: 'Inicio',
-                  it: 'Home',
-                  pl: 'Strona główna',
-                  pt: 'Início',
-                  th: 'หน้าแรก',
-                  id: 'Beranda',
-                  hi: 'होम',
-                  bn: 'ฮোম',
-                ),
-              ),
-              onTap: () async {
-                await launchUrl(
-                  Uri.parse('https://pokerscheduler.web.app/'),
-                  mode: LaunchMode.externalApplication,
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.privacy_tip_outlined),
-              title: Text(
-                tr(
-                  context,
-                  'Privacy Policy',
-                  zhTw: '隱私權政策',
-                  zhCn: '隐私政策',
-                  ko: '개인정보 처리방침',
-                  ja: 'プライバシーポリシー',
-                  de: 'Datenschutzrichtlinie',
-                  fr: 'Politique de confidentialité',
-                  ar: 'سياسة الخصوصية',
-                  ru: 'Политика конфиденциальности',
-                  trk: 'Gizlilik Politikası',
-                  es: 'Política de privacidad',
-                  it: 'Informativa sulla privacy',
-                  pl: 'Polityka prywatności',
-                  pt: 'Política de privacidade',
-                  th: 'นโยบายความเป็นส่วนตัว',
-                  id: 'Kebijakan Privasi',
-                  hi: 'गोपनीयता नीति',
-                  bn: 'গোপনীয়তা নীতি',
-                ),
-              ),
-              onTap: () {
-                launchUrl(
-                  Uri.parse('https://pokerscheduler.web.app/privacy.html'),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.description_outlined),
-              title: Text(
-                tr(
-                  context,
-                  'Terms of Service',
-                  zhTw: '服務條款',
-                  zhCn: '服务条款',
-                  ko: '서비스 약관',
-                  ja: '利用規約',
-                  de: 'Nutzungsbedingungen',
-                  fr: 'Conditions d’utilisation',
-                  ar: 'شروط الخدمة',
-                  ru: 'Условия обслуживания',
-                  trk: 'Hizmet Şartları',
-                  es: 'Términos de servicio',
-                  it: 'Termini di servizio',
-                  pl: 'Warunki korzystania',
-                  pt: 'Termos de serviço',
-                  th: 'ข้อกำหนดการให้บริการ',
-                  id: 'Ketentuan Layanan',
-                  hi: 'सेवा की शर्तें',
-                  bn: 'সেবার শর্তাবলী',
-                ),
-              ),
-              onTap: () {
-                launchUrl(
-                  Uri.parse('https://pokerscheduler.web.app/terms.html'),
-                );
-              },
-            ),
-            if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS)
-              ListTile(
-                leading: const Icon(Icons.manage_accounts),
-                title: Text(
-                  tr(
-                    context,
-                    'Manage Subscription',
-                    zhTw: '管理訂閱',
-                    zhCn: '管理订阅',
-                    ko: '구독 관리',
-                    ja: 'サブスクリプション管理',
-                    de: 'Abo verwalten',
-                    fr: 'Gérer l’abonnement',
-                    ar: 'إدارة الاشتراك',
-                    ru: 'Управление подпиской',
-                    trk: 'Aboneliği Yönet',
-                    es: 'Gestionar suscripción',
-                    it: 'Gestisci abbonamento',
-                    pl: 'Zarządzaj subskrypcją',
-                    pt: 'Gerenciar assinatura',
-                    th: 'จัดการการสมัครสมาชิก',
-                    id: 'Kelola Langganan',
-                    hi: 'सब्सक्रिप्शन प्रबंधित करें',
-                    bn: 'সাবস্ক্রিপশন পরিচালনা করুন',
+                      if (!context.mounted) return;
+                      AppThemeController.of(context).updateTheme(value);
+                    },
                   ),
-                ),
-                onTap: () => openStripeCustomerPortal(context),
-              ),
-            ListTile(
-              leading: const Icon(
-                Icons.help_outline,
-                color: Colors.green,
-              ),
-              title: Text(
-                tr(
-                  context,
-                  'Help',
-                  zhTw: '使用說明',
-                  zhCn: '使用说明',
-                  ko: '도움말',
-                  ja: 'ヘルプ',
-                  de: 'Hilfe',
-                  fr: 'Aide',
-                  ar: 'المساعدة',
-                  ru: 'Помощь',
-                  trk: 'Yardım',
-                  es: 'Ayuda',
-                  it: 'Aiuto',
-                  pl: 'Pomoc',
-                  pt: 'Ajuda',
-                  th: 'วิธีใช้งาน',
-                  id: 'Bantuan',
-                  hi: 'सहायता',
-                  bn: 'সহায়তা',
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => const HelpPage(),
+
+                  ListTile(
+                    leading: const Icon(Icons.home_outlined),
+                    title: Text(
+                      tr(
+                        context,
+                        'Home',
+                        zhTw: '首頁',
+                        zhCn: '首页',
+                        ko: '홈',
+                        ja: 'ホーム',
+                        de: 'Startseite',
+                        fr: 'Accueil',
+                        ar: 'الرئيسية',
+                        ru: 'Главная',
+                        trk: 'Ana sayfa',
+                        es: 'Inicio',
+                        it: 'Home',
+                        pl: 'Strona główna',
+                        pt: 'Início',
+                        th: 'หน้าหลัก',
+                        id: 'Beranda',
+                        hi: 'होम',
+                        bn: 'হোম',
+                      ),
+                    ),
+                    onTap: () async {
+                      await launchUrl(
+                        Uri.parse('https://pokerscheduler.web.app/'),
+                        mode: LaunchMode.externalApplication,
+                      );
+                    },
                   ),
-                );
-              },
-            ),
-            const Divider(height: 32),
-            ListTile(
-              leading: const Icon(
-                Icons.delete_forever,
-                color: Colors.red,
+
+                  ListTile(
+                    leading: const Icon(Icons.privacy_tip_outlined),
+                    title: Text(
+                      tr(
+                        context,
+                        'Privacy Policy',
+                        zhTw: '隱私權政策',
+                        zhCn: '隐私政策',
+                        ko: '개인정보 처리방침',
+                        ja: 'プライバシーポリシー',
+                        de: 'Datenschutzrichtlinie',
+                        fr: 'Politique de confidentialité',
+                        ar: 'سياسة الخصوصية',
+                        ru: 'Политика конфиденциальности',
+                        trk: 'Gizlilik politikası',
+                        es: 'Política de privacidad',
+                        it: 'Informativa sulla privacy',
+                        pl: 'Polityka prywatności',
+                        pt: 'Política de privacidade',
+                        th: 'นโยบายความเป็นส่วนตัว',
+                        id: 'Kebijakan privasi',
+                        hi: 'गोपनीयता नीति',
+                        bn: 'গোপনীয়তা নীতি',
+                      ),
+                    ),
+                    onTap: () {
+                      launchUrl(Uri.parse('https://pokerscheduler.web.app/privacy.html'));
+                    },
+                  ),
+
+                  ListTile(
+                    leading: const Icon(Icons.description_outlined),
+                    title: Text(
+                      tr(
+                        context,
+                        'Terms of Service',
+                        zhTw: '服務條款',
+                        zhCn: '服务条款',
+                        ko: '이용약관',
+                        ja: '利用規約',
+                        de: 'Nutzungsbedingungen',
+                        fr: 'Conditions d’utilisation',
+                        ar: 'شروط الخدمة',
+                        ru: 'Условия использования',
+                        trk: 'Kullanım şartları',
+                        es: 'Términos de servicio',
+                        it: 'Termini di servizio',
+                        pl: 'Warunki korzystania',
+                        pt: 'Termos de serviço',
+                        th: 'ข้อกำหนดในการให้บริการ',
+                        id: 'Syarat layanan',
+                        hi: 'सेवा की शर्तें',
+                        bn: 'সেবার শর্তাবলী',
+                      ),
+                    ),
+                    onTap: () {
+                      launchUrl(Uri.parse('https://pokerscheduler.web.app/terms.html'));
+                    },
+                  ),
+
+                  if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS)
+                    ListTile(
+                      leading: const Icon(Icons.manage_accounts),
+                      title: Text(
+                        tr(
+                          context,
+                          'Manage Subscription',
+                          zhTw: '管理訂閱',
+                          zhCn: '管理订阅',
+                          ko: '구독 관리',
+                          ja: 'サブスクリプション管理',
+                          de: 'Abonnement verwalten',
+                          fr: 'Gérer l’abonnement',
+                          ar: 'إدارة الاشتراك',
+                          ru: 'Управление подпиской',
+                          trk: 'Aboneliği yönet',
+                          es: 'Administrar suscripción',
+                          it: 'Gestisci abbonamento',
+                          pl: 'Zarządzaj subskrypcją',
+                          pt: 'Gerenciar assinatura',
+                          th: 'จัดการการสมัครสมาชิก',
+                          id: 'Kelola langganan',
+                          hi: 'सदस्यता प्रबंधित करें',
+                          bn: 'সাবস্ক্রিপশন পরিচালনা করুন',
+                        ),
+                      ),
+                      onTap: () => openStripeCustomerPortal(context),
+                    ),
+
+                  ListTile(
+                    leading: const Icon(Icons.help_outline, color: Colors.green),
+                    title: Text(
+                      tr(
+                        context,
+                        'Help',
+                        zhTw: '使用說明',
+                        zhCn: '使用说明',
+                        ko: '도움말',
+                        ja: 'ヘルプ',
+                        de: 'Hilfe',
+                        fr: 'Aide',
+                        ar: 'مساعدة',
+                        ru: 'Помощь',
+                        trk: 'Yardım',
+                        es: 'Ayuda',
+                        it: 'Aiuto',
+                        pl: 'Pomoc',
+                        pt: 'Ajuda',
+                        th: 'ช่วยเหลือ',
+                        id: 'Bantuan',
+                        hi: 'मदद',
+                        bn: 'সহায়তা',
+                      ),
+                    ),
+                    trailing: Icon(Icons.chevron_right, color: textColor),
+                    onTap: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const HelpPage()),
+                      );
+                    },
+                  ),
+
+                  Divider(height: 32, color: dividerColor),
+
+                  ListTile(
+                    leading: const Icon(Icons.delete_forever, color: Colors.red),
+                    title: Text(
+                      tr(
+                        context,
+                        'Delete Account',
+                        zhTw: '刪除帳號',
+                        zhCn: '删除账号',
+                        ko: '계정 삭제',
+                        ja: 'アカウント削除',
+                        de: 'Konto löschen',
+                        fr: 'Supprimer le compte',
+                        ar: 'حذف الحساب',
+                        ru: 'Удалить аккаунт',
+                        trk: 'Hesabı sil',
+                        es: 'Eliminar cuenta',
+                        it: 'Elimina account',
+                        pl: 'Usuń konto',
+                        pt: 'Excluir conta',
+                        th: 'ลบบัญชี',
+                        id: 'Hapus akun',
+                        hi: 'खाता हटाएं',
+                        bn: 'অ্যাকাউন্ট মুছুন',
+                      ),
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                    onTap: () => _confirmDeleteAccount(context),
+                  ),
+                ],
               ),
-              title: Text(
-                tr(
-                  context,
-                  'Delete Account',
-                  zhTw: '刪除帳號',
-                  zhCn: '删除账号',
-                  ko: '계정 삭제',
-                  ja: 'アカウント削除',
-                  de: 'Konto löschen',
-                  fr: 'Supprimer le compte',
-                  ar: 'حذف الحساب',
-                  ru: 'Удалить аккаунт',
-                  trk: 'Hesabı Sil',
-                  es: 'Eliminar cuenta',
-                  it: 'Elimina account',
-                  pl: 'Usuń konto',
-                  pt: 'Excluir conta',
-                  th: 'ลบบัญชี',
-                  id: 'Hapus Akun',
-                  hi: 'खाता हटाएँ',
-                  bn: 'অ্যাকাউন্ট মুছুন',
-                ),
-                style: const TextStyle(color: Colors.red),
-              ),
-              onTap: () => _confirmDeleteAccount(context),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -9237,42 +9237,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     );
   }
 
-  Future<void> _activateHostPlanForCurrentUser({
-    int durationDays = 30,
-  }) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid ?? '';
-    if (uid.isEmpty) return;
 
-    await activateHostSubscriptionForUserUid(
-      uid,
-      durationDays: durationDays,
-    );
-
-    if (!mounted) return;
-    _showSnack(
-      tr(
-        context,
-        'Host payment updated successfully',
-        zhTw: 'Host 付款已成功更新',
-        zhCn: 'Host 付款已成功更新',
-        ko: 'Host 결제가 성공적으로 업데이트되었습니다',
-        ja: 'Hostの支払いが正常に更新されました',
-        de: 'Host-Zahlung erfolgreich aktualisiert',
-        fr: 'Paiement Host mis à jour avec succès',
-        ar: 'تم تحديث دفعة Host بنجاح',
-        ru: 'Оплата Host успешно обновлена',
-        trk: 'Host ödemesi başarıyla güncellendi',
-        es: 'Pago de Host actualizado correctamente',
-        it: 'Pagamento Host aggiornato correttamente',
-        pl: 'Płatność Host została pomyślnie zaktualizowana',
-        pt: 'Pagamento Host atualizado com sucesso',
-        th: 'อัปเดตการชำระเงิน Host สำเร็จ',
-        id: 'Pembayaran Host berhasil diperbarui',
-        hi: 'Host भुगतान सफलतापूर्वक अपडेट हो गया',
-        bn: 'Host পেমেন্ট সফলভাবে আপডেট হয়েছে',
-      ),
-    );
-  }
 
   Future<void> _showHostProSubscribeDialog() async {
     final result = await showDialog<bool>(
@@ -13322,6 +13287,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                             final value = await showMenu<String>(
                               context: menuContext,
                               position: position,
+                              color: Colors.white,
                               items: [
                                 PopupMenuItem<String>(
                                   value: 'open',
@@ -13347,6 +13313,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                       hi: 'टेबल खोलें',
                                       bn: 'টেবিল খুলুন',
                                     ),
+                                    style: const TextStyle(color: Colors.black87),
                                   ),
                                 ),
                                 if (isMyTable || isSuperAdmin)
@@ -13374,6 +13341,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                         hi: 'टेबल संपादित करें',
                                         bn: 'টেবিল সম্পাদনা',
                                       ),
+                                      style: const TextStyle(color: Colors.black87),
                                     ),
                                   ),
                                 if (isMyTable || isSuperAdmin)
@@ -13401,6 +13369,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                         hi: 'टेबल हटाएं',
                                         bn: 'টেবিল মুছুন',
                                       ),
+                                      style: const TextStyle(color: Colors.black87),
                                     ),
                                   ),
                               ],
@@ -13421,7 +13390,11 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(Icons.more_vert, size: 24),
+                            child: const Icon(
+                              Icons.more_vert,
+                              size: 24,
+                              color: Colors.black87, 
+                            ),
                           ),
                         ),
                       );
@@ -29926,7 +29899,8 @@ class CashGameStatsHomePage extends StatefulWidget {
   State<CashGameStatsHomePage> createState() => _CashGameStatsHomePageState();
 }
 
-class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
+class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
+    with WidgetsBindingObserver {
 
   late bool _hasPaidAccess;
 
@@ -29934,10 +29908,33 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
   void initState() {
     super.initState();
 
+    WidgetsBinding.instance.addObserver(this);
+
     _hasPaidAccess = widget.hasPaidAccess;
 
-    // ⭐ 進頁面就同步一次
     Future.microtask(() => _reloadStatsAccess());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _waitAndReloadStatsAccess();
+    }
+  }
+
+  Future<void> _waitAndReloadStatsAccess() async {
+    for (int i = 0; i < 8; i++) {
+      await Future.delayed(const Duration(seconds: 2));
+      await _reloadStatsAccess();
+
+      if (_hasPaidAccess) return;
+    }
   }
 
   Future<void> _reloadStatsAccess() async {
@@ -30030,8 +30027,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
           ),
         );
 
+        await _waitAndReloadStatsAccess();
+
         if (mounted) {
-          await _reloadStatsAccess();
+          setState(() {});
         }
         
       } catch (e) {
@@ -30166,9 +30165,8 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
         mode: LaunchMode.externalApplication,
       );
 
-      // ⭐ 等使用者付款完回來後刷新
-      await Future.delayed(const Duration(seconds: 2));
-      await _reloadStatsAccess();
+      // ⭐ 等 Stripe webhook 更新 Firestore 後刷新
+      await _waitAndReloadStatsAccess();
     } catch (e) {
       if (!mounted) return;
 
@@ -30701,6 +30699,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage> {
               ),
             ),
           );
+
+          await _reloadStatsAccess();
+
         } catch (e) {
           if (!mounted) return;
 
@@ -31663,6 +31664,8 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
   }
 
   Future<void> _pickStartTime() async {
+    FocusScope.of(context).unfocus();
+
     final date = await showDatePicker(
       context: context,
       initialDate: startedAt,
@@ -31691,6 +31694,8 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
   }
 
   Future<void> _pickEndTime() async {
+    FocusScope.of(context).unfocus();
+
     final initial = endedAt ?? DateTime.now();
 
     final date = await showDatePicker(
@@ -32039,96 +32044,99 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        title: Text(
-          isEditing
-              ? tr(
-                  context,
-                  'Edit Game',
-                  zhTw: '編輯牌局',
-                  zhCn: '编辑牌局',
-                  ko: '게임 수정',
-                  ja: 'ゲーム編集',
-                  de: 'Spiel bearbeiten',
-                  fr: 'Modifier la partie',
-                  ar: 'تعديل اللعبة',
-                  ru: 'Редактировать игру',
-                  trk: 'Oyunu Düzenle',
-                  es: 'Editar partida',
-                  it: 'Modifica partita',
-                  pl: 'Edytuj grę',
-                  pt: 'Editar jogo',
-                  th: 'แก้ไขเกม',
-                  id: 'Edit game',
-                  hi: 'गेम संपादित करें',
-                  bn: 'গেম সম্পাদনা',
-                )
-              : tr(
-                  context,
-                  'Add Game',
-                  zhTw: '新增牌局',
-                  zhCn: '新增牌局',
-                  ko: '게임 추가',
-                  ja: 'ゲーム追加',
-                  de: 'Spiel hinzufügen',
-                  fr: 'Ajouter une partie',
-                  ar: 'إضافة لعبة',
-                  ru: 'Добавить игру',
-                  trk: 'Oyun Ekle',
-                  es: 'Agregar partida',
-                  it: 'Aggiungi partita',
-                  pl: 'Dodaj grę',
-                  pt: 'Adicionar jogo',
-                  th: 'เพิ่มเกม',
-                  id: 'Tambah game',
-                  hi: 'गेम जोड़ें',
-                  bn: 'গেম যোগ করুন',
-                ),
-          style: const TextStyle(fontWeight: FontWeight.w800),
+    return Theme(
+      data: ThemeData.light().copyWith(
+        scaffoldBackgroundColor: Colors.white,
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.white,
+          surfaceTintColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
-        actions: [
-          if (isEditing)
-            IconButton(
-              onPressed: _deleteGame,
-              icon: const Icon(Icons.delete_outline),
-              tooltip: tr(
-                context,
-                'Delete Game',
-                zhTw: '刪除牌局',
-                zhCn: '删除牌局',
-                ko: '게임 삭제',
-                ja: 'ゲーム削除',
-                de: 'Spiel löschen',
-                fr: 'Supprimer la partie',
-                ar: 'حذف اللعبة',
-                ru: 'Удалить игру',
-                trk: 'Oyunu Sil',
-                es: 'Eliminar partida',
-                it: 'Elimina partita',
-                pl: 'Usuń grę',
-                pt: 'Excluir jogo',
-                th: 'ลบเกม',
-                id: 'Hapus game',
-                hi: 'गेम हटाएँ',
-                bn: 'গেম মুছুন',
-              ),
-            ),
-        ],
+
+        textTheme: ThemeData.light().textTheme.apply(
+          bodyColor: Colors.black87,
+          displayColor: Colors.black87,
+        ),
+
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFFF5F5F5),
+          labelStyle: const TextStyle(color: Colors.black87),
+          hintStyle: const TextStyle(color: Colors.black54),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
       ),
 
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            TextField(
-              controller: gameController,
-              decoration: InputDecoration(
-                labelText: tr(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            isEditing
+                ? tr(
+                    context,
+                    'Edit Game',
+                    zhTw: '編輯牌局',
+                    zhCn: '编辑牌局',
+                    ko: '게임 수정',
+                    ja: 'ゲーム編集',
+                    de: 'Spiel bearbeiten',
+                    fr: 'Modifier la partie',
+                    ar: 'تعديل اللعبة',
+                    ru: 'Редактировать игру',
+                    trk: 'Oyunu düzenle',
+                    es: 'Editar partida',
+                    it: 'Modifica partita',
+                    pl: 'Edytuj grę',
+                    pt: 'Editar jogo',
+                    th: 'แก้ไขเกม',
+                    id: 'Edit permainan',
+                    hi: 'गेम संपादित करें',
+                    bn: 'গেম সম্পাদনা',
+                  )
+                : tr(
+                    context,
+                    'Add Game',
+                    zhTw: '新增牌局',
+                    zhCn: '新增牌局',
+                    ko: '게임 추가',
+                    ja: 'ゲーム追加',
+                    de: 'Spiel hinzufügen',
+                    fr: 'Ajouter une partie',
+                    ar: 'إضافة لعبة',
+                    ru: 'Добавить игру',
+                    trk: 'Oyun ekle',
+                    es: 'Agregar partida',
+                    it: 'Aggiungi partita',
+                    pl: 'Dodaj grę',
+                    pt: 'Adicionar jogo',
+                    th: 'เพิ่มเกม',
+                    id: 'Tambah permainan',
+                    hi: 'गेम जोड़ें',
+                    bn: 'গেম যোগ করুন',
+                  ),
+            style: const TextStyle(fontWeight: FontWeight.w800),
+          ),
+          actions: [
+            if (isEditing)
+              IconButton(
+                onPressed: _deleteGame,
+                icon: const Icon(Icons.delete_outline),
+              ),
+          ],
+        ),
+
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+
+              /// 所有 TextField 強制白底
+              _buildField(
+                gameController,
+                tr(
                   context,
                   'Game',
                   zhTw: '遊戲',
@@ -32145,225 +32153,65 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                   pl: 'Gra',
                   pt: 'Jogo',
                   th: 'เกม',
-                  id: 'Game',
+                  id: 'Permainan',
                   hi: 'गेम',
                   bn: 'গেম',
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: stakesController,
-              decoration: InputDecoration(
-                labelText: tr(
+
+              _buildField(
+                stakesController,
+                tr(
                   context,
                   'Stakes',
                   zhTw: '盲注',
                   zhCn: '盲注',
-                  ko: '스테이크',
+                  ko: '블라인드',
                   ja: 'ブラインド',
-                  de: 'Einsätze',
+                  de: 'Blinds',
                   fr: 'Blindes',
                   ar: 'الرهانات',
-                  ru: 'Ставки',
-                  trk: 'Bahisler',
+                  ru: 'Блайнды',
+                  trk: 'Blindler',
                   es: 'Ciegas',
-                  it: 'Puntate',
-                  pl: 'Stawki',
+                  it: 'Buio',
+                  pl: 'Blindy',
                   pt: 'Blinds',
-                  th: 'เดิมพัน',
-                  id: 'Taruhan',
-                  hi: 'स्टेक्स',
+                  th: 'บลายด์',
+                  id: 'Blind',
+                  hi: 'ब्लाइंड',
                   bn: 'ব্লাইন্ড',
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<CashGameLocationType>(
-              initialValue: locationType,
-              decoration: InputDecoration(
-                labelText: tr(
+
+              _buildField(
+                locationController,
+                tr(
                   context,
-                  'Location Type',
-                  zhTw: '地點類型',
-                  zhCn: '地点类型',
-                  ko: '장소 유형',
-                  ja: '場所タイプ',
-                  de: 'Ortstyp',
-                  fr: 'Type de lieu',
-                  ar: 'نوع الموقع',
-                  ru: 'Тип места',
-                  trk: 'Konum Türü',
-                  es: 'Tipo de ubicación',
-                  it: 'Tipo di luogo',
-                  pl: 'Typ lokalizacji',
-                  pt: 'Tipo de local',
-                  th: 'ประเภทสถานที่',
-                  id: 'Tipe lokasi',
-                  hi: 'स्थान प्रकार',
-                  bn: 'লোকেশন ধরন',
+                  'Location',
+                  zhTw: '地點',
+                  zhCn: '地点',
+                  ko: '위치',
+                  ja: '場所',
+                  de: 'Ort',
+                  fr: 'Lieu',
+                  ar: 'الموقع',
+                  ru: 'Место',
+                  trk: 'Konum',
+                  es: 'Ubicación',
+                  it: 'Posizione',
+                  pl: 'Lokalizacja',
+                  pt: 'Localização',
+                  th: 'สถานที่',
+                  id: 'Lokasi',
+                  hi: 'स्थान',
+                  bn: 'অবস্থান',
                 ),
               ),
-              items: const [
-                DropdownMenuItem(
-                  value: CashGameLocationType.homeGame,
-                  child: Text('Home Game'),
-                ),
-                DropdownMenuItem(
-                  value: CashGameLocationType.casino,
-                  child: Text('Casino'),
-                ),
-              ],
-              onChanged: (value) {
-                if (value == null) return;
 
-                setState(() {
-                  locationType = value;
-                });
-              },
-            ),
-
-            const SizedBox(height: 12),
-            TextField(
-              controller: locationController,
-              decoration: InputDecoration(
-                labelText: locationType == CashGameLocationType.casino
-                    ? tr(
-                        context,
-                        'Casino Name',
-                        zhTw: '賭場名稱',
-                        zhCn: '赌场名称',
-                        ko: '카지노 이름',
-                        ja: 'カジノ名',
-                        de: 'Casino-Name',
-                        fr: 'Nom du casino',
-                        ar: 'اسم الكازينو',
-                        ru: 'Название казино',
-                        trk: 'Casino Adı',
-                        es: 'Nombre del casino',
-                        it: 'Nome del casinò',
-                        pl: 'Nazwa kasyna',
-                        pt: 'Nome do cassino',
-                        th: 'ชื่อคาสิโน',
-                        id: 'Nama kasino',
-                        hi: 'कैसिनो का नाम',
-                        bn: 'ক্যাসিনোর নাম',
-                      )
-                    : tr(
-                        context,
-                        'Player Name',
-                        zhTw: '玩家名稱',
-                        zhCn: '玩家名称',
-                        ko: '플레이어 이름',
-                        ja: 'プレイヤー名',
-                        de: 'Spielername',
-                        fr: 'Nom du joueur',
-                        ar: 'اسم اللاعب',
-                        ru: 'Имя игрока',
-                        trk: 'Oyuncu Adı',
-                        es: 'Nombre del jugador',
-                        it: 'Nome giocatore',
-                        pl: 'Nazwa gracza',
-                        pt: 'Nome do jogador',
-                        th: 'ชื่อผู้เล่น',
-                        id: 'Nama pemain',
-                        hi: 'खिलाड़ी का नाम',
-                        bn: 'প্লেয়ারের নাম',
-                      ),
-                hintText: locationType == CashGameLocationType.casino
-                    ? tr(
-                        context,
-                        'Enter casino name',
-                        zhTw: '輸入賭場名稱',
-                        zhCn: '输入赌场名称',
-                        ko: '카지노 이름 입력',
-                        ja: 'カジノ名を入力',
-                        de: 'Casino-Namen eingeben',
-                        fr: 'Entrez le nom du casino',
-                        ar: 'أدخل اسم الكازينو',
-                        ru: 'Введите название казино',
-                        trk: 'Casino adını girin',
-                        es: 'Ingresa el nombre del casino',
-                        it: 'Inserisci il nome del casinò',
-                        pl: 'Wpisz nazwę kasyna',
-                        pt: 'Digite o nome do cassino',
-                        th: 'กรอกชื่อคาสิโน',
-                        id: 'Masukkan nama kasino',
-                        hi: 'कैसिनो का नाम दर्ज करें',
-                        bn: 'ক্যাসিনোর নাম লিখুন',
-                      )
-                    : tr(
-                        context,
-                        'Enter player name',
-                        zhTw: '輸入玩家名稱',
-                        zhCn: '输入玩家名称',
-                        ko: '플레이어 이름 입력',
-                        ja: 'プレイヤー名を入力',
-                        de: 'Spielernamen eingeben',
-                        fr: 'Entrez le nom du joueur',
-                        ar: 'أدخل اسم اللاعب',
-                        ru: 'Введите имя игрока',
-                        trk: 'Oyuncu adını girin',
-                        es: 'Ingresa el nombre del jugador',
-                        it: 'Inserisci il nome del giocatore',
-                        pl: 'Wpisz nazwę gracza',
-                        pt: 'Digite o nome do jogador',
-                        th: 'กรอกชื่อผู้เล่น',
-                        id: 'Masukkan nama pemain',
-                        hi: 'खिलाड़ी का नाम दर्ज करें',
-                        bn: 'প্লেয়ারের নাম লিখুন',
-                      ),
-                helperText: locationType == CashGameLocationType.casino
-                    ? tr(
-                        context,
-                        'Will save as: Name Casino',
-                        zhTw: '將儲存為：名稱 Casino',
-                        zhCn: '将保存为：名称 Casino',
-                        ko: '다음 형식으로 저장됩니다: Name Casino',
-                        ja: '保存形式: Name Casino',
-                        de: 'Wird gespeichert als: Name Casino',
-                        fr: 'Sera enregistré comme : Name Casino',
-                        ar: 'سيتم الحفظ كالتالي: Name Casino',
-                        ru: 'Будет сохранено как: Name Casino',
-                        trk: 'Şöyle kaydedilecek: Name Casino',
-                        es: 'Se guardará como: Name Casino',
-                        it: 'Verrà salvato come: Name Casino',
-                        pl: 'Zostanie zapisane jako: Name Casino',
-                        pt: 'Será salvo como: Name Casino',
-                        th: 'จะบันทึกเป็น: Name Casino',
-                        id: 'Akan disimpan sebagai: Name Casino',
-                        hi: 'इस रूप में सेव होगा: Name Casino',
-                        bn: 'এভাবে সংরক্ষণ হবে: Name Casino',
-                      )
-                    : tr(
-                        context,
-                        "Will save as: Name's Game",
-                        zhTw: "將儲存為：Name's Game",
-                        zhCn: "将保存为：Name's Game",
-                        ko: "다음 형식으로 저장됩니다: Name's Game",
-                        ja: "保存形式: Name's Game",
-                        de: "Wird gespeichert als: Name's Game",
-                        fr: "Sera enregistré comme : Name's Game",
-                        ar: "سيتم الحفظ كالتالي: Name's Game",
-                        ru: "Будет сохранено как: Name's Game",
-                        trk: "Şöyle kaydedilecek: Name's Game",
-                        es: "Se guardará como: Name's Game",
-                        it: "Verrà salvato come: Name's Game",
-                        pl: "Zostanie zapisane jako: Name's Game",
-                        pt: "Será salvo como: Name's Game",
-                        th: "จะบันทึกเป็น: Name's Game",
-                        id: "Akan disimpan sebagai: Name's Game",
-                        hi: "इस रूप में सेव होगा: Name's Game",
-                        bn: "এভাবে সংরক্ষণ হবে: Name's Game",
-                      ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: buyInController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: tr(
+              _buildField(
+                buyInController,
+                tr(
                   context,
                   'Buy In',
                   zhTw: '買入',
@@ -32371,55 +32219,49 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                   ko: '바이인',
                   ja: 'バイイン',
                   de: 'Buy-in',
-                  fr: 'Buy-in',
+                  fr: 'Cave',
                   ar: 'الدخول',
                   ru: 'Бай-ин',
                   trk: 'Buy-in',
-                  es: 'Buy-in',
+                  es: 'Compra',
                   it: 'Buy-in',
-                  pl: 'Buy-in',
+                  pl: 'Wpisowe',
                   pt: 'Buy-in',
                   th: 'บายอิน',
-                  id: 'Buy In',
+                  id: 'Buy-in',
                   hi: 'बाय-इन',
                   bn: 'বাই-ইন',
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: cashOutController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: tr(
+
+              _buildField(
+                cashOutController,
+                tr(
                   context,
                   'Cash Out',
                   zhTw: '結算',
                   zhCn: '结算',
                   ko: '캐시아웃',
                   ja: 'キャッシュアウト',
-                  de: 'Cash-out',
-                  fr: 'Cash-out',
+                  de: 'Auszahlung',
+                  fr: 'Encaissement',
                   ar: 'السحب',
                   ru: 'Кэшаут',
-                  trk: 'Cash-out',
-                  es: 'Cash-out',
+                  trk: 'Nakit çıkışı',
+                  es: 'Retiro',
                   it: 'Cash-out',
-                  pl: 'Cash-out',
-                  pt: 'Cash-out',
-                  th: 'แคชเอาท์',
-                  id: 'Cash Out',
+                  pl: 'Wypłata',
+                  pt: 'Saque',
+                  th: 'ถอนเงิน',
+                  id: 'Tarik tunai',
                   hi: 'कैश आउट',
                   bn: 'ক্যাশ আউট',
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: tipsController,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: tr(
+
+              _buildField(
+                tipsController,
+                tr(
                   context,
                   'Tips',
                   zhTw: '小費',
@@ -32431,95 +32273,196 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                   ar: 'الإكرامية',
                   ru: 'Чаевые',
                   trk: 'Bahşiş',
-                  es: 'Propinas',
+                  es: 'Propina',
                   it: 'Mancia',
-                  pl: 'Napiwki',
-                  pt: 'Gorjetas',
+                  pl: 'Napiwek',
+                  pt: 'Gorjeta',
                   th: 'ทิป',
                   id: 'Tip',
                   hi: 'टिप',
                   bn: 'টিপস',
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            SwitchListTile(
-              value: isOngoing,
-              title: Text(
-                tr(
-                  context,
-                  'Is Ongoing',
-                  zhTw: '進行中',
-                  zhCn: '进行中',
-                  ko: '진행 중',
-                  ja: '進行中',
-                  de: 'Läuft',
-                  fr: 'En cours',
-                  ar: 'جارٍ',
-                  ru: 'В процессе',
-                  trk: 'Devam Ediyor',
-                  es: 'En curso',
-                  it: 'In corso',
-                  pl: 'W trakcie',
-                  pt: 'Em andamento',
-                  th: 'กำลังดำเนินอยู่',
-                  id: 'Sedang berlangsung',
-                  hi: 'चल रहा है',
-                  bn: 'চলমান',
+
+              const SizedBox(height: 12),
+
+              SwitchListTile(
+                value: isOngoing,
+                title: Text(
+                  tr(
+                    context,
+                    'Is Ongoing',
+                    zhTw: '進行中',
+                    zhCn: '进行中',
+                    ko: '진행 중',
+                    ja: '進行中',
+                    de: 'Läuft',
+                    fr: 'En cours',
+                    ar: 'قيد التشغيل',
+                    ru: 'В процессе',
+                    trk: 'Devam ediyor',
+                    es: 'En curso',
+                    it: 'In corso',
+                    pl: 'W trakcie',
+                    pt: 'Em andamento',
+                    th: 'กำลังดำเนินอยู่',
+                    id: 'Sedang berlangsung',
+                    hi: 'जारी है',
+                    bn: 'চলমান',
+                  ),
+                  style: const TextStyle(color: Colors.black),
                 ),
+                onChanged: (value) {
+                  setState(() {
+                    isOngoing = value;
+                    if (isOngoing) endedAt = null;
+                  });
+                },
               ),
-              onChanged: (value) {
-                setState(() {
-                  isOngoing = value;
-                  if (isOngoing) {
-                    endedAt = null;
-                  }
-                });
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(tr(context, 'Start', zhTw: '開始', zhCn: '开始', ko: '시작', ja: '開始', de: 'Start', fr: 'Début', ar: 'البداية', ru: 'Начало', trk: 'Başlangıç', es: 'Inicio', it: 'Inizio', pl: 'Start', pt: 'Início', th: 'เริ่ม', id: 'Mulai', hi: 'शुरू', bn: 'শুরু')),
-              subtitle: Text(_dateTimeText(startedAt)),
-              trailing: const Icon(Icons.schedule),
-              onTap: _pickStartTime,
-            ),
-            if (!isOngoing)
+
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(tr(context, 'End', zhTw: '結束', zhCn: '结束', ko: '종료', ja: '終了', de: 'Ende', fr: 'Fin', ar: 'النهاية', ru: 'Конец', trk: 'Bitiş', es: 'Fin', it: 'Fine', pl: 'Koniec', pt: 'Fim', th: 'สิ้นสุด', id: 'Selesai', hi: 'समाप्त', bn: 'শেষ')),
-                subtitle: Text(
-                  endedAt == null
-                      ? tr(context, 'Please choose', zhTw: '請選擇', zhCn: '请选择', ko: '선택해주세요', ja: '選択してください', de: 'Bitte auswählen', fr: 'Veuillez choisir', ar: 'يرجى الاختيار', ru: 'Пожалуйста, выберите', trk: 'Lütfen seçin', es: 'Por favor elige', it: 'Scegli', pl: 'Wybierz', pt: 'Escolha', th: 'กรุณาเลือก', id: 'Silakan pilih', hi: 'कृपया चुनें', bn: 'অনুগ্রহ করে নির্বাচন করুন')
-                      : _dateTimeText(endedAt!),
+                title: Text(
+                  tr(
+                    context,
+                    'Start',
+                    zhTw: '開始',
+                    zhCn: '开始',
+                    ko: '시작',
+                    ja: '開始',
+                    de: 'Start',
+                    fr: 'Début',
+                    ar: 'البداية',
+                    ru: 'Начало',
+                    trk: 'Başlangıç',
+                    es: 'Inicio',
+                    it: 'Inizio',
+                    pl: 'Start',
+                    pt: 'Início',
+                    th: 'เริ่มต้น',
+                    id: 'Mulai',
+                    hi: 'शुरू',
+                    bn: 'শুরু',
+                  ),
+                  style: const TextStyle(color: Colors.black),
                 ),
-                trailing: const Icon(Icons.schedule),
-                onTap: _pickEndTime,
+                subtitle: Text(
+                  _dateTimeText(startedAt),
+                  style: const TextStyle(color: Colors.black54),
+                ),
+                trailing: const Icon(Icons.schedule, color: Colors.black),
+                onTap: _pickStartTime,
               ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: noteController,
-              maxLines: 3,
-              decoration: InputDecoration(
-                labelText: tr(context, 'Note', zhTw: '備註', zhCn: '备注', ko: '메모', ja: 'メモ', de: 'Notiz', fr: 'Note', ar: 'ملاحظة', ru: 'Заметка', trk: 'Not', es: 'Nota', it: 'Nota', pl: 'Notatka', pt: 'Nota', th: 'หมายเหตุ', id: 'Catatan', hi: 'नोट', bn: 'নোট'),
-              ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: isSaving ? null : _save,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: Text(
-                  isSaving
-                      ? tr(context, 'Saving...', zhTw: '儲存中...', zhCn: '保存中...', ko: '저장 중...', ja: '保存中...', de: 'Speichern...', fr: 'Enregistrement...', ar: 'جارٍ الحفظ...', ru: 'Сохранение...', trk: 'Kaydediliyor...', es: 'Guardando...', it: 'Salvataggio...', pl: 'Zapisywanie...', pt: 'Salvando...', th: 'กำลังบันทึก...', id: 'Menyimpan...', hi: 'सेव हो रहा है...', bn: 'সংরক্ষণ হচ্ছে...')
-                      : tr(context, 'Save', zhTw: '儲存', zhCn: '保存', ko: '저장', ja: '保存', de: 'Speichern', fr: 'Enregistrer', ar: 'حفظ', ru: 'Сохранить', trk: 'Kaydet', es: 'Guardar', it: 'Salva', pl: 'Zapisz', pt: 'Salvar', th: 'บันทึก', id: 'Simpan', hi: 'सेव करें', bn: 'সংরক্ষণ'),
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
+
+              if (!isOngoing)
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    tr(
+                      context,
+                      'End',
+                      zhTw: '結束',
+                      zhCn: '结束',
+                      ko: '종료',
+                      ja: '終了',
+                      de: 'Ende',
+                      fr: 'Fin',
+                      ar: 'النهاية',
+                      ru: 'Конец',
+                      trk: 'Bitiş',
+                      es: 'Fin',
+                      it: 'Fine',
+                      pl: 'Koniec',
+                      pt: 'Fim',
+                      th: 'สิ้นสุด',
+                      id: 'Selesai',
+                      hi: 'समाप्त',
+                      bn: 'শেষ',
+                    ),
+                    style: const TextStyle(color: Colors.black),
+                  ),
+                  subtitle: Text(
+                    endedAt == null
+                        ? tr(
+                            context,
+                            'Please choose',
+                            zhTw: '請選擇',
+                            zhCn: '请选择',
+                            ko: '선택해주세요',
+                            ja: '選択してください',
+                            de: 'Bitte wählen',
+                            fr: 'Veuillez choisir',
+                            ar: 'يرجى الاختيار',
+                            ru: 'Пожалуйста, выберите',
+                            trk: 'Lütfen seçin',
+                            es: 'Por favor elija',
+                            it: 'Per favore scegli',
+                            pl: 'Proszę wybrać',
+                            pt: 'Por favor escolha',
+                            th: 'กรุณาเลือก',
+                            id: 'Silakan pilih',
+                            hi: 'कृपया चुनें',
+                            bn: 'অনুগ্রহ করে নির্বাচন করুন',
+                          )
+                        : _dateTimeText(endedAt!),
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                  trailing: const Icon(Icons.schedule, color: Colors.black),
+                  onTap: _pickEndTime,
+                ),
+
+              const SizedBox(height: 20),
+
+              FilledButton(
+                onPressed: isSaving ? null : _save,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  child: Text(
+                    tr(
+                      context,
+                      'Save',
+                      zhTw: '儲存',
+                      zhCn: '保存',
+                      ko: '저장',
+                      ja: '保存',
+                      de: 'Speichern',
+                      fr: 'Enregistrer',
+                      ar: 'حفظ',
+                      ru: 'Сохранить',
+                      trk: 'Kaydet',
+                      es: 'Guardar',
+                      it: 'Salva',
+                      pl: 'Zapisz',
+                      pt: 'Salvar',
+                      th: 'บันทึก',
+                      id: 'Simpan',
+                      hi: 'सहेजें',
+                      bn: 'সংরক্ষণ করুন',
+                    ),
+                    style: TextStyle(fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildField(TextEditingController controller, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: Colors.black),
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: const Color(0xFFF5F5F5),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
         ),
       ),
     );
