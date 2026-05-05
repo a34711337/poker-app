@@ -3012,10 +3012,9 @@ class AppleIapService {
       body: jsonEncode({
         'productId': purchase.productID,
         'purchaseId': purchase.purchaseID ?? '',
-        'verificationData':
-            purchase.verificationData.localVerificationData.isNotEmpty
-                ? purchase.verificationData.localVerificationData
-                : purchase.verificationData.serverVerificationData,
+        'verificationData': purchase.verificationData.serverVerificationData,
+        'serverVerificationData': purchase.verificationData.serverVerificationData,
+        'localVerificationData': purchase.verificationData.localVerificationData,
         'source': purchase.verificationData.source,
         'type': type.name,
       }),

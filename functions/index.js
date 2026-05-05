@@ -932,110 +932,189 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    const receiptData = (req.body.verificationData || "").toString();
+    const clientProductId = (req.body.productId || "").toString();
     const clientType = (req.body.type || "").toString();
 
-    if (!receiptData) {
-      return res.status(400).json({ error: "Missing receipt data" });
+    const serverVerificationData =
+      (req.body.serverVerificationData ||
+        req.body.verificationData ||
+        "").toString();
+
+    const localVerificationData =
+      (req.body.localVerificationData || "").toString();
+
+    function decodeJwtPayload(token) {
+      const parts = token.split(".");
+      if (parts.length < 2) return null;
+
+      const payload = parts[1]
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+      const padded = payload + "=".repeat((4 - payload.length % 4) % 4);
+      return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
     }
 
-    const sharedSecret = process.env.APPLE_SHARED_SECRET || "";
+    function getPlanType(productId, fallbackType) {
+      const clean = (productId || "").toLowerCase();
 
-    if (!sharedSecret) {
-      return res.status(500).json({ error: "Missing APPLE_SHARED_SECRET" });
+      if (clean.includes("hostpro")) return "host";
+      if (clean.includes("statspro")) return "stats";
+
+      if (fallbackType === "host") return "host";
+      if (fallbackType === "stats") return "stats";
+
+      return "";
     }
 
-    async function verifyReceipt(url) {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          "receipt-data": receiptData,
-          "password": sharedSecret,
-          "exclude-old-transactions": true,
-        }),
-      });
+    let productId = "";
+    let originalTransactionId = "";
+    let transactionId = "";
+    let expiresAt = null;
+    let environment = "";
+    let source = "";
 
-      return await response.json();
+    // 1) StoreKit 2 / JWS
+    const possibleJws = [serverVerificationData, localVerificationData]
+      .find((v) => v && v.split(".").length >= 3) || "";
+
+    if (possibleJws && possibleJws.split(".").length >= 3) {
+      const payload = decodeJwtPayload(possibleJws);
+
+      if (!payload) {
+        return res.status(400).json({ error: "Invalid JWS payload" });
+      }
+
+      productId = (payload.productId || clientProductId || "").toString();
+      originalTransactionId =
+        (payload.originalTransactionId ||
+          payload.transactionId ||
+          req.body.purchaseId ||
+          "").toString();
+
+      transactionId =
+        (payload.transactionId || req.body.purchaseId || "").toString();
+
+      const expiresMs = Number(payload.expiresDate || 0);
+
+      if (!expiresMs) {
+        return res.status(400).json({
+          error: "Missing expiresDate from Apple JWS",
+          payloadKeys: Object.keys(payload),
+        });
+      }
+
+      expiresAt = new Date(expiresMs);
+      environment = (payload.environment || "").toString();
+      source = "jws";
     }
 
-    let appleResult = await verifyReceipt(
-      "https://buy.itunes.apple.com/verifyReceipt"
-    );
+    // 2) Old receipt fallback
+    if (!expiresAt) {
+      const receiptData = localVerificationData || serverVerificationData;
 
-    if (appleResult.status === 21007) {
-      appleResult = await verifyReceipt(
-        "https://sandbox.itunes.apple.com/verifyReceipt"
+      if (!receiptData) {
+        return res.status(400).json({ error: "Missing receipt data" });
+      }
+
+      const sharedSecret = process.env.APPLE_SHARED_SECRET || "";
+
+      if (!sharedSecret) {
+        return res.status(500).json({ error: "Missing APPLE_SHARED_SECRET" });
+      }
+
+      async function verifyReceipt(url) {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            "receipt-data": receiptData,
+            password: sharedSecret,
+            "exclude-old-transactions": true,
+          }),
+        });
+
+        return await response.json();
+      }
+
+      let appleResult = await verifyReceipt(
+        "https://buy.itunes.apple.com/verifyReceipt"
       );
-    }
 
-    if (appleResult.status !== 0) {
-      console.error("Apple receipt verification failed:", {
-        status: appleResult.status,
-        environment: appleResult.environment,
-        productIdFromClient: req.body.productId,
-        purchaseIdFromClient: req.body.purchaseId,
-        sourceFromClient: req.body.source,
-        typeFromClient: req.body.type,
-        receiptLength: receiptData.length,
-        receiptStart: receiptData.substring(0, 40),
+      if (appleResult.status === 21007) {
+        appleResult = await verifyReceipt(
+          "https://sandbox.itunes.apple.com/verifyReceipt"
+        );
+      }
+
+      if (appleResult.status !== 0) {
+        console.error("Apple receipt verification failed:", {
+          status: appleResult.status,
+          environment: appleResult.environment,
+          productIdFromClient: clientProductId,
+          purchaseIdFromClient: req.body.purchaseId,
+          sourceFromClient: req.body.source,
+          typeFromClient: req.body.type,
+          receiptLength: receiptData.length,
+          receiptStart: receiptData.substring(0, 40),
+        });
+
+        return res.status(400).json({
+          error: "Apple receipt verification failed",
+          status: appleResult.status,
+          environment: appleResult.environment || "",
+        });
+      }
+
+      const latest = Array.isArray(appleResult.latest_receipt_info)
+        ? appleResult.latest_receipt_info
+        : [];
+
+      if (latest.length === 0) {
+        return res.status(400).json({ error: "No subscription found" });
+      }
+
+      latest.sort((a, b) => {
+        const aExp = Number(a.expires_date_ms || 0);
+        const bExp = Number(b.expires_date_ms || 0);
+        return bExp - aExp;
       });
 
+      const item = latest[0];
+
+      productId = (item.product_id || clientProductId || "").toString();
+      originalTransactionId =
+        (item.original_transaction_id || item.transaction_id || "").toString();
+      transactionId = (item.transaction_id || "").toString();
+
+      const expiresMs = Number(item.expires_date_ms || 0);
+      expiresAt = new Date(expiresMs);
+      environment = (appleResult.environment || "").toString();
+      source = "receipt";
+    }
+
+    if (!originalTransactionId || !productId || !expiresAt) {
       return res.status(400).json({
-        error: "Apple receipt verification failed",
-        status: appleResult.status,
-        environment: appleResult.environment || "",
+        error: "Invalid Apple subscription data",
+        productId,
+        originalTransactionId,
       });
     }
 
-    const latest = Array.isArray(appleResult.latest_receipt_info)
-      ? appleResult.latest_receipt_info
-      : [];
-
-    if (latest.length === 0) {
-      return res.status(400).json({ error: "No subscription found" });
-    }
-
-    latest.sort((a, b) => {
-      const aExp = Number(a.expires_date_ms || 0);
-      const bExp = Number(b.expires_date_ms || 0);
-      return bExp - aExp;
-    });
-
-    const item = latest[0];
-
-    const productId = (item.product_id || "").toString();
-    const originalTransactionId =
-      (item.original_transaction_id || item.transaction_id || "").toString();
-
-    const expiresMs = Number(item.expires_date_ms || 0);
-    const expiresAt = new Date(expiresMs);
-
-    if (!originalTransactionId || !productId || !expiresMs) {
-      return res.status(400).json({ error: "Invalid Apple subscription data" });
-    }
-
-    const now = new Date();
-    const isActive = expiresAt.getTime() > now.getTime();
-
-    let planType = "";
-
-    if (productId.includes("hostpro")) {
-      planType = "host";
-    } else if (productId.includes("statspro")) {
-      planType = "stats";
-    } else {
-      planType = clientType;
-    }
+    const planType = getPlanType(productId, clientType);
 
     if (planType !== "host" && planType !== "stats") {
       return res.status(400).json({
         error: "Unknown Apple product",
         productId,
+        clientType,
       });
     }
+
+    const now = new Date();
+    const isActive = expiresAt.getTime() > now.getTime();
 
     const subRef = db
       .collection("apple_subscriptions")
@@ -1047,10 +1126,11 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
         productId,
         planType,
         originalTransactionId,
-        transactionId: (item.transaction_id || "").toString(),
+        transactionId,
         expiresAt: admin.firestore.Timestamp.fromDate(expiresAt),
         isActive,
-        environment: (appleResult.environment || "").toString(),
+        environment,
+        source,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       },
@@ -1065,7 +1145,9 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
       userUpdate.role = isActive ? "host" : "player";
       userUpdate.isHostPro = isActive;
       userUpdate.hostProActive = isActive;
-      userUpdate.hostExpiresAt = admin.firestore.Timestamp.fromDate(expiresAt);
+      userUpdate.hostExpiresAt =
+        admin.firestore.Timestamp.fromDate(expiresAt);
+
       if (isActive) {
         userUpdate.hostLastPaidAt =
           admin.firestore.FieldValue.serverTimestamp();
@@ -1077,6 +1159,7 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
       userUpdate.statsProActive = isActive;
       userUpdate.statsExpiresAt =
         admin.firestore.Timestamp.fromDate(expiresAt);
+
       if (isActive) {
         userUpdate.statsLastPaidAt =
           admin.firestore.FieldValue.serverTimestamp();
@@ -1092,6 +1175,7 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
       originalTransactionId,
       expiresAt: expiresAt.toISOString(),
       isActive,
+      source,
     });
   } catch (error) {
     console.error("verifyAppleSubscription error:", error);
