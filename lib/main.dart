@@ -6883,8 +6883,14 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         'email': user.email,
       }, SetOptions(merge: true));
 
-      final providerIds = user.providerData.map((e) => e.providerId).toList();
-      final isGoogleUser = providerIds.contains('google.com');
+      final providerIds =
+          user.providerData.map((e) => e.providerId).toList();
+
+      final isGoogleUser =
+          providerIds.contains('google.com');
+
+      final isAppleUser =
+          providerIds.contains('apple.com');
 
       setState(() {
         email = user.email ?? '';
@@ -6902,7 +6908,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         avatarBgColor = data?['avatarBgColor'] is int
             ? data!['avatarBgColor'] as int
             : 0xFF2563EB;
-        authProvider = isGoogleUser ? 'google.com' : 'password';
+        authProvider = isGoogleUser
+            ? 'google.com'
+            : isAppleUser
+                ? 'apple.com'
+                : 'password';
         isLoading = false;
       });
     } catch (e) {
@@ -8949,52 +8959,129 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
-
                 TextField(
                   controller: originalTransactionIdController,
                   decoration: InputDecoration(
-                    labelText: tr(
-                      context,
-                      'Original Transaction ID',
-                      zhTw: '原始交易 ID',
-                      zhCn: '原始交易 ID',
-                      ko: '원본 거래 ID',
-                      ja: '元の取引ID',
-                      de: 'Ursprüngliche Transaktions-ID',
-                      fr: 'ID de transaction d’origine',
-                      ar: 'معرّف المعاملة الأصلي',
-                      ru: 'Исходный ID транзакции',
-                      trk: 'Orijinal işlem kimliği',
-                      es: 'ID de transacción original',
-                      it: 'ID transazione originale',
-                      pl: 'Oryginalny identyfikator transakcji',
-                      pt: 'ID da transação original',
-                      th: 'รหัสธุรกรรมต้นฉบับ',
-                      id: 'ID transaksi asli',
-                      hi: 'मूल लेनदेन आईडी',
-                      bn: 'মূল ট্রানজ্যাকশন আইডি',
-                    ),
-                    helperText: tr(
-                      context,
-                      'You can find this in your Apple purchase receipt or App Store subscription details',
-                      zhTw: '可在 Apple 購買收據或 App Store 訂閱詳細資訊中找到',
-                      zhCn: '可在 Apple 购买收据或 App Store 订阅详情中找到',
-                      ko: 'Apple 구매 영수증 또는 App Store 구독 정보에서 확인할 수 있습니다',
-                      ja: 'Appleの購入レシートまたはApp Storeのサブスクリプション詳細で確認できます',
-                      de: 'Sie finden diese in Ihrer Apple-Kaufquittung oder in den App Store-Abonnementdetails',
-                      fr: 'Vous pouvez le trouver dans votre reçu Apple ou dans les détails de votre abonnement App Store',
-                      ar: 'يمكنك العثور عليه في إيصال شراء Apple أو تفاصيل الاشتراك في App Store',
-                      ru: 'Вы можете найти его в квитанции Apple или в деталях подписки App Store',
-                      trk: 'Bunu Apple satın alma makbuzunuzda veya App Store abonelik detaylarında bulabilirsiniz',
-                      es: 'Puedes encontrarlo en tu recibo de compra de Apple o en los detalles de suscripción del App Store',
-                      it: 'Puoi trovarlo nella ricevuta Apple o nei dettagli dell’abbonamento App Store',
-                      pl: 'Możesz go znaleźć na paragonie Apple lub w szczegółach subskrypcji App Store',
-                      pt: 'Você pode encontrá-lo no recibo da Apple ou nos detalhes da assinatura na App Store',
-                      th: 'คุณสามารถดูได้จากใบเสร็จ Apple หรือรายละเอียดการสมัครใน App Store',
-                      id: 'Anda dapat menemukannya di tanda terima Apple atau detail langganan App Store',
-                      hi: 'आप इसे Apple रसीद या App Store सदस्यता विवरण में पा सकते हैं',
-                      bn: 'আপনি এটি Apple রসিদ বা App Store সাবস্ক্রিপশন বিবরণে খুঁজে পাবেন',
+                    label: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+
+                        Text(
+                          tr(
+                            context,
+                            'Original Transaction ID',
+                            zhTw: '原始交易 ID',
+                            zhCn: '原始交易 ID',
+                            ko: '원본 거래 ID',
+                            ja: '元の取引ID',
+                            de: 'Ursprüngliche Transaktions-ID',
+                            fr: 'ID de transaction d’origine',
+                            ar: 'معرّف المعاملة الأصلي',
+                            ru: 'Исходный ID транзакции',
+                            trk: 'Orijinal işlem kimliği',
+                            es: 'ID de transacción original',
+                            it: 'ID transazione originale',
+                            pl: 'Oryginalny identyfikator transakcji',
+                            pt: 'ID da transação original',
+                            th: 'รหัสธุรกรรมต้นฉบับ',
+                            id: 'ID transaksi asli',
+                            hi: 'मूल लेनदेन आईडी',
+                            bn: 'মূল ট্রানজ্যাকশন আইডি',
+                          ),
+                        ),
+
+                        const SizedBox(width: 6),
+
+                        GestureDetector(
+                          onTap: () async {
+                            await showDialog<void>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  tr(
+                                    context,
+                                    'Where to find Original Transaction ID',
+                                    zhTw: '如何找到原始交易 ID',
+                                    zhCn: '如何找到原始交易 ID',
+                                    ko: '원본 거래 ID 찾는 방법',
+                                    ja: '元の取引IDの確認方法',
+                                    de: 'Wo Sie die ursprüngliche Transaktions-ID finden',
+                                    fr: 'Où trouver l’ID de transaction d’origine',
+                                    ar: 'أين تجد معرف المعاملة الأصلي',
+                                    ru: 'Где найти исходный ID транзакции',
+                                    trk: 'Orijinal işlem kimliği nerede bulunur',
+                                    es: 'Dónde encontrar el ID de transacción original',
+                                    it: 'Dove trovare l’ID della transazione originale',
+                                    pl: 'Gdzie znaleźć oryginalny identyfikator transakcji',
+                                    pt: 'Onde encontrar o ID da transação original',
+                                    th: 'วิธีค้นหารหัสธุรกรรมต้นฉบับ',
+                                    id: 'Di mana menemukan ID transaksi asli',
+                                    hi: 'मूल लेनदेन आईडी कहाँ ढूंढें',
+                                    bn: 'মূল ট্রানজ্যাকশন আইডি কোথায় পাবেন',
+                                  ),
+                                ),
+
+                                content: Text(
+                                  tr(
+                                    context,
+                                    'You can find this in your Apple purchase receipt or App Store subscription details.',
+                                    zhTw: '可在 Apple 購買收據或 App Store 訂閱詳細資訊中找到。',
+                                    zhCn: '可在 Apple 购买收据或 App Store 订阅详情中找到。',
+                                    ko: 'Apple 구매 영수증 또는 App Store 구독 정보에서 확인할 수 있습니다.',
+                                    ja: 'Appleの購入レシートまたはApp Storeのサブスクリプション詳細で確認できます。',
+                                    de: 'Sie finden diese in Ihrer Apple-Kaufquittung oder in den App Store-Abonnementdetails.',
+                                    fr: 'Vous pouvez le trouver dans votre reçu Apple ou dans les détails de votre abonnement App Store.',
+                                    ar: 'يمكنك العثور عليه في إيصال شراء Apple أو تفاصيل الاشتراك في App Store.',
+                                    ru: 'Вы можете найти его в квитанции Apple или в деталях подписки App Store.',
+                                    trk: 'Bunu Apple satın alma makbuzunuzda veya App Store abonelik detaylarında bulabilirsiniz.',
+                                    es: 'Puedes encontrarlo en tu recibo de compra de Apple o en los detalles de suscripción del App Store.',
+                                    it: 'Puoi trovarlo nella ricevuta Apple o nei dettagli dell’abbonamento App Store.',
+                                    pl: 'Możesz go znaleźć na paragonie Apple lub w szczegółach subskrypcji App Store.',
+                                    pt: 'Você pode encontrá-lo no recibo da Apple ou nos detalhes da assinatura na App Store.',
+                                    th: 'คุณสามารถดูได้จากใบเสร็จ Apple หรือรายละเอียดการสมัครใน App Store.',
+                                    id: 'Anda dapat menemukannya di tanda terima Apple atau detail langganan App Store.',
+                                    hi: 'आप इसे Apple रसीद या App Store सदस्यता विवरण में पा सकते हैं।',
+                                    bn: 'আপনি এটি Apple রসিদ বা App Store সাবস্ক্রিপশন বিবরণে খুঁজে পাবেন।',
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      tr(
+                                        context,
+                                        'OK',
+                                        zhTw: '確定',
+                                        zhCn: '确定',
+                                        ko: '확인',
+                                        ja: 'OK',
+                                        de: 'OK',
+                                        fr: 'OK',
+                                        ar: 'حسناً',
+                                        ru: 'ОК',
+                                        trk: 'Tamam',
+                                        es: 'OK',
+                                        it: 'OK',
+                                        pl: 'OK',
+                                        pt: 'OK',
+                                        th: 'ตกลง',
+                                        id: 'OK',
+                                        hi: 'ठीक है',
+                                        bn: 'ঠিক আছে',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          child: const Icon(
+                            Icons.help_outline,
+                            size: 18,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -10535,7 +10622,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
                       final user = FirebaseAuth.instance.currentUser;
                       if (user == null) {
-                        throw Exception('Please login again');
+                        throw Exception(
+                          tr(
+                            context,
+                            'Please login again',
+                            zhTw: '請重新登入',
+                            zhCn: '请重新登录',
+                            ko: '다시 로그인해주세요',
+                            ja: '再度ログインしてください',
+                            de: 'Bitte erneut anmelden',
+                            fr: 'Veuillez vous reconnecter',
+                            ar: 'يرجى تسجيل الدخول مرة أخرى',
+                            ru: 'Пожалуйста, войдите снова',
+                            trk: 'Lütfen tekrar giriş yapın',
+                            es: 'Por favor inicia sesión nuevamente',
+                            it: 'Accedi di nuovo',
+                            pl: 'Zaloguj się ponownie',
+                            pt: 'Faça login novamente',
+                            th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+                            id: 'Silakan login kembali',
+                            hi: 'कृपया फिर से लॉगिन करें',
+                            bn: 'অনুগ্রহ করে আবার লগইন করুন',
+                          ),
+                        );
                       }
 
                       final userDoc = await FirebaseFirestore.instance
@@ -10734,7 +10843,242 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        onPressed: () async {
+                          try {
+                            await AppleIapService.restore(
+                              type: ApplePurchaseType.host,
+                            );
+
+                            await _reloadCurrentUserAccess();
+
+                            final user = FirebaseAuth.instance.currentUser;
+
+                            if (user == null) {
+                              throw Exception(
+                                tr(
+                                  context,
+                                  'Please login again',
+                                  zhTw: '請重新登入',
+                                  zhCn: '请重新登录',
+                                  ko: '다시 로그인해주세요',
+                                  ja: '再度ログインしてください',
+                                  de: 'Bitte erneut anmelden',
+                                  fr: 'Veuillez vous reconnecter',
+                                  ar: 'يرجى تسجيل الدخول مرة أخرى',
+                                  ru: 'Пожалуйста, войдите снова',
+                                  trk: 'Lütfen tekrar giriş yapın',
+                                  es: 'Por favor inicia sesión nuevamente',
+                                  it: 'Accedi di nuovo',
+                                  pl: 'Zaloguj się ponownie',
+                                  pt: 'Faça login novamente',
+                                  th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+                                  id: 'Silakan login kembali',
+                                  hi: 'कृपया फिर से लॉगिन करें',
+                                  bn: 'অনুগ্রহ করে আবার লগইন করুন',
+                                ),
+                              );
+                            }
+
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .get();
+
+                            final data = userDoc.data() ?? {};
+
+                            final hostStatus =
+                                resolveHostSubscriptionStatusFromUserData(data);
+
+                            /// 已經綁到目前帳號
+                            if (hostStatus.isPaidActive) {
+
+                              await showDialog<void>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text(
+                                    tr(
+                                      context,
+                                      'Subscription Already Active',
+                                      zhTw: '訂閱已啟用',
+                                      zhCn: '订阅已启用',
+                                      ko: '구독이 이미 활성화됨',
+                                      ja: 'サブスクリプションはすでに有効です',
+                                      de: 'Abonnement bereits aktiv',
+                                      fr: 'Abonnement déjà actif',
+                                      ar: 'الاشتراك مفعل بالفعل',
+                                      ru: 'Подписка уже активна',
+                                      trk: 'Abonelik zaten aktif',
+                                      es: 'Suscripción ya activa',
+                                      it: 'Abbonamento già attivo',
+                                      pl: 'Subskrypcja jest już aktywna',
+                                      pt: 'Assinatura já ativa',
+                                      th: 'การสมัครสมาชิกเปิดใช้งานแล้ว',
+                                      id: 'Langganan sudah aktif',
+                                      hi: 'सदस्यता पहले से सक्रिय है',
+                                      bn: 'সাবস্ক্রিপশন ইতিমধ্যেই সক্রিয়',
+                                    ),
+                                  ),
+
+                                  content: Text(
+                                    tr(
+                                      context,
+                                      'This Apple subscription is already linked to this account.',
+                                      zhTw: '此 Apple 訂閱已經綁定到目前帳號。',
+                                      zhCn: '此 Apple 订阅已经绑定到当前账号。',
+                                      ko: '이 Apple 구독은 이미 이 계정에 연결되어 있습니다',
+                                      ja: 'このAppleサブスクリプションはすでにこのアカウントに紐付けられています',
+                                      de: 'Dieses Apple-Abonnement ist bereits mit diesem Konto verknüpft',
+                                      fr: 'Cet abonnement Apple est déjà lié à ce compte',
+                                      ar: 'هذا اشتراك Apple مرتبط بالفعل بهذا الحساب',
+                                      ru: 'Эта подписка Apple уже привязана к этому аккаунту',
+                                      trk: 'Bu Apple aboneliği zaten bu hesaba bağlı',
+                                      es: 'Esta suscripción de Apple ya está vinculada a esta cuenta',
+                                      it: 'Questo abbonamento Apple è già collegato a questo account',
+                                      pl: 'Ta subskrypcja Apple jest już powiązana z tym kontem',
+                                      pt: 'Esta assinatura Apple já está vinculada a esta conta',
+                                      th: 'การสมัคร Apple นี้เชื่อมโยงกับบัญชีนี้แล้ว',
+                                      id: 'Langganan Apple ini sudah terhubung ke akun ini',
+                                      hi: 'यह Apple सदस्यता पहले से इस खाते से जुड़ी है',
+                                      bn: 'এই Apple সাবস্ক্রিপশন ইতিমধ্যেই এই অ্যাকাউন্টের সাথে যুক্ত',
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                        tr(
+                                          context,
+                                          'OK',
+                                          zhTw: '確定',
+                                          zhCn: '确定',
+                                          ko: '확인',
+                                          ja: 'OK',
+                                          de: 'OK',
+                                          fr: 'OK',
+                                          ar: 'حسناً',
+                                          ru: 'ОК',
+                                          trk: 'Tamam',
+                                          es: 'OK',
+                                          it: 'OK',
+                                          pl: 'OK',
+                                          pt: 'OK',
+                                          th: 'ตกลง',
+                                          id: 'OK',
+                                          hi: 'ठीक है',
+                                          bn: 'ঠিক আছে',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              return;
+                            }
+
+                            /// 有舊訂閱但不是目前帳號
+                            throw Exception(
+                              tr(
+                                context,
+                                'This Apple subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+                                zhTw: '此 Apple 訂閱已綁定到另一個帳號。請到設定使用「轉移訂閱」。',
+                                zhCn: '此 Apple 订阅已绑定到另一个账号。请到设置使用“转移订阅”。',
+                                ko: '이 Apple 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+                                ja: 'このAppleサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+                                de: 'Dieses Apple-Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+                                fr: 'Cet abonnement Apple est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+                                ar: 'هذا اشتراك Apple مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+                                ru: 'Эта подписка Apple уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+                                trk: 'Bu Apple aboneliği zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+                                es: 'Esta suscripción de Apple ya está vinculada a otra cuenta. Usa “Transferir suscripción” en Configuración.',
+                                it: 'Questo abbonamento Apple è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+                                pl: 'Ta subskrypcja Apple jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+                                pt: 'Esta assinatura Apple já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+                                th: 'การสมัคร Apple นี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+                                id: 'Langganan Apple ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+                                hi: 'यह Apple सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+                                bn: 'এই Apple সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+                              ),
+                            );
+
+                          } catch (e) {
+
+                            final message =
+                                e.toString().replaceFirst('Exception: ', '');
+
+                            /// 沒有任何舊訂閱 → 才允許購買
+                            if (message.contains('No previous purchase found')) {
+                              Navigator.pop(context, true);
+                              return;
+                            }
+
+                            await showDialog<void>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  tr(
+                                    context,
+                                    'Subscription Unavailable',
+                                    zhTw: '無法購買',
+                                    zhCn: '无法购买',
+                                    ko: '구독을 사용할 수 없음',
+                                    ja: 'サブスクリプションは利用できません',
+                                    de: 'Abonnement nicht verfügbar',
+                                    fr: 'Abonnement indisponible',
+                                    ar: 'الاشتراك غير متاح',
+                                    ru: 'Подписка недоступна',
+                                    trk: 'Abonelik kullanılamıyor',
+                                    es: 'Suscripción no disponible',
+                                    it: 'Abbonamento non disponibile',
+                                    pl: 'Subskrypcja niedostępna',
+                                    pt: 'Assinatura indisponível',
+                                    th: 'ไม่สามารถสมัครได้',
+                                    id: 'Langganan tidak tersedia',
+                                    hi: 'सदस्यता उपलब्ध नहीं है',
+                                    bn: 'সাবস্ক্রিপশন উপলব্ধ নয়',
+                                  ),
+                                ),
+                                content: Text(message),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      tr(
+                                        context,
+                                        'OK',
+                                        zhTw: '確定',
+                                        zhCn: '确定',
+                                        ko: '확인',
+                                        ja: 'OK',
+                                        de: 'OK',
+                                        fr: 'OK',
+                                        ar: 'حسناً',
+                                        ru: 'ОК',
+                                        trk: 'Tamam',
+                                        es: 'OK',
+                                        it: 'OK',
+                                        pl: 'OK',
+                                        pt: 'OK',
+                                        th: 'ตกลง',
+                                        id: 'OK',
+                                        hi: 'ठीक है',
+                                        bn: 'ঠিক আছে',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
                         child: Text(
                           tr(
                             context,
@@ -32040,7 +32384,242 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
-                        onPressed: () => Navigator.pop(context, true),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                        ),
+                        onPressed: () async {
+                          try {
+                            await AppleIapService.restore(
+                              type: ApplePurchaseType.stats,
+                            );
+
+                            await _reloadStatsAccess();
+
+                            final user = FirebaseAuth.instance.currentUser;
+
+                            if (user == null) {
+                              throw Exception(
+                                tr(
+                                  context,
+                                  'Please login again',
+                                  zhTw: '請重新登入',
+                                  zhCn: '请重新登录',
+                                  ko: '다시 로그인해주세요',
+                                  ja: '再度ログインしてください',
+                                  de: 'Bitte erneut anmelden',
+                                  fr: 'Veuillez vous reconnecter',
+                                  ar: 'يرجى تسجيل الدخول مرة أخرى',
+                                  ru: 'Пожалуйста, войдите снова',
+                                  trk: 'Lütfen tekrar giriş yapın',
+                                  es: 'Por favor inicia sesión nuevamente',
+                                  it: 'Accedi di nuovo',
+                                  pl: 'Zaloguj się ponownie',
+                                  pt: 'Faça login novamente',
+                                  th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+                                  id: 'Silakan login kembali',
+                                  hi: 'कृपया फिर से लॉगिन करें',
+                                  bn: 'অনুগ্রহ করে আবার লগইন করুন',
+                                ),
+                              );
+                            }
+
+                            final userDoc = await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .get();
+
+                            final data = userDoc.data() ?? {};
+
+                            final statsStatus =
+                                resolveStatsSubscriptionStatusFromUserData(data);
+
+                            /// 已經綁到目前帳號
+                            if (statsStatus.isPaidActive) {
+
+                              await showDialog<void>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: Text(
+                                    tr(
+                                      context,
+                                      'Subscription Already Active',
+                                      zhTw: '訂閱已啟用',
+                                      zhCn: '订阅已启用',
+                                      ko: '구독이 이미 활성화됨',
+                                      ja: 'サブスクリプションはすでに有効です',
+                                      de: 'Abonnement bereits aktiv',
+                                      fr: 'Abonnement déjà actif',
+                                      ar: 'الاشتراك مفعل بالفعل',
+                                      ru: 'Подписка уже активна',
+                                      trk: 'Abonelik zaten aktif',
+                                      es: 'Suscripción ya activa',
+                                      it: 'Abbonamento già attivo',
+                                      pl: 'Subskrypcja jest już aktywna',
+                                      pt: 'Assinatura já ativa',
+                                      th: 'การสมัครสมาชิกเปิดใช้งานแล้ว',
+                                      id: 'Langganan sudah aktif',
+                                      hi: 'सदस्यता पहले से सक्रिय है',
+                                      bn: 'সাবস্ক্রিপশন ইতিমধ্যেই সক্রিয়',
+                                    ),
+                                  ),
+
+                                  content: Text(
+                                    tr(
+                                      context,
+                                      'This Apple subscription is already linked to this account.',
+                                      zhTw: '此 Apple 訂閱已經綁定到目前帳號。',
+                                      zhCn: '此 Apple 订阅已经绑定到当前账号。',
+                                      ko: '이 Apple 구독은 이미 이 계정에 연결되어 있습니다',
+                                      ja: 'このAppleサブスクリプションはすでにこのアカウントに紐付けられています',
+                                      de: 'Dieses Apple-Abonnement ist bereits mit diesem Konto verknüpft',
+                                      fr: 'Cet abonnement Apple est déjà lié à ce compte',
+                                      ar: 'هذا اشتراك Apple مرتبط بالفعل بهذا الحساب',
+                                      ru: 'Эта подписка Apple уже привязана к этому аккаунту',
+                                      trk: 'Bu Apple aboneliği zaten bu hesaba bağlı',
+                                      es: 'Esta suscripción de Apple ya está vinculada a esta cuenta',
+                                      it: 'Questo abbonamento Apple è già collegato a questo account',
+                                      pl: 'Ta subskrypcja Apple jest już powiązana z tym kontem',
+                                      pt: 'Esta assinatura Apple já está vinculada a esta conta',
+                                      th: 'การสมัคร Apple นี้เชื่อมโยงกับบัญชีนี้แล้ว',
+                                      id: 'Langganan Apple ini sudah terhubung ke akun ini',
+                                      hi: 'यह Apple सदस्यता पहले से इस खाते से जुड़ी है',
+                                      bn: 'এই Apple সাবস্ক্রিপশন ইতিমধ্যেই এই অ্যাকাউন্টের সাথে যুক্ত',
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: Text(
+                                        tr(
+                                          context,
+                                          'OK',
+                                          zhTw: '確定',
+                                          zhCn: '确定',
+                                          ko: '확인',
+                                          ja: 'OK',
+                                          de: 'OK',
+                                          fr: 'OK',
+                                          ar: 'حسناً',
+                                          ru: 'ОК',
+                                          trk: 'Tamam',
+                                          es: 'OK',
+                                          it: 'OK',
+                                          pl: 'OK',
+                                          pt: 'OK',
+                                          th: 'ตกลง',
+                                          id: 'OK',
+                                          hi: 'ठीक है',
+                                          bn: 'ঠিক আছে',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              return;
+                            }
+
+                            /// 有舊訂閱但不是目前帳號
+                            throw Exception(
+                              tr(
+                                context,
+                                'This Apple subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+                                zhTw: '此 Apple 訂閱已綁定到另一個帳號。請到設定使用「轉移訂閱」。',
+                                zhCn: '此 Apple 订阅已绑定到另一个账号。请到设置使用“转移订阅”。',
+                                ko: '이 Apple 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+                                ja: 'このAppleサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+                                de: 'Dieses Apple-Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+                                fr: 'Cet abonnement Apple est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+                                ar: 'هذا اشتراك Apple مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+                                ru: 'Эта подписка Apple уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+                                trk: 'Bu Apple aboneliği zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+                                es: 'Esta suscripción de Apple ya está vinculada a otra cuenta. Usa “Transferir suscripción” en Configuración.',
+                                it: 'Questo abbonamento Apple è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+                                pl: 'Ta subskrypcja Apple jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+                                pt: 'Esta assinatura Apple já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+                                th: 'การสมัคร Apple นี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+                                id: 'Langganan Apple ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+                                hi: 'यह Apple सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+                                bn: 'এই Apple সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+                              ),
+                            );
+
+                          } catch (e) {
+
+                            final message =
+                                e.toString().replaceFirst('Exception: ', '');
+
+                            /// 沒有舊訂閱 → 才允許購買
+                            if (message.contains('No previous purchase found')) {
+                              Navigator.pop(context, true);
+                              return;
+                            }
+
+                            await showDialog<void>(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text(
+                                  tr(
+                                    context,
+                                    'Subscription Unavailable',
+                                    zhTw: '無法購買',
+                                    zhCn: '无法购买',
+                                    ko: '구독을 사용할 수 없음',
+                                    ja: 'サブスクリプションは利用できません',
+                                    de: 'Abonnement nicht verfügbar',
+                                    fr: 'Abonnement indisponible',
+                                    ar: 'الاشتراك غير متاح',
+                                    ru: 'Подписка недоступна',
+                                    trk: 'Abonelik kullanılamıyor',
+                                    es: 'Suscripción no disponible',
+                                    it: 'Abbonamento non disponibile',
+                                    pl: 'Subskrypcja niedostępna',
+                                    pt: 'Assinatura indisponível',
+                                    th: 'ไม่สามารถสมัครได้',
+                                    id: 'Langganan tidak tersedia',
+                                    hi: 'सदस्यता उपलब्ध नहीं है',
+                                    bn: 'সাবস্ক্রিপশন উপলব্ধ নয়',
+                                  ),
+                                ),
+                                content: Text(message),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text(
+                                      tr(
+                                        context,
+                                        'OK',
+                                        zhTw: '確定',
+                                        zhCn: '确定',
+                                        ko: '확인',
+                                        ja: 'OK',
+                                        de: 'OK',
+                                        fr: 'OK',
+                                        ar: 'حسناً',
+                                        ru: 'ОК',
+                                        trk: 'Tamam',
+                                        es: 'OK',
+                                        it: 'OK',
+                                        pl: 'OK',
+                                        pt: 'OK',
+                                        th: 'ตกลง',
+                                        id: 'OK',
+                                        hi: 'ठीक है',
+                                        bn: 'ঠিক আছে',
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }
+                        },
                         child: Text(
                           tr(
                             context,
