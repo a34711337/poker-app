@@ -10590,7 +10590,155 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              Text(
+                tr(
+                  context,
+                  'What you get:',
+                  zhTw: '你將獲得：',
+                  zhCn: '你将获得：',
+                  ko: '구독 혜택:',
+                  ja: '利用できる機能：',
+                  de: 'Das ist enthalten:',
+                  fr: 'Ce que vous obtenez :',
+                  ar: 'ما الذي ستحصل عليه:',
+                  ru: 'Что вы получите:',
+                  trk: 'Neler kazanırsınız:',
+                  es: 'Lo que obtienes:',
+                  it: 'Cosa ottieni:',
+                  pl: 'Co otrzymasz:',
+                  pt: 'O que você recebe:',
+                  th: 'สิ่งที่คุณจะได้รับ:',
+                  id: 'Yang Anda dapatkan:',
+                  hi: 'आपको क्या मिलेगा:',
+                  bn: 'আপনি যা পাবেন:',
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                tr(
+                  context,
+                  '• Create poker tables\n'
+                  '• Manage seats and waiting lists\n'
+                  '• Access host controls\n'
+                  '• Organize private poker games',
+
+                  zhTw:
+                      '• 建立撲克桌\n'
+                      '• 管理座位與候補名單\n'
+                      '• 使用主持人控制功能\n'
+                      '• 組織私人撲克遊戲',
+
+                  zhCn:
+                      '• 创建扑克桌\n'
+                      '• 管理座位与候补名单\n'
+                      '• 使用房主管理功能\n'
+                      '• 组织私人扑克游戏',
+
+                  ko:
+                      '• 포커 테이블 생성\n'
+                      '• 좌석 및 대기자 목록 관리\n'
+                      '• 호스트 기능 사용\n'
+                      '• 비공개 포커 게임 구성',
+
+                  ja:
+                      '• ポーカーテーブルを作成\n'
+                      '• 席とウェイティングリストを管理\n'
+                      '• ホスト機能を利用\n'
+                      '• プライベートポーカーゲームを開催',
+
+                  de:
+                      '• Pokertische erstellen\n'
+                      '• Sitzplätze und Wartelisten verwalten\n'
+                      '• Host-Steuerungen verwenden\n'
+                      '• Private Pokerspiele organisieren',
+
+                  fr:
+                      '• Créer des tables de poker\n'
+                      '• Gérer les sièges et listes d’attente\n'
+                      '• Accéder aux contrôles hôte\n'
+                      '• Organiser des parties privées de poker',
+
+                  ar:
+                      '• إنشاء طاولات بوكر\n'
+                      '• إدارة المقاعد وقوائم الانتظار\n'
+                      '• استخدام أدوات المضيف\n'
+                      '• تنظيم ألعاب بوكر خاصة',
+
+                  ru:
+                      '• Создавать покерные столы\n'
+                      '• Управлять местами и списками ожидания\n'
+                      '• Использовать функции хоста\n'
+                      '• Организовывать приватные покерные игры',
+
+                  trk:
+                      '• Poker masaları oluşturun\n'
+                      '• Koltukları ve bekleme listelerini yönetin\n'
+                      '• Host kontrollerine erişin\n'
+                      '• Özel poker oyunları düzenleyin',
+
+                  es:
+                      '• Crear mesas de póker\n'
+                      '• Gestionar asientos y listas de espera\n'
+                      '• Acceder a controles de anfitrión\n'
+                      '• Organizar partidas privadas de póker',
+
+                  it:
+                      '• Creare tavoli da poker\n'
+                      '• Gestire posti e liste d’attesa\n'
+                      '• Accedere ai controlli host\n'
+                      '• Organizzare partite private di poker',
+
+                  pl:
+                      '• Tworzenie stołów pokerowych\n'
+                      '• Zarządzanie miejscami i listami oczekujących\n'
+                      '• Dostęp do funkcji hosta\n'
+                      '• Organizowanie prywatnych gier pokerowych',
+
+                  pt:
+                      '• Criar mesas de pôquer\n'
+                      '• Gerenciar assentos e listas de espera\n'
+                      '• Acessar controles de anfitrião\n'
+                      '• Organizar jogos privados de pôquer',
+
+                  th:
+                      '• สร้างโต๊ะโป๊กเกอร์\n'
+                      '• จัดการที่นั่งและรายชื่อรอ\n'
+                      '• ใช้งานฟีเจอร์โฮสต์\n'
+                      '• จัดเกมโป๊กเกอร์ส่วนตัว',
+
+                  id:
+                      '• Membuat meja poker\n'
+                      '• Mengelola kursi dan daftar tunggu\n'
+                      '• Mengakses kontrol host\n'
+                      '• Mengatur permainan poker pribadi',
+
+                  hi:
+                      '• पोकर टेबल बनाएं\n'
+                      '• सीट और वेटिंग लिस्ट प्रबंधित करें\n'
+                      '• होस्ट कंट्रोल का उपयोग करें\n'
+                      '• निजी पोकर गेम आयोजित करें',
+
+                  bn:
+                      '• পোকার টেবিল তৈরি করুন\n'
+                      '• সিট ও অপেক্ষমাণ তালিকা পরিচালনা করুন\n'
+                      '• হোস্ট কন্ট্রোল ব্যবহার করুন\n'
+                      '• ব্যক্তিগত পোকার গেম আয়োজন করুন',
+                ),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 16),
 
               Wrap(
                 spacing: 12,
@@ -32230,7 +32378,155 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 ),
               ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+
+              Text(
+                tr(
+                  context,
+                  'What you get:',
+                  zhTw: '你將獲得：',
+                  zhCn: '你将获得：',
+                  ko: '구독 혜택:',
+                  ja: '利用できる機能：',
+                  de: 'Das ist enthalten:',
+                  fr: 'Ce que vous obtenez :',
+                  ar: 'ما الذي ستحصل عليه:',
+                  ru: 'Что вы получите:',
+                  trk: 'Neler kazanırsınız:',
+                  es: 'Lo que obtienes:',
+                  it: 'Cosa ottieni:',
+                  pl: 'Co otrzymasz:',
+                  pt: 'O que você recebe:',
+                  th: 'สิ่งที่คุณจะได้รับ:',
+                  id: 'Yang Anda dapatkan:',
+                  hi: 'आपको क्या मिलेगा:',
+                  bn: 'আপনি যা পাবেন:',
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                tr(
+                  context,
+                  '• Track buy-ins and cash-outs\n'
+                  '• Session history\n'
+                  '• Profit statistics\n'
+                  '• Player performance analytics',
+
+                  zhTw:
+                      '• 記錄買入與結算\n'
+                      '• 查看遊戲紀錄\n'
+                      '• 盈利統計\n'
+                      '• 玩家數據分析',
+
+                  zhCn:
+                      '• 记录买入与结算\n'
+                      '• 查看游戏记录\n'
+                      '• 盈利统计\n'
+                      '• 玩家数据分析',
+
+                  ko:
+                      '• 바이인 및 정산 기록\n'
+                      '• 세션 기록 확인\n'
+                      '• 수익 통계\n'
+                      '• 플레이어 성과 분석',
+
+                  ja:
+                      '• バイインと精算を記録\n'
+                      '• セッション履歴を確認\n'
+                      '• 利益統計\n'
+                      '• プレイヤー分析データ',
+
+                  de:
+                      '• Buy-ins und Auszahlungen verfolgen\n'
+                      '• Sitzungsverlauf anzeigen\n'
+                      '• Gewinnstatistiken\n'
+                      '• Spielerleistungsanalyse',
+
+                  fr:
+                      '• Suivre les buy-ins et cash-outs\n'
+                      '• Historique des sessions\n'
+                      '• Statistiques de profit\n'
+                      '• Analyse des performances des joueurs',
+
+                  ar:
+                      '• تتبع عمليات الشراء والسحب\n'
+                      '• سجل الجلسات\n'
+                      '• إحصائيات الأرباح\n'
+                      '• تحليلات أداء اللاعبين',
+
+                  ru:
+                      '• Отслеживание бай-инов и кеш-аутов\n'
+                      '• История сессий\n'
+                      '• Статистика прибыли\n'
+                      '• Аналитика игроков',
+
+                  trk:
+                      '• Buy-in ve cash-out takibi\n'
+                      '• Oturum geçmişi\n'
+                      '• Kâr istatistikleri\n'
+                      '• Oyuncu performans analizi',
+
+                  es:
+                      '• Registrar compras y retiros\n'
+                      '• Historial de sesiones\n'
+                      '• Estadísticas de ganancias\n'
+                      '• Análisis de rendimiento de jugadores',
+
+                  it:
+                      '• Monitorare buy-in e cash-out\n'
+                      '• Cronologia delle sessioni\n'
+                      '• Statistiche dei profitti\n'
+                      '• Analisi delle prestazioni dei giocatori',
+
+                  pl:
+                      '• Śledzenie buy-inów i wypłat\n'
+                      '• Historia sesji\n'
+                      '• Statystyki zysków\n'
+                      '• Analiza wyników graczy',
+
+                  pt:
+                      '• Registrar entradas e saídas\n'
+                      '• Histórico de sessões\n'
+                      '• Estatísticas de lucro\n'
+                      '• Análise de desempenho dos jogadores',
+
+                  th:
+                      '• ติดตามการซื้อเข้าและถอนเงิน\n'
+                      '• ประวัติเซสชัน\n'
+                      '• สถิติกำไร\n'
+                      '• วิเคราะห์ข้อมูลผู้เล่น',
+
+                  id:
+                      '• Melacak buy-in dan cash-out\n'
+                      '• Riwayat sesi\n'
+                      '• Statistik keuntungan\n'
+                      '• Analitik performa pemain',
+
+                  hi:
+                      '• बाय-इन और कैश-आउट ट्रैक करें\n'
+                      '• सेशन इतिहास\n'
+                      '• लाभ सांख्यिकी\n'
+                      '• खिलाड़ी प्रदर्शन विश्लेषण',
+
+                  bn:
+                      '• বাই-ইন এবং ক্যাশ-আউট ট্র্যাক করুন\n'
+                      '• সেশন ইতিহাস\n'
+                      '• লাভের পরিসংখ্যান\n'
+                      '• খেলোয়াড়ের পারফরম্যান্স বিশ্লেষণ',
+                ),
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 16),
 
               Wrap(
                 spacing: 12,
