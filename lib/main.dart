@@ -10019,6 +10019,68 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   ),
 
+                  /// 🍎 iOS 專用 EULA
+                  if (!kIsWeb &&
+                      defaultTargetPlatform == TargetPlatform.iOS)
+                    ListTile(
+                      leading: const Icon(Icons.gavel_outlined),
+                      title: Text(
+                        tr(
+                          context,
+                          'Apple EULA',
+                          zhTw: 'Apple 使用許可協議',
+                          zhCn: 'Apple 使用许可协议',
+                          ko: 'Apple 사용권 계약',
+                          ja: 'Apple 使用許諾契約',
+                          de: 'Apple Lizenzvereinbarung',
+                          fr: 'Contrat de licence Apple',
+                          ar: 'اتفاقية ترخيص Apple',
+                          ru: 'Лицензионное соглашение Apple',
+                          trk: 'Apple Lisans Sözleşmesi',
+                          es: 'Acuerdo de licencia de Apple',
+                          it: 'Contratto di licenza Apple',
+                          pl: 'Umowa licencyjna Apple',
+                          pt: 'Contrato de licença Apple',
+                          th: 'ข้อตกลงสิทธิ์การใช้งาน Apple',
+                          id: 'Perjanjian Lisensi Apple',
+                          hi: 'Apple लाइसेंस समझौता',
+                          bn: 'Apple লাইসেন্স চুক্তি',
+                        ),
+                      ),
+                      subtitle: Text(
+                        tr(
+                          context,
+                          'View Apple standard license agreement',
+                          zhTw: '查看 Apple 標準使用許可協議',
+                          zhCn: '查看 Apple 标准使用许可协议',
+                          ko: 'Apple 표준 사용권 계약 보기',
+                          ja: 'Apple標準使用許諾契約を表示',
+                          de: 'Apple-Standard-Lizenzvereinbarung anzeigen',
+                          fr: 'Afficher le contrat de licence standard Apple',
+                          ar: 'عرض اتفاقية ترخيص Apple القياسية',
+                          ru: 'Просмотреть стандартное лицензионное соглашение Apple',
+                          trk: 'Apple standart lisans sözleşmesini görüntüle',
+                          es: 'Ver el acuerdo de licencia estándar de Apple',
+                          it: 'Visualizza il contratto di licenza standard Apple',
+                          pl: 'Wyświetl standardową umowę licencyjną Apple',
+                          pt: 'Ver contrato de licença padrão da Apple',
+                          th: 'ดูข้อตกลงสิทธิ์การใช้งานมาตรฐานของ Apple',
+                          id: 'Lihat perjanjian lisensi standar Apple',
+                          hi: 'Apple मानक लाइसेंस समझौता देखें',
+                          bn: 'Apple স্ট্যান্ডার্ড লাইসেন্স চুক্তি দেখুন',
+                        ),
+                      ),
+                      trailing: const Icon(Icons.open_in_new),
+                      onTap: () {
+                        launchUrl(
+                          Uri.parse(
+                            'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                    ),
+
                   /// 🌐 Web / Android → Stripe
                   if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS)
                     ListTile(
@@ -10600,6 +10662,42 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                       ),
                     ),
                   ),
+
+                  if (defaultTargetPlatform == TargetPlatform.iOS)
+                    TextButton(
+                      onPressed: () async {
+                        await launchUrl(
+                          Uri.parse(
+                            'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      child: Text(
+                        tr(
+                          context,
+                          'Apple EULA',
+                          zhTw: 'Apple 使用條款',
+                          zhCn: 'Apple 使用条款',
+                          ko: 'Apple 이용 약관',
+                          ja: 'Apple 使用許諾契約',
+                          de: 'Apple EULA',
+                          fr: 'Contrat Apple',
+                          ar: 'اتفاقية Apple',
+                          ru: 'Лицензия Apple',
+                          trk: 'Apple Lisansı',
+                          es: 'Licencia Apple',
+                          it: 'Licenza Apple',
+                          pl: 'Licencja Apple',
+                          pt: 'Licença Apple',
+                          th: 'ข้อตกลง Apple',
+                          id: 'Lisensi Apple',
+                          hi: 'Apple लाइसेंस',
+                          bn: 'Apple লাইসেন্স',
+                        ),
+                      ),
+                    ),
+
                 ],
               ),
             ],
@@ -32204,6 +32302,42 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                       ),
                     ),
                   ),
+
+                  if (defaultTargetPlatform == TargetPlatform.iOS)
+                    TextButton(
+                      onPressed: () async {
+                        await launchUrl(
+                          Uri.parse(
+                            'https://www.apple.com/legal/internet-services/itunes/dev/stdeula/',
+                          ),
+                          mode: LaunchMode.externalApplication,
+                        );
+                      },
+                      child: Text(
+                        tr(
+                          context,
+                          'Apple EULA',
+                          zhTw: 'Apple 使用條款',
+                          zhCn: 'Apple 使用条款',
+                          ko: 'Apple 이용 약관',
+                          ja: 'Apple 使用許諾契約',
+                          de: 'Apple EULA',
+                          fr: 'Contrat Apple',
+                          ar: 'اتفاقية Apple',
+                          ru: 'Лицензия Apple',
+                          trk: 'Apple Lisansı',
+                          es: 'Licencia Apple',
+                          it: 'Licenza Apple',
+                          pl: 'Licencja Apple',
+                          pt: 'Licença Apple',
+                          th: 'ข้อตกลง Apple',
+                          id: 'Lisensi Apple',
+                          hi: 'Apple लाइसेंस',
+                          bn: 'Apple লাইসেন্স',
+                        ),
+                      ),
+                    ),
+            
                 ],
               ),
             ],
