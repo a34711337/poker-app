@@ -744,25 +744,26 @@ exports.transferAppleSubscription = functions.https.onRequest(async (req, res) =
     }
 
     const decodedToken = await admin.auth().verifyIdToken(idToken);
+
     const newOwnerUid = decodedToken.uid;
     const newOwnerEmailLower = normalizeEmail(decodedToken.email || "");
+
+    const oldEmailLower = normalizeEmail(req.body.oldEmail || "");
+    const newEmailLower = normalizeEmail(req.body.newEmail || "");
 
     const originalTransactionId =
       (req.body.originalTransactionId || "").toString().trim();
 
-    const confirmEmail =
-      normalizeEmail(req.body.confirmEmail || "");
-
-    if (!originalTransactionId) {
-      return res.status(400).json({
-        error: "Missing original transaction id",
-      });
+    if (!oldEmailLower) {
+      return res.status(400).json({ error: "Missing old email" });
     }
 
-    if (!newOwnerEmailLower || confirmEmail !== newOwnerEmailLower) {
-      return res.status(400).json({
-        error: "Email confirmation does not match",
-      });
+    if (!newEmailLower || newEmailLower !== newOwnerEmailLower) {
+      return res.status(400).json({ error: "New email does not match current login account" });
+    }
+
+    if (!originalTransactionId) {
+      return res.status(400).json({ error: "Missing original transaction id" });
     }
 
     const subRef = db
@@ -780,9 +781,14 @@ exports.transferAppleSubscription = functions.https.onRequest(async (req, res) =
 
       const data = subDoc.data() || {};
 
-      oldOwnerUid = (data.ownerUid || "")
-        .toString()
-        .trim();
+      oldOwnerUid = (data.ownerUid || "").toString().trim();
+      const currentOwnerEmailLower =
+        normalizeEmail(data.ownerEmailLower || "");
+
+      if (currentOwnerEmailLower &&
+          currentOwnerEmailLower !== oldEmailLower) {
+        throw new Error("Old email does not match the subscription owner");
+      }
 
       if (oldOwnerUid === newOwnerUid) {
         throw new Error("This subscription is already linked to this account");
@@ -793,7 +799,13 @@ exports.transferAppleSubscription = functions.https.onRequest(async (req, res) =
         {
           ownerUid: newOwnerUid,
           ownerEmailLower: newOwnerEmailLower,
+
           previousOwnerUid: oldOwnerUid,
+          previousOwnerEmailLower: currentOwnerEmailLower || oldEmailLower,
+
+          transferFromEmailLower: oldEmailLower,
+          transferToEmailLower: newOwnerEmailLower,
+
           transferredAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         },
@@ -809,12 +821,15 @@ exports.transferAppleSubscription = functions.https.onRequest(async (req, res) =
 
     return res.status(200).json({
       ok: true,
+      fromEmail: oldEmailLower,
+      toEmail: newOwnerEmailLower,
+      originalTransactionId,
     });
   } catch (error) {
     console.error("transferAppleSubscription error:", error);
 
     return res.status(500).json({
-      error: error.message || "Internal Server Error",
+      error: error.message || "Transfer failed",
     });
   }
 });

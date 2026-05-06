@@ -8475,109 +8475,41 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 28),
-                            Text(
-                              tr(
-                                context,
-                                'Change Password',
-                                zhTw: '更改密碼',
-                                zhCn: '更改密码',
-                                ko: '비밀번호 변경',
-                                ja: 'パスワード変更',
-                                de: 'Passwort ändern',
-                                fr: 'Changer le mot de passe',
-                                ar: 'تغيير كلمة المرور',
-                                ru: 'Сменить пароль',
-                                trk: 'Şifre Değiştir',
-                                es: 'Cambiar contraseña',
-                                it: 'Cambia password',
-                                pl: 'Zmień hasło',
-                                pt: 'Alterar senha',
-                                th: 'เปลี่ยนรหัสผ่าน',
-                                id: 'Ubah kata sandi',
-                                hi: 'पासवर्ड बदलें',
-                                bn: 'পাসওয়ার্ড পরিবর্তন করুন',
-                              ),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            if (authProvider == 'google.com' || authProvider == 'apple.com')
-                              Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFF8E1),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: const Color(0xFFFFE082),
-                                  ),
+                            if (authProvider != 'google.com' &&
+                                authProvider != 'apple.com') ...[
+
+                              const SizedBox(height: 28),
+
+                              Text(
+                                tr(
+                                  context,
+                                  'Change Password',
+                                  zhTw: '更改密碼',
+                                  zhCn: '更改密码',
+                                  ko: '비밀번호 변경',
+                                  ja: 'パスワード変更',
+                                  de: 'Passwort ändern',
+                                  fr: 'Changer le mot de passe',
+                                  ar: 'تغيير كلمة المرور',
+                                  ru: 'Сменить пароль',
+                                  trk: 'Şifre Değiştir',
+                                  es: 'Cambiar contraseña',
+                                  it: 'Cambia password',
+                                  pl: 'Zmień hasło',
+                                  pt: 'Alterar senha',
+                                  th: 'เปลี่ยนรหัสผ่าน',
+                                  id: 'Ubah kata sandi',
+                                  hi: 'पासवर्ड बदलें',
+                                  bn: 'পাসওয়ার্ড পরিবর্তন করুন',
                                 ),
-                                child: Text(
-                                  tr(
-                                    context,
-                                    authProvider == 'apple.com'
-                                        ? 'This account uses Apple Sign In, so password cannot be changed here.'
-                                        : 'This account uses Google login, so password cannot be changed here.',
-                                    zhTw: authProvider == 'apple.com'
-                                        ? '此帳號使用 Apple 登入，因此無法在這裡更改密碼。'
-                                        : '此帳號使用 Google 登入，因此無法在這裡更改密碼。',
-                                    zhCn: authProvider == 'apple.com'
-                                        ? '此账号使用 Apple 登录，因此无法在这里更改密码。'
-                                        : '此账号使用 Google 登录，因此无法在这里更改密码。',
-                                    ko: authProvider == 'apple.com'
-                                        ? '이 계정은 Apple 로그인으로 사용되므로 여기서 비밀번호를 변경할 수 없습니다.'
-                                        : '이 계정은 Google 로그인으로 사용되므로 여기서 비밀번호를 변경할 수 없습니다.',
-                                    ja: authProvider == 'apple.com'
-                                        ? 'このアカウントはAppleサインインを使用しているため、ここではパスワードを変更できません。'
-                                        : 'このアカウントはGoogleログインを使用しているため、ここではパスワードを変更できません。',
-                                    de: authProvider == 'apple.com'
-                                        ? 'Dieses Konto verwendet Apple-Anmeldung, daher kann das Passwort hier nicht geändert werden.'
-                                        : 'Dieses Konto verwendet Google-Anmeldung, daher kann das Passwort hier nicht geändert werden.',
-                                    fr: authProvider == 'apple.com'
-                                        ? 'Ce compte utilise la connexion Apple, vous ne pouvez donc pas modifier le mot de passe ici.'
-                                        : 'Ce compte utilise la connexion Google, vous ne pouvez donc pas modifier le mot de passe ici.',
-                                    ar: authProvider == 'apple.com'
-                                        ? 'هذا الحساب يستخدم تسجيل الدخول عبر Apple، لذلك لا يمكن تغيير كلمة المرور هنا.'
-                                        : 'هذا الحساب يستخدم تسجيل الدخول عبر Google، لذلك لا يمكن تغيير كلمة المرور هنا.',
-                                    ru: authProvider == 'apple.com'
-                                        ? 'Этот аккаунт использует вход через Apple, поэтому пароль нельзя изменить здесь.'
-                                        : 'Этот аккаунт использует вход через Google, поэтому пароль нельзя изменить здесь.',
-                                    trk: authProvider == 'apple.com'
-                                        ? 'Bu hesap Apple ile giriş kullanıyor, bu yüzden şifre burada değiştirilemez.'
-                                        : 'Bu hesap Google ile giriş kullanıyor, bu yüzden şifre burada değiştirilemez.',
-                                    es: authProvider == 'apple.com'
-                                        ? 'Esta cuenta usa inicio de sesión con Apple, por lo que no se puede cambiar la contraseña aquí.'
-                                        : 'Esta cuenta usa inicio de sesión con Google, por lo que no se puede cambiar la contraseña aquí.',
-                                    it: authProvider == 'apple.com'
-                                        ? 'Questo account utilizza l’accesso Apple, quindi la password non può essere modificata qui.'
-                                        : 'Questo account utilizza l’accesso Google, quindi la password non può essere modificata qui.',
-                                    pl: authProvider == 'apple.com'
-                                        ? 'To konto korzysta z logowania Apple, dlatego nie można tutaj zmienić hasła.'
-                                        : 'To konto korzysta z logowania Google, dlatego nie można tutaj zmienić hasła.',
-                                    pt: authProvider == 'apple.com'
-                                        ? 'Esta conta usa login Apple, portanto a senha não pode ser alterada aqui.'
-                                        : 'Esta conta usa login Google, portanto a senha não pode ser alterada aqui.',
-                                    th: authProvider == 'apple.com'
-                                        ? 'บัญชีนี้ใช้การเข้าสู่ระบบ Apple จึงไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้'
-                                        : 'บัญชีนี้ใช้การเข้าสู่ระบบ Google จึงไม่สามารถเปลี่ยนรหัสผ่านที่นี่ได้',
-                                    id: authProvider == 'apple.com'
-                                        ? 'Akun ini menggunakan login Apple, sehingga kata sandi tidak dapat diubah di sini.'
-                                        : 'Akun ini menggunakan login Google, sehingga kata sandi tidak dapat diubah di sini.',
-                                    hi: authProvider == 'apple.com'
-                                        ? 'यह खाता Apple साइन-इन का उपयोग करता है, इसलिए यहाँ पासवर्ड नहीं बदला जा सकता।'
-                                        : 'यह खाता Google लॉगिन का उपयोग करता है, इसलिए यहाँ पासवर्ड नहीं बदला जा सकता।',
-                                    bn: authProvider == 'apple.com'
-                                        ? 'এই অ্যাকাউন্ট Apple সাইন-ইন ব্যবহার করে, তাই এখানে পাসওয়ার্ড পরিবর্তন করা যাবে না।'
-                                        : 'এই অ্যাকাউন্ট Google লগইন ব্যবহার করে, তাই এখানে পাসওয়ার্ড পরিবর্তন করা যাবে না।',
-                                  ),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w800,
                                 ),
-                              )
-                            else ...[
+                              ),
+
+                              const SizedBox(height: 12),
+
                               TextField(
                                 controller: newPasswordController,
                                 obscureText: true,
@@ -8591,9 +8523,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     ja: '新しいパスワード',
                                     de: 'Neues Passwort',
                                     fr: 'Nouveau mot de passe',
-                                    ar: 'كلمة مرور جديدة',
+                                    ar: 'كلمة المرور الجديدة',
                                     ru: 'Новый пароль',
-                                    trk: 'Yeni Şifre',
+                                    trk: 'Yeni şifre',
                                     es: 'Nueva contraseña',
                                     it: 'Nuova password',
                                     pl: 'Nowe hasło',
@@ -8610,7 +8542,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   ),
                                 ),
                               ),
+
                               const SizedBox(height: 12),
+
                               TextField(
                                 controller: confirmPasswordController,
                                 obscureText: true,
@@ -8621,12 +8555,12 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     zhTw: '確認新密碼',
                                     zhCn: '确认新密码',
                                     ko: '새 비밀번호 확인',
-                                    ja: '新しいパスワード確認',
+                                    ja: '新しいパスワードを確認',
                                     de: 'Neues Passwort bestätigen',
                                     fr: 'Confirmer le nouveau mot de passe',
                                     ar: 'تأكيد كلمة المرور الجديدة',
                                     ru: 'Подтвердите новый пароль',
-                                    trk: 'Yeni Şifreyi Onayla',
+                                    trk: 'Yeni şifreyi onayla',
                                     es: 'Confirmar nueva contraseña',
                                     it: 'Conferma nuova password',
                                     pl: 'Potwierdź nowe hasło',
@@ -8643,66 +8577,46 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   ),
                                 ),
                               ),
+
                               const SizedBox(height: 12),
+
                               SizedBox(
                                 width: double.infinity,
                                 child: FilledButton(
-                                  onPressed: isSavingPassword
-                                      ? null
-                                      : _changePassword,
+                                  onPressed:
+                                      isSavingPassword ? null : _changePassword,
                                   child: Padding(
-                                    padding:
-                                        const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
+                                    ),
                                     child: Text(
-                                      isSavingPassword
-                                          ? tr(
-                                              context,
-                                              'Saving...',
-                                              zhTw: '儲存中...',
-                                              zhCn: '保存中...',
-                                              ko: '저장 중...',
-                                              ja: '保存中...',
-                                              de: 'Speichern...',
-                                              fr: 'Enregistrement...',
-                                              ar: 'جارٍ الحفظ...',
-                                              ru: 'Сохранение...',
-                                              trk: 'Kaydediliyor...',
-                                              es: 'Guardando...',
-                                              it: 'Salvataggio...',
-                                              pl: 'Zapisywanie...',
-                                              pt: 'Salvando...',
-                                              th: 'กำลังบันทึก...',
-                                              id: 'Menyimpan...',
-                                              hi: 'सहेजा जा रहा है...',
-                                              bn: 'সংরক্ষণ করা হচ্ছে...',
-                                            )
-                                          : tr(
-                                              context,
-                                              'Change Password',
-                                              zhTw: '更改密碼',
-                                              zhCn: '更改密码',
-                                              ko: '비밀번호 변경',
-                                              ja: 'パスワード変更',
-                                              de: 'Passwort ändern',
-                                              fr: 'Changer le mot de passe',
-                                              ar: 'تغيير كلمة المرور',
-                                              ru: 'Сменить пароль',
-                                              trk: 'Şifre Değiştir',
-                                              es: 'Cambiar contraseña',
-                                              it: 'Cambia password',
-                                              pl: 'Zmień hasło',
-                                              pt: 'Alterar senha',
-                                              th: 'เปลี่ยนรหัสผ่าน',
-                                              id: 'Ubah kata sandi',
-                                              hi: 'पासवर्ड बदलें',
-                                              bn: 'পাসওয়ার্ড পরিবর্তন করুন',
-                                            ),
+                                      tr(
+                                        context,
+                                        'Change Password',
+                                        zhTw: '更改密碼',
+                                        zhCn: '更改密码',
+                                        ko: '비밀번호 변경',
+                                        ja: 'パスワードを変更',
+                                        de: 'Passwort ändern',
+                                        fr: 'Changer le mot de passe',
+                                        ar: 'تغيير كلمة المرور',
+                                        ru: 'Изменить пароль',
+                                        trk: 'Şifreyi değiştir',
+                                        es: 'Cambiar contraseña',
+                                        it: 'Cambia password',
+                                        pl: 'Zmień hasło',
+                                        pt: 'Alterar senha',
+                                        th: 'เปลี่ยนรหัสผ่าน',
+                                        id: 'Ubah kata sandi',
+                                        hi: 'पासवर्ड बदलें',
+                                        bn: 'পাসওয়ার্ড পরিবর্তন করুন',
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
                             ],
-                          ],
+                          ],  
                         ),
                       ),
                     ),
@@ -8965,6 +8879,361 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+
+  Future<void> _showTransferSubscriptionDialog() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) return;
+
+    final oldEmailController = TextEditingController();
+    final originalTransactionIdController = TextEditingController();
+
+    final newEmail = (user.email ?? '').trim();
+
+    await showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(
+            tr(
+              context,
+              'Transfer Subscription',
+              zhTw: '轉移訂閱',
+              zhCn: '转移订阅',
+              ko: '구독 이전',
+              ja: 'サブスクリプション移行',
+              de: 'Abonnement übertragen',
+              fr: 'Transférer l’abonnement',
+              ar: 'نقل الاشتراك',
+              ru: 'Перенести подписку',
+              trk: 'Aboneliği aktar',
+              es: 'Transferir suscripción',
+              it: 'Trasferisci abbonamento',
+              pl: 'Przenieś subskrypcję',
+              pt: 'Transferir assinatura',
+              th: 'โอนการสมัครสมาชิก',
+              id: 'Transfer langganan',
+              hi: 'सदस्यता स्थानांतरित करें',
+              bn: 'সাবস্ক্রিপশন স্থানান্তর করুন',
+            ),
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: oldEmailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: InputDecoration(
+                    labelText: tr(
+                      context,
+                      'Old account email',
+                      zhTw: '舊帳號 Email',
+                      zhCn: '旧账号 Email',
+                      ko: '이전 계정 이메일',
+                      ja: '旧アカウントのメールアドレス',
+                      de: 'E-Mail des alten Kontos',
+                      fr: 'E-mail de l’ancien compte',
+                      ar: 'البريد الإلكتروني للحساب القديم',
+                      ru: 'Электронная почта старого аккаунта',
+                      trk: 'Eski hesap e-postası',
+                      es: 'Correo electrónico de la cuenta anterior',
+                      it: 'Email del vecchio account',
+                      pl: 'E-mail starego konta',
+                      pt: 'E-mail da conta antiga',
+                      th: 'อีเมลบัญชีเดิม',
+                      id: 'Email akun lama',
+                      hi: 'पुराने खाते का ईमेल',
+                      bn: 'পুরোনো অ্যাকাউন্টের ইমেইল',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: originalTransactionIdController,
+                  decoration: InputDecoration(
+                    labelText: tr(
+                      context,
+                      'Original Transaction ID',
+                      zhTw: '原始交易 ID',
+                      zhCn: '原始交易 ID',
+                      ko: '원본 거래 ID',
+                      ja: '元の取引ID',
+                      de: 'Ursprüngliche Transaktions-ID',
+                      fr: 'ID de transaction d’origine',
+                      ar: 'معرّف المعاملة الأصلي',
+                      ru: 'Исходный ID транзакции',
+                      trk: 'Orijinal işlem kimliği',
+                      es: 'ID de transacción original',
+                      it: 'ID transazione originale',
+                      pl: 'Oryginalny identyfikator transakcji',
+                      pt: 'ID da transação original',
+                      th: 'รหัสธุรกรรมต้นฉบับ',
+                      id: 'ID transaksi asli',
+                      hi: 'मूल लेनदेन आईडी',
+                      bn: 'মূল ট্রানজ্যাকশন আইডি',
+                    ),
+                    helperText: tr(
+                      context,
+                      'You can find this in your Apple purchase receipt or App Store subscription details',
+                      zhTw: '可在 Apple 購買收據或 App Store 訂閱詳細資訊中找到',
+                      zhCn: '可在 Apple 购买收据或 App Store 订阅详情中找到',
+                      ko: 'Apple 구매 영수증 또는 App Store 구독 정보에서 확인할 수 있습니다',
+                      ja: 'Appleの購入レシートまたはApp Storeのサブスクリプション詳細で確認できます',
+                      de: 'Sie finden diese in Ihrer Apple-Kaufquittung oder in den App Store-Abonnementdetails',
+                      fr: 'Vous pouvez le trouver dans votre reçu Apple ou dans les détails de votre abonnement App Store',
+                      ar: 'يمكنك العثور عليه في إيصال شراء Apple أو تفاصيل الاشتراك في App Store',
+                      ru: 'Вы можете найти его в квитанции Apple или в деталях подписки App Store',
+                      trk: 'Bunu Apple satın alma makbuzunuzda veya App Store abonelik detaylarında bulabilirsiniz',
+                      es: 'Puedes encontrarlo en tu recibo de compra de Apple o en los detalles de suscripción del App Store',
+                      it: 'Puoi trovarlo nella ricevuta Apple o nei dettagli dell’abbonamento App Store',
+                      pl: 'Możesz go znaleźć na paragonie Apple lub w szczegółach subskrypcji App Store',
+                      pt: 'Você pode encontrá-lo no recibo da Apple ou nos detalhes da assinatura na App Store',
+                      th: 'คุณสามารถดูได้จากใบเสร็จ Apple หรือรายละเอียดการสมัครใน App Store',
+                      id: 'Anda dapat menemukannya di tanda terima Apple atau detail langganan App Store',
+                      hi: 'आप इसे Apple रसीद या App Store सदस्यता विवरण में पा सकते हैं',
+                      bn: 'আপনি এটি Apple রসিদ বা App Store সাবস্ক্রিপশন বিবরণে খুঁজে পাবেন',
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  enabled: false,
+                  controller: TextEditingController(text: newEmail),
+                  decoration: InputDecoration(
+                    labelText: tr(
+                      context,
+                      'New account email',
+                      zhTw: '新帳號 Email',
+                      zhCn: '新账号 Email',
+                      ko: '새 계정 이메일',
+                      ja: '新しいアカウントのメールアドレス',
+                      de: 'E-Mail des neuen Kontos',
+                      fr: 'E-mail du nouveau compte',
+                      ar: 'البريد الإلكتروني للحساب الجديد',
+                      ru: 'Электронная почта нового аккаунта',
+                      trk: 'Yeni hesap e-postası',
+                      es: 'Correo electrónico de la nueva cuenta',
+                      it: 'Email del nuovo account',
+                      pl: 'E-mail nowego konta',
+                      pt: 'E-mail da nova conta',
+                      th: 'อีเมลบัญชีใหม่',
+                      id: 'Email akun baru',
+                      hi: 'नए खाते का ईमेल',
+                      bn: 'নতুন অ্যাকাউন্টের ইমেইল',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
+            ),
+
+            FilledButton(
+              onPressed: () async {
+                try {
+                  final oldEmail = oldEmailController.text.trim();
+                  final originalTransactionId =
+                      originalTransactionIdController.text.trim();
+
+                  if (oldEmail.isEmpty) {
+                    throw Exception(
+                      tr(
+                        context,
+                        'Please enter old account email',
+                        zhTw: '請輸入舊帳號 Email',
+                        zhCn: '请输入旧账号 Email',
+                        ko: '이전 계정 이메일을 입력해주세요',
+                        ja: '旧アカウントのメールアドレスを入力してください',
+                        de: 'Bitte geben Sie die E-Mail des alten Kontos ein',
+                        fr: 'Veuillez entrer l’e-mail de l’ancien compte',
+                        ar: 'يرجى إدخال البريد الإلكتروني للحساب القديم',
+                        ru: 'Пожалуйста, введите email старого аккаунта',
+                        trk: 'Lütfen eski hesap e-postasını girin',
+                        es: 'Por favor ingrese el correo electrónico de la cuenta anterior',
+                        it: 'Inserisci l’email del vecchio account',
+                        pl: 'Wprowadź e-mail starego konta',
+                        pt: 'Insira o e-mail da conta antiga',
+                        th: 'กรุณากรอกอีเมลบัญชีเดิม',
+                        id: 'Masukkan email akun lama',
+                        hi: 'कृपया पुराने खाते का ईमेल दर्ज करें',
+                        bn: 'অনুগ্রহ করে পুরোনো অ্যাকাউন্টের ইমেইল লিখুন',
+                      ),
+                    );
+                  }
+
+                  if (originalTransactionId.isEmpty) {
+                    throw Exception(
+                      tr(
+                        context,
+                        'Please enter Original Transaction ID',
+                        zhTw: '請輸入原始交易 ID',
+                        zhCn: '请输入原始交易 ID',
+                        ko: '원본 거래 ID를 입력해주세요',
+                        ja: '元の取引IDを入力してください',
+                        de: 'Bitte geben Sie die ursprüngliche Transaktions-ID ein',
+                        fr: 'Veuillez entrer l’ID de transaction d’origine',
+                        ar: 'يرجى إدخال معرف المعاملة الأصلي',
+                        ru: 'Пожалуйста, введите исходный ID транзакции',
+                        trk: 'Lütfen orijinal işlem kimliğini girin',
+                        es: 'Por favor ingrese el ID de transacción original',
+                        it: 'Inserisci l’ID della transazione originale',
+                        pl: 'Wprowadź oryginalny identyfikator transakcji',
+                        pt: 'Insira o ID da transação original',
+                        th: 'กรุณากรอกรหัสธุรกรรมต้นฉบับ',
+                        id: 'Masukkan ID transaksi asli',
+                        hi: 'कृपया मूल लेनदेन आईडी दर्ज करें',
+                        bn: 'অনুগ্রহ করে মূল ট্রানজ্যাকশন আইডি লিখুন',
+                      ),
+                    );
+                  }
+
+                  final idToken = await user.getIdToken();
+
+                  final response = await http.post(
+                    Uri.parse(kTransferAppleSubscriptionUrl),
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': 'Bearer $idToken',
+                    },
+                    body: jsonEncode({
+                      'oldEmail': oldEmail,
+                      'newEmail': newEmail,
+                      'originalTransactionId': originalTransactionId,
+                    }),
+                  );
+
+                  final data = jsonDecode(response.body);
+
+                  if (response.statusCode < 200 || response.statusCode >= 300) {
+                    throw Exception(
+                      data['error'] ??
+                          tr(
+                            context,
+                            'Transfer failed. Please try again.',
+                            zhTw: '轉移失敗，請再試一次',
+                            zhCn: '转移失败，请重试',
+                            ko: '이전 실패. 다시 시도해주세요',
+                            ja: '移行に失敗しました。もう一度お試しください',
+                            de: 'Übertragung fehlgeschlagen. Bitte erneut versuchen',
+                            fr: 'Échec du transfert. Veuillez réessayer',
+                            ar: 'فشل النقل. يرجى المحاولة مرة أخرى',
+                            ru: 'Не удалось перенести. Попробуйте снова',
+                            trk: 'Aktarım başarısız. Lütfen tekrar deneyin',
+                            es: 'Error al transferir. Inténtalo de nuevo',
+                            it: 'Trasferimento non riuscito. Riprova',
+                            pl: 'Nie udało się przenieść. Spróbuj ponownie',
+                            pt: 'Falha na transferência. Tente novamente',
+                            th: 'โอนไม่สำเร็จ กรุณาลองใหม่',
+                            id: 'Transfer gagal. Silakan coba lagi',
+                            hi: 'स्थानांतरण विफल। कृपया फिर से प्रयास करें',
+                            bn: 'স্থানান্তর ব্যর্থ হয়েছে। আবার চেষ্টা করুন',
+                          ),
+                    );
+                  }
+
+                  if (!mounted) return;
+
+                  await _reloadCurrentUserAccess();
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        tr(
+                          context,
+                          'Subscription transferred successfully',
+                          zhTw: '訂閱轉移成功',
+                          zhCn: '订阅转移成功',
+                          ko: '구독이 성공적으로 이전되었습니다',
+                          ja: 'サブスクリプションの移行に成功しました',
+                          de: 'Abonnement erfolgreich übertragen',
+                          fr: 'Abonnement transféré avec succès',
+                          ar: 'تم نقل الاشتراك بنجاح',
+                          ru: 'Подписка успешно перенесена',
+                          trk: 'Abonelik başarıyla aktarıldı',
+                          es: 'Suscripción transferida con éxito',
+                          it: 'Abbonamento trasferito con successo',
+                          pl: 'Subskrypcja została pomyślnie przeniesiona',
+                          pt: 'Assinatura transferida com sucesso',
+                          th: 'โอนการสมัครสมาชิกสำเร็จ',
+                          id: 'Langganan berhasil dipindahkan',
+                          hi: 'सदस्यता सफलतापूर्वक स्थानांतरित की गई',
+                          bn: 'সাবস্ক্রিপশন সফলভাবে স্থানান্তর করা হয়েছে',
+                        ),
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        e.toString().replaceFirst('Exception: ', ''),
+                      ),
+                    ),
+                  );
+                }
+              },
+              child: Text(
+                tr(
+                  context,
+                  'Transfer',
+                  zhTw: '轉移',
+                  zhCn: '转移',
+                  ko: '이전',
+                  ja: '移行',
+                  de: 'Übertragen',
+                  fr: 'Transférer',
+                  ar: 'نقل',
+                  ru: 'Перенести',
+                  trk: 'Aktar',
+                  es: 'Transferir',
+                  it: 'Trasferisci',
+                  pl: 'Przenieś',
+                  pt: 'Transferir',
+                  th: 'โอน',
+                  id: 'Transfer',
+                  hi: 'स्थानांतरित करें',
+                  bn: 'স্থানান্তর করুন',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }  
 
   Future<void> _reloadCurrentUserAccess() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -9863,111 +10132,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                     ),
                     trailing: const Icon(Icons.chevron_right),
-                    onTap: () async {
-                      try {
-                        await AppleIapService.restore(
-                          type: ApplePurchaseType.host,
-                        );
-
-                        await _reloadCurrentUserAccess();
-
-                        final user = FirebaseAuth.instance.currentUser;
-                        if (user == null) {
-                          throw Exception(
-                            tr(
-                              context,
-                              'Please login again',
-                              zhTw: '請重新登入',
-                              zhCn: '请重新登录',
-                              ko: '다시 로그인해주세요',
-                              ja: '再度ログインしてください',
-                              de: 'Bitte erneut anmelden',
-                              fr: 'Veuillez vous reconnecter',
-                              ar: 'يرجى تسجيل الدخول مرة أخرى',
-                              ru: 'Пожалуйста, войдите снова',
-                              trk: 'Lütfen tekrar giriş yapın',
-                              es: 'Por favor inicia sesión nuevamente',
-                              it: 'Accedi di nuovo',
-                              pl: 'Zaloguj się ponownie',
-                              pt: 'Faça login novamente',
-                              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
-                              id: 'Silakan login kembali',
-                              hi: 'कृपया फिर से लॉगिन करें',
-                              bn: 'অনুগ্রহ করে আবার লগইন করুন',
-                            ),
-                          );
-                        }
-
-                        final doc = await FirebaseFirestore.instance
-                            .collection('users')
-                            .doc(user.uid)
-                            .get();
-
-                        final data = doc.data() ?? {};
-                        final status =
-                            resolveHostSubscriptionStatusFromUserData(data);
-
-                        if (!status.isPaidActive) {
-                          throw Exception(
-                            tr(
-                              context,
-                              'No subscription found to transfer',
-                              zhTw: '沒有可轉移的訂閱',
-                              zhCn: '没有可转移的订阅',
-                              ko: '이전할 구독이 없습니다',
-                              ja: '移行できるサブスクリプションが見つかりません',
-                              de: 'Kein Abonnement zum Übertragen gefunden',
-                              fr: 'Aucun abonnement à transférer',
-                              ar: 'لا يوجد اشتراك لنقله',
-                              ru: 'Нет подписки для переноса',
-                              trk: 'Aktarılacak abonelik bulunamadı',
-                              es: 'No hay suscripción para transferir',
-                              it: 'Nessun abbonamento da trasferire',
-                              pl: 'Brak subskrypcji do przeniesienia',
-                              pt: 'Nenhuma assinatura para transferir',
-                              th: 'ไม่มีการสมัครสมาชิกให้โอน',
-                              id: 'Tidak ada langganan untuk dipindahkan',
-                              hi: 'स्थानांतरित करने के लिए कोई सदस्यता नहीं मिली',
-                              bn: 'স্থানান্তরের জন্য কোনো সাবস্ক্রিপশন পাওয়া যায়নি',
-                            ),
-                          );
-                        }
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              tr(
-                                context,
-                                'Subscription transferred successfully',
-                                zhTw: '訂閱轉移成功',
-                                zhCn: '订阅转移成功',
-                                ko: '구독이 성공적으로 이전되었습니다',
-                                ja: 'サブスクリプションの移行に成功しました',
-                                de: 'Abonnement erfolgreich übertragen',
-                                fr: 'Abonnement transféré avec succès',
-                                ar: 'تم نقل الاشتراك بنجاح',
-                                ru: 'Подписка успешно перенесена',
-                                trk: 'Abonelik başarıyla aktarıldı',
-                                es: 'Suscripción transferida con éxito',
-                                it: 'Abbonamento trasferito con successo',
-                                pl: 'Subskrypcja została pomyślnie przeniesiona',
-                                pt: 'Assinatura transferida com sucesso',
-                                th: 'โอนการสมัครสมาชิกสำเร็จ',
-                                id: 'Langganan berhasil dipindahkan',
-                                hi: 'सदस्यता सफलतापूर्वक स्थानांतरित की गई',
-                                bn: 'সাবস্ক্রিপশন সফলভাবে স্থানান্তর করা হয়েছে',
-                              ),
-                            ),
-                          ),
-                        );
-                      } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(e.toString()),
-                          ),
-                        );
-                      }
-                    }
+                    onTap: _showTransferSubscriptionDialog,
                   ),
 
                   ListTile(
@@ -10531,13 +10696,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2E7D32),
-                          side: const BorderSide(
-                            color: Color(0xFF2E7D32),
-                            width: 1.5,
-                          ),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
@@ -10618,6 +10780,70 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           if (!mounted) return;
 
           await _reloadCurrentUserAccess();
+
+          final user = FirebaseAuth.instance.currentUser;
+
+          if (user == null) {
+            throw Exception(
+              tr(
+                context,
+                'Please login again',
+                zhTw: '請重新登入',
+                zhCn: '请重新登录',
+                ko: '다시 로그인해주세요',
+                ja: '再度ログインしてください',
+                de: 'Bitte erneut anmelden',
+                fr: 'Veuillez vous reconnecter',
+                ar: 'يرجى تسجيل الدخول مرة أخرى',
+                ru: 'Пожалуйста, войдите снова',
+                trk: 'Lütfen tekrar giriş yapın',
+                es: 'Por favor inicia sesión nuevamente',
+                it: 'Accedi di nuovo',
+                pl: 'Zaloguj się ponownie',
+                pt: 'Faça login novamente',
+                th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+                id: 'Silakan login kembali',
+                hi: 'कृपया फिर से लॉगिन करें',
+                bn: 'অনুগ্রহ করে আবার লগইন করুন',
+              ),
+            );
+          }
+
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          final data = userDoc.data() ?? {};
+
+          final hostStatus =
+              resolveHostSubscriptionStatusFromUserData(data);
+
+          if (!hostStatus.isPaidActive) {
+            throw Exception(
+              tr(
+                context,
+                'This Apple subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+                zhTw: '此 Apple 訂閱已綁定到另一個帳號。請到設定使用「轉移訂閱」。',
+                zhCn: '此 Apple 订阅已绑定到另一个账号。请到设置使用“转移订阅”。',
+                ko: '이 Apple 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+                ja: 'このAppleサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+                de: 'Dieses Apple-Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+                fr: 'Cet abonnement Apple est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+                ar: 'هذا اشتراك Apple مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+                ru: 'Эта подписка Apple уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+                trk: 'Bu Apple aboneliği zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+                es: 'Esta suscripción de Apple ya está vinculada a otra cuenta. Usa “Transferir suscripción” en Configuración.',
+                it: 'Questo abbonamento Apple è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+                pl: 'Ta subskrypcja Apple jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+                pt: 'Esta assinatura Apple já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+                th: 'การสมัคร Apple นี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+                id: 'Langganan Apple ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+                hi: 'यह Apple सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+                bn: 'এই Apple সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+              ),
+            );
+          }
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -31776,13 +32002,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFF2E7D32),
-                          side: const BorderSide(
-                            color: Color(0xFF2E7D32),
-                            width: 1.5,
-                          ),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: const Color(0xFF2E7D32),
+                          foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(999),
@@ -31861,6 +32084,72 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           );
 
           if (!mounted) return;
+
+          await _reloadStatsAccess();
+
+          final user = FirebaseAuth.instance.currentUser;
+
+          if (user == null) {
+            throw Exception(
+              tr(
+                context,
+                'Please login again',
+                zhTw: '請重新登入',
+                zhCn: '请重新登录',
+                ko: '다시 로그인해주세요',
+                ja: '再度ログインしてください',
+                de: 'Bitte erneut anmelden',
+                fr: 'Veuillez vous reconnecter',
+                ar: 'يرجى تسجيل الدخول مرة أخرى',
+                ru: 'Пожалуйста, войдите снова',
+                trk: 'Lütfen tekrar giriş yapın',
+                es: 'Por favor inicia sesión nuevamente',
+                it: 'Accedi di nuovo',
+                pl: 'Zaloguj się ponownie',
+                pt: 'Faça login novamente',
+                th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+                id: 'Silakan login kembali',
+                hi: 'कृपया फिर से लॉगिन करें',
+                bn: 'অনুগ্রহ করে আবার লগইন করুন',
+              ),
+            );
+          }
+
+          final userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+
+          final data = userDoc.data() ?? {};
+
+          final statsStatus =
+              resolveStatsSubscriptionStatusFromUserData(data);
+
+          if (!statsStatus.isPaidActive) {
+            throw Exception(
+              tr(
+                context,
+                'This Apple subscription is already linked to another account. Please use Transfer Subscription in Settings.',
+                zhTw: '此 Apple 訂閱已綁定到另一個帳號。請到設定使用「轉移訂閱」。',
+                zhCn: '此 Apple 订阅已绑定到另一个账号。请到设置使用“转移订阅”。',
+                ko: '이 Apple 구독은 이미 다른 계정에 연결되어 있습니다. 설정에서 “구독 이전”을 사용하세요.',
+                ja: 'このAppleサブスクリプションはすでに別のアカウントに紐付けられています。設定の「サブスクリプション移行」をご利用ください。',
+                de: 'Dieses Apple-Abonnement ist bereits mit einem anderen Konto verknüpft. Bitte verwenden Sie „Abonnement übertragen“ in den Einstellungen.',
+                fr: 'Cet abonnement Apple est déjà lié à un autre compte. Veuillez utiliser « Transférer l’abonnement » dans les paramètres.',
+                ar: 'هذا اشتراك Apple مرتبط بالفعل بحساب آخر. يرجى استخدام "نقل الاشتراك" من الإعدادات.',
+                ru: 'Эта подписка Apple уже привязана к другому аккаунту. Используйте «Перенести подписку» в настройках.',
+                trk: 'Bu Apple aboneliği zaten başka bir hesaba bağlı. Lütfen Ayarlar bölümünden “Aboneliği aktar” seçeneğini kullanın.',
+                es: 'Esta suscripción de Apple ya está vinculada a otra cuenta. Usa “Transferir suscripción” en Configuración.',
+                it: 'Questo abbonamento Apple è già collegato a un altro account. Usa “Trasferisci abbonamento” nelle impostazioni.',
+                pl: 'Ta subskrypcja Apple jest już powiązana z innym kontem. Użyj „Przenieś subskrypcję” w ustawieniach.',
+                pt: 'Esta assinatura Apple já está vinculada a outra conta. Use “Transferir assinatura” nas configurações.',
+                th: 'การสมัคร Apple นี้เชื่อมโยงกับบัญชีอื่นแล้ว กรุณาใช้ “โอนการสมัครสมาชิก” ในการตั้งค่า',
+                id: 'Langganan Apple ini sudah terhubung ke akun lain. Gunakan “Transfer langganan” di Pengaturan.',
+                hi: 'यह Apple सदस्यता पहले से किसी अन्य खाते से जुड़ी है। कृपया सेटिंग्स में “सदस्यता स्थानांतरण” का उपयोग करें।',
+                bn: 'এই Apple সাবস্ক্রিপশন ইতিমধ্যেই অন্য একটি অ্যাকাউন্টের সাথে যুক্ত। সেটিংসে “সাবস্ক্রিপশন স্থানান্তর” ব্যবহার করুন।',
+              ),
+            );
+          }
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
