@@ -11232,11 +11232,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
           if (!mounted) return;
 
-          await _reloadCurrentUserAccess();
-
-          if (mounted) {
-            Navigator.pop(context);
-          }          
+          await _reloadCurrentUserAccess(); 
 
           final user = FirebaseAuth.instance.currentUser;
 
@@ -11301,6 +11297,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               ),
             );
           }
+
+          if (mounted) {
+            Navigator.pop(context);
+          }          
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -32754,11 +32754,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           if (!mounted) return;
 
           await _reloadStatsAccess();
-
-          if (mounted) {
-            Navigator.pop(context);
-          }          
-
+     
           final user = FirebaseAuth.instance.currentUser;
 
           if (user == null) {
@@ -32822,6 +32818,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               ),
             );
           }
+
+          if (mounted) {
+            Navigator.pop(context);
+          }          
 
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
