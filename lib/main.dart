@@ -11136,7 +11136,19 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
     if (result == true) {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
+
+        if (!mounted) return;
+
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
         try {
+
           await AppleIapService.buy(
             productId: kAppleHostProProductId,
             type: ApplePurchaseType.host,
@@ -11145,6 +11157,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           if (!mounted) return;
 
           await _reloadCurrentUserAccess();
+
+          if (mounted) {
+            Navigator.pop(context);
+          }          
 
           final user = FirebaseAuth.instance.currentUser;
 
@@ -11238,6 +11254,11 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             ),
           );
         } catch (e) {
+
+          if (mounted) {
+            Navigator.pop(context);
+          }
+
           if (!mounted) return;
 
           ScaffoldMessenger.of(context).showSnackBar(
@@ -32636,7 +32657,19 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
 
     if (result == true) {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
+
+        if (!mounted) return;
+
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+
         try {
+
           await AppleIapService.buy(
             productId: kAppleStatsProProductId,
             type: ApplePurchaseType.stats,
@@ -32645,6 +32678,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           if (!mounted) return;
 
           await _reloadStatsAccess();
+
+          if (mounted) {
+            Navigator.pop(context);
+          }          
 
           final user = FirebaseAuth.instance.currentUser;
 
@@ -32741,6 +32778,11 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           await _reloadStatsAccess();
 
         } catch (e) {
+
+          if (mounted) {
+            Navigator.pop(context);
+          }
+
           if (!mounted) return;
 
           ScaffoldMessenger.of(context).showSnackBar(
