@@ -3434,7 +3434,7 @@ class AppleIapService {
       }
 
       await completer.future.timeout(
-        const Duration(minutes: 3),
+        const Duration(seconds: 45),
         onTimeout: () {
           throw Exception(
             tr(
@@ -11228,33 +11228,6 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           await AppleIapService.buy(
             productId: kAppleHostProProductId,
             type: ApplePurchaseType.host,
-          ).timeout(
-            const Duration(seconds: 45),
-            onTimeout: () {
-              throw Exception(
-                tr(
-                  context,
-                  'Purchase is taking too long. Please try again.',
-                  zhTw: '購買等候時間過久，請再試一次。',
-                  zhCn: '购买等待时间过久，请再试一次。',
-                  ko: '구매 대기 시간이 너무 깁니다. 다시 시도해주세요.',
-                  ja: '購入の待機時間が長すぎます。もう一度お試しください。',
-                  de: 'Der Kauf dauert zu lange. Bitte versuchen Sie es erneut.',
-                  fr: 'L’achat prend trop de temps. Veuillez réessayer.',
-                  ar: 'استغرقت عملية الشراء وقتًا طويلاً. يرجى المحاولة مرة أخرى.',
-                  ru: 'Покупка занимает слишком много времени. Пожалуйста, попробуйте снова.',
-                  trk: 'Satın alma işlemi çok uzun sürüyor. Lütfen tekrar deneyin.',
-                  es: 'La compra está tardando demasiado. Inténtalo de nuevo.',
-                  it: 'L’acquisto sta impiegando troppo tempo. Riprova.',
-                  pl: 'Zakup trwa zbyt długo. Spróbuj ponownie.',
-                  pt: 'A compra está demorando muito. Tente novamente.',
-                  th: 'การซื้อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง',
-                  id: 'Pembelian memakan waktu terlalu lama. Silakan coba lagi.',
-                  hi: 'खरीदारी में बहुत अधिक समय लग रहा है। कृपया फिर से प्रयास करें।',
-                  bn: 'ক্রয় সম্পন্ন হতে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
-                ),
-              );
-            },
           );
 
           if (!mounted) return;
@@ -32776,33 +32749,6 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           await AppleIapService.buy(
             productId: kAppleStatsProProductId,
             type: ApplePurchaseType.stats,
-          ).timeout(
-            const Duration(seconds: 45),
-            onTimeout: () {
-              throw Exception(
-                tr(
-                  context,
-                  'Purchase is taking too long. Please try again.',
-                  zhTw: '購買等候時間過久，請再試一次。',
-                  zhCn: '购买等待时间过久，请再试一次。',
-                  ko: '구매 대기 시간이 너무 깁니다. 다시 시도해주세요.',
-                  ja: '購入の待機時間が長すぎます。もう一度お試しください。',
-                  de: 'Der Kauf dauert zu lange. Bitte versuchen Sie es erneut.',
-                  fr: 'L’achat prend trop de temps. Veuillez réessayer.',
-                  ar: 'استغرقت عملية الشراء وقتًا طويلاً. يرجى المحاولة مرة أخرى.',
-                  ru: 'Покупка занимает слишком много времени. Пожалуйста, попробуйте снова.',
-                  trk: 'Satın alma işlemi çok uzun sürüyor. Lütfen tekrar deneyin.',
-                  es: 'La compra está tardando demasiado. Inténtalo de nuevo.',
-                  it: 'L’acquisto sta impiegando troppo tempo. Riprova.',
-                  pl: 'Zakup trwa zbyt długo. Spróbuj ponownie.',
-                  pt: 'A compra está demorando muito. Tente novamente.',
-                  th: 'การซื้อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง',
-                  id: 'Pembelian memakan waktu terlalu lama. Silakan coba lagi.',
-                  hi: 'खरीदारी में बहुत अधिक समय लग रहा है। कृपया फिर से प्रयास करें।',
-                  bn: 'ক্রয় সম্পন্ন হতে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
-                ),
-              );
-            },
           );
 
           if (!mounted) return;
