@@ -3112,7 +3112,29 @@ class AppleIapService {
     required ApplePurchaseType type,
   }) async {
     if (_isBuying) {
-      _isBuying = false;
+      throw Exception(
+        tr(
+          appNavigatorKey.currentContext!,
+          'Purchase already in progress. Please wait.',
+          zhTw: '購買正在進行中，請稍候。',
+          zhCn: '购买正在进行中，请稍候。',
+          ko: '구매가 이미 진행 중입니다. 잠시만 기다려주세요.',
+          ja: '購入処理がすでに進行中です。しばらくお待ちください。',
+          de: 'Der Kauf wird bereits verarbeitet. Bitte warten.',
+          fr: 'Un achat est déjà en cours. Veuillez patienter.',
+          ar: 'عملية الشراء جارية بالفعل. يرجى الانتظار.',
+          ru: 'Покупка уже выполняется. Пожалуйста, подождите.',
+          trk: 'Satın alma işlemi zaten devam ediyor. Lütfen bekleyin.',
+          es: 'La compra ya está en progreso. Por favor espera.',
+          it: 'L’acquisto è già in corso. Attendi prego.',
+          pl: 'Zakup jest już w toku. Proszę czekać.',
+          pt: 'A compra já está em andamento. Aguarde.',
+          th: 'การซื้อกำลังดำเนินการอยู่ กรุณารอสักครู่',
+          id: 'Pembelian sedang berlangsung. Harap tunggu.',
+          hi: 'खरीदारी पहले से जारी है। कृपया प्रतीक्षा करें।',
+          bn: 'ক্রয় প্রক্রিয়া ইতিমধ্যেই চলছে। অনুগ্রহ করে অপেক্ষা করুন।',
+        ),
+      );
     }
 
     _isBuying = true;
@@ -3182,7 +3204,34 @@ class AppleIapService {
         );
       }
 
-      final productResponse = await iap.queryProductDetails({productId});
+      final productResponse = await iap.queryProductDetails({productId}).timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          throw Exception(
+            tr(
+              appNavigatorKey.currentContext!,
+              'Unable to load subscription product. Please try again.',
+              zhTw: '無法載入訂閱商品，請再試一次。',
+              zhCn: '无法载入订阅商品，请再试一次。',
+              ko: '구독 상품을 불러올 수 없습니다. 다시 시도해주세요.',
+              ja: 'サブスクリプション商品を読み込めません。もう一度お試しください。',
+              de: 'Das Abonnementprodukt konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+              fr: 'Impossible de charger le produit d’abonnement. Veuillez réessayer.',
+              ar: 'تعذر تحميل منتج الاشتراك. يرجى المحاولة مرة أخرى.',
+              ru: 'Не удалось загрузить продукт подписки. Пожалуйста, попробуйте снова.',
+              trk: 'Abonelik ürünü yüklenemedi. Lütfen tekrar deneyin.',
+              es: 'No se pudo cargar el producto de suscripción. Inténtalo de nuevo.',
+              it: 'Impossibile caricare il prodotto in abbonamento. Riprova.',
+              pl: 'Nie można załadować produktu subskrypcji. Spróbuj ponownie.',
+              pt: 'Não foi possível carregar o produto de assinatura. Tente novamente.',
+              th: 'ไม่สามารถโหลดสินค้าแบบสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง',
+              id: 'Tidak dapat memuat produk langganan. Silakan coba lagi.',
+              hi: 'सदस्यता उत्पाद लोड नहीं किया जा सका। कृपया फिर से प्रयास करें।',
+              bn: 'সাবস্ক্রিপশন পণ্য লোড করা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।',
+            ),
+          );
+        },
+      );
 
       debugPrint('IAP error: ${productResponse.error}');
       debugPrint('IAP found products: ${productResponse.productDetails.map((e) => e.id).toList()}');
@@ -3327,6 +3376,33 @@ class AppleIapService {
 
       final started = await iap.buyNonConsumable(
         purchaseParam: purchaseParam,
+      ).timeout(
+        const Duration(seconds: 20),
+        onTimeout: () {
+          throw Exception(
+            tr(
+              appNavigatorKey.currentContext!,
+              'Unable to open Apple purchase screen. Please try again.',
+              zhTw: '無法開啟 Apple 購買畫面，請再試一次。',
+              zhCn: '无法打开 Apple 购买画面，请再试一次。',
+              ko: 'Apple 구매 화면을 열 수 없습니다. 다시 시도해주세요.',
+              ja: 'Apple購入画面を開けません。もう一度お試しください。',
+              de: 'Der Apple-Kaufbildschirm konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.',
+              fr: 'Impossible d’ouvrir l’écran d’achat Apple. Veuillez réessayer.',
+              ar: 'تعذر فتح شاشة شراء Apple. يرجى المحاولة مرة أخرى.',
+              ru: 'Не удалось открыть экран покупки Apple. Пожалуйста, попробуйте снова.',
+              trk: 'Apple satın alma ekranı açılamadı. Lütfen tekrar deneyin.',
+              es: 'No se pudo abrir la pantalla de compra de Apple. Inténtalo de nuevo.',
+              it: 'Impossibile aprire la schermata di acquisto Apple. Riprova.',
+              pl: 'Nie można otworzyć ekranu zakupu Apple. Spróbuj ponownie.',
+              pt: 'Não foi possível abrir a tela de compra da Apple. Tente novamente.',
+              th: 'ไม่สามารถเปิดหน้าจอซื้อของ Apple ได้ กรุณาลองใหม่อีกครั้ง',
+              id: 'Tidak dapat membuka layar pembelian Apple. Silakan coba lagi.',
+              hi: 'Apple खरीदारी स्क्रीन नहीं खोली जा सकी। कृपया फिर से प्रयास करें।',
+              bn: 'Apple ক্রয় স্ক্রিন খোলা যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।',
+            ),
+          );
+        },
       );
 
       debugPrint('IAP STARTED: $started');
@@ -11152,6 +11228,33 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           await AppleIapService.buy(
             productId: kAppleHostProProductId,
             type: ApplePurchaseType.host,
+          ).timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              throw Exception(
+                tr(
+                  context,
+                  'Purchase is taking too long. Please try again.',
+                  zhTw: '購買等候時間過久，請再試一次。',
+                  zhCn: '购买等待时间过久，请再试一次。',
+                  ko: '구매 대기 시간이 너무 깁니다. 다시 시도해주세요.',
+                  ja: '購入の待機時間が長すぎます。もう一度お試しください。',
+                  de: 'Der Kauf dauert zu lange. Bitte versuchen Sie es erneut.',
+                  fr: 'L’achat prend trop de temps. Veuillez réessayer.',
+                  ar: 'استغرقت عملية الشراء وقتًا طويلاً. يرجى المحاولة مرة أخرى.',
+                  ru: 'Покупка занимает слишком много времени. Пожалуйста, попробуйте снова.',
+                  trk: 'Satın alma işlemi çok uzun sürüyor. Lütfen tekrar deneyin.',
+                  es: 'La compra está tardando demasiado. Inténtalo de nuevo.',
+                  it: 'L’acquisto sta impiegando troppo tempo. Riprova.',
+                  pl: 'Zakup trwa zbyt długo. Spróbuj ponownie.',
+                  pt: 'A compra está demorando muito. Tente novamente.',
+                  th: 'การซื้อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง',
+                  id: 'Pembelian memakan waktu terlalu lama. Silakan coba lagi.',
+                  hi: 'खरीदारी में बहुत अधिक समय लग रहा है। कृपया फिर से प्रयास करें।',
+                  bn: 'ক্রয় সম্পন্ন হতে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
+                ),
+              );
+            },
           );
 
           if (!mounted) return;
@@ -32673,6 +32776,33 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           await AppleIapService.buy(
             productId: kAppleStatsProProductId,
             type: ApplePurchaseType.stats,
+          ).timeout(
+            const Duration(seconds: 45),
+            onTimeout: () {
+              throw Exception(
+                tr(
+                  context,
+                  'Purchase is taking too long. Please try again.',
+                  zhTw: '購買等候時間過久，請再試一次。',
+                  zhCn: '购买等待时间过久，请再试一次。',
+                  ko: '구매 대기 시간이 너무 깁니다. 다시 시도해주세요.',
+                  ja: '購入の待機時間が長すぎます。もう一度お試しください。',
+                  de: 'Der Kauf dauert zu lange. Bitte versuchen Sie es erneut.',
+                  fr: 'L’achat prend trop de temps. Veuillez réessayer.',
+                  ar: 'استغرقت عملية الشراء وقتًا طويلاً. يرجى المحاولة مرة أخرى.',
+                  ru: 'Покупка занимает слишком много времени. Пожалуйста, попробуйте снова.',
+                  trk: 'Satın alma işlemi çok uzun sürüyor. Lütfen tekrar deneyin.',
+                  es: 'La compra está tardando demasiado. Inténtalo de nuevo.',
+                  it: 'L’acquisto sta impiegando troppo tempo. Riprova.',
+                  pl: 'Zakup trwa zbyt długo. Spróbuj ponownie.',
+                  pt: 'A compra está demorando muito. Tente novamente.',
+                  th: 'การซื้อใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง',
+                  id: 'Pembelian memakan waktu terlalu lama. Silakan coba lagi.',
+                  hi: 'खरीदारी में बहुत अधिक समय लग रहा है। कृपया फिर से प्रयास करें।',
+                  bn: 'ক্রয় সম্পন্ন হতে অনেক সময় লাগছে। অনুগ্রহ করে আবার চেষ্টা করুন।',
+                ),
+              );
+            },
           );
 
           if (!mounted) return;
