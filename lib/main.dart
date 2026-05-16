@@ -3356,19 +3356,24 @@ class AppleIapService {
 
             if (purchase.status == PurchaseStatus.purchased ||
                 purchase.status == PurchaseStatus.restored) {
+              try {
+                await _activateEntitlement(
+                  uid: user.uid,
+                  type: type,
+                  purchase: purchase,
+                );
 
-              await _activateEntitlement(
-                uid: user.uid,
-                type: type,
-                purchase: purchase,
-              );
-
-              if (purchase.pendingCompletePurchase) {
-                await iap.completePurchase(purchase);
-              }
-
-              if (!completer.isCompleted) {
-                completer.complete();
+                if (!completer.isCompleted) {
+                  completer.complete();
+                }
+              } catch (e) {
+                if (!completer.isCompleted) {
+                  completer.completeError(e);
+                }
+              } finally {
+                if (purchase.pendingCompletePurchase) {
+                  await iap.completePurchase(purchase);
+                }
               }
             }
           }
