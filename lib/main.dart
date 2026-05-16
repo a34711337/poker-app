@@ -3273,7 +3273,15 @@ class AppleIapService {
 
       subscription = iap.purchaseStream.listen(
         (purchases) async {
+          debugPrint('IAP STREAM COUNT: ${purchases.length}');
+
           for (final purchase in purchases) {
+            debugPrint('IAP STREAM PRODUCT: ${purchase.productID}');
+            debugPrint('IAP EXPECT PRODUCT: $productId');
+            debugPrint('IAP STREAM STATUS: ${purchase.status}');
+            debugPrint('IAP STREAM ERROR: ${purchase.error}');
+            debugPrint('IAP STREAM PURCHASE ID: ${purchase.purchaseID}');
+
             if (purchase.productID != productId) continue;
 
             debugPrint('IAP purchase status: ${purchase.status}');
