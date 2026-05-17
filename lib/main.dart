@@ -2910,7 +2910,7 @@ HostSubscriptionStatus resolveHostSubscriptionStatusFromUserData(
   }
 
   final now = DateTime.now();
-  final graceEndsAt = expiresAt.add(const Duration(days: 14));
+  final graceEndsAt = expiresAt.add(const Duration(days: 3));
 
   final hostWillAutoRenew =
       (data['hostWillAutoRenew'] ?? true) == true;
@@ -10465,6 +10465,24 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     setupPushNotifications();   
     startVersionCheck();
     _listenToCurrentUserAccess();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        try {
+          await AppleIapService.restore(
+            type: ApplePurchaseType.host,
+          );
+
+          if (!mounted) return;
+
+          await _reloadCurrentUserAccess();
+        } catch (_) {
+          // 自動檢查失敗不要跳錯誤，避免每次開頁面跳 No previous purchase found.
+        }
+      }
+    });
   }
 
   void _listenToCurrentUserAccess() {
@@ -32535,6 +32553,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                       await AppleIapService.restore(
                         type: ApplePurchaseType.stats,
                       );
+
+                      if (!mounted) return;
+
+                      await _reloadStatsAccess();
 
                       if (!mounted) return;
 
