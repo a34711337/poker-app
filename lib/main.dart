@@ -31038,7 +31038,7 @@ String _normalizeLocationForDisplay(String rawLocation) {
     return "$base Casino";
   }
 
-  return value;
+  return "$value's Game";
 }
 
 String _extractEditableLocationName(String rawLocation) {
@@ -31753,6 +31753,8 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
 
   late bool _hasPaidAccess;
 
+  bool _showTournament = false;
+
   @override
   void initState() {
     super.initState();
@@ -31818,6 +31820,18 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         .collection('cash_game_sessions');
   }
 
+  CollectionReference<Map<String, dynamic>>
+      _tournamentSessionsRef() {
+
+    final currentUid =
+        FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('tournament_sessions');
+  }  
+
   static const String _statsProPriceId =
       'price_1TMRxVCeafvLbyRizC2lvERT';
 
@@ -31831,6 +31845,23 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         builder: (_) => CashGameSessionEditorPage(
           item: item,
         ),
+      ),
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openTournamentEditor({
+    TournamentSessionItem? item,
+  }) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            TournamentSessionEditorPage(
+              item: item,
+            ),
       ),
     );
 
@@ -32136,6 +32167,42 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
             id: 'Sesi dihapus',
             hi: 'सेशन हटा दिया गया',
             bn: 'সেশন মুছে ফেলা হয়েছে',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteTournamentSession(String docId) async {
+    await _tournamentSessionsRef()
+        .doc(docId)
+        .delete();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Tournament deleted',
+            zhTw: '錦標賽已刪除',
+            zhCn: '锦标赛已删除',
+            ko: '토너먼트가 삭제되었습니다',
+            ja: 'トーナメントが削除されました',
+            de: 'Turnier gelöscht',
+            fr: 'Tournoi supprimé',
+            ar: 'تم حذف البطولة',
+            ru: 'Турнир удалён',
+            trk: 'Turnuva silindi',
+            es: 'Torneo eliminado',
+            it: 'Torneo eliminato',
+            pl: 'Turniej został usunięty',
+            pt: 'Torneio excluído',
+            th: 'ลบทัวร์นาเมนต์แล้ว',
+            id: 'Turnamen dihapus',
+            hi: 'टूर्नामेंट हटा दिया गया',
+            bn: 'টুর্নামেন্ট মুছে ফেলা হয়েছে',
           ),
         ),
       ),
@@ -32910,6 +32977,531 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
     }
   }
 
+  Map<String, double> _buildTournamentGroupedProfit(
+    List<TournamentSessionItem> items,
+    String Function(TournamentSessionItem item) groupKey,
+  ) {
+    final result = <String, double>{};
+
+    for (final item in items) {
+      final key = groupKey(item);
+
+      result[key] = (result[key] ?? 0) + item.profit;
+    }
+
+    return result;
+  }
+
+  Widget _buildTournamentView() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _tournamentSessionsRef()
+          .orderBy('startedAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        final items = snapshot.data!.docs
+            .map(TournamentSessionItem.fromDoc)
+            .toList();
+
+        final totalProfit = items.fold<double>(
+          0,
+          (total, item) => total + item.profit,
+        );
+
+        final totalHours = items.fold<double>(
+          0,
+          (total, item) => total + item.hours,
+        );
+
+        final perHour =
+            totalHours <= 0 ? 0.0 : totalProfit / totalHours;
+
+        final perGame =
+            items.isEmpty ? 0.0 : totalProfit / items.length;
+
+        final groupedByLocation = _buildTournamentGroupedProfit(
+          items,
+          (item) => item.location.isEmpty
+              ? 'Unknown'
+              : _normalizeLocationForDisplay(item.location),
+        );
+
+        final groupedByWeekday = _buildTournamentGroupedProfit(
+          items,
+          (item) => _weekdayZh(context, item.startedAt),
+        );
+
+        final groupedByMonth = _buildTournamentGroupedProfit(
+          items,
+          (item) =>
+              '${item.startedAt.year}/${item.startedAt.month.toString().padLeft(2, '0')}',
+        );
+
+        Widget buildTournamentList() {
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              GridView.count(
+                crossAxisCount: 4,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 1.5,
+                children: [
+                  _buildSummaryCard(
+                    label: tr(
+                      context,
+                      'Profit/Loss',
+                      zhTw: '盈利/虧損',
+                      zhCn: '盈利/亏损',
+                      ko: '수익/손실',
+                      ja: '利益/損失',
+                      de: 'Gewinn/Verlust',
+                      fr: 'Profit/Perte',
+                      ar: 'الربح/الخسارة',
+                      ru: 'Прибыль/Убыток',
+                      trk: 'Kâr/Zarar',
+                      es: 'Ganancia/Pérdida',
+                      it: 'Profitto/Perdita',
+                      pl: 'Zysk/Strata',
+                      pt: 'Lucro/Prejuízo',
+                      th: 'กำไร/ขาดทุน',
+                      id: 'Untung/Rugi',
+                      hi: 'लाभ/हानि',
+                      bn: 'লাভ/ক্ষতি',
+                    ),
+                    value: _moneyText(totalProfit),
+                    color: _profitColor(totalProfit),
+                  ),
+
+                  _buildSummaryCard(
+                    label: tr(
+                      context,
+                      '\$/Hour',
+                      zhTw: '每小時',
+                      zhCn: '每小时',
+                      ko: '시간당',
+                      ja: '1時間あたり',
+                      de: 'Pro Stunde',
+                      fr: 'Par heure',
+                      ar: 'لكل ساعة',
+                      ru: 'В час',
+                      trk: 'Saat Başına',
+                      es: 'Por hora',
+                      it: 'Per ora',
+                      pl: 'Na godzinę',
+                      pt: 'Por hora',
+                      th: 'ต่อชั่วโมง',
+                      id: 'Per jam',
+                      hi: 'प्रति घंटा',
+                      bn: 'প্রতি ঘণ্টা',
+                    ),
+                    value: _moneyText(perHour),
+                    color: _profitColor(perHour),
+                  ),
+
+                  _buildSummaryCard(
+                    label: tr(
+                      context,
+                      '\$/Game',
+                      zhTw: '每場',
+                      zhCn: '每场',
+                      ko: '게임당',
+                      ja: '1ゲームあたり',
+                      de: 'Pro Spiel',
+                      fr: 'Par partie',
+                      ar: 'لكل لعبة',
+                      ru: 'За игру',
+                      trk: 'Oyun Başına',
+                      es: 'Por juego',
+                      it: 'Per partita',
+                      pl: 'Na grę',
+                      pt: 'Por jogo',
+                      th: 'ต่อเกม',
+                      id: 'Per game',
+                      hi: 'प्रति गेम',
+                      bn: 'প্রতি গেম',
+                    ),
+                    value: _moneyText(perGame),
+                    color: _profitColor(perGame),
+                  ),
+
+                  _buildSummaryCard(
+                    label: tr(
+                      context,
+                      'Spending Time',
+                      zhTw: '花費時間',
+                      zhCn: '花费时间',
+                      ko: '소요 시간',
+                      ja: 'プレイ時間',
+                      de: 'Verbrachte Zeit',
+                      fr: 'Temps passé',
+                      ar: 'الوقت المستغرق',
+                      ru: 'Потраченное время',
+                      trk: 'Harcanan Süre',
+                      es: 'Tiempo invertido',
+                      it: 'Tempo trascorso',
+                      pl: 'Spędzony czas',
+                      pt: 'Tempo gasto',
+                      th: 'เวลาที่ใช้',
+                      id: 'Waktu bermain',
+                      hi: 'खर्च किया गया समय',
+                      bn: 'ব্যয়িত সময়',
+                    ),
+                    value: '${_hourText(totalHours)} '
+                        '${tr(
+                          context,
+                          'Hour',
+                          zhTw: '小時',
+                          zhCn: '小时',
+                          ko: '시간',
+                          ja: '時間',
+                          de: 'Stunden',
+                          fr: 'Heures',
+                          ar: 'ساعة',
+                          ru: 'Час',
+                          trk: 'Saat',
+                          es: 'Hora',
+                          it: 'Ore',
+                          pl: 'Godzin',
+                          pt: 'Horas',
+                          th: 'ชั่วโมง',
+                          id: 'Jam',
+                          hi: 'घंटा',
+                          bn: 'ঘণ্টা',
+                        )}',
+                    color: Colors.black87,
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              for (final item in items)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.name,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              _normalizeLocationForDisplay(item.location),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              '#${item.rank} / ${item.players}',
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              _dateText(item.startedAt),
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+
+                          ],
+                        ),
+                      ),
+
+                      Text(
+                        _moneyText(item.profit),
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: _profitColor(item.profit),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      PopupMenuButton<String>(
+                        color: Colors.white,
+                        surfaceTintColor: Colors.white,
+                        iconColor: Colors.black,
+                        onSelected: (value) async {
+                          if (value == 'edit') {
+                            _openTournamentEditor(item: item);
+                          } else if (value == 'delete') {
+                            await _deleteTournamentSession(item.id);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem<String>(
+                            value: 'edit',
+                            child: Text(
+                              tr(
+                                context,
+                                'Edit',
+                                zhTw: '編輯',
+                                zhCn: '编辑',
+                                ko: '편집',
+                                ja: '編集',
+                                de: 'Bearbeiten',
+                                fr: 'Modifier',
+                                ar: 'تعديل',
+                                ru: 'Редактировать',
+                                trk: 'Düzenle',
+                                es: 'Editar',
+                                it: 'Modifica',
+                                pl: 'Edytuj',
+                                pt: 'Editar',
+                                th: 'แก้ไข',
+                                id: 'Edit',
+                                hi: 'संपादित करें',
+                                bn: 'এডিট',
+                              ),
+                            ),
+                          ),
+                          PopupMenuItem<String>(
+                            value: 'delete',
+                            child: Text(
+                              tr(
+                                context,
+                                'Remove',
+                                zhTw: '刪除',
+                                zhCn: '删除',
+                                ko: '삭제',
+                                ja: '削除',
+                                de: 'Entfernen',
+                                fr: 'Supprimer',
+                                ar: 'إزالة',
+                                ru: 'Удалить',
+                                trk: 'Kaldır',
+                                es: 'Eliminar',
+                                it: 'Rimuovi',
+                                pl: 'Usuń',
+                                pt: 'Remover',
+                                th: 'ลบ',
+                                id: 'Hapus',
+                                hi: 'हटाएँ',
+                                bn: 'মুছুন',
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        }
+
+        Widget buildTournamentGroupList(Map<String, double> grouped) {
+          final entries = grouped.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: entries.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final entry = entries[index];
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        entry.key,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      _moneyText(entry.value),
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: _profitColor(entry.value),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        }
+
+        return DefaultTabController(
+          length: 4,
+          child: Container(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? const Color(0xFF0F172A)
+                : const Color(0xFFF4F6F8),
+            child: Column(
+              children: [
+                Container(
+                  color: Colors.white,
+                  child: Theme(
+                    data: ThemeData.light().copyWith(
+                      dividerColor: Colors.transparent,
+                      tabBarTheme: const TabBarThemeData(
+                        dividerColor: Colors.transparent,
+                      ),
+                    ),
+                    child: TabBar(
+                      isScrollable: true,
+                      tabAlignment: TabAlignment.start,
+                      labelColor: const Color(0xFF2E7D32),
+                      unselectedLabelColor: Colors.black54,
+                      indicatorColor: const Color(0xFF2E7D32),
+                      dividerColor: Colors.transparent,
+                      tabs: [
+                        Tab(
+                          text: tr(
+                            context,
+                            'All Tournaments',
+                            zhTw: '全部錦標賽',
+                            zhCn: '全部锦标赛',
+                            ko: '전체 토너먼트',
+                            ja: 'すべてのトーナメント',
+                            de: 'Alle Turniere',
+                            fr: 'Tous les tournois',
+                            ar: 'جميع البطولات',
+                            ru: 'Все турниры',
+                            trk: 'Tüm Turnuvalar',
+                            es: 'Todos los torneos',
+                            it: 'Tutti i tornei',
+                            pl: 'Wszystkie turnieje',
+                            pt: 'Todos os torneios',
+                            th: 'ทัวร์นาเมนต์ทั้งหมด',
+                            id: 'Semua turnamen',
+                            hi: 'सभी टूर्नामेंट',
+                            bn: 'সব টুর্নামেন্ট',
+                          ),
+                        ),
+
+                        Tab(
+                          text: tr(
+                            context,
+                            'Location Profits',
+                            zhTw: '地點盈利',
+                            zhCn: '地点盈利',
+                            ko: '장소별 수익',
+                            ja: '場所別利益',
+                            de: 'Standortgewinne',
+                            fr: 'Profits par lieu',
+                            ar: 'أرباح المواقع',
+                            ru: 'Прибыль по местам',
+                            trk: 'Konum Kârları',
+                            es: 'Ganancias por ubicación',
+                            it: 'Profitti per luogo',
+                            pl: 'Zyski według lokalizacji',
+                            pt: 'Lucros por localização',
+                            th: 'กำไรตามสถานที่',
+                            id: 'Keuntungan lokasi',
+                            hi: 'स्थान लाभ',
+                            bn: 'লোকেশন লাভ',
+                          ),
+                        ),
+
+                        Tab(
+                          text: tr(
+                            context,
+                            'Weekly Profits',
+                            zhTw: '每週盈利',
+                            zhCn: '每周盈利',
+                            ko: '주간 수익',
+                            ja: '週間利益',
+                            de: 'Wöchentliche Gewinne',
+                            fr: 'Profits hebdomadaires',
+                            ar: 'الأرباح الأسبوعية',
+                            ru: 'Недельная прибыль',
+                            trk: 'Haftalık Kârlar',
+                            es: 'Ganancias semanales',
+                            it: 'Profitti settimanali',
+                            pl: 'Zyski tygodniowe',
+                            pt: 'Lucros semanais',
+                            th: 'กำไรรายสัปดาห์',
+                            id: 'Keuntungan mingguan',
+                            hi: 'साप्ताहिक लाभ',
+                            bn: 'সাপ্তাহিক লাভ',
+                          ),
+                        ),
+
+                        Tab(
+                          text: tr(
+                            context,
+                            'Monthly Profits',
+                            zhTw: '每月盈利',
+                            zhCn: '每月盈利',
+                            ko: '월간 수익',
+                            ja: '月間利益',
+                            de: 'Monatliche Gewinne',
+                            fr: 'Profits mensuels',
+                            ar: 'الأرباح الشهرية',
+                            ru: 'Месячная прибыль',
+                            trk: 'Aylık Kârlar',
+                            es: 'Ganancias mensuales',
+                            it: 'Profitti mensili',
+                            pl: 'Zyski miesięczne',
+                            pt: 'Lucros mensais',
+                            th: 'กำไรรายเดือน',
+                            id: 'Keuntungan bulanan',
+                            hi: 'मासिक लाभ',
+                            bn: 'মাসিক লাভ',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      buildTournamentList(),
+                      buildTournamentGroupList(groupedByLocation),
+                      buildTournamentGroupList(groupedByWeekday),
+                      buildTournamentGroupList(groupedByMonth),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_currentUid.isEmpty) {
@@ -32974,196 +33566,301 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
             ),
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
-          bottom: TabBar(
-            isScrollable: true,
-            tabAlignment: TabAlignment.start,
-            labelColor: const Color(0xFF2E7D32),
-            unselectedLabelColor: Colors.black54,
-            indicatorColor: const Color(0xFF2E7D32),
-            tabs: [
-              Tab(
-                text: tr(
-                  context,
-                  'All Games',
-                  zhTw: '全部牌局',
-                  zhCn: '全部牌局',
-                  ko: '전체 게임',
-                  ja: '全ゲーム',
-                  de: 'Alle Spiele',
-                  fr: 'Toutes les parties',
-                  ar: 'كل الألعاب',
-                  ru: 'Все игры',
-                  trk: 'Tüm Oyunlar',
-                  es: 'Todas las partidas',
-                  it: 'Tutte le partite',
-                  pl: 'Wszystkie gry',
-                  pt: 'Todos os jogos',
-                  th: 'เกมทั้งหมด',
-                  id: 'Semua Game',
-                  hi: 'सभी गेम',
-                  bn: 'সব গেম',
+
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(
+              _showTournament ? 56 : 96,
+            ),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: !_showTournament
+                                ? const Color(0xFF2E7D32)
+                                : Colors.grey.shade300,
+                            foregroundColor: !_showTournament
+                                ? Colors.white
+                                : Colors.black87,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _showTournament = false;
+                            });
+                          },
+                          child: Text(
+                            tr(
+                              context,
+                              'Cash Game',
+                              zhTw: '現金桌',
+                              zhCn: '现金桌',
+                              ko: '캐시 게임',
+                              ja: 'キャッシュゲーム',
+                              de: 'Cash Game',
+                              fr: 'Cash Game',
+                              ar: 'لعبة نقدية',
+                              ru: 'Кэш-игра',
+                              trk: 'Nakit Oyunu',
+                              es: 'Juego en efectivo',
+                              it: 'Cash Game',
+                              pl: 'Gra gotówkowa',
+                              pt: 'Cash Game',
+                              th: 'แคชเกม',
+                              id: 'Cash Game',
+                              hi: 'कैश गेम',
+                              bn: 'ক্যাশ গেম',
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Expanded(
+                        child: FilledButton(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: _showTournament
+                                ? const Color(0xFF2E7D32)
+                                : Colors.grey.shade300,
+                            foregroundColor: _showTournament
+                                ? Colors.white
+                                : Colors.black87,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _showTournament = true;
+                            });
+                          },
+                          child: Text(
+                            tr(
+                              context,
+                              'Tournament',
+                              zhTw: '錦標賽',
+                              zhCn: '锦标赛',
+                              ko: '토너먼트',
+                              ja: 'トーナメント',
+                              de: 'Turnier',
+                              fr: 'Tournoi',
+                              ar: 'البطولة',
+                              ru: 'Турнир',
+                              trk: 'Turnuva',
+                              es: 'Torneo',
+                              it: 'Torneo',
+                              pl: 'Turniej',
+                              pt: 'Torneio',
+                              th: 'ทัวร์นาเมนต์',
+                              id: 'Turnamen',
+                              hi: 'टूर्नामेंट',
+                              bn: 'টুর্নামেন্ট',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Tab(
-                text: tr(
-                  context,
-                  'Location Profits',
-                  zhTw: '地點盈利',
-                  zhCn: '地点盈利',
-                  ko: '장소별 수익',
-                  ja: '場所別利益',
-                  de: 'Gewinn nach Ort',
-                  fr: 'Profits par lieu',
-                  ar: 'أرباح المواقع',
-                  ru: 'Прибыль по местам',
-                  trk: 'Konum Kârları',
-                  es: 'Ganancias por ubicación',
-                  it: 'Profitti per luogo',
-                  pl: 'Zyski według lokalizacji',
-                  pt: 'Lucros por local',
-                  th: 'กำไรตามสถานที่',
-                  id: 'Profit Lokasi',
-                  hi: 'स्थान लाभ',
-                  bn: 'স্থানভিত্তিক লাভ',
-                ),
-              ),
-              Tab(
-                text: tr(
-                  context,
-                  'Game Profits',
-                  zhTw: '遊戲盈利',
-                  zhCn: '游戏盈利',
-                  ko: '게임별 수익',
-                  ja: 'ゲーム別利益',
-                  de: 'Gewinn nach Spiel',
-                  fr: 'Profits par jeu',
-                  ar: 'أرباح الألعاب',
-                  ru: 'Прибыль по играм',
-                  trk: 'Oyun Kârları',
-                  es: 'Ganancias por juego',
-                  it: 'Profitti per gioco',
-                  pl: 'Zyski według gry',
-                  pt: 'Lucros por jogo',
-                  th: 'กำไรตามเกม',
-                  id: 'Profit Game',
-                  hi: 'गेम लाभ',
-                  bn: 'গেমভিত্তিক লাভ',
-                ),
-              ),
-              Tab(
-                text: tr(
-                  context,
-                  'Weekly Profits',
-                  zhTw: '每週盈利',
-                  zhCn: '每周盈利',
-                  ko: '주간 수익',
-                  ja: '週間利益',
-                  de: 'Wöchentliche Gewinne',
-                  fr: 'Profits hebdomadaires',
-                  ar: 'الأرباح الأسبوعية',
-                  ru: 'Недельная прибыль',
-                  trk: 'Haftalık Kârlar',
-                  es: 'Ganancias semanales',
-                  it: 'Profitti settimanali',
-                  pl: 'Tygodniowe zyski',
-                  pt: 'Lucros semanais',
-                  th: 'กำไรรายสัปดาห์',
-                  id: 'Profit Mingguan',
-                  hi: 'साप्ताहिक लाभ',
-                  bn: 'সাপ্তাহিক লাভ',
-                ),
-              ),
-              Tab(
-                text: tr(
-                  context,
-                  'Monthly Profits',
-                  zhTw: '每月盈利',
-                  zhCn: '每月盈利',
-                  ko: '월간 수익',
-                  ja: '月間利益',
-                  de: 'Monatliche Gewinne',
-                  fr: 'Profits mensuels',
-                  ar: 'الأرباح الشهرية',
-                  ru: 'Месячная прибыль',
-                  trk: 'Aylık Kârlar',
-                  es: 'Ganancias mensuales',
-                  it: 'Profitti mensili',
-                  pl: 'Miesięczne zyski',
-                  pt: 'Lucros mensais',
-                  th: 'กำไรรายเดือน',
-                  id: 'Profit Bulanan',
-                  hi: 'मासिक लाभ',
-                  bn: 'মাসিক লাভ',
-                ),
-              ),
-            ],
+
+                if (!_showTournament)
+                  TabBar(
+                    isScrollable: true,
+                    tabAlignment: TabAlignment.start,
+                    labelColor: const Color(0xFF2E7D32),
+                    unselectedLabelColor: Colors.black54,
+                    indicatorColor: const Color(0xFF2E7D32),
+                    tabs: [
+                      Tab(
+                        text: tr(
+                          context,
+                          'All Games',
+                          zhTw: '全部牌局',
+                          zhCn: '全部牌局',
+                          ko: '전체 게임',
+                          ja: '全ゲーム',
+                          de: 'Alle Spiele',
+                          fr: 'Toutes les parties',
+                          ar: 'كل الألعاب',
+                          ru: 'Все игры',
+                          trk: 'Tüm Oyunlar',
+                          es: 'Todas las partidas',
+                          it: 'Tutte le partite',
+                          pl: 'Wszystkie gry',
+                          pt: 'Todos os jogos',
+                          th: 'เกมทั้งหมด',
+                          id: 'Semua Game',
+                          hi: 'सभी गेम',
+                          bn: 'সব গেম',
+                        ),
+                      ),
+                      Tab(
+                        text: tr(
+                          context,
+                          'Location Profits',
+                          zhTw: '地點盈利',
+                          zhCn: '地点盈利',
+                          ko: '장소별 수익',
+                          ja: '場所別利益',
+                          de: 'Gewinn nach Ort',
+                          fr: 'Profits par lieu',
+                          ar: 'أرباح المواقع',
+                          ru: 'Прибыль по местам',
+                          trk: 'Konum Kârları',
+                          es: 'Ganancias por ubicación',
+                          it: 'Profitti per luogo',
+                          pl: 'Zyski według lokalizacji',
+                          pt: 'Lucros por local',
+                          th: 'กำไรตามสถานที่',
+                          id: 'Profit Lokasi',
+                          hi: 'स्थान लाभ',
+                          bn: 'স্থানভিত্তিক লাভ',
+                        ),
+                      ),
+                      Tab(
+                        text: tr(
+                          context,
+                          'Game Profits',
+                          zhTw: '遊戲盈利',
+                          zhCn: '游戏盈利',
+                          ko: '게임별 수익',
+                          ja: 'ゲーム別利益',
+                          de: 'Gewinn nach Spiel',
+                          fr: 'Profits par jeu',
+                          ar: 'أرباح الألعاب',
+                          ru: 'Прибыль по играм',
+                          trk: 'Oyun Kârları',
+                          es: 'Ganancias por juego',
+                          it: 'Profitti per gioco',
+                          pl: 'Zyski według gry',
+                          pt: 'Lucros por jogo',
+                          th: 'กำไรตามเกม',
+                          id: 'Profit Game',
+                          hi: 'गेम लाभ',
+                          bn: 'গেমভিত্তিক লাভ',
+                        ),
+                      ),
+                      Tab(
+                        text: tr(
+                          context,
+                          'Weekly Profits',
+                          zhTw: '每週盈利',
+                          zhCn: '每周盈利',
+                          ko: '주간 수익',
+                          ja: '週間利益',
+                          de: 'Wöchentliche Gewinne',
+                          fr: 'Profits hebdomadaires',
+                          ar: 'الأرباح الأسبوعية',
+                          ru: 'Недельная прибыль',
+                          trk: 'Haftalık Kârlar',
+                          es: 'Ganancias semanales',
+                          it: 'Profitti settimanali',
+                          pl: 'Tygodniowe zyski',
+                          pt: 'Lucros semanais',
+                          th: 'กำไรรายสัปดาห์',
+                          id: 'Profit Mingguan',
+                          hi: 'साप्ताहिक लाभ',
+                          bn: 'সाप्तাহিক লাভ',
+                        ),
+                      ),
+                      Tab(
+                        text: tr(
+                          context,
+                          'Monthly Profits',
+                          zhTw: '每月盈利',
+                          zhCn: '每月盈利',
+                          ko: '월간 수익',
+                          ja: '月間利益',
+                          de: 'Monatliche Gewinne',
+                          fr: 'Profits mensuels',
+                          ar: 'الأرباح الشهرية',
+                          ru: 'Месячная прибыль',
+                          trk: 'Aylık Kârlar',
+                          es: 'Ganancias mensuales',
+                          it: 'Profitti mensili',
+                          pl: 'Miesięczne zyski',
+                          pt: 'Lucros mensais',
+                          th: 'กำไรรายเดือน',
+                          id: 'Profit Bulanan',
+                          hi: 'मासिक लाभ',
+                          bn: 'মাসিক লাভ',
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
           ),
         ),
+
         floatingActionButton: _hasPaidAccess
             ? PopupMenuButton<String>(
                 color: Colors.white,
                 surfaceTintColor: Colors.white,
                 iconColor: Colors.black,              
                 onSelected: (value) {
-                  if (value == 'ongoing') {
+                  if (value == 'cash') {
                     _openEditor();
-                  } else if (value == 'ended') {
-                    _openEditor();
+                  } else if (value == 'tournament') {
+                    _openTournamentEditor();
                   }
                 },
                 itemBuilder: (context) => [
                   PopupMenuItem<String>(
-                    value: 'ongoing',
+                    value: 'cash',
                     child: Text(
                       tr(
                         context,
-                        'Add an ongoing game',
-                        zhTw: '新增進行中的牌局',
-                        zhCn: '新增进行中的牌局',
-                        ko: '진행 중인 게임 추가',
-                        ja: '進行中のゲームを追加',
-                        de: 'Laufendes Spiel hinzufügen',
-                        fr: 'Ajouter une partie en cours',
-                        ar: 'إضافة لعبة جارية',
-                        ru: 'Добавить текущую игру',
-                        trk: 'Devam eden oyun ekle',
-                        es: 'Agregar una partida en curso',
-                        it: 'Aggiungi partita in corso',
-                        pl: 'Dodaj trwającą grę',
-                        pt: 'Adicionar jogo em andamento',
-                        th: 'เพิ่มเกมที่กำลังดำเนินอยู่',
-                        id: 'Tambah game yang sedang berlangsung',
-                        hi: 'चल रहा गेम जोड़ें',
-                        bn: 'চলমান গেম যোগ করুন',
+                        'Add Cash Game',
+                        zhTw: '新增現金局',
+                        zhCn: '新增现金局',
+                        ko: '캐시 게임 추가',
+                        ja: 'キャッシュゲーム追加',
+                        de: 'Cash Game hinzufügen',
+                        fr: 'Ajouter une cash game',
+                        ar: 'إضافة لعبة نقدية',
+                        ru: 'Добавить кэш-игру',
+                        trk: 'Cash Game ekle',
+                        es: 'Agregar Cash Game',
+                        it: 'Aggiungi Cash Game',
+                        pl: 'Dodaj Cash Game',
+                        pt: 'Adicionar Cash Game',
+                        th: 'เพิ่ม Cash Game',
+                        id: 'Tambah Cash Game',
+                        hi: 'कैश गेम जोड़ें',
+                        bn: 'ক্যাশ গেম যোগ করুন',
                       ),
                     ),
                   ),
+
                   PopupMenuItem<String>(
-                    value: 'ended',
+                    value: 'tournament',
                     child: Text(
                       tr(
                         context,
-                        'Add an already finished game',
-                        zhTw: '新增已結束的牌局',
-                        zhCn: '新增已结束的牌局',
-                        ko: '이미 종료된 게임 추가',
-                        ja: '終了済みゲームを追加',
-                        de: 'Bereits beendetes Spiel hinzufügen',
-                        fr: 'Ajouter une partie terminée',
-                        ar: 'إضافة لعبة منتهية',
-                        ru: 'Добавить уже завершённую игру',
-                        trk: 'Bitmiş oyun ekle',
-                        es: 'Agregar una partida finalizada',
-                        it: 'Aggiungi partita terminata',
-                        pl: 'Dodaj zakończoną grę',
-                        pt: 'Adicionar jogo finalizado',
-                        th: 'เพิ่มเกมที่จบแล้ว',
-                        id: 'Tambah game yang sudah selesai',
-                        hi: 'पहले से समाप्त गेम जोड़ें',
-                        bn: 'ইতোমধ্যে শেষ হওয়া গেম যোগ করুন',
+                        'Add tournament',
+                        zhTw: '新增錦標賽',
+                        zhCn: '新增锦标赛',
+                        ko: '토너먼트 추가',
+                        ja: 'トーナメント追加',
+                        de: 'Turnier hinzufügen',
+                        fr: 'Ajouter un tournoi',
+                        ar: 'إضافة بطولة',
+                        ru: 'Добавить турнир',
+                        trk: 'Turnuva ekle',
+                        es: 'Agregar torneo',
+                        it: 'Aggiungi torneo',
+                        pl: 'Dodaj turniej',
+                        pt: 'Adicionar torneio',
+                        th: 'เพิ่มทัวร์นาเมนต์',
+                        id: 'Tambah turnamen',
+                        hi: 'टूर्नामेंट जोड़ें',
+                        bn: 'টুর্নামেন্ট যোগ করুন',
                       ),
                     ),
                   ),
+
                 ],
                 child: FloatingActionButton.extended(
                   onPressed: null,
@@ -33232,7 +33929,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                   
                 ],
               ),
-        body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        body: _showTournament
+            ? _buildTournamentView()
+            : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: _sessionsRef()
               .orderBy('startedAt', descending: true)
               .snapshots(),
@@ -33587,99 +34286,96 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: InkWell(
-                                onTap: () => _openEditor(item: item),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item.location.isEmpty
-                                          ? tr(
-                                              context,
-                                              'Unknown Location',
-                                              zhTw: '未知地點',
-                                              zhCn: '未知地点',
-                                              ko: '알 수 없는 장소',
-                                              ja: '不明な場所',
-                                              de: 'Unbekannter Ort',
-                                              fr: 'Lieu inconnu',
-                                              ar: 'موقع غير معروف',
-                                              ru: 'Неизвестное место',
-                                              trk: 'Bilinmeyen Konum',
-                                              es: 'Ubicación desconocida',
-                                              it: 'Posizione sconosciuta',
-                                              pl: 'Nieznana lokalizacja',
-                                              pt: 'Local desconhecido',
-                                              th: 'สถานที่ไม่ทราบ',
-                                              id: 'Lokasi tidak diketahui',
-                                              hi: 'अज्ञात स्थान',
-                                              bn: 'অজানা অবস্থান',
-                                            )
-                                          : _normalizeLocationForDisplay(item.location),
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w900,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      '${_hourText(item.hours)}h - ${item.gameLabel}',
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      _dateText(item.startedAt),
-                                      style: const TextStyle(
-                                        color: Colors.black54,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                    ),
-                                    if (item.isOngoing)
-                                      Container(
-                                        margin: const EdgeInsets.only(top: 8),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFDBEAFE),
-                                          borderRadius: BorderRadius.circular(999),
-                                        ),
-                                        child: Text(
-                                          tr(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.location.isEmpty
+                                        ? tr(
                                             context,
-                                            'Is Ongoing',
-                                            zhTw: '進行中',
-                                            zhCn: '进行中',
-                                            ko: '진행 중',
-                                            ja: '進行中',
-                                            de: 'Läuft',
-                                            fr: 'En cours',
-                                            ar: 'جارٍ',
-                                            ru: 'В процессе',
-                                            trk: 'Devam Ediyor',
-                                            es: 'En curso',
-                                            it: 'In corso',
-                                            pl: 'W trakcie',
-                                            pt: 'Em andamento',
-                                            th: 'กำลังดำเนินอยู่',
-                                            id: 'Sedang berlangsung',
-                                            hi: 'चल रहा है',
-                                            bn: 'চলমান',
-                                          ),
-                                          style: const TextStyle(
-                                            color: Color(0xFF1D4ED8),
-                                            fontWeight: FontWeight.w800,
-                                          ),
+                                            'Unknown Location',
+                                            zhTw: '未知地點',
+                                            zhCn: '未知地点',
+                                            ko: '알 수 없는 장소',
+                                            ja: '不明な場所',
+                                            de: 'Unbekannter Ort',
+                                            fr: 'Lieu inconnu',
+                                            ar: 'موقع غير معروف',
+                                            ru: 'Неизвестное место',
+                                            trk: 'Bilinmeyen Konum',
+                                            es: 'Ubicación desconocida',
+                                            it: 'Posizione sconosciuta',
+                                            pl: 'Nieznana lokalizacja',
+                                            pt: 'Local desconhecido',
+                                            th: 'สถานที่ไม่ทราบ',
+                                            id: 'Lokasi tidak diketahui',
+                                            hi: 'अज्ञात स्थान',
+                                            bn: 'অজানা অবস্থান',
+                                          )
+                                        : _normalizeLocationForDisplay(item.location),
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    '${_hourText(item.hours)}h - ${item.gameLabel}',
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    _dateText(item.startedAt),
+                                    style: const TextStyle(
+                                      color: Colors.black54,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  if (item.isOngoing)
+                                    Container(
+                                      margin: const EdgeInsets.only(top: 8),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDBEAFE),
+                                        borderRadius: BorderRadius.circular(999),
+                                      ),
+                                      child: Text(
+                                        tr(
+                                          context,
+                                          'Is Ongoing',
+                                          zhTw: '進行中',
+                                          zhCn: '进行中',
+                                          ko: '진행 중',
+                                          ja: '進行中',
+                                          de: 'Läuft',
+                                          fr: 'En cours',
+                                          ar: 'جارٍ',
+                                          ru: 'В процессе',
+                                          trk: 'Devam Ediyor',
+                                          es: 'En curso',
+                                          it: 'In corso',
+                                          pl: 'W trakcie',
+                                          pt: 'Em andamento',
+                                          th: 'กำลังดำเนินอยู่',
+                                          id: 'Sedang berlangsung',
+                                          hi: 'चल रहा है',
+                                          bn: 'চলমান',
+                                        ),
+                                        style: const TextStyle(
+                                          color: Color(0xFF1D4ED8),
+                                          fontWeight: FontWeight.w800,
                                         ),
                                       ),
-                                  ],
-                                ),
+                                    ),
+                                ],
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -33788,6 +34484,970 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               ],
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+class TournamentSessionItem {
+  final String id;
+  final String name;
+  final String location;
+  final double buyIn;
+  final int rebuys;
+  final double prize;
+  final int players;
+  final int rank;
+  final String note;
+  final DateTime startedAt;
+  final DateTime? endedAt;
+
+  TournamentSessionItem({
+    required this.id,
+    required this.name,
+    required this.location,
+    required this.buyIn,
+    required this.rebuys,
+    required this.prize,
+    required this.players,
+    required this.rank,
+    required this.note,
+    required this.startedAt,
+    required this.endedAt,
+  });
+
+  double get totalCost =>
+      buyIn + (buyIn * rebuys);
+
+  double get profit => prize - totalCost;
+
+  double get roi {
+    if (totalCost <= 0) return 0;
+    return (profit / totalCost) * 100;
+  }
+
+  bool get itm => prize > 0;
+
+  double get hours {
+    final end = endedAt ?? DateTime.now();
+    final minutes = end.difference(startedAt).inMinutes;
+    if (minutes <= 0) return 0;
+    return minutes / 60.0;
+  }  
+
+  factory TournamentSessionItem.fromDoc(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final data = doc.data();
+
+    return TournamentSessionItem(
+      id: doc.id,
+      name: (data['name'] ?? '').toString(),
+      location: (data['location'] ?? '').toString(),
+      buyIn: (data['buyIn'] ?? 0).toDouble(),
+      rebuys: (data['rebuys'] ?? 0).toInt(),
+      prize: (data['prize'] ?? 0).toDouble(),
+      players: (data['players'] ?? 0).toInt(),
+      rank: (data['rank'] ?? 0).toInt(),
+      note: (data['note'] ?? '').toString(),
+      startedAt:
+          (data['startedAt'] as Timestamp).toDate(),
+      endedAt: data['endedAt'] == null
+          ? null
+          : (data['endedAt'] as Timestamp).toDate(),
+    );
+  }
+}
+
+class TournamentSessionEditorPage extends StatefulWidget {
+  final TournamentSessionItem? item;
+
+  const TournamentSessionEditorPage({
+    super.key,
+    this.item,
+  });
+
+  @override
+  State<TournamentSessionEditorPage>
+      createState() =>
+          _TournamentSessionEditorPageState();
+}
+
+class _TournamentSessionEditorPageState
+    extends State<TournamentSessionEditorPage> {
+
+  late final TextEditingController
+      nameController;
+
+  late final TextEditingController
+      locationController;
+
+  late final TextEditingController
+      buyInController;
+
+  late final TextEditingController
+      rebuysController;
+
+  late final TextEditingController
+      prizeController;
+
+  late final TextEditingController
+      playersController;
+
+  late final TextEditingController
+      rankController;
+
+  late final TextEditingController
+      noteController;
+
+  DateTime startedAt = DateTime.now();
+  DateTime? endedAt;
+
+  bool isSaving = false;
+  bool isOngoing = false;
+  CashGameLocationType locationType =
+      CashGameLocationType.homeGame;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final item = widget.item;
+
+    nameController = TextEditingController(
+      text: item?.name ?? '',
+    );
+
+    locationController = TextEditingController(
+      text: item == null
+          ? ''
+          : _extractEditableLocationName(
+              item.location,
+            ),
+    );
+
+    buyInController = TextEditingController(
+      text: item == null
+          ? ''
+          : item.buyIn.toString(),
+    );
+
+    rebuysController = TextEditingController(
+      text: item == null
+          ? '0'
+          : item.rebuys.toString(),
+    );
+
+    prizeController = TextEditingController(
+      text: item == null
+          ? '0'
+          : item.prize.toString(),
+    );
+
+    playersController = TextEditingController(
+      text: item == null
+          ? ''
+          : item.players.toString(),
+    );
+
+    rankController = TextEditingController(
+      text: item == null
+          ? ''
+          : item.rank.toString(),
+    );
+
+    noteController = TextEditingController(
+      text: item?.note ?? '',
+    );
+
+    if (item != null) {
+
+      startedAt = item.startedAt;
+
+      endedAt = item.endedAt;
+      isOngoing = item.endedAt == null;
+
+      locationType =
+          _detectLocationType(
+        item.location,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    locationController.dispose();
+    buyInController.dispose();
+    rebuysController.dispose();
+    prizeController.dispose();
+    playersController.dispose();
+    rankController.dispose();
+    noteController.dispose();
+
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+
+    final uid =
+        FirebaseAuth.instance
+                .currentUser
+                ?.uid ??
+            '';
+
+    if (uid.isEmpty) return;
+
+    setState(() {
+      isSaving = true;
+    });
+
+    try {
+
+      final ref = FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection(
+            'tournament_sessions',
+          );
+
+      if (widget.item == null) {
+
+        await ref.add({
+
+        'name':
+            nameController.text.trim(),
+
+        'location': locationType == CashGameLocationType.casino
+            ? '${locationController.text.trim()} Casino'
+            : "${locationController.text.trim()}'s Game",
+
+        'buyIn':
+            double.tryParse(
+                  buyInController.text,
+                ) ??
+                0,
+
+        'rebuys':
+            int.tryParse(
+                  rebuysController.text,
+                ) ??
+                0,
+
+        'prize':
+            double.tryParse(
+                  prizeController.text,
+                ) ??
+                0,
+
+        'players':
+            int.tryParse(
+                  playersController.text,
+                ) ??
+                0,
+
+        'rank':
+            int.tryParse(
+                  rankController.text,
+                ) ??
+                0,
+
+        'note':
+            noteController.text.trim(),
+
+        'startedAt': Timestamp.fromDate(startedAt),
+
+        'endedAt': isOngoing || endedAt == null
+            ? null
+            : Timestamp.fromDate(endedAt!),
+
+        'isOngoing': isOngoing,
+
+        'createdAt':
+            FieldValue.serverTimestamp(),
+      });
+
+      } else {
+
+        await ref
+            .doc(widget.item!.id)
+            .update({
+
+          'name':
+              nameController.text.trim(),
+
+          'location': locationType ==
+                  CashGameLocationType.casino
+              ? '${locationController.text.trim()} Casino'
+              : "${locationController.text.trim()}'s Game",
+
+          'buyIn':
+              double.tryParse(
+                    buyInController.text,
+                  ) ??
+                  0,
+
+          'rebuys':
+              int.tryParse(
+                    rebuysController.text,
+                  ) ??
+                  0,
+
+          'prize':
+              double.tryParse(
+                    prizeController.text,
+                  ) ??
+                  0,
+
+          'players':
+              int.tryParse(
+                    playersController.text,
+                  ) ??
+                  0,
+
+          'rank':
+              int.tryParse(
+                    rankController.text,
+                  ) ??
+                  0,
+
+          'note':
+              noteController.text.trim(),
+
+          'startedAt':
+              Timestamp.fromDate(
+            startedAt,
+          ),
+
+          'endedAt': isOngoing || endedAt == null
+              ? null
+              : Timestamp.fromDate(endedAt!),
+
+          'isOngoing': isOngoing,
+
+          'updatedAt':
+              FieldValue.serverTimestamp(),
+        });
+      }
+
+      if (!mounted) return;
+
+      Navigator.pop(context);
+
+    } finally {
+
+      if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+      }
+    }
+  }
+
+  Widget _field({
+    required String label,
+    required TextEditingController
+        controller,
+    TextInputType? keyboardType,
+  }) {
+
+    return Padding(
+      padding:
+          const EdgeInsets.only(
+        bottom: 16,
+      ),
+
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+
+        decoration: InputDecoration(
+          labelText: label,
+
+          border:
+              OutlineInputBorder(
+            borderRadius:
+                BorderRadius.circular(16),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Theme(
+      data: ThemeData.light(),
+      child: Scaffold(
+
+        appBar: AppBar(
+          title: Text(
+            tr(
+              context,
+              'Tournament',
+              zhTw: '錦標賽',
+              zhCn: '锦标赛',
+              ko: '토너먼트',
+              ja: 'トーナメント',
+              de: 'Turnier',
+              fr: 'Tournoi',
+              ar: 'البطولة',
+              ru: 'Турнир',
+              trk: 'Turnuva',
+              es: 'Torneo',
+              it: 'Torneo',
+              pl: 'Turniej',
+              pt: 'Torneio',
+              th: 'ทัวร์นาเมนต์',
+              id: 'Turnamen',
+              hi: 'टूर्नामेंट',
+              bn: 'টুর্নামেন্ট',
+            ),
+          ),
+        ),
+
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+
+          children: [
+
+            _field(
+              label: tr(
+                context,
+                'Tournament Name',
+                zhTw: '錦標賽名稱',
+                zhCn: '锦标赛名称',
+                ko: '토너먼트 이름',
+                ja: 'トーナメント名',
+                de: 'Turniername',
+                fr: 'Nom du tournoi',
+                ar: 'اسم البطولة',
+                ru: 'Название турнира',
+                trk: 'Turnuva Adı',
+                es: 'Nombre del torneo',
+                it: 'Nome del torneo',
+                pl: 'Nazwa turnieju',
+                pt: 'Nome do torneio',
+                th: 'ชื่อทัวร์นาเมนต์',
+                id: 'Nama turnamen',
+                hi: 'टूर्नामेंट नाम',
+                bn: 'টুর্নামেন্টের নাম',
+              ),
+              controller: nameController,
+            ),
+
+            DropdownButtonFormField<CashGameLocationType>(
+              initialValue: locationType,
+              decoration: InputDecoration(
+                labelText: tr(
+                  context,
+                  'Location Type',
+                  zhTw: '地點類型',
+                  zhCn: '地点类型',
+                  ko: '장소 유형',
+                  ja: '場所タイプ',
+                  de: 'Ortstyp',
+                  fr: 'Type de lieu',
+                  ar: 'نوع الموقع',
+                  ru: 'Тип места',
+                  trk: 'Konum Türü',
+                  es: 'Tipo de ubicación',
+                  it: 'Tipo di luogo',
+                  pl: 'Typ lokalizacji',
+                  pt: 'Tipo de local',
+                  th: 'ประเภทสถานที่',
+                  id: 'Tipe lokasi',
+                  hi: 'स्थान प्रकार',
+                  bn: 'লোকেশনের ধরন',
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: CashGameLocationType.homeGame,
+                  child: Text(
+                    tr(
+                      context,
+                      'Home Game',
+                      zhTw: '私人局',
+                      zhCn: '私人局',
+                      ko: '홈 게임',
+                      ja: 'ホームゲーム',
+                      de: 'Home Game',
+                      fr: 'Partie privée',
+                      ar: 'لعبة منزلية',
+                      ru: 'Домашняя игра',
+                      trk: 'Ev Oyunu',
+                      es: 'Juego privado',
+                      it: 'Partita privata',
+                      pl: 'Gra domowa',
+                      pt: 'Jogo em casa',
+                      th: 'เกมส่วนตัว',
+                      id: 'Game pribadi',
+                      hi: 'होम गेम',
+                      bn: 'হোম গেম',
+                    ),
+                  ),
+                ),
+
+                DropdownMenuItem(
+                  value: CashGameLocationType.casino,
+                  child: Text(
+                    tr(
+                      context,
+                      'Casino',
+                      zhTw: '賭場',
+                      zhCn: '赌场',
+                      ko: '카지노',
+                      ja: 'カジノ',
+                      de: 'Casino',
+                      fr: 'Casino',
+                      ar: 'كازينو',
+                      ru: 'Казино',
+                      trk: 'Kumarhane',
+                      es: 'Casino',
+                      it: 'Casinò',
+                      pl: 'Kasyno',
+                      pt: 'Cassino',
+                      th: 'คาสิโน',
+                      id: 'Kasino',
+                      hi: 'कैसीनो',
+                      bn: 'ক্যাসিনো',
+                    ),
+                  ),
+                ),
+              ],
+
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  locationType = value;
+                });
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            _field(
+              label: locationType == CashGameLocationType.casino
+                  ? tr(
+                      context,
+                      'Casino Name',
+                      zhTw: '賭場名稱',
+                      zhCn: '赌场名称',
+                      ko: '카지노 이름',
+                      ja: 'カジノ名',
+                      de: 'Casino-Name',
+                      fr: 'Nom du casino',
+                      ar: 'اسم الكازينو',
+                      ru: 'Название казино',
+                      trk: 'Kumarhane Adı',
+                      es: 'Nombre del casino',
+                      it: 'Nome del casinò',
+                      pl: 'Nazwa kasyna',
+                      pt: 'Nome do cassino',
+                      th: 'ชื่อคาสิโน',
+                      id: 'Nama kasino',
+                      hi: 'कैसीनो का नाम',
+                      bn: 'ক্যাসিনোর নাম',
+                    )
+                  : tr(
+                      context,
+                      'Player Name',
+                      zhTw: '玩家名稱',
+                      zhCn: '玩家名称',
+                      ko: '플레이어 이름',
+                      ja: 'プレイヤー名',
+                      de: 'Spielername',
+                      fr: 'Nom du joueur',
+                      ar: 'اسم اللاعب',
+                      ru: 'Имя игрока',
+                      trk: 'Oyuncu Adı',
+                      es: 'Nombre del jugador',
+                      it: 'Nome del giocatore',
+                      pl: 'Nazwa gracza',
+                      pt: 'Nome do jogador',
+                      th: 'ชื่อผู้เล่น',
+                      id: 'Nama pemain',
+                      hi: 'खिलाड़ी का नाम',
+                      bn: 'খেলোয়াড়ের নাম',
+                    ),
+              controller: locationController,
+            ),
+
+            _field(
+              label: tr(
+                context,
+                'Buy-in',
+                zhTw: '買入',
+                zhCn: '买入',
+                ko: '바이인',
+                ja: 'バイイン',
+                de: 'Buy-in',
+                fr: 'Buy-in',
+                ar: 'الدخول',
+                ru: 'Бай-ин',
+                trk: 'Giriş Ücreti',
+                es: 'Entrada',
+                it: 'Buy-in',
+                pl: 'Wpisowe',
+                pt: 'Buy-in',
+                th: 'บายอิน',
+                id: 'Buy-in',
+                hi: 'बाय-इन',
+                bn: 'বাই-ইন',
+              ),
+              controller: buyInController,
+              keyboardType: TextInputType.number,
+            ),
+
+            _field(
+              label: tr(
+                context,
+                'Number of Rebuys',
+                zhTw: '重買次數',
+                zhCn: '重购次数',
+                ko: '리바이 횟수',
+                ja: 'リバイ回数',
+                de: 'Anzahl der Rebuys',
+                fr: 'Nombre de rebuys',
+                ar: 'عدد مرات إعادة الشراء',
+                ru: 'Количество ребаев',
+                trk: 'Yeniden Alım Sayısı',
+                es: 'Número de recompras',
+                it: 'Numero di rebuy',
+                pl: 'Liczba rebuyów',
+                pt: 'Número de rebuys',
+                th: 'จำนวนรีบาย',
+                id: 'Jumlah rebuy',
+                hi: 'रीबाय की संख्या',
+                bn: 'রিবাই সংখ্যা',
+              ),
+              controller: rebuysController,
+              keyboardType: TextInputType.number,
+            ),
+
+            _field(
+              label: tr(
+                context,
+                'Prize',
+                zhTw: '獎金',
+                zhCn: '奖金',
+                ko: '상금',
+                ja: '賞金',
+                de: 'Preisgeld',
+                fr: 'Prix',
+                ar: 'الجائزة',
+                ru: 'Приз',
+                trk: 'Ödül',
+                es: 'Premio',
+                it: 'Premio',
+                pl: 'Nagroda',
+                pt: 'Prêmio',
+                th: 'รางวัล',
+                id: 'Hadiah',
+                hi: 'पुरस्कार',
+                bn: 'পুরস্কার',
+              ),
+              controller: prizeController,
+              keyboardType: TextInputType.number,
+            ),
+
+            _field(
+              label: tr(
+                context,
+                'Players',
+                zhTw: '玩家數',
+                zhCn: '玩家数',
+                ko: '플레이어 수',
+                ja: 'プレイヤー数',
+                de: 'Spieler',
+                fr: 'Joueurs',
+                ar: 'اللاعبون',
+                ru: 'Игроки',
+                trk: 'Oyuncular',
+                es: 'Jugadores',
+                it: 'Giocatori',
+                pl: 'Gracze',
+                pt: 'Jogadores',
+                th: 'จำนวนผู้เล่น',
+                id: 'Pemain',
+                hi: 'खिलाड़ी',
+                bn: 'খেলোয়াড়',
+              ),
+              controller: playersController,
+              keyboardType: TextInputType.number,
+            ),
+
+            _field(
+              label: tr(
+                context,
+                'Rank',
+                zhTw: '名次',
+                zhCn: '名次',
+                ko: '순위',
+                ja: '順位',
+                de: 'Rang',
+                fr: 'Classement',
+                ar: 'الترتيب',
+                ru: 'Место',
+                trk: 'Sıralama',
+                es: 'Posición',
+                it: 'Posizione',
+                pl: 'Miejsce',
+                pt: 'Classificação',
+                th: 'อันดับ',
+                id: 'Peringkat',
+                hi: 'रैंक',
+                bn: 'র‍্যাঙ্ক',
+              ),
+              controller: rankController,
+              keyboardType: TextInputType.number,
+            ),
+
+            SwitchListTile(
+              value: isOngoing,
+              title: Text(
+                tr(
+                  context,
+                  'Is Ongoing',
+                  zhTw: '進行中',
+                  zhCn: '进行中',
+                  ko: '진행 중',
+                  ja: '進行中',
+                  de: 'Läuft noch',
+                  fr: 'En cours',
+                  ar: 'قيد التشغيل',
+                  ru: 'В процессе',
+                  trk: 'Devam Ediyor',
+                  es: 'En curso',
+                  it: 'In corso',
+                  pl: 'W trakcie',
+                  pt: 'Em andamento',
+                  th: 'กำลังดำเนินอยู่',
+                  id: 'Sedang berlangsung',
+                  hi: 'जारी है',
+                  bn: 'চলমান',
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  isOngoing = value;
+
+                  if (isOngoing) {
+                    endedAt = null;
+                  }
+                });
+              },
+            ),
+
+            ListTile(
+              title: Text(
+                tr(
+                  context,
+                  'Start at',
+                  zhTw: '開始時間',
+                  zhCn: '开始时间',
+                  ko: '시작 시간',
+                  ja: '開始時間',
+                  de: 'Startzeit',
+                  fr: 'Heure de début',
+                  ar: 'وقت البدء',
+                  ru: 'Время начала',
+                  trk: 'Başlangıç zamanı',
+                  es: 'Hora de inicio',
+                  it: 'Ora di inizio',
+                  pl: 'Czas rozpoczęcia',
+                  pt: 'Hora de início',
+                  th: 'เวลาเริ่มต้น',
+                  id: 'Waktu mulai',
+                  hi: 'शुरू होने का समय',
+                  bn: 'শুরুর সময়',
+                ),
+              ),
+              subtitle: Text(
+                startedAt.toString().substring(0, 16),
+              ),
+              trailing: const Icon(Icons.calendar_month),
+              onTap: () async {
+                final date = await showDatePicker(
+                  context: context,
+                  initialDate: startedAt,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+
+                if (date == null || !mounted) return;
+
+                final time = await showTimePicker(
+                  context: context,
+                  initialTime: TimeOfDay.fromDateTime(startedAt),
+                );
+
+                if (time == null || !mounted) return;
+
+                setState(() {
+                  startedAt = DateTime(
+                    date.year,
+                    date.month,
+                    date.day,
+                    time.hour,
+                    time.minute,
+                  );
+                });
+              },
+            ),
+
+            if (!isOngoing)
+              ListTile(
+                title: Text(
+                  tr(
+                    context,
+                    'End at',
+                    zhTw: '結束時間',
+                    zhCn: '结束时间',
+                    ko: '종료 시간',
+                    ja: '終了時間',
+                    de: 'Endzeit',
+                    fr: 'Heure de fin',
+                    ar: 'وقت الانتهاء',
+                    ru: 'Время окончания',
+                    trk: 'Bitiş zamanı',
+                    es: 'Hora de finalización',
+                    it: 'Ora di fine',
+                    pl: 'Czas zakończenia',
+                    pt: 'Hora de término',
+                    th: 'เวลาสิ้นสุด',
+                    id: 'Waktu selesai',
+                    hi: 'समाप्ति समय',
+                    bn: 'শেষ সময়',
+                  ),
+                ),
+                subtitle: Text(
+                  endedAt == null
+                      ? tr(
+                          context,
+                          'Not set',
+                          zhTw: '尚未設定',
+                          zhCn: '尚未设置',
+                          ko: '설정되지 않음',
+                          ja: '未設定',
+                          de: 'Nicht festgelegt',
+                          fr: 'Non défini',
+                          ar: 'غير محدد',
+                          ru: 'Не задано',
+                          trk: 'Ayarlanmadı',
+                          es: 'No establecido',
+                          it: 'Non impostato',
+                          pl: 'Nie ustawiono',
+                          pt: 'Não definido',
+                          th: 'ยังไม่ได้ตั้งค่า',
+                          id: 'Belum diatur',
+                          hi: 'सेट नहीं है',
+                          bn: 'সেট করা হয়নি',
+                        )
+                      : endedAt.toString().substring(0, 16),
+                ),
+                trailing: const Icon(Icons.calendar_month),
+                onTap: () async {
+                  final initial = endedAt ?? DateTime.now();
+
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: initial,
+                    firstDate: DateTime(2020),
+                    lastDate: DateTime(2100),
+                  );
+
+                  if (date == null || !mounted) return;
+
+                  final time = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.fromDateTime(initial),
+                  );
+
+                  if (time == null || !mounted) return;
+
+                  setState(() {
+                    endedAt = DateTime(
+                      date.year,
+                      date.month,
+                      date.day,
+                      time.hour,
+                      time.minute,
+                    );
+                  });
+                },
+              ),
+
+            _field(
+              label: tr(
+                context,
+                'Note',
+                zhTw: '備註',
+                zhCn: '备注',
+                ko: '메모',
+                ja: 'メモ',
+                de: 'Notiz',
+                fr: 'Note',
+                ar: 'ملاحظة',
+                ru: 'Заметка',
+                trk: 'Not',
+                es: 'Nota',
+                it: 'Nota',
+                pl: 'Notatka',
+                pt: 'Nota',
+                th: 'บันทึก',
+                id: 'Catatan',
+                hi: 'नोट',
+                bn: 'নোট',
+              ),
+              controller: noteController,
+            ),
+
+            const SizedBox(height: 24),
+
+            FilledButton(
+              onPressed: isSaving ? null : _save,
+
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  vertical: 16,
+                ),
+
+                child: isSaving
+                    ? const CircularProgressIndicator()
+                    : Text(
+                        tr(
+                          context,
+                          'Save Tournament',
+                          zhTw: '儲存錦標賽',
+                          zhCn: '保存锦标赛',
+                          ko: '토너먼트 저장',
+                          ja: 'トーナメントを保存',
+                          de: 'Turnier speichern',
+                          fr: 'Enregistrer le tournoi',
+                          ar: 'حفظ البطولة',
+                          ru: 'Сохранить турнир',
+                          trk: 'Turnuvayı Kaydet',
+                          es: 'Guardar torneo',
+                          it: 'Salva torneo',
+                          pl: 'Zapisz turniej',
+                          pt: 'Salvar torneio',
+                          th: 'บันทึกทัวร์นาเมนต์',
+                          id: 'Simpan turnamen',
+                          hi: 'टूर्नामेंट सहेजें',
+                          bn: 'টুর্নামেন্ট সংরক্ষণ করুন',
+                        ),
+                      ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -34424,28 +36084,187 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                 ),
               ),
 
-              _buildField(
-                locationController,
-                tr(
-                  context,
-                  'Location',
-                  zhTw: '地點',
-                  zhCn: '地点',
-                  ko: '위치',
-                  ja: '場所',
-                  de: 'Ort',
-                  fr: 'Lieu',
-                  ar: 'الموقع',
-                  ru: 'Место',
-                  trk: 'Konum',
-                  es: 'Ubicación',
-                  it: 'Posizione',
-                  pl: 'Lokalizacja',
-                  pt: 'Localização',
-                  th: 'สถานที่',
-                  id: 'Lokasi',
-                  hi: 'स्थान',
-                  bn: 'অবস্থান',
+              DropdownButtonFormField<CashGameLocationType>(
+                initialValue: locationType,
+                decoration: InputDecoration(
+                  labelText: tr(
+                    context,
+                    'Location Type',
+                    zhTw: '地點類型',
+                    zhCn: '地点类型',
+                    ko: '장소 유형',
+                    ja: '場所タイプ',
+                    de: 'Ortstyp',
+                    fr: 'Type de lieu',
+                    ar: 'نوع الموقع',
+                    ru: 'Тип места',
+                    trk: 'Konum Türü',
+                    es: 'Tipo de ubicación',
+                    it: 'Tipo di luogo',
+                    pl: 'Typ lokalizacji',
+                    pt: 'Tipo de local',
+                    th: 'ประเภทสถานที่',
+                    id: 'Tipe lokasi',
+                    hi: 'स्थान प्रकार',
+                    bn: 'লোকেশনের ধরন',
+                  ),
+                ),
+                items: [
+                  DropdownMenuItem(
+                    value: CashGameLocationType.homeGame,
+                    child: Text(
+                      tr(
+                        context,
+                        'Home Game',
+                        zhTw: '私人局',
+                        zhCn: '私人局',
+                        ko: '홈 게임',
+                        ja: 'ホームゲーム',
+                        de: 'Home Game',
+                        fr: 'Partie privée',
+                        ar: 'لعبة منزلية',
+                        ru: 'Домашняя игра',
+                        trk: 'Ev Oyunu',
+                        es: 'Juego privado',
+                        it: 'Partita privata',
+                        pl: 'Gra domowa',
+                        pt: 'Jogo em casa',
+                        th: 'เกมส่วนตัว',
+                        id: 'Game pribadi',
+                        hi: 'होम गेम',
+                        bn: 'হোম গেম',
+                      ),
+                    ),
+                  ),
+
+                  DropdownMenuItem(
+                    value: CashGameLocationType.casino,
+                    child: Text(
+                      tr(
+                        context,
+                        'Casino',
+                        zhTw: '賭場',
+                        zhCn: '赌场',
+                        ko: '카지노',
+                        ja: 'カジノ',
+                        de: 'Casino',
+                        fr: 'Casino',
+                        ar: 'كازينو',
+                        ru: 'Казино',
+                        trk: 'Kumarhane',
+                        es: 'Casino',
+                        it: 'Casinò',
+                        pl: 'Kasyno',
+                        pt: 'Cassino',
+                        th: 'คาสิโน',
+                        id: 'Kasino',
+                        hi: 'कैसीनो',
+                        bn: 'ক্যাসিনো',
+                      ),
+                    ),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value == null) return;
+
+                  setState(() {
+                    locationType = value;
+                  });
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: locationController,
+                decoration: InputDecoration(
+                  labelText: locationType == CashGameLocationType.casino
+                      ? tr(
+                          context,
+                          'Casino Name',
+                          zhTw: '賭場名稱',
+                          zhCn: '赌场名称',
+                          ko: '카지노 이름',
+                          ja: 'カジノ名',
+                          de: 'Casino-Name',
+                          fr: 'Nom du casino',
+                          ar: 'اسم الكازينو',
+                          ru: 'Название казино',
+                          trk: 'Kumarhane Adı',
+                          es: 'Nombre del casino',
+                          it: 'Nome del casinò',
+                          pl: 'Nazwa kasyna',
+                          pt: 'Nome do cassino',
+                          th: 'ชื่อคาสิโน',
+                          id: 'Nama kasino',
+                          hi: 'कैसीनो का नाम',
+                          bn: 'ক্যাসিনোর নাম',
+                        )
+                      : tr(
+                          context,
+                          'Player Name',
+                          zhTw: '玩家名稱',
+                          zhCn: '玩家名称',
+                          ko: '플레이어 이름',
+                          ja: 'プレイヤー名',
+                          de: 'Spielername',
+                          fr: 'Nom du joueur',
+                          ar: 'اسم اللاعب',
+                          ru: 'Имя игрока',
+                          trk: 'Oyuncu Adı',
+                          es: 'Nombre del jugador',
+                          it: 'Nome del giocatore',
+                          pl: 'Nazwa gracza',
+                          pt: 'Nome do jogador',
+                          th: 'ชื่อผู้เล่น',
+                          id: 'Nama pemain',
+                          hi: 'खिलाड़ी का नाम',
+                          bn: 'খেলোয়াড়ের নাম',
+                        ),
+
+                  helperText: locationType == CashGameLocationType.casino
+                      ? tr(
+                          context,
+                          'Will save as: Name Casino',
+                          zhTw: '將儲存為：名稱 Casino',
+                          zhCn: '将保存为：名称 Casino',
+                          ko: '다음 형식으로 저장됩니다: 이름 Casino',
+                          ja: '「名前 Casino」として保存されます',
+                          de: 'Wird gespeichert als: Name Casino',
+                          fr: 'Sera enregistré sous : Nom Casino',
+                          ar: 'سيتم الحفظ كالتالي: اسم الكازينو',
+                          ru: 'Будет сохранено как: Название Casino',
+                          trk: 'Şöyle kaydedilecek: İsim Casino',
+                          es: 'Se guardará como: Nombre Casino',
+                          it: 'Verrà salvato come: Nome Casino',
+                          pl: 'Zostanie zapisane jako: Nazwa Casino',
+                          pt: 'Será salvo como: Nome Casino',
+                          th: 'จะบันทึกเป็น: ชื่อ Casino',
+                          id: 'Akan disimpan sebagai: Nama Casino',
+                          hi: 'इस रूप में सेव होगा: नाम Casino',
+                          bn: 'এভাবে সংরক্ষণ হবে: নাম Casino',
+                        )
+                      : tr(
+                          context,
+                          "Will save as: Name's Game",
+                          zhTw: '將儲存為：Name 的牌局',
+                          zhCn: '将保存为：Name 的牌局',
+                          ko: '다음 형식으로 저장됩니다: Name의 게임',
+                          ja: '「Name のゲーム」として保存されます',
+                          de: 'Wird gespeichert als: Name\'s Game',
+                          fr: 'Sera enregistré sous : Partie de Name',
+                          ar: 'سيتم الحفظ كالتالي: لعبة Name',
+                          ru: 'Будет сохранено как: Игра Name',
+                          trk: 'Şöyle kaydedilecek: Name\'s Game',
+                          es: 'Se guardará como: Juego de Name',
+                          it: 'Verrà salvato come: Gioco di Name',
+                          pl: 'Zostanie zapisane jako: Gra Name',
+                          pt: 'Será salvo como: Jogo de Name',
+                          th: 'จะบันทึกเป็น: เกมของ Name',
+                          id: 'Akan disimpan sebagai: Game milik Name',
+                          hi: 'इस रूप में सेव होगा: Name\'s Game',
+                          bn: 'এভাবে সংরক্ষণ হবে: Name এর গেম',
+                        ),
                 ),
               ),
 
@@ -34658,6 +36477,33 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                   trailing: const Icon(Icons.schedule, color: Colors.black),
                   onTap: _pickEndTime,
                 ),
+
+              const SizedBox(height: 12),
+
+              _buildField(
+                noteController,
+                tr(
+                  context,
+                  'Note',
+                  zhTw: '備註',
+                  zhCn: '备注',
+                  ko: '메모',
+                  ja: 'メモ',
+                  de: 'Notiz',
+                  fr: 'Note',
+                  ar: 'ملاحظة',
+                  ru: 'Заметка',
+                  trk: 'Not',
+                  es: 'Nota',
+                  it: 'Nota',
+                  pl: 'Notatka',
+                  pt: 'Nota',
+                  th: 'หมายเหตุ',
+                  id: 'Catatan',
+                  hi: 'नोट',
+                  bn: 'নোট',
+                ),
+              ),
 
               const SizedBox(height: 20),
 
