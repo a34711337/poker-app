@@ -17,7 +17,6 @@ workflows:
       - flutter pub get
       - cd ios
       - rm -rf Pods Podfile.lock .symlinks
-      - pod deintegrate
       - pod repo update
       - pod install
       - cd ..
