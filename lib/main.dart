@@ -33109,9 +33109,26 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               : _normalizeLocationForDisplay(item.location),
         );
 
-        final groupedByWeekday = _buildTournamentGroupedProfit(
+        final groupedByWeek = _buildTournamentGroupedProfit(
           items,
-          (item) => _weekdayZh(context, item.startedAt),
+          (item) {
+
+            final date = item.startedAt;
+
+            final startOfWeek =
+                date.subtract(Duration(days: date.weekday - 1));
+
+            final endOfWeek =
+                startOfWeek.add(const Duration(days: 6));
+
+            return
+                '${startOfWeek.year}/'
+                '${startOfWeek.month.toString().padLeft(2, '0')}/'
+                '${startOfWeek.day.toString().padLeft(2, '0')}'
+                ' - '
+                '${endOfWeek.month.toString().padLeft(2, '0')}/'
+                '${endOfWeek.day.toString().padLeft(2, '0')}';
+          },
         );
 
         final groupedByMonth = _buildTournamentGroupedProfit(
@@ -33348,16 +33365,71 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               if (isMobile)
                 SizedBox(
                   height: 170,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: summaryCards.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      return SizedBox(
-                        width: 220,
-                        child: summaryCards[index],
-                      );
-                    },
+                  child: Stack(
+                    children: [
+
+                      /// Summary cards
+                      ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 26),
+                        itemCount: summaryCards.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          return SizedBox(
+                            width: 220,
+                            child: summaryCards[index],
+                          );
+                        },
+                      ),
+
+                      /// 左箭頭
+                      Positioned(
+                        left: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Container(
+                              width: 24,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Icon(
+                                Icons.chevron_left,
+                                color: Colors.black45,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      /// 右箭頭
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          child: Center(
+                            child: Container(
+                              width: 24,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: const Icon(
+                                Icons.chevron_right,
+                                color: Colors.black45,
+                                size: 22,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 )
               else
@@ -33476,11 +33548,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         Widget buildTournamentGroupList(Map<String, Map<String, double>> grouped) {
           final entries = grouped.entries.toList()
             ..sort(
-              (a, b) =>
-                  (b.value['profit'] ?? 0)
-                      .compareTo(
-                        a.value['profit'] ?? 0,
-                      ),
+              (a, b) => b.key.compareTo(a.key),
             );
 
           return ListView.separated(
@@ -33693,7 +33761,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                     children: [
                       buildTournamentList(),
                       buildTournamentGroupList(groupedByLocation),
-                      buildTournamentGroupList(groupedByWeekday),
+                      buildTournamentGroupList(groupedByWeek),
                       buildTournamentGroupList(groupedByMonth),
                     ],
                   ),
@@ -34220,9 +34288,26 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               (item) => item.gameLabel.isEmpty ? 'Unknown' : item.gameLabel,
             );
 
-            final groupedByWeekday = _buildGroupedData(
-              endedItems,
-              (item) => _weekdayZh(context, item.startedAt),
+            final groupedByWeek = _buildGroupedData(
+              items,
+              (item) {
+
+                final date = item.startedAt;
+
+                final startOfWeek =
+                    date.subtract(Duration(days: date.weekday - 1));
+
+                final endOfWeek =
+                    startOfWeek.add(const Duration(days: 6));
+
+                return
+                    '${startOfWeek.year}/'
+                    '${startOfWeek.month.toString().padLeft(2, '0')}/'
+                    '${startOfWeek.day.toString().padLeft(2, '0')}'
+                    ' - '
+                    '${endOfWeek.month.toString().padLeft(2, '0')}/'
+                    '${endOfWeek.day.toString().padLeft(2, '0')}';
+              },
             );
 
             final groupedByMonth = _buildGroupedData(
@@ -34231,10 +34316,19 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                   '${item.startedAt.year}/${item.startedAt.month.toString().padLeft(2, '0')}',
             );
 
-            Widget buildGroupList(Map<String, Map<String, double>> grouped) {
+            Widget buildGroupList(
+              Map<String, Map<String, double>> grouped, {
+              bool sortByDate = false,
+            }) {
               final entries = grouped.entries.toList()
-                ..sort((a, b) =>
-                    (b.value['profit'] ?? 0).compareTo(a.value['profit'] ?? 0));
+                ..sort((a, b) {
+                  if (sortByDate) {
+                    return b.key.compareTo(a.key);
+                  }
+
+                  return (b.value['profit'] ?? 0)
+                      .compareTo(a.value['profit'] ?? 0);
+                });
 
               if (entries.isEmpty) {
                 return Center(
@@ -34788,7 +34882,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 buildAllSessions(),
                 buildGroupList(groupedByLocation),
                 buildGroupList(groupedByGame),
-                buildGroupList(groupedByWeekday),
+                buildGroupList(groupedByWeek, sortByDate: true),
                 buildGroupList(groupedByMonth),
               ],
             );
