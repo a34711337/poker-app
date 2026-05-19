@@ -15,7 +15,12 @@ workflows:
     scripts:
       - flutter clean
       - flutter pub get
-      - cd ios && pod install && cd ..
+      - cd ios
+      - rm -rf Pods Podfile.lock .symlinks
+      - pod deintegrate
+      - pod repo update
+      - pod install
+      - cd ..
 
       - name: Set up code signing
         script: xcode-project use-profiles
