@@ -17320,10 +17320,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                         ),
                       ),
                       subtitle: Text(
-                        '${user.email}\nID: ${user.playerId}',
+                        'ID: ${user.playerId}',
                         style: const TextStyle(color: Colors.black54),
                       ),
-                      isThreeLine: true,
+                      isThreeLine: false,
                       trailing: FilledButton(
                         onPressed: user.uid == currentUid
                             ? null
@@ -32977,16 +32977,37 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
     }
   }
 
-  Map<String, double> _buildTournamentGroupedProfit(
+  Map<String, Map<String, double>>
+      _buildTournamentGroupedProfit(
     List<TournamentSessionItem> items,
     String Function(TournamentSessionItem item) groupKey,
   ) {
-    final result = <String, double>{};
+
+    final result =
+        <String, Map<String, double>>{};
 
     for (final item in items) {
+
       final key = groupKey(item);
 
-      result[key] = (result[key] ?? 0) + item.profit;
+      result.putIfAbsent(key, () {
+        return {
+          'profit': 0,
+          'cost': 0,
+          'count': 0,
+        };
+      });
+
+      result[key]!['profit'] =
+          (result[key]!['profit'] ?? 0) +
+          item.profit;
+
+      result[key]!['cost'] =
+          (result[key]!['cost'] ?? 0) +
+          item.totalCost;
+
+      result[key]!['count'] =
+          (result[key]!['count'] ?? 0) + 1;
     }
 
     return result;
@@ -33012,6 +33033,63 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           0,
           (total, item) => total + item.profit,
         );
+
+        final totalCost = items.fold<double>(
+          0,
+          (total, item) => total + item.totalCost,
+        );
+
+        final roi =
+            totalCost <= 0
+                ? 0.0
+                : (totalProfit / totalCost) * 100;
+
+        final tournamentCount = items.length;
+
+        final itmCount =
+            items.where((item) => item.itm).length;
+
+        final itmRate =
+            tournamentCount <= 0
+                ? 0.0
+                : (itmCount / tournamentCount) * 100;
+
+        final averageBuyIn =
+            tournamentCount <= 0
+                ? 0.0
+                : totalCost / tournamentCount;
+
+        final bestCash = items.isEmpty
+            ? 0.0
+            : items
+                .map((item) => item.prize)
+                .reduce((a, b) => a > b ? a : b);
+
+        final averageRank =
+            items.isEmpty
+                ? 0.0
+                : items.fold<double>(
+                      0,
+                      (total, item) => total + item.rank,
+                    ) /
+                    items.length;
+
+        final averagePlayers =
+            items.isEmpty
+                ? 0.0
+                : items.fold<double>(
+                      0,
+                      (total, item) => total + item.players,
+                    ) /
+                    items.length;
+
+        final finalTableCount =
+            items.where((item) => item.rank <= 9).length;
+
+        final finalTableRate =
+            items.isEmpty
+                ? 0.0
+                : (finalTableCount / items.length) * 100;
 
         final totalHours = items.fold<double>(
           0,
@@ -33043,143 +33121,255 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         );
 
         Widget buildTournamentList() {
+          final summaryCards = [
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Profit/Loss',
+                zhTw: '盈利/虧損',
+                zhCn: '盈利/亏损',
+                ko: '수익/손실',
+                ja: '利益/損失',
+                de: 'Gewinn/Verlust',
+                fr: 'Profit/Perte',
+                ar: 'الربح/الخسارة',
+                ru: 'Прибыль/Убыток',
+                trk: 'Kâr/Zarar',
+                es: 'Ganancia/Pérdida',
+                it: 'Profitto/Perdita',
+                pl: 'Zysk/Strata',
+                pt: 'Lucro/Prejuízo',
+                th: 'กำไร/ขาดทุน',
+                id: 'Untung/Rugi',
+                hi: 'लाभ/हानि',
+                bn: 'লাভ/ক্ষতি',
+              ),
+              value: _moneyText(totalProfit),
+              color: _profitColor(totalProfit),
+            ),
+
+            _buildSummaryCard(
+              label: 'ROI',
+              value: '${roi.toStringAsFixed(1)}%',
+              color: _profitColor(roi),
+            ),
+
+            _buildSummaryCard(
+              label: 'ITM',
+              value: '$itmCount/$tournamentCount (${itmRate.toStringAsFixed(1)}%)',
+              color: _profitColor(itmRate),
+            ),
+
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Tournaments',
+                zhTw: '錦標賽數',
+                zhCn: '锦标赛数',
+                ko: '토너먼트 수',
+                ja: 'トーナメント数',
+                de: 'Turniere',
+                fr: 'Tournois',
+                ar: 'عدد البطولات',
+                ru: 'Турниры',
+                trk: 'Turnuva Sayısı',
+                es: 'Torneos',
+                it: 'Tornei',
+                pl: 'Turnieje',
+                pt: 'Torneios',
+                th: 'จำนวนทัวร์นาเมนต์',
+                id: 'Turnamen',
+                hi: 'टूर्नामेंट',
+                bn: 'টুর্নামেন্ট',
+              ),
+              value: tournamentCount.toString(),
+              color: Colors.black87,
+            ),
+
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Average Buy-in',
+                zhTw: '平均買入',
+                zhCn: '平均买入',
+                ko: '평균 바이인',
+                ja: '平均バイイン',
+                de: 'Durchschn. Buy-in',
+                fr: 'Buy-in moyen',
+                ar: 'متوسط الدخول',
+                ru: 'Средний бай-ин',
+                trk: 'Ortalama Giriş',
+                es: 'Entrada promedio',
+                it: 'Buy-in medio',
+                pl: 'Średni buy-in',
+                pt: 'Buy-in médio',
+                th: 'บายอินเฉลี่ย',
+                id: 'Rata-rata Buy-in',
+                hi: 'औसत बाय-इन',
+                bn: 'গড় বাই-ইন',
+              ),
+              value: _moneyText(averageBuyIn),
+              color: Colors.black87,
+            ),
+
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Best Cash',
+                zhTw: '最高獎金',
+                zhCn: '最高奖金',
+                ko: '최고 상금',
+                ja: '最高賞金',
+                de: 'Höchster Gewinn',
+                fr: 'Meilleur gain',
+                ar: 'أعلى جائزة',
+                ru: 'Лучший выигрыш',
+                trk: 'En Yüksek Ödül',
+                es: 'Mayor premio',
+                it: 'Miglior premio',
+                pl: 'Najwyższa wygrana',
+                pt: 'Maior prêmio',
+                th: 'เงินรางวัลสูงสุด',
+                id: 'Hadiah Tertinggi',
+                hi: 'सबसे बड़ा पुरस्कार',
+                bn: 'সর্বোচ্চ পুরস্কার',
+              ),
+              value: _moneyText(bestCash),
+              color: _profitColor(bestCash),
+            ),
+
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Avg Finish',
+                zhTw: '平均名次',
+                zhCn: '平均名次',
+                ko: '평균 순위',
+                ja: '平均順位',
+                de: 'Durchschn. Platzierung',
+                fr: 'Classement moyen',
+                ar: 'متوسط الترتيب',
+                ru: 'Среднее место',
+                trk: 'Ortalama Sıralama',
+                es: 'Promedio de posición',
+                it: 'Posizione media',
+                pl: 'Średnia pozycja',
+                pt: 'Classificação média',
+                th: 'อันดับเฉลี่ย',
+                id: 'Rata-rata Peringkat',
+                hi: 'औसत रैंक',
+                bn: 'গড় র‍্যাঙ্ক',
+              ),
+              value:
+                  '${averageRank.toStringAsFixed(1)} / ${averagePlayers.toStringAsFixed(0)}',
+              color: Colors.black87,
+            ),
+
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Final Table',
+                zhTw: '決賽桌',
+                zhCn: '决赛桌',
+                ko: '파이널 테이블',
+                ja: 'ファイナルテーブル',
+                de: 'Finaltisch',
+                fr: 'Table finale',
+                ar: 'الطاولة النهائية',
+                ru: 'Финальный стол',
+                trk: 'Final Masası',
+                es: 'Mesa final',
+                it: 'Tavolo finale',
+                pl: 'Stół finałowy',
+                pt: 'Mesa final',
+                th: 'โต๊ะสุดท้าย',
+                id: 'Meja Final',
+                hi: 'फाइनल टेबल',
+                bn: 'ফাইনাল টেবিল',
+              ),
+              value:
+                  '$finalTableCount/${items.length} (${finalTableRate.toStringAsFixed(1)}%)',
+              color: _profitColor(finalTableRate),
+            ),
+
+            _buildSummaryCard(
+              label: tr(
+                context,
+                'Spending Time',
+                zhTw: '花費時間',
+                zhCn: '花费时间',
+                ko: '사용 시간',
+                ja: 'プレイ時間',
+                de: 'Spielzeit',
+                fr: 'Temps passé',
+                ar: 'الوقت المستغرق',
+                ru: 'Потраченное время',
+                trk: 'Harcanan Süre',
+                es: 'Tiempo invertido',
+                it: 'Tempo trascorso',
+                pl: 'Czas gry',
+                pt: 'Tempo gasto',
+                th: 'เวลาที่ใช้',
+                id: 'Waktu Bermain',
+                hi: 'खर्च किया गया समय',
+                bn: 'ব্যয়িত সময়',
+              ),
+              value:
+                  '${_hourText(totalHours)} ${tr(
+                    context,
+                    'Hour',
+                    zhTw: '小時',
+                    zhCn: '小时',
+                    ko: '시간',
+                    ja: '時間',
+                    de: 'Stunde',
+                    fr: 'Heure',
+                    ar: 'ساعة',
+                    ru: 'Час',
+                    trk: 'Saat',
+                    es: 'Hora',
+                    it: 'Ora',
+                    pl: 'Godzina',
+                    pt: 'Hora',
+                    th: 'ชั่วโมง',
+                    id: 'Jam',
+                    hi: 'घंटा',
+                    bn: 'ঘন্টা',
+                  )}',
+              color: Colors.black87,
+            ),
+          ];
+
+          final isMobile = MediaQuery.of(context).size.width < 720;
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              GridView.count(
-                crossAxisCount: MediaQuery.of(context).size.width > 720 ? 4 : 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.5,
-                children: [
-                  _buildSummaryCard(
-                    label: tr(
-                      context,
-                      'Profit/Loss',
-                      zhTw: '盈利/虧損',
-                      zhCn: '盈利/亏损',
-                      ko: '수익/손실',
-                      ja: '利益/損失',
-                      de: 'Gewinn/Verlust',
-                      fr: 'Profit/Perte',
-                      ar: 'الربح/الخسارة',
-                      ru: 'Прибыль/Убыток',
-                      trk: 'Kâr/Zarar',
-                      es: 'Ganancia/Pérdida',
-                      it: 'Profitto/Perdita',
-                      pl: 'Zysk/Strata',
-                      pt: 'Lucro/Prejuízo',
-                      th: 'กำไร/ขาดทุน',
-                      id: 'Untung/Rugi',
-                      hi: 'लाभ/हानि',
-                      bn: 'লাভ/ক্ষতি',
-                    ),
-                    value: _moneyText(totalProfit),
-                    color: _profitColor(totalProfit),
+              if (isMobile)
+                SizedBox(
+                  height: 170,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: summaryCards.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      return SizedBox(
+                        width: 220,
+                        child: summaryCards[index],
+                      );
+                    },
                   ),
-
-                  _buildSummaryCard(
-                    label: tr(
-                      context,
-                      '\$/Hour',
-                      zhTw: '平均每小時',
-                      zhCn: '平均每小时',
-                      ko: '시간당 평균',
-                      ja: '1時間あたり平均',
-                      de: 'Durchschnitt pro Stunde',
-                      fr: 'Moyenne par heure',
-                      ar: 'المتوسط لكل ساعة',
-                      ru: 'Среднее за час',
-                      trk: 'Saat Başına Ortalama',
-                      es: 'Promedio por hora',
-                      it: 'Media per ora',
-                      pl: 'Średnio na godzinę',
-                      pt: 'Média por hora',
-                      th: 'เฉลี่ยต่อชั่วโมง',
-                      id: 'Rata-rata per jam',
-                      hi: 'प्रति घंटा औसत',
-                      bn: 'প্রতি ঘণ্টার গড়',
-                    ),
-                    value: _moneyText(perHour),
-                    color: _profitColor(perHour),
-                  ),
-
-                  _buildSummaryCard(
-                    label: tr(
-                      context,
-                      '\$/Game',
-                      zhTw: '平均每場',
-                      zhCn: '平均每场',
-                      ko: '게임당 평균',
-                      ja: '1ゲームあたり平均',
-                      de: 'Durchschnitt pro Spiel',
-                      fr: 'Moyenne par partie',
-                      ar: 'المتوسط لكل لعبة',
-                      ru: 'Среднее за игру',
-                      trk: 'Oyun Başına Ortalama',
-                      es: 'Promedio por juego',
-                      it: 'Media per partita',
-                      pl: 'Średnio na grę',
-                      pt: 'Média por jogo',
-                      th: 'เฉลี่ยต่อเกม',
-                      id: 'Rata-rata per game',
-                      hi: 'प्रति गेम औसत',
-                      bn: 'প্রতি গেম গড়',
-                    ),
-                    value: _moneyText(perGame),
-                    color: _profitColor(perGame),
-                  ),
-
-                  _buildSummaryCard(
-                    label: tr(
-                      context,
-                      'Spending Time',
-                      zhTw: '花費時間',
-                      zhCn: '花费时间',
-                      ko: '소요 시간',
-                      ja: 'プレイ時間',
-                      de: 'Verbrachte Zeit',
-                      fr: 'Temps passé',
-                      ar: 'الوقت المستغرق',
-                      ru: 'Потраченное время',
-                      trk: 'Harcanan Süre',
-                      es: 'Tiempo invertido',
-                      it: 'Tempo trascorso',
-                      pl: 'Spędzony czas',
-                      pt: 'Tempo gasto',
-                      th: 'เวลาที่ใช้',
-                      id: 'Waktu bermain',
-                      hi: 'खर्च किया गया समय',
-                      bn: 'ব্যয়িত সময়',
-                    ),
-                    value: '${_hourText(totalHours)} '
-                        '${tr(
-                          context,
-                          'Hour',
-                          zhTw: '小時',
-                          zhCn: '小时',
-                          ko: '시간',
-                          ja: '時間',
-                          de: 'Stunden',
-                          fr: 'Heures',
-                          ar: 'ساعة',
-                          ru: 'Час',
-                          trk: 'Saat',
-                          es: 'Hora',
-                          it: 'Ore',
-                          pl: 'Godzin',
-                          pt: 'Horas',
-                          th: 'ชั่วโมง',
-                          id: 'Jam',
-                          hi: 'घंटा',
-                          bn: 'ঘণ্টা',
-                        )}',
-                    color: Colors.black87,
-                  ),
-                ],
-              ),
+                )
+              else
+                GridView.count(
+                  crossAxisCount: 4,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 1.5,
+                  children: summaryCards,
+                ),
 
               const SizedBox(height: 16),
 
@@ -33205,21 +33395,36 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
-
                             const SizedBox(height: 8),
-
+                            Text(_normalizeLocationForDisplay(item.location)),
+                            const SizedBox(height: 8),
                             Text(
-                              _normalizeLocationForDisplay(item.location),
+                              'Buy-in: ${_moneyText(item.totalCost)}',
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-
-                            const SizedBox(height: 8),
-
                             Text(
-                              '#${item.rank} / ${item.players}',
+                              'Prize: ${_moneyText(item.prize)}',
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-
+                            Text(
+                              'ROI: ${item.roi.toStringAsFixed(1)}%',
+                              style: TextStyle(
+                                color: _profitColor(item.roi),
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                             const SizedBox(height: 8),
-
+                            Text('#${item.rank} / ${item.players}'),
+                            const SizedBox(height: 8),
                             Text(
                               _dateText(item.startedAt),
                               style: const TextStyle(
@@ -33227,11 +33432,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-
                           ],
                         ),
                       ),
-
                       Text(
                         _moneyText(item.profit),
                         style: TextStyle(
@@ -33240,9 +33443,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                           color: _profitColor(item.profit),
                         ),
                       ),
-
                       const SizedBox(width: 8),
-
                       PopupMenuButton<String>(
                         color: Colors.white,
                         surfaceTintColor: Colors.white,
@@ -33257,55 +33458,11 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                         itemBuilder: (context) => [
                           PopupMenuItem<String>(
                             value: 'edit',
-                            child: Text(
-                              tr(
-                                context,
-                                'Edit',
-                                zhTw: '編輯',
-                                zhCn: '编辑',
-                                ko: '편집',
-                                ja: '編集',
-                                de: 'Bearbeiten',
-                                fr: 'Modifier',
-                                ar: 'تعديل',
-                                ru: 'Редактировать',
-                                trk: 'Düzenle',
-                                es: 'Editar',
-                                it: 'Modifica',
-                                pl: 'Edytuj',
-                                pt: 'Editar',
-                                th: 'แก้ไข',
-                                id: 'Edit',
-                                hi: 'संपादित करें',
-                                bn: 'এডিট',
-                              ),
-                            ),
+                            child: Text(tr(context, 'Edit', zhTw: '編輯', zhCn: '编辑')),
                           ),
                           PopupMenuItem<String>(
                             value: 'delete',
-                            child: Text(
-                              tr(
-                                context,
-                                'Remove',
-                                zhTw: '刪除',
-                                zhCn: '删除',
-                                ko: '삭제',
-                                ja: '削除',
-                                de: 'Entfernen',
-                                fr: 'Supprimer',
-                                ar: 'إزالة',
-                                ru: 'Удалить',
-                                trk: 'Kaldır',
-                                es: 'Eliminar',
-                                it: 'Rimuovi',
-                                pl: 'Usuń',
-                                pt: 'Remover',
-                                th: 'ลบ',
-                                id: 'Hapus',
-                                hi: 'हटाएँ',
-                                bn: 'মুছুন',
-                              ),
-                            ),
+                            child: Text(tr(context, 'Remove', zhTw: '刪除', zhCn: '删除')),
                           ),
                         ],
                       ),
@@ -33316,9 +33473,15 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
           );
         }
 
-        Widget buildTournamentGroupList(Map<String, double> grouped) {
+        Widget buildTournamentGroupList(Map<String, Map<String, double>> grouped) {
           final entries = grouped.entries.toList()
-            ..sort((a, b) => b.value.compareTo(a.value));
+            ..sort(
+              (a, b) =>
+                  (b.value['profit'] ?? 0)
+                      .compareTo(
+                        a.value['profit'] ?? 0,
+                      ),
+            );
 
           return ListView.separated(
             padding: const EdgeInsets.all(16),
@@ -33326,6 +33489,20 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final entry = entries[index];
+
+              final profit =
+                  entry.value['profit'] ?? 0;
+
+              final cost =
+                  entry.value['cost'] ?? 0;
+
+              final roi =
+                  cost <= 0
+                      ? 0.0
+                      : (profit / cost) * 100;
+
+              final count =
+                  entry.value['count'] ?? 0;
 
               return Container(
                 padding: const EdgeInsets.all(16),
@@ -33344,13 +33521,40 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                         ),
                       ),
                     ),
-                    Text(
-                      _moneyText(entry.value),
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: _profitColor(entry.value),
-                      ),
+                    Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.end,
+                      children: [
+
+                        Text(
+                          _moneyText(profit),
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: _profitColor(profit),
+                          ),
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        Text(
+                          'ROI: ${roi.toStringAsFixed(1)}%',
+                          style: TextStyle(
+                            color: _profitColor(roi),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          '${count.toInt()} tournaments',
+                          style: const TextStyle(
+                            color: Colors.black54,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -35188,24 +35392,24 @@ class _TournamentSessionEditorPageState
             _field(
               label: tr(
                 context,
-                'Buy-in',
-                zhTw: '買入',
-                zhCn: '买入',
-                ko: '바이인',
-                ja: 'バイイン',
-                de: 'Buy-in',
-                fr: 'Buy-in',
-                ar: 'الدخول',
-                ru: 'Бай-ин',
-                trk: 'Giriş Ücreti',
-                es: 'Entrada',
-                it: 'Buy-in',
-                pl: 'Wpisowe',
-                pt: 'Buy-in',
-                th: 'บายอิน',
-                id: 'Buy-in',
-                hi: 'बाय-इन',
-                bn: 'বাই-ইন',
+                'Buy-in Amount',
+                zhTw: '買入金額',
+                zhCn: '买入金额',
+                ko: '바이인 금액',
+                ja: 'バイイン金額',
+                de: 'Buy-in Betrag',
+                fr: 'Montant du buy-in',
+                ar: 'مبلغ الدخول',
+                ru: 'Сумма бай-ина',
+                trk: 'Giriş Tutarı',
+                es: 'Monto de entrada',
+                it: 'Importo buy-in',
+                pl: 'Kwota wpisowego',
+                pt: 'Valor do buy-in',
+                th: 'จำนวนบายอิน',
+                id: 'Jumlah Buy-in',
+                hi: 'बाय-इन राशि',
+                bn: 'বাই-ইন পরিমাণ',
               ),
               controller: buyInController,
               keyboardType: TextInputType.number,
@@ -35240,27 +35444,88 @@ class _TournamentSessionEditorPageState
             _field(
               label: tr(
                 context,
-                'Prize',
-                zhTw: '獎金',
-                zhCn: '奖金',
-                ko: '상금',
-                ja: '賞金',
-                de: 'Preisgeld',
-                fr: 'Prix',
-                ar: 'الجائزة',
-                ru: 'Приз',
-                trk: 'Ödül',
-                es: 'Premio',
-                it: 'Premio',
-                pl: 'Nagroda',
-                pt: 'Prêmio',
-                th: 'รางวัล',
-                id: 'Hadiah',
-                hi: 'पुरस्कार',
-                bn: 'পুরস্কার',
+                'Cash Out / Prize',
+                zhTw: '結算 / 獎金',
+                zhCn: '结算 / 奖金',
+                ko: '캐시아웃 / 상금',
+                ja: 'キャッシュアウト / 賞金',
+                de: 'Cash Out / Preisgeld',
+                fr: 'Encaissement / Prix',
+                ar: 'السحب / الجائزة',
+                ru: 'Кэшаут / Приз',
+                trk: 'Nakit Çıkışı / Ödül',
+                es: 'Retiro / Premio',
+                it: 'Cash Out / Premio',
+                pl: 'Cash Out / Nagroda',
+                pt: 'Cash Out / Prêmio',
+                th: 'เงินออก / รางวัล',
+                id: 'Cash Out / Hadiah',
+                hi: 'कैश आउट / पुरस्कार',
+                bn: 'ক্যাশ আউট / পুরস্কার',
               ),
               controller: prizeController,
               keyboardType: TextInputType.number,
+            ),
+
+            Padding(
+              padding: const EdgeInsets.only(
+                bottom: 16,
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Colors.black12,
+                  ),
+                ),
+                child: Builder(
+                  builder: (_) {
+
+                    final buyIn =
+                        double.tryParse(
+                              buyInController.text,
+                            ) ??
+                            0;
+
+                    final rebuys =
+                        int.tryParse(
+                              rebuysController.text,
+                            ) ??
+                            0;
+
+                    final totalCost =
+                        buyIn + (buyIn * rebuys);
+
+                    return Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+
+                        const Text(
+                          'Total Cost',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black54,
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        Text(
+                          '\$${totalCost.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ),
 
             _field(
