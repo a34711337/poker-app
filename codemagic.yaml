@@ -15,20 +15,18 @@ workflows:
     scripts:
       - flutter clean
       - flutter pub get
+      - flutter precache --ios
 
       - cd ios && rm -rf Pods Podfile.lock
-      - cd ios && pod repo update
       - cd ios && pod install --repo-update
-      - cd ..
 
       - name: Set up code signing
         script: xcode-project use-profiles
 
       - name: Build IPA
         script: |
-          xcode-project build-ipa \
-            --workspace ios/Runner.xcworkspace \
-            --scheme Runner
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
 
     artifacts:
       - build/ios/ipa/*.ipa
