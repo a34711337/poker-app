@@ -29,9 +29,11 @@ workflows:
       - name: Build IPA
         script: |
           flutter build ipa --release
+          ls -R build/ios/ipa
 
     artifacts:
       - build/ios/ipa/*.ipa
+      - /Users/builder/clone/build/ios/ipa/*.ipa
 
     publishing:
       app_store_connect:
