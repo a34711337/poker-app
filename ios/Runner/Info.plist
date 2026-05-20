@@ -6,6 +6,29 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh_TW</string>
+		<string>zh_CN</string>
+		<string>ko</string>
+		<string>ja</string>
+		<string>de</string>
+		<string>fr</string>
+		<string>ar</string>
+		<string>ru</string>
+		<string>tr</string>
+		<string>es</string>
+		<string>it</string>
+		<string>pl</string>
+		<string>pt</string>
+		<string>th</string>
+		<string>id</string>
+		<string>hi</string>
+		<string>bn</string>
+	</array>
+
 	<key>CFBundleDisplayName</key>
 	<string>Poker Scheduler</string>
 	<key>CFBundleExecutable</key>

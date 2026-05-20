@@ -25,6 +25,8 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 
 import 'purchase_history_page.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+
 
 final GlobalKey<NavigatorState> appNavigatorKey =
     GlobalKey<NavigatorState>();
@@ -470,9 +472,59 @@ class _PokerReservationAppState
 
   ThemeMode _themeMode = ThemeMode.light;
 
-  String _languageCode = 'en';
+  String _languageCode =
+      _deviceLanguageCode(WidgetsBinding.instance.platformDispatcher.locale);
 
   StreamSubscription<User?>? _authSub;
+
+  static String _deviceLanguageCode(Locale locale) {
+    final language = locale.languageCode.toLowerCase();
+    final country = locale.countryCode?.toUpperCase();
+
+    if (language == 'zh') {
+      if (country == 'TW' ||
+          country == 'HK' ||
+          country == 'MO') {
+        return 'zh_tw';
+      }
+      return 'zh_cn';
+    }
+
+    switch (language) {
+      case 'ko':
+        return 'ko';
+      case 'ja':
+        return 'ja';
+      case 'de':
+        return 'de';
+      case 'fr':
+        return 'fr';
+      case 'ar':
+        return 'ar';
+      case 'ru':
+        return 'ru';
+      case 'tr':
+        return 'tr';
+      case 'es':
+        return 'es';
+      case 'it':
+        return 'it';
+      case 'pl':
+        return 'pl';
+      case 'pt':
+        return 'pt';
+      case 'th':
+        return 'th';
+      case 'id':
+        return 'id';
+      case 'hi':
+        return 'hi';
+      case 'bn':
+        return 'bn';
+      default:
+        return 'en';
+    }
+  }
 
   @override
   void initState() {
@@ -552,6 +604,54 @@ class _PokerReservationAppState
           navigatorKey: appNavigatorKey,
           title: 'Poker Table Reservation',
           debugShowCheckedModeBanner: false,
+
+          supportedLocales: const [
+            Locale('en'),
+            Locale('zh', 'TW'),
+            Locale('zh', 'CN'),
+            Locale('ko'),
+            Locale('ja'),
+            Locale('de'),
+            Locale('fr'),
+            Locale('ar'),
+            Locale('ru'),
+            Locale('tr'),
+            Locale('es'),
+            Locale('it'),
+            Locale('pl'),
+            Locale('pt'),
+            Locale('th'),
+            Locale('id'),
+            Locale('hi'),
+            Locale('bn'),
+          ],
+
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+
+          localeResolutionCallback: (locale, supportedLocales) {
+            if (locale == null) return const Locale('en');
+
+            if (locale.languageCode == 'zh') {
+              if (locale.countryCode == 'TW' ||
+                  locale.countryCode == 'HK' ||
+                  locale.countryCode == 'MO') {
+                return const Locale('zh', 'TW');
+              }
+              return const Locale('zh', 'CN');
+            }
+
+            for (final supportedLocale in supportedLocales) {
+              if (supportedLocale.languageCode == locale.languageCode) {
+                return supportedLocale;
+              }
+            }
+
+            return const Locale('en');
+          },
 
           themeMode: _themeMode,
 
