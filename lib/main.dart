@@ -490,16 +490,34 @@ class _PokerReservationAppState
   StreamSubscription<User?>? _authSub;
 
   static String _deviceLanguageCode(Locale locale) {
-    final language = locale.languageCode.toLowerCase();
-    final country = locale.countryCode?.toUpperCase();
+    final localeString =
+        locale.toString().toLowerCase();
 
+    final language =
+        locale.languageCode.toLowerCase();
+
+    final country =
+        locale.countryCode?.toUpperCase();
+
+    // 🔥 Chinese handling
     if (language == 'zh') {
+      // iOS / modern locale
+      if (localeString.contains('hant')) {
+        return 'zh_Hant';
+      }
+
+      if (localeString.contains('hans')) {
+        return 'zh_Hans';
+      }
+
+      // Country fallback
       if (country == 'TW' ||
           country == 'HK' ||
           country == 'MO') {
-        return 'zh_tw';
+        return 'zh_Hant';
       }
-      return 'zh_cn';
+
+      return 'zh_Hans';
     }
 
     switch (language) {
@@ -576,13 +594,23 @@ class _PokerReservationAppState
     final languageCode =
         (data['languageCode'] ?? 'en').toString();
 
+    String fixedLanguageCode = languageCode;
+
+    if (fixedLanguageCode == 'zh_tw') {
+      fixedLanguageCode = 'zh_Hant';
+    }
+
+    if (fixedLanguageCode == 'zh_cn') {
+      fixedLanguageCode = 'zh_Hans';
+    }
+
     if (!mounted) return;
 
     setState(() {
       _themeMode =
           isDark ? ThemeMode.dark : ThemeMode.light;
 
-      _languageCode = languageCode;
+      _languageCode = fixedLanguageCode;
     });
   }
 
@@ -619,8 +647,15 @@ class _PokerReservationAppState
 
           supportedLocales: const [
             Locale('en'),
-            Locale('zh', 'TW'),
-            Locale('zh', 'CN'),
+            Locale.fromSubtags(
+              languageCode: 'zh',
+              scriptCode: 'Hant',
+            ),
+
+            Locale.fromSubtags(
+              languageCode: 'zh',
+              scriptCode: 'Hans',
+            ),
             Locale('ko'),
             Locale('ja'),
             Locale('de'),
@@ -651,9 +686,15 @@ class _PokerReservationAppState
               if (locale.countryCode == 'TW' ||
                   locale.countryCode == 'HK' ||
                   locale.countryCode == 'MO') {
-                return const Locale('zh', 'TW');
+                return Locale.fromSubtags(
+                  languageCode: 'zh',
+                  scriptCode: 'Hant',
+                );
               }
-              return const Locale('zh', 'CN');
+              return Locale.fromSubtags(
+                languageCode: 'zh',
+                scriptCode: 'Hans',
+              );
             }
 
             for (final supportedLocale in supportedLocales) {
