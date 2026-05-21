@@ -564,6 +564,20 @@ class _PokerReservationAppState
       if (user == null) {
         currentAppSession = null;
 
+        final systemLanguage =
+            _deviceLanguageCode(
+              WidgetsBinding
+                  .instance
+                  .platformDispatcher
+                  .locale,
+            );
+
+        if (!mounted) return;
+
+        setState(() {
+          _languageCode = systemLanguage;
+        });
+
         if (!kIsWeb) {
           await FlutterAppBadger.removeBadge();
         }
@@ -9632,8 +9646,8 @@ class _SettingsPageState extends State<SettingsPage> {
                 _buildLanguageOption('en', 'English'),
                 _buildLanguageOption('ko', '한국어'),
                 _buildLanguageOption('ja', '日本語'),
-                _buildLanguageOption('zh_tw', '繁體中文'),
-                _buildLanguageOption('zh_cn', '简体中文'),
+                _buildLanguageOption('zhTw', '繁體中文'),
+                _buildLanguageOption('zhCn', '简体中文'),
                 _buildLanguageOption('de', 'Deutsch'),
                 _buildLanguageOption('fr', 'Français'),
                 _buildLanguageOption('ar', 'العربية'),
