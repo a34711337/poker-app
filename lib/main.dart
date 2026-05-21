@@ -389,12 +389,16 @@ String tr(
     case 'zh_TW':
     case 'zh-Hant':
     case 'zh-Hant-TW':
+    case 'zhTw':
+    case 'zh_tw':
       return zhTw.isEmpty ? en : zhTw;
 
     case 'zh_Hans':
     case 'zh_CN':
     case 'zh-Hans':
     case 'zh-Hans-CN':
+    case 'zhCn':
+    case 'zh_cn':
       return zhCn.isEmpty ? en : zhCn;
     case 'ko':
       return ko.isEmpty ? en : ko;
@@ -437,11 +441,15 @@ String languageName(String code) {
     case 'zh_Hant':
     case 'zh_TW':
     case 'zh-Hant':
+    case 'zhTw':
+    case 'zh_tw':
       return '繁體中文';
 
     case 'zh_Hans':
     case 'zh_CN':
     case 'zh-Hans':
+    case 'zhCn':
+    case 'zh_cn':
       return '简体中文';
     case 'ko':
       return '한국어';
@@ -6174,12 +6182,12 @@ class _GoogleFirstSetupPageState extends State<GoogleFirstSetupPage> {
                           ),
 
                           DropdownMenuItem(
-                            value: 'zh_tw',
+                            value: 'zhTw',
                             child: Text('繁體中文'),
                           ),
 
                           DropdownMenuItem(
-                            value: 'zh_cn',
+                            value: 'zhCn',
                             child: Text('简体中文'),
                           ),
 
