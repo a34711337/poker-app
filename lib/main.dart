@@ -26,6 +26,7 @@ import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'purchase_history_page.dart';
 
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 final GlobalKey<NavigatorState> appNavigatorKey =
@@ -572,19 +573,7 @@ class _PokerReservationAppState
       if (user == null) {
         currentAppSession = null;
 
-        final systemLanguage =
-            _deviceLanguageCode(
-              WidgetsBinding
-                  .instance
-                  .platformDispatcher
-                  .locale,
-            );
-
-        if (!mounted) return;
-
-        setState(() {
-          _languageCode = systemLanguage;
-        });
+        await _loadSettings();
 
         if (!kIsWeb) {
           await FlutterAppBadger.removeBadge();
@@ -602,7 +591,26 @@ class _PokerReservationAppState
   Future<void> _loadSettings() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    if (user == null) return;
+    if (user == null) {
+      final prefs = await SharedPreferences.getInstance();
+
+      final savedLanguage =
+          prefs.getString('lastLanguageCode');
+
+      final fallbackLanguage =
+          _deviceLanguageCode(
+            WidgetsBinding.instance.platformDispatcher.locale,
+          );
+
+      if (!mounted) return;
+
+      setState(() {
+        _languageCode =
+            savedLanguage ?? fallbackLanguage;
+      });
+
+      return;
+    }
 
     final doc = await FirebaseFirestore.instance
         .collection('users')
@@ -618,13 +626,22 @@ class _PokerReservationAppState
 
     String fixedLanguageCode = languageCode;
 
-    if (fixedLanguageCode == 'zh_tw') {
-      fixedLanguageCode = 'zh_Hant';
+    if (fixedLanguageCode == 'zh_tw' ||
+        fixedLanguageCode == 'zh_Hant') {
+      fixedLanguageCode = 'zhTw';
     }
 
-    if (fixedLanguageCode == 'zh_cn') {
-      fixedLanguageCode = 'zh_Hans';
+    if (fixedLanguageCode == 'zh_cn' ||
+        fixedLanguageCode == 'zh_Hans') {
+      fixedLanguageCode = 'zhCn';
     }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      'lastLanguageCode',
+      fixedLanguageCode,
+    );
 
     if (!mounted) return;
 
@@ -643,7 +660,17 @@ class _PokerReservationAppState
     });
   }
 
-  void updateLanguage(String languageCode) {
+  void updateLanguage(String languageCode) async {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      'lastLanguageCode',
+      languageCode,
+    );
+
+    if (!mounted) return;
+
     setState(() {
       _languageCode = languageCode;
     });
