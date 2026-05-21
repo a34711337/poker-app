@@ -385,9 +385,16 @@ String tr(
   final languageCode = AppLanguageController.of(context).languageCode;
 
   switch (languageCode) {
-    case 'zh_tw':
+    case 'zh_Hant':
+    case 'zh_TW':
+    case 'zh-Hant':
+    case 'zh-Hant-TW':
       return zhTw.isEmpty ? en : zhTw;
-    case 'zh_cn':
+
+    case 'zh_Hans':
+    case 'zh_CN':
+    case 'zh-Hans':
+    case 'zh-Hans-CN':
       return zhCn.isEmpty ? en : zhCn;
     case 'ko':
       return ko.isEmpty ? en : ko;
@@ -427,9 +434,14 @@ String tr(
 
 String languageName(String code) {
   switch (code) {
-    case 'zh_tw':
+    case 'zh_Hant':
+    case 'zh_TW':
+    case 'zh-Hant':
       return '繁體中文';
-    case 'zh_cn':
+
+    case 'zh_Hans':
+    case 'zh_CN':
+    case 'zh-Hans':
       return '简体中文';
     case 'ko':
       return '한국어';

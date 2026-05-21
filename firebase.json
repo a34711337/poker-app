@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "tablescheduler",
+    "site": "pokerscheduler",
     "public": "build/web",
     "ignore": [
       "firebase.json",
@@ -26,26 +26,5 @@
         "*.local"
       ]
     }
-  ],
-  "flutter": {
-    "platforms": {
-      "android": {
-        "default": {
-          "projectId": "poker-scheduler-fd8c7",
-          "appId": "1:1019034709236:android:7585f4efc82d47a599c2a1",
-          "fileOutput": "android/app/google-services.json"
-        }
-      },
-      "dart": {
-        "lib/firebase_options.dart": {
-          "projectId": "poker-scheduler-fd8c7",
-          "configurations": {
-            "android": "1:1019034709236:android:7585f4efc82d47a599c2a1",
-            "ios": "1:1019034709236:ios:36cbcc53231e3eb099c2a1",
-            "web": "1:1019034709236:web:0a4ae0a4cebb35d499c2a1"
-          }
-        }
-      }
-    }
-  }
+  ]
 }
