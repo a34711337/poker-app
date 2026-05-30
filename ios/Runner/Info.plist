@@ -10,8 +10,8 @@
 	<key>CFBundleLocalizations</key>
 	<array>
 		<string>en</string>
-		<string>zh_TW</string>
-		<string>zh_CN</string>
+		<string>zh-Hant</string>
+		<string>zh-Hans</string>
 		<string>ko</string>
 		<string>ja</string>
 		<string>de</string>

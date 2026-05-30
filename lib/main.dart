@@ -3,7 +3,10 @@ import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'theme_helper.dart';
 
+import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:flutter/material.dart';
@@ -771,64 +774,50 @@ class _PokerReservationAppState
               seedColor: Colors.green,
               brightness: Brightness.dark,
             ).copyWith(
-              surface: Colors.white,
-              onSurface: Colors.black87,
-              primary: const Color(0xFF2E7D32),
+              surface: const Color(0xFF1E293B),
+              onSurface: Colors.white,
+              primary: const Color(0xFF22C55E),
               onPrimary: Colors.white,
             ),
-            scaffoldBackgroundColor: const Color(0xFF111827),
-            cardColor: Colors.white,
+            scaffoldBackgroundColor: const Color(0xFF0F172A),
+            cardColor: const Color(0xFF1E293B),
 
-            cardTheme: CardThemeData(
-              color: Colors.white,
-              surfaceTintColor: Colors.white,
+            cardTheme: const CardThemeData(
+              color: Color(0xFF1E293B),
+              surfaceTintColor: Colors.transparent,
             ),
 
             dialogTheme: const DialogThemeData(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
+              backgroundColor: Color(0xFF1E293B),
+              surfaceTintColor: Colors.transparent,
               titleTextStyle: TextStyle(
-                color: Colors.black87,
+                color: Colors.white,
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
               ),
               contentTextStyle: TextStyle(
-                color: Colors.black87,
+                color: Colors.white70,
                 fontSize: 16,
               ),
             ),
 
             listTileTheme: const ListTileThemeData(
-              textColor: Colors.black87,
-              iconColor: Colors.black87,
-              titleTextStyle: TextStyle(
-                color: Colors.black87,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              textColor: Colors.white,
+              iconColor: Colors.white,
               subtitleTextStyle: TextStyle(
-                color: Colors.black54,
+                color: Colors.white70,
                 fontSize: 14,
               ),
             ),
 
             inputDecorationTheme: InputDecorationTheme(
               filled: true,
-              fillColor: const Color(0xFFF9FAFB),
-              labelStyle: const TextStyle(color: Colors.black87),
-              hintStyle: const TextStyle(color: Colors.black54),
+              fillColor: const Color(0xFF0F172A),
+              labelStyle: const TextStyle(color: Colors.white70),
+              hintStyle: const TextStyle(color: Colors.white54),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
               ),
-            ),
-
-            textTheme: const TextTheme(
-              bodyLarge: TextStyle(color: Colors.black87),
-              bodyMedium: TextStyle(color: Colors.black87),
-              bodySmall: TextStyle(color: Colors.black54),
-              titleLarge: TextStyle(color: Colors.black87),
-              titleMedium: TextStyle(color: Colors.black87),
-              titleSmall: TextStyle(color: Colors.black87),
             ),
           ),
 
@@ -1262,17 +1251,6 @@ IconData virtualAvatarIconData(String key) {
     default:
       return Icons.person;
   }
-}
-
-Widget forceLightTheme(Widget child) {
-  return Theme(
-    data: ThemeData(
-      useMaterial3: true,
-      brightness: Brightness.light,
-      colorSchemeSeed: Colors.green,
-    ),
-    child: child,
-  );
 }
 
 Widget buildAppAvatar({
@@ -8034,7 +8012,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
   Future<void> _pickVirtualAvatar() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     String tempIcon = avatarIcon;
     int tempColor = avatarBgColor;
 
@@ -8044,6 +8022,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         return StatefulBuilder(
           builder: (context, setLocalState) {
             return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
               title: Text(
                 tr(
                   context,
@@ -8065,6 +8048,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                   id: 'Pilih avatar virtual',
                   hi: 'वर्चुअल अवतार चुनें',
                   bn: 'ভার্চুয়াল অবতার নির্বাচন করুন',
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               content: SingleChildScrollView(
@@ -8092,9 +8079,15 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                         final isSelected = tempIcon == iconKey;
 
                         return ChoiceChip(
+                          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+                          selectedColor: isDark ? const Color(0xFF334155) : const Color(0xFFE8F5E9),
+                          side: BorderSide(
+                            color: isSelected ? const Color(0xFF22C55E) : Colors.white24,
+                          ),
                           label: Icon(
                             virtualAvatarIconData(iconKey),
                             size: 18,
+                            color: isDark ? Colors.white : Colors.black87,
                           ),
                           selected: isSelected,
                           onSelected: (_) {
@@ -8142,6 +8135,9 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
               ),
               actions: [
                 TextButton(
+                  style: TextButton.styleFrom(
+                    foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -8171,6 +8167,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 ),
 
                 FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF22C55E),
+                    foregroundColor: Colors.white,
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop({
                       'avatarIcon': tempIcon,
@@ -8317,10 +8317,23 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final titleColor = isDark ? Colors.white : Colors.black87;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
+    const primaryGreen = Color(0xFF22C55E);
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF2F2F7);
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
         title: Text(
           tr(
             context,
@@ -8355,7 +8368,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 520),
                     child: Card(
-                      color: Colors.white,
+                      color: cardColor,
+                      elevation: 0,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(24),
                       ),
@@ -8499,8 +8513,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   const SizedBox(height: 10),
                                   Text(
                                     email,
-                                    style: const TextStyle(
-                                      color: Colors.black54,
+                                    style: TextStyle(
+                                      color: subTextColor,
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -8508,13 +8522,16 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: const Color(0xFFF4F6F8),
+                                      color: isDark
+                                          ? const Color(0xFF111827)
+                                          : const Color(0xFFF4F6F8),
                                       borderRadius: BorderRadius.circular(16),
-                                      border: Border.all(color: Colors.black12),
+                                      border: Border.all(
+                                        color: isDark ? Colors.white12 : Colors.black12,
+                                      ),
                                     ),
                                     child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                      crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           tr(
@@ -8534,18 +8551,20 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                             pl: 'ID gracza',
                                             pt: 'ID do jogador',
                                             th: 'รหัสผู้เล่น',
-                                            id: 'ID pemain',
+                                            id: 'ID Pemain',
                                             hi: 'प्लेयर आईडी',
                                             bn: 'প্লেয়ার আইডি',
                                           ),
-                                          style: const TextStyle(
+                                          style: TextStyle(
+                                            color: textColor,
                                             fontWeight: FontWeight.w800,
                                           ),
                                         ),
                                         const SizedBox(height: 6),
                                         SelectableText(
                                           playerId.isEmpty ? '-' : playerId,
-                                          style: const TextStyle(
+                                          style: TextStyle(
+                                            color: textColor,
                                             fontSize: 18,
                                             fontWeight: FontWeight.w900,
                                             letterSpacing: 1.1,
@@ -8559,23 +8578,23 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                             zhTw: '這個 ID 是唯一的，無法更改。',
                                             zhCn: '这个 ID 是唯一的，无法更改。',
                                             ko: '이 ID는 고유하며 변경할 수 없습니다.',
-                                            ja: 'このIDは変更できません。',
-                                            de: 'Diese ID ist einzigartig und kann nicht geändert werden.',
-                                            fr: 'Cet ID est unique et ne peut pas être modifié.',
-                                            ar: 'هذا المعرف فريد ولا يمكن تغييره.',
+                                            ja: 'このIDは固有のもので、変更できません。',
+                                            de: 'Diese ID ist eindeutig und kann nicht geändert werden.',
+                                            fr: 'Cet identifiant est unique et ne peut pas être modifié.',
+                                            ar: 'هذا المعرّف فريد ولا يمكن تغييره.',
                                             ru: 'Этот ID уникален и не может быть изменён.',
                                             trk: 'Bu kimlik benzersizdir ve değiştirilemez.',
                                             es: 'Este ID es único y no se puede cambiar.',
-                                            it: 'Questo ID è unico e non può essere modificato.',
-                                            pl: 'Ten identyfikator jest unikalny i nie można go zmienić.',
+                                            it: 'Questo ID è univoco e non può essere modificato.',
+                                            pl: 'To ID jest unikalne i nie można go zmienić.',
                                             pt: 'Este ID é único e não pode ser alterado.',
-                                            th: 'ID นี้ไม่สามารถเปลี่ยนได้',
+                                            th: 'ID นี้ไม่ซ้ำและไม่สามารถเปลี่ยนได้',
                                             id: 'ID ini unik dan tidak dapat diubah.',
                                             hi: 'यह आईडी यूनिक है और बदली नहीं जा सकती।',
-                                            bn: 'এই আইডি ইউনিক এবং পরিবর্তন করা যাবে না।',
+                                            bn: 'এই আইডিটি ইউনিক এবং পরিবর্তন করা যাবে না।',
                                           ),
-                                          style: const TextStyle(
-                                            color: Colors.black54,
+                                          style: TextStyle(
+                                            color: subTextColor,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -8585,7 +8604,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 28),
+                            const SizedBox(height: 18),
                             Text(
                               tr(
                                 context,
@@ -8608,14 +8627,18 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                 hi: 'बेसिक प्रोफ़ाइल',
                                 bn: 'বেসিক প্রোফাইল',
                               ),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
+                                color: titleColor,
                               ),
                             ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: displayNameController,
+                              style: TextStyle(
+                                color: textColor,
+                              ),
                               decoration: InputDecoration(
                                 labelText: tr(
                                   context,
@@ -8638,6 +8661,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   hi: 'डिस्प्ले नाम',
                                   bn: 'প্রদর্শন নাম',
                                 ),
+
                                 hintText: tr(
                                   context,
                                   'Enter your display name',
@@ -8659,16 +8683,53 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   hi: 'अपना डिस्प्ले नाम दर्ज करें',
                                   bn: 'আপনার প্রদর্শন নাম লিখুন',
                                 ),
+
+                                labelStyle: TextStyle(
+                                  color: subTextColor,
+                                ),
+
+                                hintStyle: TextStyle(
+                                  color: subTextColor,
+                                ),
+
                                 filled: true,
-                                fillColor: const Color(0xFFF9FAFB),
+                                fillColor: fieldColor,
+
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
+                                  ),
+                                ),
+
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
+                                  ),
+                                ),
+
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: primaryGreen,
+                                    width: 1.5,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 12),
                             TextField(
                               controller: lastNameController,
+
+                              style: TextStyle(
+                                color: textColor,
+                              ),
+
                               decoration: InputDecoration(
                                 labelText: tr(
                                   context,
@@ -8691,6 +8752,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   hi: 'उपनाम',
                                   bn: 'শেষ নাম',
                                 ),
+
                                 hintText: tr(
                                   context,
                                   'Enter your last name',
@@ -8712,10 +8774,42 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   hi: 'अपना उपनाम दर्ज करें',
                                   bn: 'আপনার শেষ নাম লিখুন',
                                 ),
+
+                                labelStyle: TextStyle(
+                                  color: subTextColor,
+                                ),
+
+                                hintStyle: TextStyle(
+                                  color: subTextColor,
+                                ),
+
                                 filled: true,
-                                fillColor: const Color(0xFFF9FAFB),
+                                fillColor: fieldColor,
+
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
+                                  ),
+                                ),
+
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
+                                  ),
+                                ),
+
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: primaryGreen,
+                                    width: 1.5,
+                                  ),
                                 ),
                               ),
                             ),
@@ -8723,11 +8817,21 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                             SizedBox(
                               width: double.infinity,
                               child: FilledButton(
-                                onPressed:
-                                    isSavingName ? null : _saveBasicProfile,
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: const Color(0xFF22C55E),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: EdgeInsets.zero,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                ),
+
+                                onPressed: isSavingName ? null : _saveBasicProfile,
+
                                 child: Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(vertical: 14),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+
                                   child: Text(
                                     isSavingName
                                         ? tr(
@@ -8772,6 +8876,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                             hi: 'प्रोफ़ाइल सहेजें',
                                             bn: 'প্রোফাইল সংরক্ষণ করুন',
                                           ),
+
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -8779,7 +8888,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                             if (authProvider != 'google.com' &&
                                 authProvider != 'apple.com') ...[
 
-                              const SizedBox(height: 28),
+                              const SizedBox(height: 18),
 
                               Text(
                                 tr(
@@ -8803,9 +8912,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                   hi: 'पासवर्ड बदलें',
                                   bn: 'পাসওয়ার্ড পরিবর্তন করুন',
                                 ),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
+                                  color: titleColor,
                                 ),
                               ),
 
@@ -8814,6 +8924,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               TextField(
                                 controller: newPasswordController,
                                 obscureText: true,
+
+                                style: TextStyle(
+                                  color: textColor,
+                                ),
+
                                 decoration: InputDecoration(
                                   labelText: tr(
                                     context,
@@ -8836,10 +8951,42 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     hi: 'नया पासवर्ड',
                                     bn: 'নতুন পাসওয়ার্ড',
                                   ),
+
+                                  labelStyle: TextStyle(
+                                    color: subTextColor,
+                                  ),
+
+                                  hintStyle: TextStyle(
+                                    color: subTextColor,
+                                  ),
+
                                   filled: true,
-                                  fillColor: const Color(0xFFF9FAFB),
+                                  fillColor: fieldColor,
+
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: isDark
+                                          ? Colors.white12
+                                          : Colors.black12,
+                                    ),
+                                  ),
+
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: isDark
+                                          ? Colors.white12
+                                          : Colors.black12,
+                                    ),
+                                  ),
+
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: primaryGreen,
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -8849,6 +8996,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               TextField(
                                 controller: confirmPasswordController,
                                 obscureText: true,
+
+                                style: TextStyle(
+                                  color: textColor,
+                                ),
+
                                 decoration: InputDecoration(
                                   labelText: tr(
                                     context,
@@ -8871,10 +9023,31 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                     hi: 'नए पासवर्ड की पुष्टि करें',
                                     bn: 'নতুন পাসওয়ার্ড নিশ্চিত করুন',
                                   ),
+
+                                  labelStyle: TextStyle(
+                                    color: subTextColor,
+                                  ),
+
+                                  hintStyle: TextStyle(
+                                    color: subTextColor,
+                                  ),
+
                                   filled: true,
-                                  fillColor: const Color(0xFFF9FAFB),
-                                  border: OutlineInputBorder(
+                                  fillColor: fieldColor,
+
+                                  enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(
+                                      color: isDark ? Colors.white12 : Colors.black12,
+                                    ),
+                                  ),
+
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(
+                                      color: Color(0xFF22C55E),
+                                      width: 1.5,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -8884,12 +9057,24 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                               SizedBox(
                                 width: double.infinity,
                                 child: FilledButton(
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFF22C55E),
+                                    foregroundColor: Colors.white,
+                                    elevation: 0,
+                                    padding: EdgeInsets.zero,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                  ),
+
                                   onPressed:
                                       isSavingPassword ? null : _changePassword,
+
                                   child: Padding(
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 14,
                                     ),
+
                                     child: Text(
                                       tr(
                                         context,
@@ -8912,6 +9097,11 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                                         hi: 'पासवर्ड बदलें',
                                         bn: 'পাসওয়ার্ড পরিবর্তন করুন',
                                       ),
+
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 15,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -8933,12 +9123,15 @@ class HelpPage extends StatelessWidget {
   const HelpPage({super.key});
 
   Widget _helpCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String body,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Card(
-      color: Colors.white,
+      color: isDark ? const Color(0xFF1E293B) : Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -8949,30 +9142,26 @@ class HelpPage extends StatelessWidget {
               color: Colors.green,
               size: 26,
             ),
-
             const SizedBox(width: 14),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w800,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black87,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   Text(
                     body,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       height: 1.45,
-                      color: Colors.black87,
+                      color: isDark ? Colors.white70 : Colors.black54,
                     ),
                   ),
                 ],
@@ -8986,182 +9175,197 @@ class HelpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return forceLightTheme(
-      Scaffold(
-        appBar: AppBar(
-          title: Text(
-            tr(
-              context,
-              'Help',
-              zhTw: '使用說明',
-              zhCn: '使用说明',
-              ko: '도움말',
-              ja: 'ヘルプ',
-              de: 'Hilfe',
-              fr: 'Aide',
-              ar: 'المساعدة',
-              ru: 'Помощь',
-              trk: 'Yardım',
-              es: 'Ayuda',
-              it: 'Aiuto',
-              pl: 'Pomoc',
-              pt: 'Ajuda',
-              th: 'วิธีใช้งาน',
-              id: 'Bantuan',
-              hi: 'सहायता',
-              bn: 'সহায়তা',
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF4F6F8);
+    final appBarColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: appBarColor,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: textColor,
+        elevation: 0,
+        title: Text(
+          tr(
+            context,
+            'Help',
+            zhTw: '使用說明',
+            zhCn: '使用说明',
+            ko: '도움말',
+            ja: 'ヘルプ',
+            de: 'Hilfe',
+            fr: 'Aide',
+            ar: 'المساعدة',
+            ru: 'Помощь',
+            trk: 'Yardım',
+            es: 'Ayuda',
+            it: 'Aiuto',
+            pl: 'Pomoc',
+            pt: 'Ajuda',
+            th: 'วิธีใช้งาน',
+            id: 'Bantuan',
+            hi: 'सहायता',
+            bn: 'সহায়তা',
+          ),
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
           ),
         ),
+      ),
 
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _helpCard(
-              icon: Icons.badge_outlined,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _helpCard(
+            context: context,
+            icon: Icons.badge_outlined,
 
-              title: tr(
-                context,
-                'What is Add Player by ID?',
-                zhTw: 'Add Player by ID 是什麼？',
-                zhCn: 'Add Player by ID 是什么？',
-                ko: 'Add Player by ID란 무엇인가요?',
-                ja: 'Add Player by IDとは？',
-                de: 'Was bedeutet Add Player by ID?',
-                fr: 'Que signifie Add Player by ID ?',
-                ar: 'ما معنى Add Player by ID؟',
-                ru: 'Что такое Add Player by ID?',
-                trk: 'Add Player by ID nedir?',
-                es: '¿Qué significa Add Player by ID?',
-                it: 'Che cos’è Add Player by ID?',
-                pl: 'Co oznacza Add Player by ID?',
-                pt: 'O que é Add Player by ID?',
-                th: 'Add Player by ID คืออะไร?',
-                id: 'Apa itu Add Player by ID?',
-                hi: 'Add Player by ID क्या है?',
-                bn: 'Add Player by ID কী?',
-              ),
-
-              body: tr(
-                context,
-                'Each user has an 8-character Player ID. A host can enter a player’s ID to allow that player to see the host’s tables.',
-                zhTw: '每個玩家都有一組 8 碼 Player ID。房主輸入玩家的 ID 後，該玩家就可以看到這位房主建立的牌桌。',
-                zhCn: '每个玩家都有一组 8 位 Player ID。房主输入玩家的 ID 后，该玩家就可以看到这位房主创建的牌桌。',
-                ko: '모든 플레이어는 8자리 Player ID를 가지고 있습니다. 호스트가 해당 ID를 추가하면 플레이어가 그 호스트의 테이블을 볼 수 있습니다.',
-                ja: '各プレイヤーには8文字のPlayer IDがあります。ホストがそのIDを追加すると、そのプレイヤーはホストのテーブルを見ることができます。',
-                de: 'Jeder Benutzer hat eine 8-stellige Player ID. Ein Host kann diese ID hinzufügen, damit der Spieler die Tische des Hosts sehen kann.',
-                fr: 'Chaque utilisateur possède un Player ID à 8 caractères. Un hôte peut ajouter cet ID pour permettre au joueur de voir ses tables.',
-                ar: 'لكل مستخدم معرف Player ID مكوّن من 8 أحرف. يمكن للمضيف إدخال هذا المعرف للسماح للاعب برؤية طاولاته.',
-                ru: 'У каждого пользователя есть 8-символьный Player ID. Хост может добавить этот ID, чтобы игрок видел его столы.',
-                trk: 'Her kullanıcının 8 karakterli bir Player ID’si vardır. Host bu ID’yi ekleyerek oyuncunun masaları görmesini sağlayabilir.',
-                es: 'Cada usuario tiene un Player ID de 8 caracteres. El anfitrión puede agregar este ID para permitir que el jugador vea sus mesas.',
-                it: 'Ogni utente ha un Player ID di 8 caratteri. L’host può aggiungere questo ID per consentire al giocatore di vedere i suoi tavoli.',
-                pl: 'Każdy użytkownik ma 8-znakowy Player ID. Host może dodać ten ID, aby gracz widział jego stoły.',
-                pt: 'Cada usuário possui um Player ID de 8 caracteres. O anfitrião pode adicionar esse ID para permitir que o jogador veja suas mesas.',
-                th: 'ผู้เล่นทุกคนจะมี Player ID 8 ตัวอักษร เจ้าของโต๊ะสามารถเพิ่ม ID นี้เพื่อให้ผู้เล่นเห็นโต๊ะของตนได้',
-                id: 'Setiap pengguna memiliki Player ID 8 karakter. Host dapat menambahkan ID tersebut agar pemain dapat melihat meja host.',
-                hi: 'हर उपयोगकर्ता के पास 8-अक्षरों का Player ID होता है। होस्ट इस ID को जोड़कर खिलाड़ी को अपनी टेबल दिखा सकता है।',
-                bn: 'প্রতিটি ব্যবহারকারীর একটি ৮ অক্ষরের Player ID থাকে। হোস্ট এই ID যোগ করে খেলোয়াড়কে তার টেবিল দেখতে দিতে পারে।',
-              ),
+            title: tr(
+              context,
+              'What is Add Player by ID?',
+              zhTw: 'Add Player by ID 是什麼？',
+              zhCn: 'Add Player by ID 是什么？',
+              ko: 'Add Player by ID란 무엇인가요?',
+              ja: 'Add Player by IDとは？',
+              de: 'Was bedeutet Add Player by ID?',
+              fr: 'Que signifie Add Player by ID ?',
+              ar: 'ما معنى Add Player by ID؟',
+              ru: 'Что такое Add Player by ID?',
+              trk: 'Add Player by ID nedir?',
+              es: '¿Qué significa Add Player by ID?',
+              it: 'Che cos’è Add Player by ID?',
+              pl: 'Co oznacza Add Player by ID?',
+              pt: 'O que é Add Player by ID?',
+              th: 'Add Player by ID คืออะไร?',
+              id: 'Apa itu Add Player by ID?',
+              hi: 'Add Player by ID क्या है?',
+              bn: 'Add Player by ID কী?',
             ),
 
-            _helpCard(
-              icon: Icons.person_search_outlined,
+            body: tr(
+              context,
+              'Each user has an 8-character Player ID. A host can enter a player’s ID to allow that player to see the host’s tables.',
+              zhTw: '每個玩家都有一組 8 碼 Player ID。房主輸入玩家的 ID 後，該玩家就可以看到這位房主建立的牌桌。',
+              zhCn: '每个玩家都有一组 8 位 Player ID。房主输入玩家的 ID 后，该玩家就可以看到这位房主创建的牌桌。',
+              ko: '모든 플레이어는 8자리 Player ID를 가지고 있습니다. 호스트가 해당 ID를 추가하면 플레이어가 그 호스트의 테이블을 볼 수 있습니다.',
+              ja: '各プレイヤーには8文字のPlayer IDがあります。ホストがそのIDを追加すると、そのプレイヤーはホストのテーブルを見ることができます。',
+              de: 'Jeder Benutzer hat eine 8-stellige Player ID. Ein Host kann diese ID hinzufügen, damit der Spieler die Tische des Hosts sehen kann.',
+              fr: 'Chaque utilisateur possède un Player ID à 8 caractères. Un hôte peut ajouter cet ID pour permettre au joueur de voir ses tables.',
+              ar: 'لكل مستخدم معرف Player ID مكوّن من 8 أحرف. يمكن للمضيف إدخال هذا المعرف للسماح للاعب برؤية طاولاته.',
+              ru: 'У каждого пользователя есть 8-символьный Player ID. Хост может добавить этот ID, чтобы игрок видел его столы.',
+              trk: 'Her kullanıcının 8 karakterli bir Player ID’si vardır. Host bu ID’yi ekleyerek oyuncunun masaları görmesini sağlayabilir.',
+              es: 'Cada usuario tiene un Player ID de 8 caracteres. El anfitrión puede agregar este ID para permitir que el jugador vea sus mesas.',
+              it: 'Ogni utente ha un Player ID di 8 caratteri. L’host può aggiungere questo ID per consentire al giocatore di vedere i suoi tavoli.',
+              pl: 'Każdy użytkownik ma 8-znakowy Player ID. Host może dodać ten ID, aby gracz widział jego stoły.',
+              pt: 'Cada usuário possui um Player ID de 8 caracteres. O anfitrião pode adicionar esse ID para permitir que o jogador veja suas mesas.',
+              th: 'ผู้เล่นทุกคนจะมี Player ID 8 ตัวอักษร เจ้าของโต๊ะสามารถเพิ่ม ID นี้เพื่อให้ผู้เล่นเห็นโต๊ะของตนได้',
+              id: 'Setiap pengguna memiliki Player ID 8 karakter. Host dapat menambahkan ID tersebut agar pemain dapat melihat meja host.',
+              hi: 'हर उपयोगकर्ता के पास 8-अक्षरों का Player ID होता है। होस्ट इस ID को जोड़कर खिलाड़ी को अपनी टेबल दिखा सकता है।',
+              bn: 'প্রতিটি ব্যবহারকারীর একটি ৮ অক্ষরের Player ID থাকে। হোস্ট এই ID যোগ করে খেলোয়াড়কে তার টেবিল দেখতে দিতে পারে।',
+            ),
+          ),
 
-              title: tr(
-                context,
-                'Where can I find my Player ID?',
-                zhTw: '我要去哪裡找到我的 Player ID？',
-                zhCn: '我要在哪里找到我的 Player ID？',
-                ko: '내 Player ID는 어디서 찾나요?',
-                ja: 'Player IDはどこで確認できますか？',
-                de: 'Wo finde ich meine Player ID?',
-                fr: 'Où trouver mon Player ID ?',
-                ar: 'أين أجد Player ID الخاص بي؟',
-                ru: 'Где найти мой Player ID?',
-                trk: 'Player ID nerede bulunur?',
-                es: '¿Dónde encuentro mi Player ID?',
-                it: 'Dove posso trovare il mio Player ID?',
-                pl: 'Gdzie znaleźć mój Player ID?',
-                pt: 'Onde encontro meu Player ID?',
-                th: 'ฉันจะหา Player ID ของฉันได้ที่ไหน?',
-                id: 'Di mana saya bisa menemukan Player ID saya?',
-                hi: 'मेरा Player ID कहाँ मिलेगा?',
-                bn: 'আমি আমার Player ID কোথায় পাব?',
-              ),
+          _helpCard(
+            context: context,
+            icon: Icons.person_search_outlined,
 
-              body: tr(
-                context,
-                'Open Edit Profile to find your Player ID, then share it with the host.',
-                zhTw: '打開 Edit Profile / 編輯個人資料，就可以看到你的 Player ID，然後把它傳給房主。',
-                zhCn: '打开 Edit Profile / 编辑个人资料，就可以看到你的 Player ID，然后把它发给房主。',
-                ko: 'Edit Profile에서 Player ID를 확인한 후 호스트에게 공유하세요.',
-                ja: 'Edit ProfileでPlayer IDを確認し、ホストに共有してください。',
-                de: 'Öffne Edit Profile, um deine Player ID zu finden, und teile sie dem Host mit.',
-                fr: 'Ouvrez Edit Profile pour trouver votre Player ID puis partagez-le avec l’hôte.',
-                ar: 'افتح Edit Profile للعثور على Player ID الخاص بك ثم شاركه مع المضيف.',
-                ru: 'Откройте Edit Profile, чтобы найти свой Player ID, и отправьте его хосту.',
-                trk: 'Player ID’nizi görmek için Edit Profile bölümünü açın ve host ile paylaşın.',
-                es: 'Abre Edit Profile para encontrar tu Player ID y compártelo con el anfitrión.',
-                it: 'Apri Edit Profile per trovare il tuo Player ID e condividerlo con l’host.',
-                pl: 'Otwórz Edit Profile, aby znaleźć swój Player ID i udostępnić go hostowi.',
-                pt: 'Abra Edit Profile para encontrar seu Player ID e compartilhá-lo com o anfitrião.',
-                th: 'เปิด Edit Profile เพื่อดู Player ID ของคุณ แล้วส่งให้เจ้าของโต๊ะ',
-                id: 'Buka Edit Profile untuk melihat Player ID Anda lalu bagikan ke host.',
-                hi: 'अपना Player ID देखने के लिए Edit Profile खोलें और उसे होस्ट के साथ साझा करें।',
-                bn: 'আপনার Player ID দেখতে Edit Profile খুলুন এবং হোস্টকে পাঠান।',
-              ),
+            title: tr(
+              context,
+              'Where can I find my Player ID?',
+              zhTw: '我要去哪裡找到我的 Player ID？',
+              zhCn: '我要在哪里找到我的 Player ID？',
+              ko: '내 Player ID는 어디서 찾나요?',
+              ja: 'Player IDはどこで確認できますか？',
+              de: 'Wo finde ich meine Player ID?',
+              fr: 'Où trouver mon Player ID ?',
+              ar: 'أين أجد Player ID الخاص بي؟',
+              ru: 'Где найти мой Player ID?',
+              trk: 'Player ID nerede bulunur?',
+              es: '¿Dónde encuentro mi Player ID?',
+              it: 'Dove posso trovare il mio Player ID?',
+              pl: 'Gdzie znaleźć mój Player ID?',
+              pt: 'Onde encontro meu Player ID?',
+              th: 'ฉันจะหา Player ID ของฉันได้ที่ไหน?',
+              id: 'Di mana saya bisa menemukan Player ID saya?',
+              hi: 'मेरा Player ID कहाँ मिलेगा?',
+              bn: 'আমি আমার Player ID কোথায় পাব?',
             ),
 
-            _helpCard(
-              icon: Icons.table_bar_outlined,
-
-              title: tr(
-                context,
-                'How do players join a table?',
-                zhTw: '玩家怎麼加入牌桌？',
-                zhCn: '玩家怎么加入牌桌？',
-                ko: '플레이어는 어떻게 테이블에 참가하나요?',
-                ja: 'プレイヤーはどうやってテーブルに参加しますか？',
-                de: 'Wie tritt man einem Tisch bei?',
-                fr: 'Comment rejoindre une table ?',
-                ar: 'كيف ينضم اللاعب إلى الطاولة؟',
-                ru: 'Как игрок присоединяется к столу?',
-                trk: 'Oyuncular masaya nasıl katılır?',
-                es: '¿Cómo se unen los jugadores a una mesa?',
-                it: 'Come si uniscono i giocatori a un tavolo?',
-                pl: 'Jak gracze dołączają do stołu?',
-                pt: 'Como os jogadores entram em uma mesa?',
-                th: 'ผู้เล่นเข้าร่วมโต๊ะได้อย่างไร?',
-                id: 'Bagaimana pemain bergabung ke meja?',
-                hi: 'खिलाड़ी टेबल में कैसे शामिल होते हैं?',
-                bn: 'খেলোয়াড় কীভাবে টেবিলে যোগ দেয়?',
-              ),
-
-              body: tr(
-                context,
-                'After the host adds your Player ID, you can see that host’s tables, choose an open seat, or join the waiting list if the table is full.',
-                zhTw: '房主新增你的 Player ID 後，你就能看到他的牌桌。你可以選空位入座；如果滿桌，可以加入等待區。',
-                zhCn: '房主添加你的 Player ID 后，你就能看到他的牌桌。你可以选择空位入座；如果满桌，可以加入等待区。',
-                ko: '호스트가 Player ID를 추가하면 해당 호스트의 테이블을 볼 수 있으며 빈 자리에 앉거나 대기열에 참가할 수 있습니다.',
-                ja: 'ホストがPlayer IDを追加すると、そのホストのテーブルが表示され、空席に座るかウェイティングリストに参加できます。',
-                de: 'Nachdem der Host deine Player ID hinzugefügt hat, kannst du die Tische sehen, einen freien Platz wählen oder der Warteliste beitreten.',
-                fr: 'Une fois votre Player ID ajouté par l’hôte, vous pouvez voir ses tables, choisir une place libre ou rejoindre la liste d’attente.',
-                ar: 'بعد أن يضيف المضيف Player ID الخاص بك، يمكنك رؤية طاولاته واختيار مقعد فارغ أو الانضمام إلى قائمة الانتظار.',
-                ru: 'После добавления вашего Player ID хостом вы сможете видеть его столы, выбрать свободное место или встать в очередь ожидания.',
-                trk: 'Host Player ID’nizi ekledikten sonra masaları görebilir, boş koltuk seçebilir veya bekleme listesine katılabilirsiniz.',
-                es: 'Después de que el anfitrión agregue tu Player ID, podrás ver sus mesas, elegir un asiento vacío o unirte a la lista de espera.',
-                it: 'Dopo che l’host ha aggiunto il tuo Player ID, potrai vedere i suoi tavoli, scegliere un posto libero o unirti alla lista d’attesa.',
-                pl: 'Po dodaniu Twojego Player ID przez hosta możesz zobaczyć jego stoły, wybrać wolne miejsce lub dołączyć do listy oczekujących.',
-                pt: 'Depois que o anfitrião adicionar seu Player ID, você poderá ver suas mesas, escolher um assento vazio ou entrar na fila de espera.',
-                th: 'หลังจากเจ้าของโต๊ะเพิ่ม Player ID ของคุณแล้ว คุณจะเห็นโต๊ะของเขา เลือกที่นั่งว่าง หรือเข้าคิวรอได้',
-                id: 'Setelah host menambahkan Player ID Anda, Anda dapat melihat meja host, memilih kursi kosong, atau masuk waiting list jika meja penuh.',
-                hi: 'होस्ट द्वारा आपका Player ID जोड़ने के बाद आप उसकी टेबल देख सकते हैं, खाली सीट चुन सकते हैं या वेटिंग लिस्ट में शामिल हो सकते हैं।',
-                bn: 'হোস্ট আপনার Player ID যোগ করার পরে আপনি তার টেবিল দেখতে পারবেন, খালি সিট নিতে পারবেন অথবা ওয়েটিং লিস্টে যোগ দিতে পারবেন।',
-              ),
+            body: tr(
+              context,
+              'Open Edit Profile to find your Player ID, then share it with the host.',
+              zhTw: '打開 Edit Profile / 編輯個人資料，就可以看到你的 Player ID，然後把它傳給房主。',
+              zhCn: '打开 Edit Profile / 编辑个人资料，就可以看到你的 Player ID，然后把它发给房主。',
+              ko: 'Edit Profile에서 Player ID를 확인한 후 호스트에게 공유하세요.',
+              ja: 'Edit ProfileでPlayer IDを確認し、ホストに共有してください。',
+              de: 'Öffne Edit Profile, um deine Player ID zu finden, und teile sie dem Host mit.',
+              fr: 'Ouvrez Edit Profile pour trouver votre Player ID puis partagez-le avec l’hôte.',
+              ar: 'افتح Edit Profile للعثور على Player ID الخاص بك ثم شاركه مع المضيف.',
+              ru: 'Откройте Edit Profile, чтобы найти свой Player ID, и отправьте его хосту.',
+              trk: 'Player ID’nizi görmek için Edit Profile bölümünü açın ve host ile paylaşın.',
+              es: 'Abre Edit Profile para encontrar tu Player ID y compártelo con el anfitrión.',
+              it: 'Apri Edit Profile per trovare il tuo Player ID e condividerlo con l’host.',
+              pl: 'Otwórz Edit Profile, aby znaleźć swój Player ID i udostępnić go hostowi.',
+              pt: 'Abra Edit Profile para encontrar seu Player ID e compartilhá-lo com o anfitrião.',
+              th: 'เปิด Edit Profile เพื่อดู Player ID ของคุณ แล้วส่งให้เจ้าของโต๊ะ',
+              id: 'Buka Edit Profile untuk melihat Player ID Anda lalu bagikan ke host.',
+              hi: 'अपना Player ID देखने के लिए Edit Profile खोलें और उसे होस्ट के साथ साझा करें।',
+              bn: 'আপনার Player ID দেখতে Edit Profile খুলুন এবং হোস্টকে পাঠান।',
             ),
-          ],
-        ),
+          ),
+
+          _helpCard(
+            context: context,
+            icon: Icons.table_bar_outlined,
+
+            title: tr(
+              context,
+              'How do players join a table?',
+              zhTw: '玩家怎麼加入牌桌？',
+              zhCn: '玩家怎么加入牌桌？',
+              ko: '플레이어는 어떻게 테이블에 참가하나요?',
+              ja: 'プレイヤーはどうやってテーブルに参加しますか？',
+              de: 'Wie tritt man einem Tisch bei?',
+              fr: 'Comment rejoindre une table ?',
+              ar: 'كيف ينضم اللاعب إلى الطاولة؟',
+              ru: 'Как игрок присоединяется к столу?',
+              trk: 'Oyuncular masaya nasıl katılır?',
+              es: '¿Cómo se unen los jugadores a una mesa?',
+              it: 'Come si uniscono i giocatori a un tavolo?',
+              pl: 'Jak gracze dołączają do stołu?',
+              pt: 'Como os jogadores entram em uma mesa?',
+              th: 'ผู้เล่นเข้าร่วมโต๊ะได้อย่างไร?',
+              id: 'Bagaimana pemain bergabung ke meja?',
+              hi: 'खिलाड़ी टेबल में कैसे शामिल होते हैं?',
+              bn: 'খেলোয়াড় কীভাবে টেবিলে যোগ দেয়?',
+            ),
+
+            body: tr(
+              context,
+              'After the host adds your Player ID, you can see that host’s tables, choose an open seat, or join the waiting list if the table is full.',
+              zhTw: '房主新增你的 Player ID 後，你就能看到他的牌桌。你可以選空位入座；如果滿桌，可以加入等待區。',
+              zhCn: '房主添加你的 Player ID 后，你就能看到他的牌桌。你可以选择空位入座；如果满桌，可以加入等待区。',
+              ko: '호스트가 Player ID를 추가하면 해당 호스트의 테이블을 볼 수 있으며 빈 자리에 앉거나 대기열에 참가할 수 있습니다.',
+              ja: 'ホストがPlayer IDを追加すると、そのホストのテーブルが表示され、空席に座るかウェイティングリストに参加できます。',
+              de: 'Nachdem der Host deine Player ID hinzugefügt hat, kannst du die Tische sehen, einen freien Platz wählen oder der Warteliste beitreten.',
+              fr: 'Une fois votre Player ID ajouté par l’hôte, vous pouvez voir ses tables, choisir une place libre ou rejoindre la liste d’attente.',
+              ar: 'بعد أن يضيف المضيف Player ID الخاص بك، يمكنك رؤية طاولاته واختيار مقعد فارغ أو الانضمام إلى قائمة الانتظار.',
+              ru: 'После добавления вашего Player ID хостом вы сможете видеть его столы, выбрать свободное место или встать в очередь ожидания.',
+              trk: 'Host Player ID’nizi ekledikten sonra masaları görebilir, boş koltuk seçebilir veya bekleme listesine katılabilirsiniz.',
+              es: 'Después de que el anfitrión agregue tu Player ID, podrás ver sus mesas, elegir un asiento vacío o unirte a la lista de espera.',
+              it: 'Dopo che l’host ha aggiunto il tuo Player ID, potrai vedere i suoi tavoli, scegliere un posto libero o unirti alla lista d’attesa.',
+              pl: 'Po dodaniu Twojego Player ID przez hosta możesz zobaczyć jego stoły, wybrać wolne miejsce lub dołączyć do listy oczekujących.',
+              pt: 'Depois que o anfitrião adicionar seu Player ID, você poderá ver suas mesas, escolher um assento vazio ou entrar na fila de espera.',
+              th: 'หลังจากเจ้าของโต๊ะเพิ่ม Player ID ของคุณแล้ว คุณจะเห็นโต๊ะของเขา เลือกที่นั่งว่าง หรือเข้าคิวรอได้',
+              id: 'Setelah host menambahkan Player ID Anda, Anda dapat melihat meja host, memilih kursi kosong, atau masuk waiting list jika meja penuh.',
+              hi: 'होस्ट द्वारा आपका Player ID जोड़ने के बाद आप उसकी टेबल देख सकते हैं, खाली सीट चुन सकते हैं या वेटिंग लिस्ट में शामिल हो सकते हैं।',
+              bn: 'হোস্ট আপনার Player ID যোগ করার পরে আপনি তার টেবিল দেখতে পারবেন, খালি সিট নিতে পারবেন অথবা ওয়েটিং লিস্টে যোগ দিতে পারবেন।',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -9713,6 +9917,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
     final isSelected = currentLanguage == code;
 
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       borderRadius: BorderRadius.circular(14),
       onTap: () async {
@@ -9727,16 +9934,25 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFFE8F5E9)
-              : Colors.grey.shade100,
+              ? (isDark
+                  ? const Color(0xFF14532D)
+                  : const Color(0xFFE8F5E9))
+              : (isDark
+                  ? const Color(0xFF0F172A)
+                  : Colors.grey.shade100),
+
           borderRadius: BorderRadius.circular(14),
+
           border: Border.all(
             color: isSelected
-                ? Colors.green
-                : Colors.grey.shade300,
+                ? const Color(0xFF22C55E)
+                : (isDark
+                    ? Colors.white12
+                    : Colors.grey.shade300),
             width: 2,
           ),
         ),
+
         child: Row(
           children: [
             Icon(
@@ -9744,10 +9960,14 @@ class _SettingsPageState extends State<SettingsPage> {
                   ? Icons.check_circle
                   : Icons.circle_outlined,
               color: isSelected
-                  ? Colors.green
-                  : Colors.grey,
+                  ? const Color(0xFF22C55E)
+                  : (isDark
+                      ? Colors.white54
+                      : Colors.grey),
             ),
+
             const SizedBox(width: 12),
+
             Expanded(
               child: Text(
                 label,
@@ -9756,6 +9976,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   fontWeight: isSelected
                       ? FontWeight.w700
                       : FontWeight.w500,
+                  color: isDark
+                      ? Colors.white
+                      : Colors.black87,
                 ),
               ),
             ),
@@ -10027,13 +10250,20 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     final languageCode =
         AppLanguageController.of(context).languageCode;
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        foregroundColor: Colors.black87,
+        backgroundColor:
+            isDark ? const Color(0xFF111827) : Colors.white,
+
+        surfaceTintColor:
+            isDark ? const Color(0xFF111827) : Colors.white,
+
+        foregroundColor:
+            isDark ? Colors.white : Colors.black87,
         elevation: 0,
         title: Text(
           tr(
@@ -12748,11 +12978,23 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   Future<void> _showGrantPlayerAccessDialog() async {
     if (!isHost) return;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
+    const primaryGreen = Color(0xFF22C55E);
+
     final controller = TextEditingController();
 
     final playerId = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+        ),
+
         title: Text(
           tr(
             context,
@@ -12775,14 +13017,18 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             hi: 'Player ID से खिलाड़ी जोड़ें',
             bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
           ),
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),
         ),
+
         content: TextField(
           controller: controller,
+          style: TextStyle(color: textColor),
           textCapitalization: TextCapitalization.characters,
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              RegExp(r'[A-Za-z0-9]'),
-            ),
+            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
             LengthLimitingTextInputFormatter(8),
             UpperCaseTextFormatter(),
           ],
@@ -12829,10 +13075,31 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               hi: '8 अक्षरों वाला Player ID दर्ज करें',
               bn: '৮ অক্ষরের Player ID লিখুন',
             ),
+            labelStyle: TextStyle(color: subTextColor),
+            hintStyle: TextStyle(color: subTextColor),
+            filled: true,
+            fillColor: fieldColor,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(
+                color: primaryGreen,
+                width: 1.5,
+              ),
+            ),
           ),
         ),
+
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+            ),
             onPressed: () => Navigator.pop(context),
             child: Text(
               tr(
@@ -12858,7 +13125,16 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
               ),
             ),
           ),
+
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: primaryGreen,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
             onPressed: () =>
                 Navigator.pop(context, controller.text.trim().toUpperCase()),
             child: Text(
@@ -13718,16 +13994,22 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     return showDialog<TableData>(
       context: context,
       builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: Text(
                 tr(
                   context,
                   'Create Table',
                   zhTw: '建立桌子',
                   zhCn: '创建桌子',
-                  ko: '테이블 생성',
+                  ko: '테이블 만들기',
                   ja: 'テーブル作成',
                   de: 'Tisch erstellen',
                   fr: 'Créer une table',
@@ -13739,9 +14021,13 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                   pl: 'Utwórz stół',
                   pt: 'Criar mesa',
                   th: 'สร้างโต๊ะ',
-                  id: 'Buat meja',
-                  hi: 'टेबल बनाएं',
+                  id: 'Buat Meja',
+                  hi: 'टेबल बनाएँ',
                   bn: 'টেবিল তৈরি করুন',
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               content: SingleChildScrollView(
@@ -13750,7 +14036,12 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                   children: [
                     TextField(
                       controller: tableNameController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
                         labelText: tr(
                           context,
                           'Table Name',
@@ -13764,13 +14055,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           ru: 'Название стола',
                           trk: 'Masa Adı',
                           es: 'Nombre de la mesa',
-                          it: 'Nome tavolo',
+                          it: 'Nome del tavolo',
                           pl: 'Nazwa stołu',
                           pt: 'Nome da mesa',
                           th: 'ชื่อโต๊ะ',
-                          id: 'Nama meja',
-                          hi: 'टेबल नाम',
+                          id: 'Nama Meja',
+                          hi: 'टेबल का नाम',
                           bn: 'টেবিলের নাম',
+                        ),
+                        labelStyle: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF22C55E),
+                            width: 1.5,
+                          ),
                         ),
                       ),
                     ),
@@ -13779,7 +14086,13 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
                     TextField(
                       controller: locationController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+
                         labelText: tr(
                           context,
                           'Location',
@@ -13801,6 +14114,25 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           hi: 'स्थान',
                           bn: 'অবস্থান',
                         ),
+
+                        labelStyle: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                          ),
+                        ),
+
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF22C55E),
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -13808,7 +14140,13 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
                     TextField(
                       controller: stakesController,
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+
                         labelText: tr(
                           context,
                           'Stakes',
@@ -13830,6 +14168,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           hi: 'ब्लाइंड',
                           bn: 'ব্লাইন্ড',
                         ),
+
                         hintText: tr(
                           context,
                           'ex: 1/3 NLH',
@@ -13851,6 +14190,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           hi: 'उदा: 1/3 NLH',
                           bn: 'যেমন: 1/3 NLH',
                         ),
+
+                        hintStyle: TextStyle(
+                          color: isDark ? Colors.white38 : Colors.black38,
+                        ),
+
+                        labelStyle: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                          ),
+                        ),
+
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF22C55E),
+                            width: 1.5,
+                          ),
+                        ),
                       ),
                     ),
 
@@ -13858,7 +14220,23 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
                     DropdownButtonFormField<int>(
                       initialValue: selectedSeatCount,
+
+                      dropdownColor:
+                          isDark ? const Color(0xFF1E293B) : Colors.white,
+
+                      style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w600,
+                      ),
+
+                      iconEnabledColor:
+                          isDark ? Colors.white70 : Colors.black54,
+
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor:
+                            isDark ? const Color(0xFF0F172A) : Colors.white,
+
                         labelText: tr(
                           context,
                           'Player Seats',
@@ -13880,7 +14258,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           hi: 'प्लेयर सीट्स',
                           bn: 'প্লেয়ার সিট',
                         ),
+
+                        labelStyle: TextStyle(
+                          color:
+                              isDark ? Colors.white70 : Colors.black54,
+                        ),
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: BorderSide(
+                            color:
+                                isDark ? Colors.white24 : Colors.black12,
+                          ),
+                        ),
+
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF22C55E),
+                            width: 1.5,
+                          ),
+                        ),
                       ),
+
                       items: [
                         DropdownMenuItem(
                           value: 9,
@@ -13890,24 +14290,14 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                               '9 Players',
                               zhTw: '9人桌',
                               zhCn: '9人桌',
-                              ko: '9인 테이블',
-                              ja: '9人テーブル',
-                              de: '9 Spieler',
-                              fr: '9 joueurs',
-                              ar: '9 لاعبين',
-                              ru: '9 игроков',
-                              trk: '9 Oyuncu',
-                              es: '9 jugadores',
-                              it: '9 giocatori',
-                              pl: '9 graczy',
-                              pt: '9 jogadores',
-                              th: 'ผู้เล่น 9 คน',
-                              id: '9 pemain',
-                              hi: '9 खिलाड़ी',
-                              bn: '9 জন খেলোয়াড়',
+                            ),
+                            style: TextStyle(
+                              color:
+                                  isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                         ),
+
                         DropdownMenuItem(
                           value: 10,
                           child: Text(
@@ -13916,25 +14306,15 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                               '10 Players',
                               zhTw: '10人桌',
                               zhCn: '10人桌',
-                              ko: '10인 테이블',
-                              ja: '10人テーブル',
-                              de: '10 Spieler',
-                              fr: '10 joueurs',
-                              ar: '10 لاعبين',
-                              ru: '10 игроков',
-                              trk: '10 Oyuncu',
-                              es: '10 jugadores',
-                              it: '10 giocatori',
-                              pl: '10 graczy',
-                              pt: '10 jogadores',
-                              th: 'ผู้เล่น 10 คน',
-                              id: '10 pemain',
-                              hi: '10 खिलाड़ी',
-                              bn: '10 জন খেলোয়াড়',
+                            ),
+                            style: TextStyle(
+                              color:
+                                  isDark ? Colors.white : Colors.black87,
                             ),
                           ),
                         ),
                       ],
+
                       onChanged: (value) {
                         if (value != null) {
                           setDialogState(() {
@@ -13966,24 +14346,54 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           pl: 'Data i godzina',
                           pt: 'Data e hora',
                           th: 'วันที่และเวลา',
-                          id: 'Tanggal & waktu',
+                          id: 'Tanggal & Waktu',
                           hi: 'तारीख और समय',
                           bn: 'তারিখ ও সময়',
+                        ),
+                        style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       subtitle: Text(
                         '${selectedDateTime.year}/${selectedDateTime.month}/${selectedDateTime.day} '
                         '${selectedDateTime.hour}:${selectedDateTime.minute.toString().padLeft(2, '0')}',
+                        style: TextStyle(
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
                       ),
-                      trailing: const Icon(Icons.calendar_today),
+                      trailing: Icon(
+                        Icons.calendar_today,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
                       onTap: () async {
                         final pickedDate = await showDatePicker(
                           context: context,
                           initialDate: selectedDateTime,
-                          firstDate:
-                              DateTime.now().subtract(const Duration(days: 365)),
-                          lastDate:
-                              DateTime.now().add(const Duration(days: 3650)),
+                          firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                          lastDate: DateTime.now().add(const Duration(days: 3650)),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: isDark
+                                    ? const ColorScheme.dark(
+                                        primary: Color(0xFF22C55E),
+                                        surface: Color(0xFF1E293B),
+                                        onSurface: Colors.white,
+                                      )
+                                    : const ColorScheme.light(
+                                        primary: Color(0xFF2E7D32),
+                                        surface: Colors.white,
+                                        onSurface: Colors.black87,
+                                      ),
+                                dialogTheme: DialogThemeData(
+                                  backgroundColor:
+                                      isDark ? const Color(0xFF1E293B) : Colors.white,
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
                         );
 
                         if (!context.mounted) return;
@@ -13992,6 +14402,28 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         final pickedTime = await showTimePicker(
                           context: context,
                           initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                          builder: (context, child) {
+                            return Theme(
+                              data: Theme.of(context).copyWith(
+                                colorScheme: isDark
+                                    ? const ColorScheme.dark(
+                                        primary: Color(0xFF22C55E),
+                                        surface: Color(0xFF1E293B),
+                                        onSurface: Colors.white,
+                                      )
+                                    : const ColorScheme.light(
+                                        primary: Color(0xFF2E7D32),
+                                        surface: Colors.white,
+                                        onSurface: Colors.black87,
+                                      ),
+                                dialogTheme: DialogThemeData(
+                                  backgroundColor:
+                                      isDark ? const Color(0xFF1E293B) : Colors.white,
+                                ),
+                              ),
+                              child: child!,
+                            );
+                          },
                         );
 
                         if (!context.mounted) return;
@@ -14669,360 +15101,368 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 
   Widget _buildProfileMenu() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.only(right: 12),
-      child: forceLightTheme(
-        PopupMenuButton<String>(
-          offset: const Offset(0, 50),
-          color: Colors.white,
-          surfaceTintColor: Colors.white,
-          iconColor: Colors.black,          
-          onSelected: (value) async {
-            if (value == 'edit_profile') {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => ProfileEditPage(
-                    session: widget.session,
-                  ),
-                ),
-              );
-
-              if (result == true && mounted) {
-                final user = FirebaseAuth.instance.currentUser;
-
-                if (user != null) {
-                  final doc = await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user.uid)
-                      .get();
-
-                  final data = doc.data() ?? {};
-
-                  final newName =
-                      (data['displayName'] ?? widget.session.name).toString();
-
-                  final newShortName =
-                      (data['shortName'] ?? newName).toString();
-
-                  final newSession = UserSession(
-                    name: newName,
-                    shortName: newShortName,
-                    role: widget.session.role,
-                    hasCompletedTutorial: widget.session.hasCompletedTutorial,
-                  );
-
-                  currentAppSession = newSession;
-
-                  if (!mounted) return;
-
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => TableListPage(
-                        session: newSession,
-                      ),
-                    ),
-                  );
-                }
-              }
-
-            } else if (value == 'help') {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const HelpPage(),
-                ),
-              );
-
-            } else if (value == 'settings') {
-              await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SettingsPage(
-                    session: widget.session,
-                  ),
-                ),
-              );
-
-              if (mounted) {
-                setState(() {});
-              }
-
-            } else if (value == 'grant_player_access') {
-              await _showGrantPlayerAccessDialog();
-
-            } else if (value == 'logout') {
-              _logout();
-            }
-          },
-
-          itemBuilder: (context) => [
-            PopupMenuItem<String>(
-              value: 'user',
-              enabled: false,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.session.shortName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    FirebaseAuth.instance.currentUser?.email ?? '',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.black54,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const PopupMenuDivider(),
-
-            PopupMenuItem<String>(
-              value: 'edit_profile',
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.edit_outlined,
-                    size: 18,
-                    color: Colors.black,
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  Text(
-                    tr(
-                      context,
-                      'Edit Profile',
-                      zhTw: '編輯個人資料',
-                      zhCn: '编辑个人资料',
-                      ko: '프로필 수정',
-                      ja: 'プロフィール編集',
-                      de: 'Profil bearbeiten',
-                      fr: 'Modifier le profil',
-                      ar: 'تعديل الملف الشخصي',
-                      ru: 'Редактировать профиль',
-                      trk: 'Profili Düzenle',
-                      es: 'Editar perfil',
-                      it: 'Modifica profilo',
-                      pl: 'Edytuj profil',
-                      pt: 'Editar perfil',
-                      th: 'แก้ไขโปรไฟล์',
-                      id: 'Edit profil',
-                      hi: 'प्रोफ़ाइल संपादित करें',
-                      bn: 'প্রোফাইল সম্পাদনা',
-                    ),
-                    style: const TextStyle(
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            if (isHost)
-              PopupMenuItem<String>(
-                value: 'grant_player_access',
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.badge_outlined,
-                      size: 18,
-                      color: Colors.black,
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    Text(
-                      tr(
-                        context,
-                        'Add Player by ID',
-                        zhTw: '用玩家 ID 新增玩家',
-                        zhCn: '用玩家 ID 添加玩家',
-                        ko: '플레이어 ID로 추가',
-                        ja: 'プレイヤーIDで追加',
-                        de: 'Spieler per ID hinzufügen',
-                        fr: 'Ajouter un joueur par ID',
-                        ar: 'إضافة لاعب باستخدام المعرّف',
-                        ru: 'Добавить игрока по ID',
-                        trk: 'Oyuncu ID ile ekle',
-                        es: 'Agregar jugador por ID',
-                        it: 'Aggiungi giocatore tramite ID',
-                        pl: 'Dodaj gracza przez ID',
-                        pt: 'Adicionar jogador por ID',
-                        th: 'เพิ่มผู้เล่นด้วย ID',
-                        id: 'Tambah pemain dengan ID',
-                        hi: 'Player ID से खिलाड़ी जोड़ें',
-                        bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
-                      ),
-                      style: const TextStyle(
-                        color: Colors.black,
-                      ),
-                    ),
-                  ],
+ 
+      child: PopupMenuButton<String>(
+        offset: const Offset(0, 50),
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        iconColor: isDark ? Colors.white : Colors.black87,       
+        onSelected: (value) async {
+          if (value == 'edit_profile') {
+            final result = await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ProfileEditPage(
+                  session: widget.session,
                 ),
               ),
+            );
 
-            PopupMenuItem<String>(
-              value: 'settings',
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.settings,
-                    size: 18,
-                    color: Colors.black,
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  Text(
-                    tr(
-                      context,
-                      'Settings',
-                      zhTw: '設定',
-                      zhCn: '设置',
-                      ko: '설정',
-                      ja: '設定',
-                      de: 'Einstellungen',
-                      fr: 'Paramètres',
-                      ar: 'الإعدادات',
-                      ru: 'Настройки',
-                      trk: 'Ayarlar',
-                      es: 'Configuración',
-                      it: 'Impostazioni',
-                      pl: 'Ustawienia',
-                      pt: 'Configurações',
-                      th: 'ตั้งค่า',
-                      id: 'Pengaturan',
-                      hi: 'सेटिंग्स',
-                      bn: 'সেটিংস',
-                    ),
-                    style: const TextStyle(
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            PopupMenuItem<String>(
-              value: 'logout',
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.logout,
-                    size: 18,
-                    color: Colors.black,
-                  ),
-
-                  const SizedBox(width: 8),
-
-                  Text(
-                    tr(
-                      context,
-                      'Logout',
-                      zhTw: '登出',
-                      zhCn: '登出',
-                      ko: '로그아웃',
-                      ja: 'ログアウト',
-                      de: 'Abmelden',
-                      fr: 'Déconnexion',
-                      ar: 'تسجيل الخروج',
-                      ru: 'Выйти',
-                      trk: 'Çıkış Yap',
-                      es: 'Cerrar sesión',
-                      it: 'Disconnetti',
-                      pl: 'Wyloguj',
-                      pt: 'Sair',
-                      th: 'ออกจากระบบ',
-                      id: 'Keluar',
-                      hi: 'लॉगआउट',
-                      bn: 'লগআউট',
-                    ),
-                    style: const TextStyle(
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          child: Builder(
-            builder: (context) {
+            if (result == true && mounted) {
               final user = FirebaseAuth.instance.currentUser;
-              final displayName = widget.session.shortName;
 
-              return Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
+              if (user != null) {
+                final doc = await FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(user.uid)
+                    .get();
+
+                final data = doc.data() ?? {};
+
+                final newName =
+                    (data['displayName'] ?? widget.session.name).toString();
+
+                final newShortName =
+                    (data['shortName'] ?? newName).toString();
+
+                final newSession = UserSession(
+                  name: newName,
+                  shortName: newShortName,
+                  role: widget.session.role,
+                  hasCompletedTutorial: widget.session.hasCompletedTutorial,
+                );
+
+                currentAppSession = newSession;
+
+                if (!mounted) return;
+
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (_) => TableListPage(
+                      session: newSession,
+                    ),
+                  ),
+                );
+              }
+            }
+
+          } else if (value == 'help') {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const HelpPage(),
+              ),
+            );
+
+          } else if (value == 'settings') {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SettingsPage(
+                  session: widget.session,
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: Colors.black12,
+              ),
+            );
+
+            if (mounted) {
+              setState(() {});
+            }
+
+          } else if (value == 'grant_player_access') {
+            await _showGrantPlayerAccessDialog();
+
+          } else if (value == 'logout') {
+            _logout();
+          }
+        },
+
+        itemBuilder: (context) => [
+          PopupMenuItem<String>(
+            value: 'user',
+            enabled: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.session.shortName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                      future: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(user?.uid)
-                          .get(),
-                      builder: (context, snapshot) {
-                        final data = snapshot.data?.data() ?? {};
-
-                        return buildAppAvatar(
-                          radius: 16,
-                          avatar: resolveAvatarSnapshotFromMap({
-                            'photoUrl':
-                                (data['photoUrl'] ?? user?.photoURL)
-                                    ?.toString(),
-                            'avatarType': data['avatarType'],
-                            'avatarIcon': data['avatarIcon'],
-                            'avatarBgColor': data['avatarBgColor'],
-                          }),
-                          displayName: displayName,
-                          iconSize: 16,
-                          textSize: 12,
-                        );
-                      },
-                    ),
-
-                    const SizedBox(width: 8),
-
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxWidth: 120,
-                      ),
-                      child: Text(
-                        displayName,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 4),
-
-                    const Icon(
-                      Icons.arrow_drop_down,
-                      color: Colors.black,
-                    ),
-                  ],
+                const SizedBox(height: 4),
+                Text(
+                  FirebaseAuth.instance.currentUser?.email ?? '',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
                 ),
-              );
-            },
+              ],
+            ),
           ),
+
+          const PopupMenuDivider(),
+
+          PopupMenuItem<String>(
+            value: 'edit_profile',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+
+                const SizedBox(width: 8),
+
+                Text(
+                  tr(
+                    context,
+                    'Edit Profile',
+                    zhTw: '編輯個人資料',
+                    zhCn: '编辑个人资料',
+                    ko: '프로필 수정',
+                    ja: 'プロフィール編集',
+                    de: 'Profil bearbeiten',
+                    fr: 'Modifier le profil',
+                    ar: 'تعديل الملف الشخصي',
+                    ru: 'Редактировать профиль',
+                    trk: 'Profili Düzenle',
+                    es: 'Editar perfil',
+                    it: 'Modifica profilo',
+                    pl: 'Edytuj profil',
+                    pt: 'Editar perfil',
+                    th: 'แก้ไขโปรไฟล์',
+                    id: 'Edit profil',
+                    hi: 'प्रोफ़ाइल संपादित करें',
+                    bn: 'প্রোফাইল সম্পাদনা',
+                  ),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          if (isHost)
+            PopupMenuItem<String>(
+              value: 'grant_player_access',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.badge_outlined,
+                    size: 18,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Text(
+                    tr(
+                      context,
+                      'Add Player by ID',
+                      zhTw: '用玩家 ID 新增玩家',
+                      zhCn: '用玩家 ID 添加玩家',
+                      ko: '플레이어 ID로 추가',
+                      ja: 'プレイヤーIDで追加',
+                      de: 'Spieler per ID hinzufügen',
+                      fr: 'Ajouter un joueur par ID',
+                      ar: 'إضافة لاعب باستخدام المعرّف',
+                      ru: 'Добавить игрока по ID',
+                      trk: 'Oyuncu ID ile ekle',
+                      es: 'Agregar jugador por ID',
+                      it: 'Aggiungi giocatore tramite ID',
+                      pl: 'Dodaj gracza przez ID',
+                      pt: 'Adicionar jogador por ID',
+                      th: 'เพิ่มผู้เล่นด้วย ID',
+                      id: 'Tambah pemain dengan ID',
+                      hi: 'Player ID से खिलाड़ी जोड़ें',
+                      bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
+                    ),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          PopupMenuItem<String>(
+            value: 'settings',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.settings,
+                  size: 18,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+
+                const SizedBox(width: 8),
+
+                Text(
+                  tr(
+                    context,
+                    'Settings',
+                    zhTw: '設定',
+                    zhCn: '设置',
+                    ko: '설정',
+                    ja: '設定',
+                    de: 'Einstellungen',
+                    fr: 'Paramètres',
+                    ar: 'الإعدادات',
+                    ru: 'Настройки',
+                    trk: 'Ayarlar',
+                    es: 'Configuración',
+                    it: 'Impostazioni',
+                    pl: 'Ustawienia',
+                    pt: 'Configurações',
+                    th: 'ตั้งค่า',
+                    id: 'Pengaturan',
+                    hi: 'सेटिंग्स',
+                    bn: 'সেটিংস',
+                  ),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          PopupMenuItem<String>(
+            value: 'logout',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.logout,
+                  size: 18,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+
+                const SizedBox(width: 8),
+
+                Text(
+                  tr(
+                    context,
+                    'Logout',
+                    zhTw: '登出',
+                    zhCn: '登出',
+                    ko: '로그아웃',
+                    ja: 'ログアウト',
+                    de: 'Abmelden',
+                    fr: 'Déconnexion',
+                    ar: 'تسجيل الخروج',
+                    ru: 'Выйти',
+                    trk: 'Çıkış Yap',
+                    es: 'Cerrar sesión',
+                    it: 'Disconnetti',
+                    pl: 'Wyloguj',
+                    pt: 'Sair',
+                    th: 'ออกจากระบบ',
+                    id: 'Keluar',
+                    hi: 'लॉगआउट',
+                    bn: 'লগআউট',
+                  ),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        child: Builder(
+          builder: (context) {
+            final user = FirebaseAuth.instance.currentUser;
+            final displayName = widget.session.shortName;
+
+            return Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color:
+                    isDark
+                        ? const Color(0xFF1E293B)
+                        : Colors.white,
+
+                borderRadius: BorderRadius.circular(999),
+
+                border: Border.all(
+                  color:
+                      isDark
+                          ? Colors.white10
+                          : Colors.black12,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                    future: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user?.uid)
+                        .get(),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data?.data() ?? {};
+
+                      return buildAppAvatar(
+                        radius: 16,
+                        avatar: resolveAvatarSnapshotFromMap({
+                          'photoUrl':
+                              (data['photoUrl'] ?? user?.photoURL)
+                                  ?.toString(),
+                          'avatarType': data['avatarType'],
+                          'avatarIcon': data['avatarIcon'],
+                          'avatarBgColor': data['avatarBgColor'],
+                        }),
+                        displayName: displayName,
+                        iconSize: 16,
+                        textSize: 12,
+                      );
+                    },
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 120,
+                    ),
+                    child: Text(
+                      displayName,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white : Colors.black,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 4),
+
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: isDark ? Colors.white70 : Colors.black,
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -15034,23 +15474,35 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     required Color color,
     Color? backgroundColor,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final chipBg = backgroundColor ??
+        (isDark
+            ? color.withValues(alpha: 0.18)
+            : color.withValues(alpha: 0.10));
+
+    final chipBorder =
+        isDark ? color.withValues(alpha: 0.45) : color.withValues(alpha: 0.25);
+
+    final chipTextColor = isDark ? color.withValues(alpha: 0.95) : color;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: backgroundColor ?? color.withValues(alpha: 0.10),
+        color: chipBg,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha:0.25)),
+        border: Border.all(color: chipBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 15, color: color),
+          Icon(icon, size: 15, color: chipTextColor),
           const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
+              color: chipTextColor,
+              fontWeight: FontWeight.w800,
               fontSize: 13,
             ),
           ),
@@ -15066,27 +15518,30 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 
   Widget _buildTableCard({
+    
     required BuildContext context,
     required String tableId,
     required TableData table,
     required int index,
   }) {
     final bool isMyTable = _canManageTable(table);
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final takenCount = table.seats.where((seat) => !seat.isOpen).length;
     final openCount = table.playerSeatCount - takenCount;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: const [
+        border: Border.all(
+          color: isDark ? Colors.white10 : const Color(0xFFE5E7EB),
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x12000000),
+            color: isDark ? Colors.black26 : const Color(0x12000000),
             blurRadius: 12,
-            offset: Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -15133,10 +15588,10 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                         children: [
                           Text(
                             table.name,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFF111827),
+                              color: isDark ? Colors.white : const Color(0xFF111827),
                             ),
                           ),
 
@@ -15182,7 +15637,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                   hi: '${table.playerSeatCount} सीटें',
                                   bn: '${table.playerSeatCount} সিট',
                                 ),
-                                color: Colors.black87,
+                                color: isDark ? Colors.white70 : Colors.black87,
                               ),
 
                               _buildStatChip(
@@ -15292,8 +15747,8 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                     hi: 'डीलर: सेट नहीं',
                                     bn: 'ডিলার: সেট করা হয়নি',
                                   ),
-                            style: const TextStyle(
-                              color: Colors.black54,
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : Colors.black54,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -15338,7 +15793,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                             final value = await showMenu<String>(
                               context: menuContext,
                               position: position,
-                              color: Colors.white,
+                              color: isDark ? const Color(0xFF263445) : Colors.white,
                               items: [
                                 PopupMenuItem<String>(
                                   value: 'open',
@@ -15364,7 +15819,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                       hi: 'टेबल खोलें',
                                       bn: 'টেবিল খুলুন',
                                     ),
-                                    style: const TextStyle(color: Colors.black87),
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
                                   ),
                                 ),
                                 if (isMyTable || isSuperAdmin)
@@ -15392,7 +15849,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                         hi: 'टेबल संपादित करें',
                                         bn: 'টেবিল সম্পাদনা',
                                       ),
-                                      style: const TextStyle(color: Colors.black87),
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
                                     ),
                                   ),
                                 if (isMyTable || isSuperAdmin)
@@ -15420,7 +15879,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                         hi: 'टेबल हटाएं',
                                         bn: 'টেবিল মুছুন',
                                       ),
-                                      style: const TextStyle(color: Colors.black87),
+                                      style: TextStyle(
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
                                     ),
                                   ),
                               ],
@@ -15441,21 +15902,24 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.more_vert,
                               size: 24,
-                              color: Colors.black87, 
+                              color: isDark ? Colors.white70 : Colors.black87,
                             ),
                           ),
                         ),
                       );
                     },
                   )
-                : const SizedBox(
+                : SizedBox(
                     width: 48,
                     height: 48,
                     child: Center(
-                      child: Icon(Icons.chevron_right),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
                     ),
                   ),
           ],
@@ -15465,29 +15929,33 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Center(
       child: Container(
         margin: const EdgeInsets.all(24),
         padding: const EdgeInsets.all(28),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? const Color(0xFF1E293B) : Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: const [
+          border: Border.all(
+            color: isDark ? Colors.white10 : const Color(0xFFE5E7EB),
+          ),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x12000000),
+              color: isDark ? Colors.black26 : const Color(0x12000000),
               blurRadius: 12,
-              offset: Offset(0, 5),
+              offset: const Offset(0, 5),
             ),
           ],
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.table_restaurant,
               size: 72,
-              color: Colors.black38,
+              color: isDark ? Colors.white38 : Colors.black38,
             ),
 
             const SizedBox(height: 14),
@@ -15503,20 +15971,21 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                 de: 'Noch keine Tische',
                 fr: 'Aucune table pour le moment',
                 ar: 'لا توجد طاولات بعد',
-                ru: 'Столов пока нет',
+                ru: 'Пока нет столов',
                 trk: 'Henüz masa yok',
                 es: 'Aún no hay mesas',
-                it: 'Ancora nessun tavolo',
-                pl: 'Nie ma jeszcze stołów',
+                it: 'Nessun tavolo al momento',
+                pl: 'Brak stołów',
                 pt: 'Ainda não há mesas',
                 th: 'ยังไม่มีโต๊ะ',
                 id: 'Belum ada meja',
-                hi: 'अभी कोई टेबल नहीं है',
+                hi: 'अभी तक कोई टेबल नहीं है',
                 bn: 'এখনও কোনো টেবিল নেই',
               ),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
+                color: isDark ? Colors.white : Colors.black87,
               ),
             ),
 
@@ -15530,39 +15999,39 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                           'Tap the Add Table button to create your first poker table.',
                           zhTw: '點擊新增桌子按鈕來建立你的第一張撲克牌桌。',
                           zhCn: '点击添加桌子按钮来创建你的第一张扑克桌。',
-                          ko: '테이블 추가 버튼을 눌러 첫 포커 테이블을 만드세요.',
-                          ja: '「テーブル追加」ボタンをタップして、最初のポーカーテーブルを作成してください。',
-                          de: 'Tippe auf „Tisch hinzufügen“, um deinen ersten Pokertisch zu erstellen.',
+                          ko: '첫 번째 포커 테이블을 만들려면 테이블 추가 버튼을 누르세요.',
+                          ja: '「テーブル追加」ボタンを押して最初のポーカーテーブルを作成してください。',
+                          de: 'Tippe auf die Schaltfläche „Tisch hinzufügen“, um deinen ersten Pokertisch zu erstellen.',
                           fr: 'Appuyez sur le bouton Ajouter une table pour créer votre première table de poker.',
-                          ar: 'اضغط على زر إضافة طاولة لإنشاء أول طاولة بوكر لك.',
-                          ru: 'Нажмите кнопку добавления стола, чтобы создать свой первый покерный стол.',
+                          ar: 'اضغط على زر إضافة طاولة لإنشاء أول طاولة بوكر خاصة بك.',
+                          ru: 'Нажмите кнопку «Добавить стол», чтобы создать свой первый покерный стол.',
                           trk: 'İlk poker masanızı oluşturmak için Masa Ekle düğmesine dokunun.',
-                          es: 'Toca el botón Agregar mesa para crear tu primera mesa de póker.',
+                          es: 'Pulsa el botón Agregar mesa para crear tu primera mesa de póker.',
                           it: 'Tocca il pulsante Aggiungi tavolo per creare il tuo primo tavolo da poker.',
-                          pl: 'Stuknij przycisk Dodaj stół, aby utworzyć pierwszy stół pokerowy.',
-                          pt: 'Toque no botão Adicionar mesa para criar sua primeira mesa de pôquer.',
+                          pl: 'Naciśnij przycisk Dodaj stół, aby utworzyć swój pierwszy stół pokerowy.',
+                          pt: 'Toque no botão Adicionar Mesa para criar sua primeira mesa de pôquer.',
                           th: 'แตะปุ่มเพิ่มโต๊ะเพื่อสร้างโต๊ะโป๊กเกอร์แรกของคุณ',
-                          id: 'Ketuk tombol Tambah Meja untuk membuat meja poker pertama Anda.',
+                          id: 'Tekan tombol Tambah Meja untuk membuat meja poker pertama Anda.',
                           hi: 'अपनी पहली पोकर टेबल बनाने के लिए Add Table बटन दबाएँ।',
-                          bn: 'আপনার প্রথম পোকার টেবিল তৈরি করতে Add Table বোতামে চাপুন।',
+                          bn: 'আপনার প্রথম পোকার টেবিল তৈরি করতে Add Table বোতাম চাপুন।',
                         )
                       : tr(
                           context,
                           'Update payment to create a new table. You can still open and edit your existing tables.',
                           zhTw: '請更新付款才能建立新桌子。你仍然可以開啟並編輯現有桌子。',
                           zhCn: '请更新付款才能创建新桌子。你仍然可以打开并编辑现有桌子。',
-                          ko: '새 테이블을 만들려면 결제를 업데이트하세요. 기존 테이블은 계속 열고 수정할 수 있습니다.',
+                          ko: '새 테이블을 만들려면 결제를 업데이트하세요. 기존 테이블은 계속 열고 편집할 수 있습니다.',
                           ja: '新しいテーブルを作成するには支払いを更新してください。既存のテーブルは引き続き開いて編集できます。',
-                          de: 'Aktualisiere die Zahlung, um einen neuen Tisch zu erstellen. Bestehende Tische kannst du weiterhin öffnen und bearbeiten.',
+                          de: 'Aktualisiere die Zahlung, um einen neuen Tisch zu erstellen. Du kannst bestehende Tische weiterhin öffnen und bearbeiten.',
                           fr: 'Mettez à jour le paiement pour créer une nouvelle table. Vous pouvez toujours ouvrir et modifier vos tables existantes.',
-                          ar: 'حدّث الدفع لإنشاء طاولة جديدة. لا يزال بإمكانك فتح وتعديل طاولاتك الحالية.',
-                          ru: 'Обновите оплату, чтобы создать новый стол. Вы всё ещё можете открывать и редактировать существующие столы.',
-                          trk: 'Yeni bir masa oluşturmak için ödemeyi güncelleyin. Mevcut masalarınızı hâlâ açıp düzenleyebilirsiniz.',
+                          ar: 'قم بتحديث الدفع لإنشاء طاولة جديدة. لا يزال بإمكانك فتح وتعديل طاولاتك الحالية.',
+                          ru: 'Обновите оплату, чтобы создать новый стол. Вы по-прежнему можете открывать и редактировать существующие столы.',
+                          trk: 'Yeni bir masa oluşturmak için ödemenizi güncelleyin. Mevcut masalarınızı açıp düzenlemeye devam edebilirsiniz.',
                           es: 'Actualiza el pago para crear una nueva mesa. Aún puedes abrir y editar tus mesas existentes.',
-                          it: 'Aggiorna il pagamento per creare un nuovo tavolo. Puoi ancora aprire e modificare i tavoli esistenti.',
+                          it: 'Aggiorna il pagamento per creare un nuovo tavolo. Puoi comunque aprire e modificare i tavoli esistenti.',
                           pl: 'Zaktualizuj płatność, aby utworzyć nowy stół. Nadal możesz otwierać i edytować istniejące stoły.',
                           pt: 'Atualize o pagamento para criar uma nova mesa. Você ainda pode abrir e editar suas mesas existentes.',
-                          th: 'โปรดอัปเดตการชำระเงินเพื่อสร้างโต๊ะใหม่ คุณยังสามารถเปิดและแก้ไขโต๊ะเดิมได้',
+                          th: 'อัปเดตการชำระเงินเพื่อสร้างโต๊ะใหม่ คุณยังสามารถเปิดและแก้ไขโต๊ะเดิมได้',
                           id: 'Perbarui pembayaran untuk membuat meja baru. Anda masih dapat membuka dan mengedit meja yang sudah ada.',
                           hi: 'नई टेबल बनाने के लिए भुगतान अपडेट करें। आप अभी भी अपनी मौजूदा टेबल खोल और संपादित कर सकते हैं।',
                           bn: 'নতুন টেবিল তৈরি করতে পেমেন্ট আপডেট করুন। আপনি এখনও আপনার বর্তমান টেবিল খুলতে এবং সম্পাদনা করতে পারবেন।',
@@ -15572,25 +16041,25 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                       'No tables are available right now.',
                       zhTw: '目前沒有可用的桌子。',
                       zhCn: '目前没有可用的桌子。',
-                      ko: '현재 이용 가능한 테이블이 없습니다.',
-                      ja: '現在利用できるテーブルはありません。',
+                      ko: '현재 사용 가능한 테이블이 없습니다.',
+                      ja: '現在利用可能なテーブルはありません。',
                       de: 'Derzeit sind keine Tische verfügbar.',
                       fr: 'Aucune table n’est disponible pour le moment.',
                       ar: 'لا توجد طاولات متاحة حالياً.',
                       ru: 'Сейчас нет доступных столов.',
-                      trk: 'Şu anda uygun masa yok.',
+                      trk: 'Şu anda kullanılabilir masa yok.',
                       es: 'No hay mesas disponibles en este momento.',
                       it: 'Al momento non ci sono tavoli disponibili.',
-                      pl: 'Obecnie nie ma dostępnych stołów.',
+                      pl: 'Obecnie brak dostępnych stołów.',
                       pt: 'Não há mesas disponíveis no momento.',
-                      th: 'ขณะนี้ไม่มีโต๊ะที่พร้อมใช้งาน',
+                      th: 'ขณะนี้ไม่มีโต๊ะว่าง',
                       id: 'Tidak ada meja yang tersedia saat ini.',
                       hi: 'अभी कोई टेबल उपलब्ध नहीं है।',
                       bn: 'এই মুহূর্তে কোনো টেবিল উপলব্ধ নেই।',
                     ),
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.black54,
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
                 height: 1.45,
               ),
             ),
@@ -15602,6 +16071,9 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0B1020) : const Color(0xFFF2F2F7);
+    final textColor = isDark ? Colors.white : Colors.black87;
     final roleText = isHost
         ? tr(
             context,
@@ -15647,10 +16119,12 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           );
 
     return Scaffold(
+      backgroundColor: bgColor,
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
         elevation: 0,
         centerTitle: true,
         title: Text(
@@ -16215,6 +16689,7 @@ class FriendsNotificationButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (currentUid.isEmpty) {
       return IconButton(
@@ -16240,7 +16715,10 @@ class FriendsNotificationButton extends StatelessWidget {
           hi: 'दोस्त और चैट',
           bn: 'বন্ধু ও চ্যাট',
         ),
-        icon: const Icon(Icons.people_alt_outlined),
+        icon: Icon(
+          Icons.people_alt_outlined,
+          color: isDark ? Colors.white : Colors.black87,
+        ),
       );
     }
 
@@ -16316,7 +16794,10 @@ class FriendsNotificationButton extends StatelessWidget {
                         hi: 'दोस्त और चैट',
                         bn: 'বন্ধু ও চ্যাট',
                       ),
-                      icon: const Icon(Icons.people_alt_outlined),
+                      icon: Icon(
+                        Icons.people_alt_outlined,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
                     ),
                     if (totalBadgeCount > 0)
                       Positioned(
@@ -16598,11 +17079,23 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                 bn: 'এই বন্ধুকে',
               );
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),            
             tr(
               context,
               'Delete friend',
@@ -16626,6 +17119,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
             ),
           ),
           content: Text(
+            style: TextStyle(
+              color: subTextColor,
+            ),            
             tr(
               context,
               'Remove $otherName from your friend list?',
@@ -16650,6 +17146,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context, false),
               child: Text(
                 tr(
@@ -16676,6 +17175,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 tr(
@@ -16822,11 +17325,23 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                 bn: 'এই ব্যবহারকারীকে',
               );
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),            
             tr(
               context,
               'Add to blacklist',
@@ -16850,6 +17365,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
             ),
           ),
           content: Text(
+            style: TextStyle(
+              color: subTextColor,
+            ),            
             tr(
               context,
               'Block $otherName? After blocking, this user will not appear in search.',
@@ -16874,6 +17392,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context, false),
               child: Text(
                 tr(
@@ -16900,6 +17421,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 tr(
@@ -16971,11 +17496,23 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null) return;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),            
             tr(
               context,
               'Remove from blacklist',
@@ -16999,6 +17536,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
             ),
           ),
           content: Text(
+            style: TextStyle(
+              color: subTextColor,
+            ),            
             tr(
               context,
               'Remove ${user.displayName} from blacklist?',
@@ -17023,6 +17563,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context, false),
               child: Text(
                 tr(
@@ -17049,6 +17592,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 tr(
@@ -17127,11 +17674,23 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
     final controller = TextEditingController(text: initialNickname);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
     final saved = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),            
             tr(
               context,
               'Edit friend name',
@@ -17156,7 +17715,12 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
           ),
           content: TextField(
             controller: controller,
+            style: TextStyle(color: textColor),
             decoration: InputDecoration(
+              filled: true,
+              fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB),
+              labelStyle: TextStyle(color: subTextColor),
+              hintStyle: TextStyle(color: subTextColor),
               labelText: tr(
                 context,
                 'Nickname',
@@ -17203,6 +17767,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context, false),
               child: Text(
                 tr(
@@ -17229,6 +17796,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 tr(
@@ -17392,195 +17963,202 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
   }
 
   Widget _buildSearchCard() {
-    return forceLightTheme(
-      Card(
-        color: Colors.white,
-        surfaceTintColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              TextField(
-                controller: searchController,
-                style: const TextStyle(color: Colors.black87),
-                decoration: InputDecoration(
-                  labelText: tr(
-                    context,
-                    'Search player',
-                    zhTw: '搜尋玩家',
-                    zhCn: '搜索玩家',
-                    ko: '플레이어 검색',
-                    ja: 'プレイヤー検索',
-                    de: 'Spieler suchen',
-                    fr: 'Rechercher un joueur',
-                    ar: 'البحث عن لاعب',
-                    ru: 'Поиск игрока',
-                    trk: 'Oyuncu ara',
-                    es: 'Buscar jugador',
-                    it: 'Cerca giocatore',
-                    pl: 'Szukaj gracza',
-                    pt: 'Buscar jogador',
-                    th: 'ค้นหาผู้เล่น',
-                    id: 'Cari pemain',
-                    hi: 'खिलाड़ी खोजें',
-                    bn: 'খেলোয়াড় খুঁজুন',
-                  ),
-                  hintText: tr(
-                    context,
-                    'Name / email / player ID',
-                    zhTw: '名稱 / Email / 玩家 ID',
-                    zhCn: '名称 / Email / 玩家 ID',
-                    ko: '이름 / 이메일 / 플레이어 ID',
-                    ja: '名前 / メール / プレイヤーID',
-                    de: 'Name / E-Mail / Spieler-ID',
-                    fr: 'Nom / email / ID joueur',
-                    ar: 'الاسم / البريد / معرف اللاعب',
-                    ru: 'Имя / email / ID игрока',
-                    trk: 'Ad / e-posta / Oyuncu ID',
-                    es: 'Nombre / correo / ID de jugador',
-                    it: 'Nome / email / ID giocatore',
-                    pl: 'Nazwa / email / ID gracza',
-                    pt: 'Nome / email / ID do jogador',
-                    th: 'ชื่อ / อีเมล / ไอดีผู้เล่น',
-                    id: 'Nama / email / ID pemain',
-                    hi: 'नाम / ईमेल / प्लेयर ID',
-                    bn: 'নাম / ইমেইল / প্লেয়ার ID',
-                  ),
-                  labelStyle: const TextStyle(color: Colors.black54),
-                  hintStyle: const TextStyle(color: Colors.black38),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  suffixIcon: IconButton(
-                    onPressed: isSearching ? null : _searchUsers,
-                    icon: const Icon(
-                      Icons.search,
-                      color: Colors.black54,
-                    ),
-                  ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final inputColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+    return Card(
+      color: cardColor,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: searchController,
+              style: TextStyle(color: textColor),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: inputColor,
+                labelText: tr(
+                  context,
+                  'Search player',
+                  zhTw: '搜尋玩家',
+                  zhCn: '搜索玩家',
+                  ko: '플레이어 검색',
+                  ja: 'プレイヤー検索',
+                  de: 'Spieler suchen',
+                  fr: 'Rechercher un joueur',
+                  ar: 'البحث عن لاعب',
+                  ru: 'Поиск игрока',
+                  trk: 'Oyuncu ara',
+                  es: 'Buscar jugador',
+                  it: 'Cerca giocatore',
+                  pl: 'Szukaj gracza',
+                  pt: 'Buscar jogador',
+                  th: 'ค้นหาผู้เล่น',
+                  id: 'Cari pemain',
+                  hi: 'खिलाड़ी खोजें',
+                  bn: 'প্লেয়ার খুঁজুন',
                 ),
-                onSubmitted: (_) => _searchUsers(),
+                hintText: tr(
+                  context,
+                  'Name / email / player ID',
+                  zhTw: '名稱 / Email / 玩家 ID',
+                  zhCn: '名称 / Email / 玩家 ID',
+                  ko: '이름 / 이메일 / 플레이어 ID',
+                  ja: '名前 / メール / プレイヤーID',
+                  de: 'Name / E-Mail / Spieler-ID',
+                  fr: 'Nom / e-mail / ID joueur',
+                  ar: 'الاسم / البريد الإلكتروني / معرف اللاعب',
+                  ru: 'Имя / email / ID игрока',
+                  trk: 'İsim / E-posta / Oyuncu Kimliği',
+                  es: 'Nombre / correo / ID del jugador',
+                  it: 'Nome / email / ID giocatore',
+                  pl: 'Nazwa / e-mail / ID gracza',
+                  pt: 'Nome / e-mail / ID do jogador',
+                  th: 'ชื่อ / อีเมล / รหัสผู้เล่น',
+                  id: 'Nama / email / ID pemain',
+                  hi: 'नाम / ईमेल / प्लेयर आईडी',
+                  bn: 'নাম / ইমেইল / প্লেয়ার আইডি',
+                ),
+                labelStyle: TextStyle(color: subTextColor),
+                hintStyle: TextStyle(color: subTextColor),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                suffixIcon: IconButton(
+                  onPressed: isSearching ? null : _searchUsers,
+                  icon: Icon(Icons.search, color: subTextColor),
+                ),
               ),
+              onSubmitted: (_) => _searchUsers(),
+            ),
 
-              const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-              if (isSearching)
-                const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(),
-                )
-              else if (searchResults.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Text(
-                    tr(
-                      context,
-                      'No search results yet',
-                      zhTw: '目前沒有搜尋結果',
-                      zhCn: '目前没有搜索结果',
-                      ko: '검색 결과가 없습니다',
-                      ja: '検索結果はありません',
-                      de: 'Noch keine Suchergebnisse',
-                      fr: 'Aucun résultat de recherche',
-                      ar: 'لا توجد نتائج بحث',
-                      ru: 'Пока нет результатов поиска',
-                      trk: 'Henüz arama sonucu yok',
-                      es: 'Aún no hay resultados',
-                      it: 'Nessun risultato di ricerca',
-                      pl: 'Brak wyników wyszukiwania',
-                      pt: 'Nenhum resultado encontrado',
-                      th: 'ยังไม่มีผลการค้นหา',
-                      id: 'Belum ada hasil pencarian',
-                      hi: 'अभी कोई खोज परिणाम नहीं',
-                      bn: 'এখনও কোনো সার্চ ফলাফল নেই',
-                    ),
-                    style: const TextStyle(color: Colors.black54),
+            if (isSearching)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(),
+              )
+            else if (searchResults.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  tr(
+                    context,
+                    'No search results yet',
+                    zhTw: '目前沒有搜尋結果',
+                    zhCn: '目前没有搜索结果',
+                    ko: '검색 결과가 없습니다',
+                    ja: '検索結果がありません',
+                    de: 'Noch keine Suchergebnisse',
+                    fr: 'Aucun résultat de recherche',
+                    ar: 'لا توجد نتائج بحث بعد',
+                    ru: 'Пока нет результатов поиска',
+                    trk: 'Henüz arama sonucu yok',
+                    es: 'Aún no hay resultados de búsqueda',
+                    it: 'Nessun risultato di ricerca',
+                    pl: 'Brak wyników wyszukiwania',
+                    pt: 'Ainda não há resultados de pesquisa',
+                    th: 'ยังไม่มีผลการค้นหา',
+                    id: 'Belum ada hasil pencarian',
+                    hi: 'अभी तक कोई खोज परिणाम नहीं',
+                    bn: 'এখনও কোনো সার্চ ফলাফল নেই',
                   ),
-                )
-              else
-                Column(
-                  children: searchResults.map((user) {
-                    final imageProvider =
-                        (user.photoUrl != null &&
-                                user.photoUrl!.trim().isNotEmpty)
-                            ? NetworkImage(user.photoUrl!)
-                            : null;
-
-                    return ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: CircleAvatar(
-                        backgroundImage: imageProvider,
-                        child: imageProvider == null
-                            ? const Icon(Icons.person)
-                            : null,
-                      ),
-                      title: Text(
-                        user.displayName,
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      subtitle: Text(
-                        'ID: ${user.playerId}',
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                      isThreeLine: false,
-                      trailing: FilledButton(
-                        onPressed: user.uid == currentUid
-                            ? null
-                            : () => _sendRequest(user),
-                        child: Text(
-                          user.uid == currentUid
-                              ? tr(
-                                  context,
-                                  'You',
-                                  zhTw: '你',
-                                  zhCn: '你',
-                                  ko: '나',
-                                  ja: 'あなた',
-                                  de: 'Du',
-                                  fr: 'Vous',
-                                  ar: 'أنت',
-                                  ru: 'Вы',
-                                  trk: 'Sen',
-                                  es: 'Tú',
-                                  it: 'Tu',
-                                  pl: 'Ty',
-                                  pt: 'Você',
-                                  th: 'คุณ',
-                                  id: 'Anda',
-                                  hi: 'आप',
-                                  bn: 'আপনি',
-                                )
-                              : tr(
-                                  context,
-                                  'Add',
-                                  zhTw: '新增',
-                                  zhCn: '添加',
-                                  ko: '추가',
-                                  ja: '追加',
-                                  de: 'Hinzufügen',
-                                  fr: 'Ajouter',
-                                  ar: 'إضافة',
-                                  ru: 'Добавить',
-                                  trk: 'Ekle',
-                                  es: 'Agregar',
-                                  it: 'Aggiungi',
-                                  pl: 'Dodaj',
-                                  pt: 'Adicionar',
-                                  th: 'เพิ่ม',
-                                  id: 'Tambah',
-                                  hi: 'जोड़ें',
-                                  bn: 'যোগ করুন',
-                                ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                  style: TextStyle(color: subTextColor),
                 ),
-            ],
-          ),
+              )
+            else
+              Column(
+                children: searchResults.map((user) {
+                  final imageProvider =
+                      (user.photoUrl != null && user.photoUrl!.trim().isNotEmpty)
+                          ? NetworkImage(user.photoUrl!)
+                          : null;
+
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: CircleAvatar(
+                      backgroundImage: imageProvider,
+                      child: imageProvider == null
+                          ? Icon(Icons.person, color: textColor)
+                          : null,
+                    ),
+                    title: Text(
+                      user.displayName,
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'ID: ${user.playerId}',
+                      style: TextStyle(color: subTextColor),
+                    ),
+                    trailing: FilledButton(
+                      onPressed: user.uid == currentUid
+                          ? null
+                          : () => _sendRequest(user),
+                      child: Text(
+                        user.uid == currentUid
+                            ? tr(
+                                context,
+                                'You',
+                                zhTw: '你',
+                                zhCn: '你',
+                                ko: '나',
+                                ja: 'あなた',
+                                de: 'Du',
+                                fr: 'Vous',
+                                ar: 'أنت',
+                                ru: 'Вы',
+                                trk: 'Sen',
+                                es: 'Tú',
+                                it: 'Tu',
+                                pl: 'Ty',
+                                pt: 'Você',
+                                th: 'คุณ',
+                                id: 'Anda',
+                                hi: 'आप',
+                                bn: 'আপনি',
+                              )
+                            : tr(
+                                context,
+                                'Add',
+                                zhTw: '新增',
+                                zhCn: '添加',
+                                ko: '추가',
+                                ja: '追加',
+                                de: 'Hinzufügen',
+                                fr: 'Ajouter',
+                                ar: 'إضافة',
+                                ru: 'Добавить',
+                                trk: 'Ekle',
+                                es: 'Agregar',
+                                it: 'Aggiungi',
+                                pl: 'Dodaj',
+                                pt: 'Adicionar',
+                                th: 'เพิ่ม',
+                                id: 'Tambah',
+                                hi: 'जोड़ें',
+                                bn: 'যোগ করুন',
+                              ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+          ],
         ),
       ),
     );
@@ -17596,253 +18174,256 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
       builder: (context, snapshot) {
         final docs = snapshot.data?.docs ?? [];
 
-        return forceLightTheme(
-          Card(
-            color: Colors.white,
-            surfaceTintColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+        final textColor = isDark ? Colors.white : Colors.black87;
+        final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+        return Card(
+          color: cardColor,
+          surfaceTintColor: Colors.transparent,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr(
+                    context,
+                    'Incoming Requests',
+                    zhTw: '收到的好友邀請',
+                    zhCn: '收到的好友邀请',
+                    ko: '받은 친구 요청',
+                    ja: '受信したリクエスト',
+                    de: 'Eingehende Anfragen',
+                    fr: 'Demandes reçues',
+                    ar: 'الطلبات الواردة',
+                    ru: 'Входящие запросы',
+                    trk: 'Gelen İstekler',
+                    es: 'Solicitudes recibidas',
+                    it: 'Richieste ricevute',
+                    pl: 'Przychodzące zaproszenia',
+                    pt: 'Solicitações recebidas',
+                    th: 'คำขอที่ได้รับ',
+                    id: 'Permintaan masuk',
+                    hi: 'आने वाले अनुरोध',
+                    bn: 'আসা অনুরোধ',
+                  ),
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                if (docs.isEmpty)
                   Text(
                     tr(
                       context,
-                      'Incoming Requests',
-                      zhTw: '收到的好友邀請',
-                      zhCn: '收到的好友邀请',
-                      ko: '받은 친구 요청',
-                      ja: '受信したリクエスト',
-                      de: 'Eingehende Anfragen',
-                      fr: 'Demandes reçues',
-                      ar: 'الطلبات الواردة',
-                      ru: 'Входящие запросы',
-                      trk: 'Gelen İstekler',
-                      es: 'Solicitudes recibidas',
-                      it: 'Richieste ricevute',
-                      pl: 'Przychodzące zaproszenia',
-                      pt: 'Solicitações recebidas',
-                      th: 'คำขอที่ได้รับ',
-                      id: 'Permintaan masuk',
-                      hi: 'आने वाले अनुरोध',
-                      bn: 'আসা অনুরোধ',
+                      'No incoming requests',
+                      zhTw: '目前沒有好友邀請',
+                      zhCn: '目前没有好友邀请',
+                      ko: '받은 친구 요청이 없습니다',
+                      ja: '受信したリクエストはありません',
+                      de: 'Keine eingehenden Anfragen',
+                      fr: 'Aucune demande reçue',
+                      ar: 'لا توجد طلبات واردة',
+                      ru: 'Нет входящих запросов',
+                      trk: 'Gelen istek yok',
+                      es: 'No hay solicitudes recibidas',
+                      it: 'Nessuna richiesta ricevuta',
+                      pl: 'Brak przychodzących zaproszeń',
+                      pt: 'Nenhuma solicitação recebida',
+                      th: 'ไม่มีคำขอที่ได้รับ',
+                      id: 'Tidak ada permintaan masuk',
+                      hi: 'कोई आने वाला अनुरोध नहीं',
+                      bn: 'কোনো আসা অনুরোধ নেই',
                     ),
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                    style: TextStyle(
+                      color: subTextColor,
+                      fontWeight: FontWeight.w600,
                     ),
-                  ),
+                  )
+                else
+                  Column(
+                    children: docs.map((doc) {
+                      final data = doc.data();
+                      final status = (data['status'] ?? 'pending')
+                          .toString()
+                          .trim();
 
-                  const SizedBox(height: 12),
-
-                  if (docs.isEmpty)
-                    Text(
-                      tr(
-                        context,
-                        'No incoming requests',
-                        zhTw: '目前沒有好友邀請',
-                        zhCn: '目前没有好友邀请',
-                        ko: '받은 친구 요청이 없습니다',
-                        ja: '受信したリクエストはありません',
-                        de: 'Keine eingehenden Anfragen',
-                        fr: 'Aucune demande reçue',
-                        ar: 'لا توجد طلبات واردة',
-                        ru: 'Нет входящих запросов',
-                        trk: 'Gelen istek yok',
-                        es: 'No hay solicitudes recibidas',
-                        it: 'Nessuna richiesta ricevuta',
-                        pl: 'Brak przychodzących zaproszeń',
-                        pt: 'Nenhuma solicitação recebida',
-                        th: 'ไม่มีคำขอที่ได้รับ',
-                        id: 'Tidak ada permintaan masuk',
-                        hi: 'कोई आने वाला अनुरोध नहीं',
-                        bn: 'কোনো আসা অনুরোধ নেই',
-                      ),
-                      style: const TextStyle(
-                        color: Colors.black54,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                  else
-                    Column(
-                      children: docs.map((doc) {
-                        final data = doc.data();
-                        final status = (data['status'] ?? 'pending')
-                            .toString()
-                            .trim();
-
-                        return ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            backgroundImage: ((data['fromPhotoUrl'] ?? '')
-                                    .toString()
-                                    .trim()
-                                    .isNotEmpty)
-                                ? NetworkImage(
-                                    (data['fromPhotoUrl'] ?? '')
-                                        .toString()
-                                        .trim(),
-                                  )
-                                : null,
-                            child: ((data['fromPhotoUrl'] ?? '')
-                                    .toString()
-                                    .trim()
-                                    .isEmpty)
-                                ? const Icon(Icons.person)
-                                : null,
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundImage: ((data['fromPhotoUrl'] ?? '')
+                                  .toString()
+                                  .trim()
+                                  .isNotEmpty)
+                              ? NetworkImage(
+                                  (data['fromPhotoUrl'] ?? '')
+                                      .toString()
+                                      .trim(),
+                                )
+                              : null,
+                          child: ((data['fromPhotoUrl'] ?? '')
+                                  .toString()
+                                  .trim()
+                                  .isEmpty)
+                              ? const Icon(Icons.person)
+                              : null,
+                        ),
+                        title: Text(
+                          (data['fromDisplayName'] ?? 'Unknown').toString(),
+                          style: TextStyle(
+                            color: textColor,
+                            fontWeight: FontWeight.w700,
                           ),
-                          title: Text(
-                            (data['fromDisplayName'] ?? 'Unknown').toString(),
-                            style: const TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        ),
+                        subtitle: Text(
+                          (data['fromShortName'] ?? '').toString(),
+                          style: TextStyle(
+                            color: subTextColor,
                           ),
-                          subtitle: Text(
-                            (data['fromShortName'] ?? '').toString(),
-                            style: const TextStyle(
-                              color: Colors.black54,
-                            ),
-                          ),
-                          trailing: Wrap(
-                            spacing: 8,
-                            children: [
-                              if (status == 'pending')
-                                TextButton(
-                                  onPressed: () async {
-                                    try {
-                                      await ignoreFriendRequest(data);
-                                    } catch (_) {}
-                                  },
-                                  child: Text(
-                                    tr(
-                                      context,
-                                      'Ignore',
-                                      zhTw: '忽略',
-                                      zhCn: '忽略',
-                                      ko: '무시',
-                                      ja: '無視',
-                                      de: 'Ignorieren',
-                                      fr: 'Ignorer',
-                                      ar: 'تجاهل',
-                                      ru: 'Игнорировать',
-                                      trk: 'Yoksay',
-                                      es: 'Ignorar',
-                                      it: 'Ignora',
-                                      pl: 'Ignoruj',
-                                      pt: 'Ignorar',
-                                      th: 'ไม่สนใจ',
-                                      id: 'Abaikan',
-                                      hi: 'नज़रअंदाज़',
-                                      bn: 'উপেক্ষা',
-                                    ),
-                                  ),
-                                ),
-
-                              OutlinedButton(
+                        ),
+                        trailing: Wrap(
+                          spacing: 8,
+                          children: [
+                            if (status == 'pending')
+                              TextButton(
                                 onPressed: () async {
                                   try {
-                                    await rejectFriendRequest(data);
+                                    await ignoreFriendRequest(data);
                                   } catch (_) {}
                                 },
                                 child: Text(
                                   tr(
                                     context,
-                                    'Reject',
-                                    zhTw: '拒絕',
-                                    zhCn: '拒绝',
-                                    ko: '거절',
-                                    ja: '拒否',
-                                    de: 'Ablehnen',
-                                    fr: 'Refuser',
-                                    ar: 'رفض',
-                                    ru: 'Отклонить',
-                                    trk: 'Reddet',
-                                    es: 'Rechazar',
-                                    it: 'Rifiuta',
-                                    pl: 'Odrzuć',
-                                    pt: 'Recusar',
-                                    th: 'ปฏิเสธ',
-                                    id: 'Tolak',
-                                    hi: 'अस्वीकार',
-                                    bn: 'প্রত্যাখ্যান',
+                                    'Ignore',
+                                    zhTw: '忽略',
+                                    zhCn: '忽略',
+                                    ko: '무시',
+                                    ja: '無視',
+                                    de: 'Ignorieren',
+                                    fr: 'Ignorer',
+                                    ar: 'تجاهل',
+                                    ru: 'Игнорировать',
+                                    trk: 'Yoksay',
+                                    es: 'Ignorar',
+                                    it: 'Ignora',
+                                    pl: 'Ignoruj',
+                                    pt: 'Ignorar',
+                                    th: 'ไม่สนใจ',
+                                    id: 'Abaikan',
+                                    hi: 'नज़रअंदाज़',
+                                    bn: 'উপেক্ষা',
                                   ),
                                 ),
                               ),
 
-                              FilledButton(
-                                onPressed: () async {
-                                  try {
-                                    await acceptFriendRequest(data);
-                                  } catch (e) {
-                                    if (!mounted) return;
-
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          e.toString().replaceFirst(
-                                                'Exception: ',
-                                                '',
-                                              ),
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                },
-                                child: Text(
-                                  status == 'ignored'
-                                      ? tr(
-                                          context,
-                                          'Add',
-                                          zhTw: '新增',
-                                          zhCn: '添加',
-                                          ko: '추가',
-                                          ja: '追加',
-                                          de: 'Hinzufügen',
-                                          fr: 'Ajouter',
-                                          ar: 'إضافة',
-                                          ru: 'Добавить',
-                                          trk: 'Ekle',
-                                          es: 'Agregar',
-                                          it: 'Aggiungi',
-                                          pl: 'Dodaj',
-                                          pt: 'Adicionar',
-                                          th: 'เพิ่ม',
-                                          id: 'Tambah',
-                                          hi: 'जोड़ें',
-                                          bn: 'যোগ করুন',
-                                        )
-                                      : tr(
-                                          context,
-                                          'Accept',
-                                          zhTw: '接受',
-                                          zhCn: '接受',
-                                          ko: '수락',
-                                          ja: '承認',
-                                          de: 'Akzeptieren',
-                                          fr: 'Accepter',
-                                          ar: 'قبول',
-                                          ru: 'Принять',
-                                          trk: 'Kabul Et',
-                                          es: 'Aceptar',
-                                          it: 'Accetta',
-                                          pl: 'Akceptuj',
-                                          pt: 'Aceitar',
-                                          th: 'ยอมรับ',
-                                          id: 'Terima',
-                                          hi: 'स्वीकार करें',
-                                          bn: 'গ্রহণ করুন',
-                                        ),
+                            OutlinedButton(
+                              onPressed: () async {
+                                try {
+                                  await rejectFriendRequest(data);
+                                } catch (_) {}
+                              },
+                              child: Text(
+                                tr(
+                                  context,
+                                  'Reject',
+                                  zhTw: '拒絕',
+                                  zhCn: '拒绝',
+                                  ko: '거절',
+                                  ja: '拒否',
+                                  de: 'Ablehnen',
+                                  fr: 'Refuser',
+                                  ar: 'رفض',
+                                  ru: 'Отклонить',
+                                  trk: 'Reddet',
+                                  es: 'Rechazar',
+                                  it: 'Rifiuta',
+                                  pl: 'Odrzuć',
+                                  pt: 'Recusar',
+                                  th: 'ปฏิเสธ',
+                                  id: 'Tolak',
+                                  hi: 'अस्वीकार',
+                                  bn: 'প্রত্যাখ্যান',
                                 ),
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                ],
-              ),
+                            ),
+
+                            FilledButton(
+                              onPressed: () async {
+                                try {
+                                  await acceptFriendRequest(data);
+                                } catch (e) {
+                                  if (!mounted) return;
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        e.toString().replaceFirst(
+                                              'Exception: ',
+                                              '',
+                                            ),
+                                      ),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Text(
+                                status == 'ignored'
+                                    ? tr(
+                                        context,
+                                        'Add',
+                                        zhTw: '新增',
+                                        zhCn: '添加',
+                                        ko: '추가',
+                                        ja: '追加',
+                                        de: 'Hinzufügen',
+                                        fr: 'Ajouter',
+                                        ar: 'إضافة',
+                                        ru: 'Добавить',
+                                        trk: 'Ekle',
+                                        es: 'Agregar',
+                                        it: 'Aggiungi',
+                                        pl: 'Dodaj',
+                                        pt: 'Adicionar',
+                                        th: 'เพิ่ม',
+                                        id: 'Tambah',
+                                        hi: 'जोड़ें',
+                                        bn: 'যোগ করুন',
+                                      )
+                                    : tr(
+                                        context,
+                                        'Accept',
+                                        zhTw: '接受',
+                                        zhCn: '接受',
+                                        ko: '수락',
+                                        ja: '承認',
+                                        de: 'Akzeptieren',
+                                        fr: 'Accepter',
+                                        ar: 'قبول',
+                                        ru: 'Принять',
+                                        trk: 'Kabul Et',
+                                        es: 'Aceptar',
+                                        it: 'Accetta',
+                                        pl: 'Akceptuj',
+                                        pt: 'Aceitar',
+                                        th: 'ยอมรับ',
+                                        id: 'Terima',
+                                        hi: 'स्वीकार करें',
+                                        bn: 'গ্রহণ করুন',
+                                      ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
+              ],
             ),
           ),
         );
@@ -17851,559 +18432,569 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
   }
 
   Widget _buildFriendsList() {
-    return forceLightTheme(
-      Card(
-        color: Colors.white,
-        surfaceTintColor: Colors.white,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection('users')
-                .doc(currentUid)
-                .snapshots(),
-            builder: (context, userSnapshot) {
-              final currentUserData = userSnapshot.data?.data() ?? {};
-              final blockedUids = List<String>.from(
-                currentUserData['blockedUids'] ?? [],
-              );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
 
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: FirebaseFirestore.instance
-                    .collection('friendships')
-                    .where('memberUids', arrayContains: currentUid)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  final docs = [...(snapshot.data?.docs ?? [])]
-                      .where((doc) {
-                        final data = doc.data();
+    return Card(
+      color: cardColor,
+      surfaceTintColor: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUid)
+              .snapshots(),
+          builder: (context, userSnapshot) {
+            final currentUserData = userSnapshot.data?.data() ?? {};
+            final blockedUids = List<String>.from(
+              currentUserData['blockedUids'] ?? [],
+            );
 
-                        final userA =
-                            Map<String, dynamic>.from(data['userA'] ?? {});
-                        final userB =
-                            Map<String, dynamic>.from(data['userB'] ?? {});
+            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: FirebaseFirestore.instance
+                  .collection('friendships')
+                  .where('memberUids', arrayContains: currentUid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                final docs = [...(snapshot.data?.docs ?? [])]
+                    .where((doc) {
+                      final data = doc.data();
 
-                        final otherUser =
-                            (userA['uid'] ?? '').toString() == currentUid
-                                ? userB
-                                : userA;
+                      final userA =
+                          Map<String, dynamic>.from(data['userA'] ?? {});
+                      final userB =
+                          Map<String, dynamic>.from(data['userB'] ?? {});
 
-                        final otherUid =
-                            (otherUser['uid'] ?? '').toString().trim();
+                      final otherUser =
+                          (userA['uid'] ?? '').toString() == currentUid
+                              ? userB
+                              : userA;
 
-                        return otherUid.isNotEmpty &&
-                            !blockedUids.contains(otherUid);
-                      })
-                      .toList()
-                    ..sort((a, b) {
-                      final aData = a.data();
-                      final bData = b.data();
+                      final otherUid =
+                          (otherUser['uid'] ?? '').toString().trim();
 
-                      final aTime = aData['updatedAt'];
-                      final bTime = bData['updatedAt'];
+                      return otherUid.isNotEmpty &&
+                          !blockedUids.contains(otherUid);
+                    })
+                    .toList()
+                  ..sort((a, b) {
+                    final aData = a.data();
+                    final bData = b.data();
 
-                      final aMillis =
-                          aTime is Timestamp ? aTime.millisecondsSinceEpoch : 0;
-                      final bMillis =
-                          bTime is Timestamp ? bTime.millisecondsSinceEpoch : 0;
+                    final aTime = aData['updatedAt'];
+                    final bTime = bData['updatedAt'];
 
-                      return bMillis.compareTo(aMillis);
-                    });
+                    final aMillis =
+                        aTime is Timestamp ? aTime.millisecondsSinceEpoch : 0;
+                    final bMillis =
+                        bTime is Timestamp ? bTime.millisecondsSinceEpoch : 0;
 
-                  if (docs.isEmpty) {
-                    return Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        tr(
-                          context,
-                          'No friends yet',
-                          zhTw: '目前還沒有好友',
-                          zhCn: '目前还没有好友',
-                          ko: '아직 친구가 없습니다',
-                          ja: 'まだ友達がいません',
-                          de: 'Noch keine Freunde',
-                          fr: 'Aucun ami pour le moment',
-                          ar: 'لا يوجد أصدقاء بعد',
-                          ru: 'Пока нет друзей',
-                          trk: 'Henüz arkadaş yok',
-                          es: 'Aún no hay amigos',
-                          it: 'Ancora nessun amico',
-                          pl: 'Nie masz jeszcze znajomych',
-                          pt: 'Ainda não há amigos',
-                          th: 'ยังไม่มีเพื่อน',
-                          id: 'Belum ada teman',
-                          hi: 'अभी कोई दोस्त नहीं है',
-                          bn: 'এখনও কোনো বন্ধু নেই',
-                        ),
-                        style: const TextStyle(color: Colors.black54),
+                    return bMillis.compareTo(aMillis);
+                  });
+
+                if (docs.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      tr(
+                        context,
+                        'No friends yet',
+                        zhTw: '目前還沒有好友',
+                        zhCn: '目前还没有好友',
+                        ko: '아직 친구가 없습니다',
+                        ja: 'まだ友達がいません',
+                        de: 'Noch keine Freunde',
+                        fr: 'Aucun ami pour le moment',
+                        ar: 'لا يوجد أصدقاء بعد',
+                        ru: 'Пока нет друзей',
+                        trk: 'Henüz arkadaş yok',
+                        es: 'Aún no hay amigos',
+                        it: 'Ancora nessun amico',
+                        pl: 'Nie masz jeszcze znajomych',
+                        pt: 'Ainda não há amigos',
+                        th: 'ยังไม่มีเพื่อน',
+                        id: 'Belum ada teman',
+                        hi: 'अभी कोई दोस्त नहीं है',
+                        bn: 'এখনও কোনো বন্ধু নেই',
                       ),
-                    );
-                  }
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tr(
-                          context,
-                          'Friends',
-                          zhTw: '好友',
-                          zhCn: '好友',
-                          ko: '친구',
-                          ja: '友達',
-                          de: 'Freunde',
-                          fr: 'Amis',
-                          ar: 'الأصدقاء',
-                          ru: 'Друзья',
-                          trk: 'Arkadaşlar',
-                          es: 'Amigos',
-                          it: 'Amici',
-                          pl: 'Znajomi',
-                          pt: 'Amigos',
-                          th: 'เพื่อน',
-                          id: 'Teman',
-                          hi: 'दोस्त',
-                          bn: 'বন্ধু',
-                        ),
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      ...docs.map((doc) {
-                        final data = doc.data();
-
-                        final userA =
-                            Map<String, dynamic>.from(data['userA'] ?? {});
-                        final userB =
-                            Map<String, dynamic>.from(data['userB'] ?? {});
-                        final nicknames =
-                            Map<String, dynamic>.from(data['nicknames'] ?? {});
-
-                        final otherUser =
-                            (userA['uid'] ?? '').toString() == currentUid
-                                ? userB
-                                : userA;
-
-                        final otherUid =
-                            (otherUser['uid'] ?? '').toString().trim();
-
-                        final nickname =
-                            (nicknames[currentUid] ?? '').toString().trim();
-
-                        final displayName = nickname.isNotEmpty
-                            ? nickname
-                            : (otherUser['displayName'] ??
-                                    tr(
-                                      context,
-                                      'Friend',
-                                      zhTw: '好友',
-                                      zhCn: '好友',
-                                      ko: '친구',
-                                      ja: '友達',
-                                      de: 'Freund',
-                                      fr: 'Ami',
-                                      ar: 'صديق',
-                                      ru: 'Друг',
-                                      trk: 'Arkadaş',
-                                      es: 'Amigo',
-                                      it: 'Amico',
-                                      pl: 'Znajomy',
-                                      pt: 'Amigo',
-                                      th: 'เพื่อน',
-                                      id: 'Teman',
-                                      hi: 'दोस्त',
-                                      bn: 'বন্ধু',
-                                    ))
-                                .toString();
-
-                        final subtitleName =
-                            (otherUser['displayName'] ?? '').toString().trim();
-
-                        final chatId = (data['chatId'] ?? '').toString();
-
-                        return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                          future: FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(otherUid)
-                              .get(),
-                          builder: (context, userCheckSnapshot) {
-                            if (userCheckSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const SizedBox.shrink();
-                            }
-
-                            final userExists =
-                                userCheckSnapshot.data != null &&
-                                userCheckSnapshot.data!.exists &&
-                                userCheckSnapshot.data!.data()?['isActive'] !=
-                                    false;
-
-                            if (!userExists) {
-                              Future.microtask(() async {
-                                try {
-                                  final firestore =
-                                      FirebaseFirestore.instance;
-
-                                  final cleanChatId = chatId.trim();
-
-                                  await doc.reference.delete();
-
-                                  if (cleanChatId.isNotEmpty) {
-                                    final chatRef = firestore
-                                        .collection('direct_chats')
-                                        .doc(cleanChatId);
-
-                                    final messagesSnap =
-                                        await chatRef.collection('messages').get();
-
-                                    for (final messageDoc
-                                        in messagesSnap.docs) {
-                                      await messageDoc.reference.delete();
-                                    }
-
-                                    await chatRef.delete();
-                                  }
-                                } catch (e) {
-                                  debugPrint(
-                                    'cleanup deleted friend error: $e',
-                                  );
-                                }
-                              });
-
-                              return const SizedBox.shrink();
-                            }
-
-                            return FutureBuilder<bool>(
-                              future: isBlockedEitherWay(
-                                currentUid: currentUid,
-                                otherUid: otherUid,
-                              ),
-                              builder: (context, blockedSnapshot) {
-                                if (blockedSnapshot.data == true) {
-                                  return const SizedBox();
-                                }
-
-                                return StreamBuilder<
-                                    DocumentSnapshot<Map<String, dynamic>>>(
-                                  stream: FirebaseFirestore.instance
-                                      .collection('direct_chats')
-                                      .doc(chatId)
-                                      .snapshots(),
-                                  builder: (context, chatSnapshot) {
-                                    final chatData =
-                                        chatSnapshot.data?.data() ?? {};
-                                    final unreadCounts =
-                                        Map<String, dynamic>.from(
-                                      chatData['unreadCounts'] ?? {},
-                                    );
-
-                                    final rawUnread =
-                                        unreadCounts[currentUid] ?? 0;
-
-                                    final unreadCount = rawUnread is int
-                                        ? rawUnread
-                                        : int.tryParse(
-                                              rawUnread.toString(),
-                                            ) ??
-                                            0;
-
-                                    return ListTile(
-                                      contentPadding: EdgeInsets.zero,
-                                      onTap: () =>
-                                          _openChatFromFriendship(data),
-                                      leading: buildAppAvatar(
-                                        radius: 20,
-                                        avatar: resolveAvatarSnapshotFromMap(
-                                          userCheckSnapshot.data!.data() ??
-                                              otherUser,
-                                        ),
-                                        displayName: displayName,
-                                        iconSize: 18,
-                                        textSize: 14,
-                                      ),
-                                      title: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(
-                                              displayName,
-                                              style: const TextStyle(
-                                                color: Colors.black87,
-                                                fontWeight: FontWeight.w700,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          if (unreadCount > 0)
-                                            Container(
-                                              margin:
-                                                  const EdgeInsets.only(left: 8),
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 3,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFDC2626),
-                                                borderRadius:
-                                                    BorderRadius.circular(999),
-                                              ),
-                                              constraints:
-                                                  const BoxConstraints(
-                                                minWidth: 22,
-                                                minHeight: 22,
-                                              ),
-                                              child: Text(
-                                                unreadCount > 99
-                                                    ? '99+'
-                                                    : unreadCount.toString(),
-                                                textAlign: TextAlign.center,
-                                                style: const TextStyle(
-                                                  color: Colors.white,
-                                                  fontSize: 11,
-                                                  fontWeight: FontWeight.w800,
-                                                ),
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                      subtitle: subtitleName.isNotEmpty &&
-                                              subtitleName != displayName
-                                          ? Text(
-                                              subtitleName,
-                                              style: const TextStyle(
-                                                color: Colors.black54,
-                                              ),
-                                            )
-                                          : Text(
-                                              unreadCount > 0
-                                                  ? tr(
-                                                      context,
-                                                      '$unreadCount unread message${unreadCount > 1 ? 's' : ''}',
-                                                      zhTw:
-                                                          '$unreadCount 則未讀訊息',
-                                                      zhCn:
-                                                          '$unreadCount 条未读消息',
-                                                      ko:
-                                                          '읽지 않은 메시지 $unreadCount개',
-                                                      ja:
-                                                          '未読メッセージ $unreadCount 件',
-                                                      de:
-                                                          '$unreadCount ungelesene Nachricht${unreadCount > 1 ? 'en' : ''}',
-                                                      fr:
-                                                          '$unreadCount message${unreadCount > 1 ? 's' : ''} non lu${unreadCount > 1 ? 's' : ''}',
-                                                      ar:
-                                                          '$unreadCount رسالة غير مقروءة',
-                                                      ru:
-                                                          '$unreadCount непрочитанных сообщений',
-                                                      trk:
-                                                          '$unreadCount okunmamış mesaj',
-                                                      es:
-                                                          '$unreadCount mensaje${unreadCount > 1 ? 's' : ''} sin leer',
-                                                      it:
-                                                          '$unreadCount messagg${unreadCount > 1 ? 'i' : 'io'} non lett${unreadCount > 1 ? 'i' : 'o'}',
-                                                      pl:
-                                                          '$unreadCount nieprzeczytanych wiadomości',
-                                                      pt:
-                                                          '$unreadCount mensagem${unreadCount > 1 ? 'ens' : ''} não lida${unreadCount > 1 ? 's' : ''}',
-                                                      th:
-                                                          '$unreadCount ข้อความที่ยังไม่ได้อ่าน',
-                                                      id:
-                                                          '$unreadCount pesan belum dibaca',
-                                                      hi:
-                                                          '$unreadCount अपठित संदेश',
-                                                      bn:
-                                                          '$unreadCount টি অপঠিত বার্তা',
-                                                    )
-                                                  : tr(
-                                                      context,
-                                                      'Tap to open chat',
-                                                      zhTw: '點擊開啟聊天',
-                                                      zhCn: '点击打开聊天',
-                                                      ko: '눌러서 채팅 열기',
-                                                      ja: 'タップしてチャットを開く',
-                                                      de:
-                                                          'Tippen zum Öffnen des Chats',
-                                                      fr:
-                                                          'Touchez pour ouvrir le chat',
-                                                      ar: 'اضغط لفتح الدردشة',
-                                                      ru:
-                                                          'Нажмите, чтобы открыть чат',
-                                                      trk:
-                                                          'Sohbeti açmak için dokun',
-                                                      es: 'Toca para abrir el chat',
-                                                      it: 'Tocca per aprire la chat',
-                                                      pl: 'Kliknij, aby otworzyć czat',
-                                                      pt: 'Toque para abrir o chat',
-                                                      th: 'แตะเพื่อเปิดแชท',
-                                                      id: 'Ketuk untuk membuka chat',
-                                                      hi: 'चैट खोलने के लिए टैप करें',
-                                                      bn: 'চ্যাট খুলতে চাপুন',
-                                                    ),
-                                              style: const TextStyle(
-                                                color: Colors.black54,
-                                              ),
-                                            ),
-                                      trailing: PopupMenuButton<String>(
-                                        color: Colors.white,
-                                        surfaceTintColor: Colors.white,
-                                        iconColor: Colors.black,
-                                        onSelected: (value) async {
-                                          if (value == 'chat') {
-                                            await _openChatFromFriendship(data);
-                                          } else if (value == 'edit_name') {
-                                            await _editFriendNickname(data);
-                                          } else if (value == 'delete_friend') {
-                                            await _deleteFriendship(data);
-                                          } else if (value == 'block') {
-                                            await _blockFriend(data);
-                                          }
-                                        },
-                                        itemBuilder: (context) => [
-                                          PopupMenuItem(
-                                            value: 'chat',
-                                            child: Text(
-                                              tr(
-                                                context,
-                                                'Open chat',
-                                                zhTw: '開啟聊天',
-                                                zhCn: '打开聊天',
-                                                ko: '채팅 열기',
-                                                ja: 'チャットを開く',
-                                                de: 'Chat öffnen',
-                                                fr: 'Ouvrir le chat',
-                                                ar: 'فتح الدردشة',
-                                                ru: 'Открыть чат',
-                                                trk: 'Sohbeti Aç',
-                                                es: 'Abrir chat',
-                                                it: 'Apri chat',
-                                                pl: 'Otwórz czat',
-                                                pt: 'Abrir chat',
-                                                th: 'เปิดแชท',
-                                                id: 'Buka chat',
-                                                hi: 'चैट खोलें',
-                                                bn: 'চ্যাট খুলুন',
-                                              ),
-                                              style: const TextStyle(
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'edit_name',
-                                            child: Text(
-                                              tr(
-                                                context,
-                                                'Edit name',
-                                                zhTw: '編輯名稱',
-                                                zhCn: '编辑名称',
-                                                ko: '이름 수정',
-                                                ja: '名前を編集',
-                                                de: 'Namen bearbeiten',
-                                                fr: 'Modifier le nom',
-                                                ar: 'تعديل الاسم',
-                                                ru: 'Изменить имя',
-                                                trk: 'Adı Düzenle',
-                                                es: 'Editar nombre',
-                                                it: 'Modifica nome',
-                                                pl: 'Edytuj nazwę',
-                                                pt: 'Editar nome',
-                                                th: 'แก้ไขชื่อ',
-                                                id: 'Edit nama',
-                                                hi: 'नाम संपादित करें',
-                                                bn: 'নাম সম্পাদনা',
-                                              ),
-                                              style: const TextStyle(
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'delete_friend',
-                                            child: Text(
-                                              tr(
-                                                context,
-                                                'Delete friend',
-                                                zhTw: '刪除好友',
-                                                zhCn: '删除好友',
-                                                ko: '친구 삭제',
-                                                ja: '友達を削除',
-                                                de: 'Freund löschen',
-                                                fr: 'Supprimer l’ami',
-                                                ar: 'حذف الصديق',
-                                                ru: 'Удалить друга',
-                                                trk: 'Arkadaşı Sil',
-                                                es: 'Eliminar amigo',
-                                                it: 'Elimina amico',
-                                                pl: 'Usuń znajomego',
-                                                pt: 'Excluir amigo',
-                                                th: 'ลบเพื่อน',
-                                                id: 'Hapus teman',
-                                                hi: 'दोस्त हटाएं',
-                                                bn: 'বন্ধু মুছুন',
-                                              ),
-                                              style: const TextStyle(
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-                                          PopupMenuItem(
-                                            value: 'block',
-                                            child: Text(
-                                              tr(
-                                                context,
-                                                'Blacklist',
-                                                zhTw: '加入黑名單',
-                                                zhCn: '加入黑名单',
-                                                ko: '차단 목록',
-                                                ja: 'ブラックリスト',
-                                                de: 'Blacklist',
-                                                fr: 'Liste noire',
-                                                ar: 'القائمة السوداء',
-                                                ru: 'Чёрный список',
-                                                trk: 'Kara Liste',
-                                                es: 'Lista negra',
-                                                it: 'Blacklist',
-                                                pl: 'Czarna lista',
-                                                pt: 'Lista negra',
-                                                th: 'บัญชีดำ',
-                                                id: 'Daftar hitam',
-                                                hi: 'ब्लैकलिस्ट',
-                                                bn: 'ব্ল্যাকলिस्ट',
-                                              ),
-                                              style: const TextStyle(
-                                                color: Colors.black87,
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                            );
-                          },
-                        );
-                      }),
-                    ],
+                      style: TextStyle(color: subTextColor),
+                    ),
                   );
-                },
-              );
-            },
-          ),
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tr(
+                        context,
+                        'Friends',
+                        zhTw: '好友',
+                        zhCn: '好友',
+                        ko: '친구',
+                        ja: '友達',
+                        de: 'Freunde',
+                        fr: 'Amis',
+                        ar: 'الأصدقاء',
+                        ru: 'Друзья',
+                        trk: 'Arkadaşlar',
+                        es: 'Amigos',
+                        it: 'Amici',
+                        pl: 'Znajomi',
+                        pt: 'Amigos',
+                        th: 'เพื่อน',
+                        id: 'Teman',
+                        hi: 'दोस्त',
+                        bn: 'বন্ধু',
+                      ),
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    ...docs.map((doc) {
+                      final data = doc.data();
+
+                      final userA =
+                          Map<String, dynamic>.from(data['userA'] ?? {});
+                      final userB =
+                          Map<String, dynamic>.from(data['userB'] ?? {});
+                      final nicknames =
+                          Map<String, dynamic>.from(data['nicknames'] ?? {});
+
+                      final otherUser =
+                          (userA['uid'] ?? '').toString() == currentUid
+                              ? userB
+                              : userA;
+
+                      final otherUid =
+                          (otherUser['uid'] ?? '').toString().trim();
+
+                      final nickname =
+                          (nicknames[currentUid] ?? '').toString().trim();
+
+                      final displayName = nickname.isNotEmpty
+                          ? nickname
+                          : (otherUser['displayName'] ??
+                                  tr(
+                                    context,
+                                    'Friend',
+                                    zhTw: '好友',
+                                    zhCn: '好友',
+                                    ko: '친구',
+                                    ja: '友達',
+                                    de: 'Freund',
+                                    fr: 'Ami',
+                                    ar: 'صديق',
+                                    ru: 'Друг',
+                                    trk: 'Arkadaş',
+                                    es: 'Amigo',
+                                    it: 'Amico',
+                                    pl: 'Znajomy',
+                                    pt: 'Amigo',
+                                    th: 'เพื่อน',
+                                    id: 'Teman',
+                                    hi: 'दोस्त',
+                                    bn: 'বন্ধু',
+                                  ))
+                              .toString();
+
+                      final subtitleName =
+                          (otherUser['displayName'] ?? '').toString().trim();
+
+                      final chatId = (data['chatId'] ?? '').toString();
+
+                      return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                        future: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(otherUid)
+                            .get(),
+                        builder: (context, userCheckSnapshot) {
+                          if (userCheckSnapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SizedBox.shrink();
+                          }
+
+                          final userExists =
+                              userCheckSnapshot.data != null &&
+                              userCheckSnapshot.data!.exists &&
+                              userCheckSnapshot.data!.data()?['isActive'] !=
+                                  false;
+
+                          if (!userExists) {
+                            Future.microtask(() async {
+                              try {
+                                final firestore =
+                                    FirebaseFirestore.instance;
+
+                                final cleanChatId = chatId.trim();
+
+                                await doc.reference.delete();
+
+                                if (cleanChatId.isNotEmpty) {
+                                  final chatRef = firestore
+                                      .collection('direct_chats')
+                                      .doc(cleanChatId);
+
+                                  final messagesSnap =
+                                      await chatRef.collection('messages').get();
+
+                                  for (final messageDoc
+                                      in messagesSnap.docs) {
+                                    await messageDoc.reference.delete();
+                                  }
+
+                                  await chatRef.delete();
+                                }
+                              } catch (e) {
+                                debugPrint(
+                                  'cleanup deleted friend error: $e',
+                                );
+                              }
+                            });
+
+                            return const SizedBox.shrink();
+                          }
+
+                          return FutureBuilder<bool>(
+                            future: isBlockedEitherWay(
+                              currentUid: currentUid,
+                              otherUid: otherUid,
+                            ),
+                            builder: (context, blockedSnapshot) {
+                              if (blockedSnapshot.data == true) {
+                                return const SizedBox();
+                              }
+
+                              return StreamBuilder<
+                                  DocumentSnapshot<Map<String, dynamic>>>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('direct_chats')
+                                    .doc(chatId)
+                                    .snapshots(),
+                                builder: (context, chatSnapshot) {
+                                  final chatData =
+                                      chatSnapshot.data?.data() ?? {};
+                                  final unreadCounts =
+                                      Map<String, dynamic>.from(
+                                    chatData['unreadCounts'] ?? {},
+                                  );
+
+                                  final rawUnread =
+                                      unreadCounts[currentUid] ?? 0;
+
+                                  final unreadCount = rawUnread is int
+                                      ? rawUnread
+                                      : int.tryParse(
+                                            rawUnread.toString(),
+                                          ) ??
+                                          0;
+
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    onTap: () =>
+                                        _openChatFromFriendship(data),
+                                    leading: buildAppAvatar(
+                                      radius: 20,
+                                      avatar: resolveAvatarSnapshotFromMap(
+                                        userCheckSnapshot.data!.data() ??
+                                            otherUser,
+                                      ),
+                                      displayName: displayName,
+                                      iconSize: 18,
+                                      textSize: 14,
+                                    ),
+                                    title: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            displayName,
+                                            style: TextStyle(
+                                              color: textColor,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                        if (unreadCount > 0)
+                                          Container(
+                                            margin:
+                                                const EdgeInsets.only(left: 8),
+                                            padding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFDC2626),
+                                              borderRadius:
+                                                  BorderRadius.circular(999),
+                                            ),
+                                            constraints:
+                                                const BoxConstraints(
+                                              minWidth: 22,
+                                              minHeight: 22,
+                                            ),
+                                            child: Text(
+                                              unreadCount > 99
+                                                  ? '99+'
+                                                  : unreadCount.toString(),
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    subtitle: subtitleName.isNotEmpty &&
+                                            subtitleName != displayName
+                                        ? Text(
+                                            subtitleName,
+                                            style: TextStyle(
+                                              color: subTextColor,
+                                            ),
+                                          )
+                                        : Text(
+                                            unreadCount > 0
+                                                ? tr(
+                                                    context,
+                                                    '$unreadCount unread message${unreadCount > 1 ? 's' : ''}',
+                                                    zhTw:
+                                                        '$unreadCount 則未讀訊息',
+                                                    zhCn:
+                                                        '$unreadCount 条未读消息',
+                                                    ko:
+                                                        '읽지 않은 메시지 $unreadCount개',
+                                                    ja:
+                                                        '未読メッセージ $unreadCount 件',
+                                                    de:
+                                                        '$unreadCount ungelesene Nachricht${unreadCount > 1 ? 'en' : ''}',
+                                                    fr:
+                                                        '$unreadCount message${unreadCount > 1 ? 's' : ''} non lu${unreadCount > 1 ? 's' : ''}',
+                                                    ar:
+                                                        '$unreadCount رسالة غير مقروءة',
+                                                    ru:
+                                                        '$unreadCount непрочитанных сообщений',
+                                                    trk:
+                                                        '$unreadCount okunmamış mesaj',
+                                                    es:
+                                                        '$unreadCount mensaje${unreadCount > 1 ? 's' : ''} sin leer',
+                                                    it:
+                                                        '$unreadCount messagg${unreadCount > 1 ? 'i' : 'io'} non lett${unreadCount > 1 ? 'i' : 'o'}',
+                                                    pl:
+                                                        '$unreadCount nieprzeczytanych wiadomości',
+                                                    pt:
+                                                        '$unreadCount mensagem${unreadCount > 1 ? 'ens' : ''} não lida${unreadCount > 1 ? 's' : ''}',
+                                                    th:
+                                                        '$unreadCount ข้อความที่ยังไม่ได้อ่าน',
+                                                    id:
+                                                        '$unreadCount pesan belum dibaca',
+                                                    hi:
+                                                        '$unreadCount अपठित संदेश',
+                                                    bn:
+                                                        '$unreadCount টি অপঠিত বার্তা',
+                                                  )
+                                                : tr(
+                                                    context,
+                                                    'Tap to open chat',
+                                                    zhTw: '點擊開啟聊天',
+                                                    zhCn: '点击打开聊天',
+                                                    ko: '눌러서 채팅 열기',
+                                                    ja: 'タップしてチャットを開く',
+                                                    de:
+                                                        'Tippen zum Öffnen des Chats',
+                                                    fr:
+                                                        'Touchez pour ouvrir le chat',
+                                                    ar: 'اضغط لفتح الدردشة',
+                                                    ru:
+                                                        'Нажмите, чтобы открыть чат',
+                                                    trk:
+                                                        'Sohbeti açmak için dokun',
+                                                    es: 'Toca para abrir el chat',
+                                                    it: 'Tocca per aprire la chat',
+                                                    pl: 'Kliknij, aby otworzyć czat',
+                                                    pt: 'Toque para abrir o chat',
+                                                    th: 'แตะเพื่อเปิดแชท',
+                                                    id: 'Ketuk untuk membuka chat',
+                                                    hi: 'चैट खोलने के लिए टैप करें',
+                                                    bn: 'চ্যাট খুলতে চাপুন',
+                                                  ),
+                                            style: TextStyle(
+                                              color: subTextColor,
+                                            ),
+                                          ),
+                                    trailing: PopupMenuButton<String>(
+                                      color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                                      surfaceTintColor: Colors.transparent,
+                                      iconColor: textColor,
+                                      onSelected: (value) async {
+                                        if (value == 'chat') {
+                                          await _openChatFromFriendship(data);
+                                        } else if (value == 'edit_name') {
+                                          await _editFriendNickname(data);
+                                        } else if (value == 'delete_friend') {
+                                          await _deleteFriendship(data);
+                                        } else if (value == 'block') {
+                                          await _blockFriend(data);
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem(
+                                          value: 'chat',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Open chat',
+                                              zhTw: '開啟聊天',
+                                              zhCn: '打开聊天',
+                                              ko: '채팅 열기',
+                                              ja: 'チャットを開く',
+                                              de: 'Chat öffnen',
+                                              fr: 'Ouvrir le chat',
+                                              ar: 'فتح الدردشة',
+                                              ru: 'Открыть чат',
+                                              trk: 'Sohbeti Aç',
+                                              es: 'Abrir chat',
+                                              it: 'Apri chat',
+                                              pl: 'Otwórz czat',
+                                              pt: 'Abrir chat',
+                                              th: 'เปิดแชท',
+                                              id: 'Buka chat',
+                                              hi: 'चैट खोलें',
+                                              bn: 'চ্যাট খুলুন',
+                                            ),
+                                            style: TextStyle(
+                                              color: textColor,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'edit_name',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Edit name',
+                                              zhTw: '編輯名稱',
+                                              zhCn: '编辑名称',
+                                              ko: '이름 수정',
+                                              ja: '名前を編集',
+                                              de: 'Namen bearbeiten',
+                                              fr: 'Modifier le nom',
+                                              ar: 'تعديل الاسم',
+                                              ru: 'Изменить имя',
+                                              trk: 'Adı Düzenle',
+                                              es: 'Editar nombre',
+                                              it: 'Modifica nome',
+                                              pl: 'Edytuj nazwę',
+                                              pt: 'Editar nome',
+                                              th: 'แก้ไขชื่อ',
+                                              id: 'Edit nama',
+                                              hi: 'नाम संपादित करें',
+                                              bn: 'নাম সম্পাদনা',
+                                            ),
+                                            style: TextStyle(
+                                              color: textColor,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'delete_friend',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Delete friend',
+                                              zhTw: '刪除好友',
+                                              zhCn: '删除好友',
+                                              ko: '친구 삭제',
+                                              ja: '友達を削除',
+                                              de: 'Freund löschen',
+                                              fr: 'Supprimer l’ami',
+                                              ar: 'حذف الصديق',
+                                              ru: 'Удалить друга',
+                                              trk: 'Arkadaşı Sil',
+                                              es: 'Eliminar amigo',
+                                              it: 'Elimina amico',
+                                              pl: 'Usuń znajomego',
+                                              pt: 'Excluir amigo',
+                                              th: 'ลบเพื่อน',
+                                              id: 'Hapus teman',
+                                              hi: 'दोस्त हटाएं',
+                                              bn: 'বন্ধু মুছুন',
+                                            ),
+                                            style: TextStyle(
+                                              color: textColor,
+                                            ),
+                                          ),
+                                        ),
+                                        PopupMenuItem(
+                                          value: 'block',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Blacklist',
+                                              zhTw: '加入黑名單',
+                                              zhCn: '加入黑名单',
+                                              ko: '차단 목록',
+                                              ja: 'ブラックリスト',
+                                              de: 'Blacklist',
+                                              fr: 'Liste noire',
+                                              ar: 'القائمة السوداء',
+                                              ru: 'Чёрный список',
+                                              trk: 'Kara Liste',
+                                              es: 'Lista negra',
+                                              it: 'Blacklist',
+                                              pl: 'Czarna lista',
+                                              pt: 'Lista negra',
+                                              th: 'บัญชีดำ',
+                                              id: 'Daftar hitam',
+                                              hi: 'ब्लैकलिस्ट',
+                                              bn: 'ব্ল্যাকলिस्ट',
+                                            ),
+                                            style: TextStyle(
+                                              color: textColor,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          );
+                        },
+                      );
+                    }),
+                  ],
+                );
+              },
+            );
+          },
         ),
       ),
     );
   }
 
   Widget _buildBlockedUsersList() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final itemColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
     return Card(
-      color: Colors.white,
+      color: cardColor,
+      surfaceTintColor: Colors.transparent,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
@@ -18413,9 +19004,7 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
               .snapshots(),
           builder: (context, snapshot) {
             final data = snapshot.data?.data() ?? {};
-            final blockedUids = List<String>.from(
-              data['blockedUids'] ?? [],
-            );
+            final blockedUids = List<String>.from(data['blockedUids'] ?? []);
 
             if (blockedUids.isEmpty) {
               return const SizedBox();
@@ -18442,7 +19031,7 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                     pl: 'Zablokowani użytkownicy',
                     pt: 'Usuários bloqueados',
                     th: 'ผู้ใช้ที่ถูกบล็อก',
-                    id: 'Pengguna diblokir',
+                    id: 'Pengguna Diblokir',
                     hi: 'ब्लॉक किए गए उपयोगकर्ता',
                     bn: 'ব্লক করা ব্যবহারকারী',
                   ),
@@ -18452,19 +19041,16 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                     color: Colors.red,
                   ),
                 ),
-
                 const SizedBox(height: 14),
 
                 ...blockedUids.map((uid) {
-                  return FutureBuilder<
-                      DocumentSnapshot<Map<String, dynamic>>>(
+                  return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
                     future: FirebaseFirestore.instance
                         .collection('users')
                         .doc(uid)
                         .get(),
                     builder: (context, userSnapshot) {
-                      final userData =
-                          userSnapshot.data?.data() ?? {};
+                      final userData = userSnapshot.data?.data() ?? {};
 
                       final displayName =
                           (userData['displayName'] ??
@@ -18492,14 +19078,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                               .toString();
 
                       final shortName =
-                          (userData['shortName'] ?? '')
-                              .toString()
-                              .trim();
+                          (userData['shortName'] ?? '').toString().trim();
 
                       final photoUrl =
-                          (userData['photoUrl'] ?? '')
-                              .toString()
-                              .trim();
+                          (userData['photoUrl'] ?? '').toString().trim();
 
                       return Container(
                         margin: const EdgeInsets.only(bottom: 10),
@@ -18508,57 +19090,49 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF9FAFB),
+                          color: itemColor,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: const Color(0xFFE5E7EB),
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : const Color(0xFFE5E7EB),
                           ),
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundImage: photoUrl.isNotEmpty
-                                  ? NetworkImage(photoUrl)
-                                  : null,
-                              backgroundColor:
-                                  const Color(0xFFE5E7EB),
+                              backgroundImage:
+                                  photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                              backgroundColor: isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE5E7EB),
                               child: photoUrl.isEmpty
-                                  ? const Icon(
-                                      Icons.block,
-                                      color: Colors.black54,
-                                    )
+                                  ? Icon(Icons.block, color: subTextColor)
                                   : null,
                             ),
-
                             const SizedBox(width: 12),
 
                             Expanded(
                               child: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     displayName,
-                                    style: const TextStyle(
-                                      color: Colors.black87,
+                                    style: TextStyle(
+                                      color: textColor,
                                       fontSize: 18,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
-
                                   if (shortName.isNotEmpty)
                                     Padding(
-                                      padding:
-                                          const EdgeInsets.only(
-                                        top: 2,
-                                      ),
+                                      padding: const EdgeInsets.only(top: 2),
                                       child: Text(
                                         shortName,
-                                        style: const TextStyle(
-                                          color: Colors.black54,
-                                          fontWeight:
-                                              FontWeight.w500,
+                                        style: TextStyle(
+                                          color: subTextColor,
+                                          fontWeight: FontWeight.w500,
                                         ),
                                       ),
                                     ),
@@ -18591,12 +19165,12 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                                   pl: 'Odblokuj',
                                   pt: 'Desbloquear',
                                   th: 'เลิกบล็อก',
-                                  id: 'Buka blokir',
+                                  id: 'Buka Blokir',
                                   hi: 'अनब्लॉक करें',
                                   bn: 'আনব্লক করুন',
                                 ),
                                 style: TextStyle(
-                                  color: Colors.red.shade700,
+                                  color: Colors.red.shade400,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -18623,12 +19197,26 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF6F7F9);
+
+    final appBarColor =
+        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black;
+
     return Scaffold(
+      backgroundColor: bgColor,
+
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: appBarColor,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: textColor,
         elevation: 0,
+
         title: Text(
           tr(
             context,
@@ -18651,22 +19239,26 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
             hi: 'दोस्त और चैट',
             bn: 'বন্ধু ও চ্যাট',
           ),
-          style: const TextStyle(
-            color: Colors.black,
+          style: TextStyle(
+            color: textColor,
             fontWeight: FontWeight.w900,
           ),
         ),
       ),
+
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
             _buildSearchCard(),
             const SizedBox(height: 14),
+
             _buildIncomingRequests(),
             const SizedBox(height: 14),
+
             _buildFriendsList(),
             const SizedBox(height: 14),
+
             _buildBlockedUsersList(),
           ],
         ),
@@ -18686,6 +19278,8 @@ class UnreadChatIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? Colors.white : Colors.black87;
 
     if (currentUid.isEmpty) {
       return IconButton(
@@ -18711,7 +19305,10 @@ class UnreadChatIconButton extends StatelessWidget {
           hi: 'दोस्त और चैट',
           bn: 'বন্ধু ও চ্যাট',
         ),
-        icon: const Icon(Icons.people_alt_outlined),
+        icon: Icon(
+          Icons.people_alt_outlined,
+          color: iconColor,
+        ),
       );
     }
 
@@ -18776,7 +19373,10 @@ class UnreadChatIconButton extends StatelessWidget {
                 hi: 'दोस्त और चैट',
                 bn: 'বন্ধু ও চ্যাট',
               ),
-              icon: const Icon(Icons.people_alt_outlined),
+              icon: Icon(
+                Icons.people_alt_outlined,
+                color: iconColor,
+              ),
             ),
 
             if (unreadTotal > 0)
@@ -19260,6 +19860,12 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
   @override
   Widget build(BuildContext context) {
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF6F7F9);
+    final appBarColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final inputColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
 
     final titleText =
         (widget.otherNickname ?? '').trim().isNotEmpty
@@ -19267,16 +19873,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
             : widget.otherDisplayName;
 
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: appBarColor,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: textColor,
         elevation: 0,
         title: isSearchMode
             ? TextField(
                 controller: chatSearchController,
                 autofocus: true,
-                style: const TextStyle(color: Colors.black87),
+                style: TextStyle(color: textColor),
                 decoration: InputDecoration(
                   hintText: tr(
                     context,
@@ -19299,9 +19906,7 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                     hi: 'चैट इतिहास खोजें',
                     bn: 'চ্যাট ইতিহাস খুঁজুন',
                   ),
-                  hintStyle: const TextStyle(
-                    color: Colors.black54,
-                  ),
+                  hintStyle: TextStyle(color: subTextColor),
                   border: InputBorder.none,
                   suffixIcon: IconButton(
                     onPressed: () {
@@ -19352,8 +19957,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                   Expanded(
                     child: Text(
                       titleText,
-                      style: const TextStyle(
-                        color: Colors.black,
+                      style: TextStyle(
+                        color: textColor,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -19457,8 +20062,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                 hi: 'कोई मेल खाता संदेश नहीं',
                                 bn: 'কোনো মিলযুক্ত বার্তা নেই',
                               ),
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: subTextColor,
                         ),
                       ),
                     );
@@ -19600,7 +20205,9 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                             decoration: BoxDecoration(
                               color: isMine
                                   ? const Color(0xFFDDF6E3)
-                                  : Colors.white,
+                                  : (isDark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.white),
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
                                 color: isMine
@@ -19623,17 +20230,17 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                                     padding: const EdgeInsets.only(bottom: 4),
                                     child: Text(
                                       (data['senderName'] ?? '').toString(),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: Colors.black54,
+                                        color: subTextColor,
                                       ),
                                     ),
                                   ),
                                 SelectableText(
                                   text,
-                                  style: const TextStyle(
-                                    color: Colors.black87,
+                                  style: TextStyle(
+                                    color: isMine ? Colors.black87 : textColor,
                                     fontSize: 15,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -19656,11 +20263,13 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                 12,
                 12,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
+              decoration: BoxDecoration(
+                color: appBarColor,
                 border: Border(
                   top: BorderSide(
-                    color: Color(0xFFE5E7EB),
+                    color: isDark
+                        ? const Color(0xFF334155)
+                        : const Color(0xFFE5E7EB),
                   ),
                 ),
               ),
@@ -19673,8 +20282,8 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                       onSubmitted: (_) => _sendMessage(),
                       minLines: 1,
                       maxLines: 1,
-                      style: const TextStyle(
-                        color: Colors.black87,
+                      style: TextStyle(
+                        color: textColor,
                         fontWeight: FontWeight.w500,
                       ),
                       decoration: InputDecoration(
@@ -19699,14 +20308,14 @@ class _ChatRoomPageState extends State<ChatRoomPage> {
                           hi: 'संदेश लिखें',
                           bn: 'বার্তা লিখুন',
                         ),
-                        hintStyle: const TextStyle(
-                          color: Colors.black38,
+                        hintStyle: TextStyle(
+                          color: subTextColor,
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                         filled: true,
-                        fillColor: const Color(0xFFF9FAFB),
+                        fillColor: inputColor,
                       ),
                     ),
                   ),
@@ -19939,10 +20548,17 @@ class _TableDetailPageState extends State<TableDetailPage> {
             .toString()
             .trim();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final approved = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
+
         title: Text(
           tr(
             context,
@@ -19965,7 +20581,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
             hi: 'सीट बदलने का अनुरोध',
             bn: 'সিট বদলের অনুরোধ',
           ),
+          style: TextStyle(
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w800,
+          ),
         ),
+
         content: Text(
           tr(
             context,
@@ -19988,9 +20609,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
             hi: '$requesterName आपके साथ सीट बदलना चाहता है।\n\nक्या आप सहमत हैं?',
             bn: '$requesterName আপনার সাথে সিট বদলাতে চায়।\n\nআপনি কি রাজি?',
           ),
+          style: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black87,
+          ),
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.white70 : Colors.black54,
+            ),
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               tr(
@@ -20017,6 +20644,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              foregroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               tr(
@@ -20482,6 +21113,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
       return null;
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
+    const primaryGreen = Color(0xFF22C55E);
+
     return showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
@@ -20594,6 +21231,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
             }
 
             return AlertDialog(
+              backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
               title: Text(
                 tr(
                   context,
@@ -20616,6 +21258,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   hi: 'खिलाड़ी चुनें',
                   bn: 'খেলোয়াড় নির্বাচন করুন',
                 ),
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               content: SizedBox(
                 width: 420,
@@ -20625,8 +21271,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     TextField(
                       controller: searchController,
                       onChanged: runFilter,
+                      style: TextStyle(color: textColor),
                       decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search),
+                        prefixIcon: Icon(
+                          Icons.search,
+                          color: subTextColor,
+                        ),
                         labelText: tr(
                           context,
                           'Search player',
@@ -20669,6 +21319,31 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           hi: 'नाम या ईमेल',
                           bn: 'নাম বা ইমেইল',
                         ),
+
+                        labelStyle: TextStyle(color: subTextColor),
+                        hintStyle: TextStyle(color: subTextColor),
+
+                        filled: true,
+                        fillColor: fieldColor,
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color:
+                                isDark
+                                    ? Colors.white12
+                                    : Colors.black12,
+                          ),
+                        ),
+
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF22C55E),
+                            width: 1.5,
+                          ),
+                        ),
+
                       ),
                     ),
 
@@ -20703,8 +21378,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
                             )
                           : ListView.separated(
                               itemCount: filteredPlayers.length,
-                              separatorBuilder: (_, __) =>
-                                  const Divider(height: 1),
+                              separatorBuilder: (_, __) => Divider(
+                                height: 1,
+                                color:
+                                    isDark
+                                        ? Colors.white12
+                                        : Colors.black12,
+                              ),
                               itemBuilder: (context, index) {
                                 final player =
                                     filteredPlayers[index];
@@ -20720,7 +21400,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
                                         .trim();
 
                                 return ListTile(
-                                  title: Text(name),
+                                  title: Text(
+                                    name,
+                                    style: TextStyle(
+                                      color: textColor,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                   onTap: () {
                                     Navigator.pop(context, {
                                       'uid': player.id,
@@ -20794,6 +21480,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'रद्द करें',
                       bn: 'বাতিল',
                     ),
+                    style: TextStyle(
+                      color:
+                          isDark
+                              ? Colors.white70
+                              : const Color(0xFF2E7D32),
+                    ),
                   ),
                 ),
               ],
@@ -20809,7 +21501,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
   ) async {
     final firstNameController = TextEditingController();
     final lastInitialController = TextEditingController();
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
     return showDialog<Map<String, dynamic>>(
       context: context,
       builder: (context) {
@@ -20842,6 +21537,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 (!hasDuplicate || lastInitial.isNotEmpty);
 
             return AlertDialog(
+              backgroundColor:
+                  isDark ? const Color(0xFF1E293B) : Colors.white,
+              surfaceTintColor: Colors.transparent,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
               title: Text(
                 tr(
                   context,
@@ -20864,14 +21565,38 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   hi: 'सीट रिज़र्व करें',
                   bn: 'সিট রিজার্ভ করুন',
                 ),
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w800,
+                ),                
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
+                    style: TextStyle(color: textColor),
                     controller: firstNameController,
                     onChanged: (_) => setLocalState(() {}),
                     decoration: InputDecoration(
+
+                      labelStyle: TextStyle(color: subTextColor),
+                      hintStyle: TextStyle(color: subTextColor),
+                      filled: true,
+                      fillColor: fieldColor,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white12 : Colors.black12,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: Color(0xFF22C55E),
+                          width: 1.5,
+                        ),
+                      ),
+
                       labelText: tr(
                         context,
                         'First name',
@@ -20921,11 +21646,29 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
                   if (hasDuplicate) ...[
                     TextField(
+                      style: TextStyle(color: textColor),
                       controller: lastInitialController,
                       onChanged: (_) => setLocalState(() {}),
                       textCapitalization: TextCapitalization.characters,
                       maxLength: 1,
                       decoration: InputDecoration(
+                        labelStyle: TextStyle(color: subTextColor),
+                        hintStyle: TextStyle(color: subTextColor),
+                        filled: true,
+                        fillColor: fieldColor,
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: isDark ? Colors.white12 : Colors.black12,
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: const BorderSide(
+                            color: Color(0xFF22C55E),
+                            width: 1.5,
+                          ),
+                        ),                        
                         labelText: tr(
                           context,
                           'Last initial',
@@ -20996,9 +21739,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         hi: 'यह नाम पहले से टेबल पर मौजूद है। कृपया अंतिम नाम का पहला अक्षर जोड़ें, जैसे Joe A या Joe B.',
                         bn: 'এই নামটি টেবিলে আগে থেকেই আছে। অনুগ্রহ করে পদবির প্রথম অক্ষর যোগ করুন, যেমন Joe A বা Joe B.',
                       ),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Colors.black54,
+                        color: subTextColor,
                       ),
                     ),
                   ] else ...[
@@ -21026,9 +21769,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           hi: 'इस टेबल पर कोई डुप्लिकेट नाम नहीं है।',
                           bn: 'এই টেবিলে কোনো একই নাম নেই।',
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: Colors.black54,
+                          color: subTextColor,
                         ),
                       ),
                     ),
@@ -22397,8 +23140,6 @@ class _TableDetailPageState extends State<TableDetailPage> {
     }
   }
 
-
-
   Future<void> _joinSeatAsCurrentUser(int seatIndex) async {
     final user = FirebaseAuth.instance.currentUser;
 
@@ -22928,11 +23669,20 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final controller = TextEditingController(
       text: currentDealerName ?? '',
     );
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
     final result = await showDialog<String>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
             tr(
               context,
@@ -22955,10 +23705,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
               hi: 'डीलर का नाम सेट करें',
               bn: 'ডিলারের নাম সেট করুন',
             ),
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),           
           ),
           content: TextField(
             controller: controller,
             autofocus: true,
+            style: TextStyle(color: textColor),
             decoration: InputDecoration(
               labelText: tr(
                 context,
@@ -23002,10 +23757,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 hi: 'यदि पता न हो तो खाली छोड़ दें',
                 bn: 'জানা না থাকলে খালি রাখুন',
               ),
+              labelStyle: TextStyle(color: subTextColor),
+              hintStyle: TextStyle(color: subTextColor),
+              filled: true,
+              fillColor: fieldColor,
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(
+                  color: Color(0xFF22C55E),
+                  width: 1.5,
+                ),
+              ),              
             ),
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context),
               child: Text(
                 tr(
@@ -23032,6 +23807,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () {
                 Navigator.pop(context, controller.text.trim());
               },
@@ -23569,11 +24348,21 @@ class _TableDetailPageState extends State<TableDetailPage> {
   Future<Map<String, String>?> _showAddWaitingGuestDialog() async {
     final nameController = TextEditingController();
     final codeController = TextEditingController();
-  
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final fieldColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);  
+
     return showDialog<Map<String, String>>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
             tr(
               context,
@@ -23601,8 +24390,26 @@ class _TableDetailPageState extends State<TableDetailPage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
+                style: TextStyle(color: textColor),
                 controller: nameController,
                 decoration: InputDecoration(
+                  labelStyle: TextStyle(color: subTextColor),
+                  hintStyle: TextStyle(color: subTextColor),
+                  filled: true,
+                  fillColor: fieldColor,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.black12,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF22C55E),
+                      width: 1.5,
+                    ),
+                  ),                  
                   labelText: tr(
                     context,
                     'Guest Name',
@@ -23649,8 +24456,26 @@ class _TableDetailPageState extends State<TableDetailPage> {
               ),
               const SizedBox(height: 12),
               TextField(
+                style: TextStyle(color: textColor),
                 controller: codeController,
                 decoration: InputDecoration(
+                  labelStyle: TextStyle(color: subTextColor),
+                  hintStyle: TextStyle(color: subTextColor),
+                  filled: true,
+                  fillColor: fieldColor,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: isDark ? Colors.white12 : Colors.black12,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF22C55E),
+                      width: 1.5,
+                    ),
+                  ),                  
                   labelText: tr(
                     context,
                     'Invitation Code / Player ID (optional)',
@@ -23720,9 +24545,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     hi: 'बिना खाते वाले मेहमान के लिए कोड खाली छोड़ें।',
                     bn: 'অ্যাকাউন্ট ছাড়া অতিথির জন্য কোড খালি রাখুন।',
                   ),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
-                    color: Colors.black54,
+                    color: subTextColor,
                   ),
                 ),
               ),
@@ -23730,6 +24555,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context),
               child: Text(
                 tr(
@@ -23756,6 +24584,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () {
                 final name = nameController.text.trim();
                 final playerId = codeController.text.trim().toUpperCase();
@@ -24919,9 +25751,12 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
     if (!mounted) return null;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
     return showModalBottomSheet<int>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       showDragHandle: true,
       builder: (context) {
         return SafeArea(
@@ -24929,7 +25764,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
             children: [
               for (final seatIndex in openSeatIndexes)
                 ListTile(
-                  leading: const Icon(Icons.event_seat_outlined),
+                  leading: Icon(
+                    Icons.event_seat_outlined,
+                    color: textColor,
+                  ),
                   title: Text(
                     tr(
                       context,
@@ -24952,11 +25790,17 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'सीट ${seatIndex + 1}',
                       bn: 'সিট ${seatIndex + 1}',
                     ),
+                    style: TextStyle(
+                      color: textColor,
+                    ),                    
                   ),
                   onTap: () => Navigator.pop(context, seatIndex),
                 ),
               ListTile(
-                leading: const Icon(Icons.close),
+                leading: Icon(
+                  Icons.close,
+                  color: textColor,
+                ),
                 title: Text(
                   tr(
                     context,
@@ -24979,6 +25823,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     hi: 'रद्द करें',
                     bn: 'বাতিল',
                   ),
+                  style: TextStyle(
+                    color: textColor,
+                  ),                  
                 ),
                 onTap: () => Navigator.pop(context),
               ),
@@ -25153,10 +26000,19 @@ class _TableDetailPageState extends State<TableDetailPage> {
             .toString()
             .trim();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
     final shouldFill = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
             tr(
               context,
@@ -25179,6 +26035,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
               hi: 'खाली सीट भरें',
               bn: 'খালি সিট পূরণ করুন',
             ),
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),            
           ),
           content: Text(
             tr(
@@ -25202,9 +26062,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
               hi: '$nextPlayerName को प्रतीक्षा सूची से इस सीट पर ले जाएँ?',
               bn: '$nextPlayerName-কে অপেক্ষমাণ তালিকা থেকে এই সিটে সরাবেন?',
             ),
+            style: TextStyle(
+              color: subTextColor,
+            ),            
           ),
           actions: [
             TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),              
               onPressed: () => Navigator.pop(context, false),
               child: Text(
                 tr(
@@ -25231,6 +26097,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+              ),              
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 tr(
@@ -25800,6 +26670,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final user = FirebaseAuth.instance.currentUser;
     final myName = widget.session.name.trim();
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
     final seatList = rawSeats.map((seat) {
       if (seat is Map<String, dynamic>) {
         return Map<String, dynamic>.from(seat);
@@ -25911,7 +26785,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
       if (seatIsReserved) {
         final action = await showModalBottomSheet<String>(
           context: context,
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           showDragHandle: true,
           builder: (context) {
             return SafeArea(
@@ -25919,9 +26793,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 children: [
                   ListTile(
                     leading: Icon(
-                      reservedArrived
-                          ? Icons.schedule
-                          : Icons.check_circle,
+                      reservedArrived ? Icons.schedule : Icons.check_circle,
+                      color: textColor,
                     ),
                     title: Text(
                       reservedArrived
@@ -25967,6 +26840,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                               hi: 'पहुंच गया के रूप में चिह्नित करें',
                               bn: 'এসেছে হিসেবে চিহ্নিত করুন',
                             ),
+                      style: TextStyle(color: textColor),                            
                     ),
                     onTap: () => Navigator.pop(
                       context,
@@ -25974,9 +26848,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.drive_file_move_outline,
-                    ),
+                      color: textColor,
+                    ),                    
                     title: Text(
                       tr(
                         context,
@@ -25999,13 +26874,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         hi: 'सीट बदलें / स्वैप करें',
                         bn: 'সিট সরান / বদল করুন',
                       ),
+                      style: TextStyle(color: textColor),
                     ),
                     onTap: () => Navigator.pop(context, 'move'),
                   ),
                   ListTile(
-                    leading: const Icon(
+                    leading: Icon(
                       Icons.bookmark_remove_outlined,
-                    ),
+                      color: textColor,
+                    ),                    
                     title: Text(
                       tr(
                         context,
@@ -26028,6 +26905,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         hi: 'आरक्षण हटाएँ',
                         bn: 'রিজার্ভ সরান',
                       ),
+                      style: TextStyle(color: textColor),
                     ),
                     onTap: () => Navigator.pop(
                       context,
@@ -26035,7 +26913,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.close),
+                    leading: Icon(
+                      Icons.close,
+                      color: textColor,
+                    ),                    
                     title: Text(
                       tr(
                         context,
@@ -26058,6 +26939,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         hi: 'रद्द करें',
                         bn: 'বাতিল',
                       ),
+                      style: TextStyle(color: textColor),
                     ),
                     onTap: () => Navigator.pop(context, 'cancel'),
                   ),
@@ -26140,14 +27022,17 @@ class _TableDetailPageState extends State<TableDetailPage> {
       if (seatIsOpen) {
         final action = await showModalBottomSheet<String>(
           context: context,
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           showDragHandle: true,
           builder: (context) {
             return SafeArea(
               child: Wrap(
                 children: [
                   ListTile(
-                    leading: const Icon(Icons.person),
+                    leading: Icon(
+                      Icons.person,
+                      color: textColor,
+                    ),                    
                     title: Text(
                       tr(
                         context,
@@ -26170,12 +27055,16 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         hi: 'खुद शामिल हों',
                         bn: 'নিজে যোগ দিন',
                       ),
+                      style: TextStyle(color: textColor),
                     ),
                     onTap: () => Navigator.pop(context, 'join_self'),
                   ),
                   if (canManageThisTable)
                     ListTile(
-                      leading: const Icon(Icons.search),
+                      leading: Icon(
+                        Icons.search,
+                        color: textColor,
+                      ),                      
                       title: Text(
                         tr(
                           context,
@@ -26198,12 +27087,16 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           hi: 'खिलाड़ी चुनें',
                           bn: 'খেলোয়াড় নির্বাচন করুন',
                         ),
+                        style: TextStyle(color: textColor),
                       ),
                       onTap: () => Navigator.pop(context, 'select_player'),
                     ),
                   if (canManageThisTable)
                     ListTile(
-                      leading: const Icon(Icons.bookmark_add_outlined),
+                      leading: Icon(
+                        Icons.bookmark_add_outlined,
+                        color: textColor,
+                      ),                      
                       title: Text(
                         tr(
                           context,
@@ -26226,11 +27119,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           hi: 'मेहमान के लिए आरक्षित करें',
                           bn: 'অতিথির জন্য সংরক্ষণ করুন',
                         ),
+                        style: TextStyle(color: textColor),
                       ),
                       onTap: () => Navigator.pop(context, 'reserve_guest'),
                     ),
                   ListTile(
-                    leading: const Icon(Icons.close),
+                    leading: Icon(
+                      Icons.close,
+                      color: textColor,
+                    ),                    
                     title: Text(
                       tr(
                         context,
@@ -26253,6 +27150,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                         hi: 'रद्द करें',
                         bn: 'বাতিল',
                       ),
+                      style: TextStyle(color: textColor),
                     ),
                     onTap: () => Navigator.pop(context, 'cancel'),
                   ),
@@ -26285,7 +27183,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
       final action = await showModalBottomSheet<String>(
         context: context,
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         showDragHandle: true,
         builder: (context) {
           return SafeArea(
@@ -26294,6 +27192,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 ListTile(
                   leading: Icon(
                     arrived ? Icons.schedule : Icons.check_circle,
+                    color: textColor,
                   ),
                   title: Text(
                     arrived
@@ -26339,11 +27238,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                             hi: 'पहुंच गया के रूप में चिह्नित करें',
                             bn: 'এসেছে হিসেবে চিহ্নিত করুন',
                           ),
+                    style: TextStyle(color: textColor),      
                   ),
                   onTap: () => Navigator.pop(context, 'toggle_arrived'),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.drive_file_move_outline),
+                  leading: Icon(
+                    Icons.drive_file_move_outline,
+                    color: textColor,
+                  ),                  
                   title: Text(
                     tr(
                       context,
@@ -26366,11 +27269,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'सीट बदलें / स्वैप करें',
                       bn: 'সিট সরান / বদল করুন',
                     ),
+                    style: TextStyle(color: textColor),
                   ),
                   onTap: () => Navigator.pop(context, 'move'),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.person_remove),
+                  leading: Icon(
+                    Icons.person_remove,
+                    color: textColor,
+                  ),                  
                   title: Text(
                     tr(
                       context,
@@ -26393,11 +27300,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'सीट से हटाएँ',
                       bn: 'সিট থেকে সরান',
                     ),
+                    style: TextStyle(color: textColor),
                   ),
                   onTap: () => Navigator.pop(context, 'remove'),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.close),
+                  leading: Icon(
+                    Icons.close,
+                    color: textColor,
+                  ),                  
                   title: Text(
                     tr(
                       context,
@@ -26420,6 +27331,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'रद्द करें',
                       bn: 'বাতিল',
                     ),
+                    style: TextStyle(color: textColor),
                   ),
                   onTap: () => Navigator.pop(context, 'cancel'),
                 ),
@@ -26517,7 +27429,16 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
+            backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+            surfaceTintColor: Colors.transparent,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),            
             title: Text(
+              style: TextStyle(
+                color: textColor,
+                fontWeight: FontWeight.w800,
+              ),              
               tr(
                 context,
                 'Claim Reserved Seat',
@@ -26541,6 +27462,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
               ),
             ),
             content: Text(
+              style: TextStyle(color: subTextColor),
               tr(
                 context,
                 'This seat is reserved for ${seat['reservedForShortName'] ?? seat['reservedForName'] ?? 'you'}.\n\nIs this you?',
@@ -26582,6 +27504,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),
             actions: [
               TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                ),                
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
                   tr(
@@ -26608,6 +27533,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 ),
               ),
               FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: const Color(0xFF22C55E),
+                  foregroundColor: Colors.white,
+                ),                
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(
                   tr(
@@ -26728,7 +27657,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
       final action = await showModalBottomSheet<String>(
         context: context,
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         showDragHandle: true,
         builder: (context) {
           return SafeArea(
@@ -26737,9 +27666,8 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 if (canToggleMine)
                   ListTile(
                     leading: Icon(
-                      arrived
-                          ? Icons.schedule
-                          : Icons.check_circle,
+                      arrived ? Icons.schedule : Icons.check_circle,
+                      color: textColor,
                     ),
                     title: Text(
                       arrived
@@ -26785,6 +27713,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                               hi: 'पहुंच गया के रूप में चिह्नित करें',
                               bn: 'এসেছে হিসেবে চিহ্নিত করুন',
                             ),
+                      style: TextStyle(color: textColor),      
                     ),
                     onTap: () => Navigator.pop(
                       context,
@@ -26792,7 +27721,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     ),
                   ),
                 ListTile(
-                  leading: const Icon(Icons.person_remove),
+                  leading: Icon(
+                    Icons.person_remove,
+                    color: textColor,
+                  ),                  
                   title: Text(
                     tr(
                       context,
@@ -26815,6 +27747,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'सीट छोड़ें',
                       bn: 'সিট ছাড়ুন',
                     ),
+                    style: TextStyle(color: textColor),
                   ),
                   onTap: () => Navigator.pop(
                     context,
@@ -26822,7 +27755,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   ),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.close),
+                  leading: Icon(
+                    Icons.close,
+                    color: textColor,
+                  ),                  
                   title: Text(
                     tr(
                       context,
@@ -26845,6 +27781,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'रद्द करें',
                       bn: 'বাতিল',
                     ),
+                    style: TextStyle(color: textColor),
                   ),
                   onTap: () => Navigator.pop(context, 'cancel'),
                 ),
@@ -26944,7 +27881,16 @@ class _TableDetailPageState extends State<TableDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),        
         title: Text(
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),          
           tr(
             context,
             'Request Seat Swap',
@@ -26968,6 +27914,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
           ),
         ),
         content: Text(
+          style: TextStyle(color: subTextColor),
           tr(
             context,
             'Do you want to ask this player to swap seats with you?',
@@ -26992,6 +27939,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+            ),            
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               tr(
@@ -27018,6 +27968,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              foregroundColor: Colors.white,
+            ),            
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               tr(
@@ -27179,45 +28133,49 @@ class _TableDetailPageState extends State<TableDetailPage> {
     required String value,
     required Color color,
   }) {
-    return forceLightTheme(
-      Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 9,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 9,
+      ),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E293B)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: color.withValues(alpha: 0.28),
         ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: 0.28),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 15,
+            color: color,
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
               color: color,
+              fontWeight: FontWeight.w900,
             ),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w900,
-              ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: isDark
+                  ? Colors.white
+                  : Colors.black87,
+              fontWeight: FontWeight.w900,
             ),
-            const SizedBox(width: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -27477,407 +28435,409 @@ class _TableDetailPageState extends State<TableDetailPage> {
     );
   }
 
-
-
-
-
   Widget _buildWaitingListCard(TableData table) {
-    return forceLightTheme(
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFFE5E7EB)),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x12000000),
-              blurRadius: 10,
-              offset: Offset(0, 4),
-            ),
-          ],
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E293B)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: isDark
+              ? Colors.white12
+              : const Color(0xFFE5E7EB),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.groups_2_outlined,
-                  color: Colors.black87,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  tr(
-                    context,
-                    'Waiting List',
-                    zhTw: '等待名單',
-                    zhCn: '等待名单',
-                    ko: '대기 목록',
-                    ja: 'ウェイティングリスト',
-                    de: 'Warteliste',
-                    fr: 'Liste d’attente',
-                    ar: 'قائمة الانتظار',
-                    ru: 'Список ожидания',
-                    trk: 'Bekleme Listesi',
-                    es: 'Lista de espera',
-                    it: 'Lista d’attesa',
-                    pl: 'Lista oczekujących',
-                    pt: 'Lista de espera',
-                    th: 'รายชื่อรอ',
-                    id: 'Daftar tunggu',
-                    hi: 'प्रतीक्षा सूची',
-                    bn: 'অপেক্ষমাণ তালিকা',
-                  ),
-                  style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (table.waitingList.isEmpty)
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.groups_2_outlined,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+              const SizedBox(width: 8),
               Text(
                 tr(
                   context,
-                  'Nobody is waiting yet.',
-                  zhTw: '目前還沒有人在等待。',
-                  zhCn: '目前还没有人在等待。',
-                  ko: '현재 대기 중인 사람이 없습니다.',
-                  ja: '現在待機中の人はいません。',
-                  de: 'Derzeit wartet niemand.',
-                  fr: 'Personne n’attend pour le moment.',
-                  ar: 'لا يوجد أحد في قائمة الانتظار حالياً.',
-                  ru: 'Сейчас никто не ожидает.',
-                  trk: 'Henüz bekleyen kimse yok.',
-                  es: 'Nadie está esperando todavía.',
-                  it: 'Nessuno è ancora in attesa.',
-                  pl: 'Nikt jeszcze nie czeka.',
-                  pt: 'Ninguém está esperando ainda.',
-                  th: 'ยังไม่มีใครรออยู่',
-                  id: 'Belum ada yang menunggu.',
-                  hi: 'अभी कोई प्रतीक्षा नहीं कर रहा है।',
-                  bn: 'এখনও কেউ অপেক্ষা করছে না।',
+                  'Waiting List',
+                  zhTw: '等待名單',
+                  zhCn: '等待名单',
+                  ko: '대기 목록',
+                  ja: 'ウェイティングリスト',
+                  de: 'Warteliste',
+                  fr: 'Liste d’attente',
+                  ar: 'قائمة الانتظار',
+                  ru: 'Список ожидания',
+                  trk: 'Bekleme Listesi',
+                  es: 'Lista de espera',
+                  it: 'Lista d’attesa',
+                  pl: 'Lista oczekujących',
+                  pt: 'Lista de espera',
+                  th: 'รายชื่อรอ',
+                  id: 'Daftar tunggu',
+                  hi: 'प्रतीक्षा सूची',
+                  bn: 'অপেক্ষমাণ তালিকা',
                 ),
-                style: const TextStyle(
-                  color: Colors.black54,
-                  fontWeight: FontWeight.w600,
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
                 ),
-              )
-            else
-              Column(
-                children: List.generate(table.waitingList.length, (index) {
-                  final entry =
-                      Map<String, dynamic>.from(table.waitingList[index]);
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (table.waitingList.isEmpty)
+            Text(
+              tr(
+                context,
+                'Nobody is waiting yet.',
+                zhTw: '目前還沒有人在等待。',
+                zhCn: '目前还没有人在等待。',
+                ko: '현재 대기 중인 사람이 없습니다.',
+                ja: '現在待機中の人はいません。',
+                de: 'Derzeit wartet niemand.',
+                fr: 'Personne n’attend pour le moment.',
+                ar: 'لا يوجد أحد في قائمة الانتظار حالياً.',
+                ru: 'Сейчас никто не ожидает.',
+                trk: 'Henüz bekleyen kimse yok.',
+                es: 'Nadie está esperando todavía.',
+                it: 'Nessuno è ancora in attesa.',
+                pl: 'Nikt jeszcze nie czeka.',
+                pt: 'Ninguém está esperando ainda.',
+                th: 'ยังไม่มีใครรออยู่',
+                id: 'Belum ada yang menunggu.',
+                hi: 'अभी कोई प्रतीक्षा नहीं कर रहा है।',
+                bn: 'এখনও কেউ অপেক্ষা করছে না।',
+              ),
+              style: TextStyle(
+                color: isDark ? Colors.white70 : Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
+            )
+          else
+            Column(
+              children: List.generate(table.waitingList.length, (index) {
+                final entry =
+                    Map<String, dynamic>.from(table.waitingList[index]);
 
-                  final label = buildWaitingLabel(entry, index);
+                final label = buildWaitingLabel(entry, index);
 
-                  final arrived = entry['arrived'] == true;
+                final arrived = entry['arrived'] == true;
 
-                  return ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      label,
-                      style: const TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.w700,
-                      ),
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    label,
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontWeight: FontWeight.w700,
                     ),
-                    subtitle: Text(
-                      arrived
-                          ? tr(
-                              context,
-                              'Arrived',
-                              zhTw: '已到場',
-                              zhCn: '已到场',
-                              ko: '도착',
-                              ja: '到着済み',
-                              de: 'Angekommen',
-                              fr: 'Arrivé',
-                              ar: 'حاضر',
-                              ru: 'Прибыл',
-                              trk: 'Geldi',
-                              es: 'Llegó',
-                              it: 'Arrivato',
-                              pl: 'Przybył',
-                              pt: 'Chegou',
-                              th: 'มาถึงแล้ว',
-                              id: 'Sudah datang',
-                              hi: 'आ गया',
-                              bn: 'এসেছে',
-                            )
-                          : tr(
-                              context,
-                              'Unarrived',
-                              zhTw: '未到場',
-                              zhCn: '未到场',
-                              ko: '미도착',
-                              ja: '未到着',
-                              de: 'Nicht angekommen',
-                              fr: 'Non arrivé',
-                              ar: 'غير حاضر',
-                              ru: 'Не прибыл',
-                              trk: 'Gelmedi',
-                              es: 'No llegó',
-                              it: 'Non arrivato',
-                              pl: 'Nie przybył',
-                              pt: 'Não chegou',
-                              th: 'ยังไม่มา',
-                              id: 'Belum datang',
-                              hi: 'नहीं आया',
-                              bn: 'এখনও আসেনি',
-                            ),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Colors.black54,
-                      ),
+                  ),
+                  subtitle: Text(
+                    arrived
+                        ? tr(
+                            context,
+                            'Arrived',
+                            zhTw: '已到場',
+                            zhCn: '已到场',
+                            ko: '도착',
+                            ja: '到着済み',
+                            de: 'Angekommen',
+                            fr: 'Arrivé',
+                            ar: 'حاضر',
+                            ru: 'Прибыл',
+                            trk: 'Geldi',
+                            es: 'Llegó',
+                            it: 'Arrivato',
+                            pl: 'Przybył',
+                            pt: 'Chegou',
+                            th: 'มาถึงแล้ว',
+                            id: 'Sudah datang',
+                            hi: 'आ गया',
+                            bn: 'এসেছে',
+                          )
+                        : tr(
+                            context,
+                            'Unarrived',
+                            zhTw: '未到場',
+                            zhCn: '未到场',
+                            ko: '미도착',
+                            ja: '未到着',
+                            de: 'Nicht angekommen',
+                            fr: 'Non arrivé',
+                            ar: 'غير حاضر',
+                            ru: 'Не прибыл',
+                            trk: 'Gelmedi',
+                            es: 'No llegó',
+                            it: 'Non arrivato',
+                            pl: 'Nie przybył',
+                            pt: 'Não chegou',
+                            th: 'ยังไม่มา',
+                            id: 'Belum datang',
+                            hi: 'नहीं आया',
+                            bn: 'এখনও আসেনি',
+                          ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.black54,
                     ),
-                    onTap: () async {
-                      final canToggleMine =
-                          _canCurrentUserToggleWaitingArrived(entry);
+                  ),
+                  onTap: () async {
+                    final canToggleMine =
+                        _canCurrentUserToggleWaitingArrived(entry);
 
-                      if (!canManageThisTable && !canToggleMine) return;
+                    if (!canManageThisTable && !canToggleMine) return;
 
-                      final action = await showModalBottomSheet<String>(
-                        context: context,
-                        backgroundColor: Colors.white,
-                        showDragHandle: true,
-                        builder: (context) {
-                          return forceLightTheme(
-                            SafeArea(
-                              child: Wrap(
-                                children: [
-                                  if (canToggleMine)
-                                    ListTile(
-                                      leading: Icon(
-                                        arrived
-                                            ? Icons.schedule
-                                            : Icons.check_circle,
-                                        color: Colors.black87,
-                                      ),
-                                      title: Text(
-                                        arrived
-                                            ? tr(
-                                                context,
-                                                'Mark as unarrived',
-                                                zhTw: '標記為未到場',
-                                                zhCn: '标记为未到场',
-                                                ko: '미도착으로 표시',
-                                                ja: '未到着にする',
-                                                de: 'Als nicht angekommen markieren',
-                                                fr: 'Marquer comme non arrivé',
-                                                ar: 'تحديد كغير حاضر',
-                                                ru: 'Отметить как не прибывшего',
-                                                trk: 'Gelmedi olarak işaretle',
-                                                es: 'Marcar como no llegado',
-                                                it: 'Segna come non arrivato',
-                                                pl: 'Oznacz jako nieprzybyły',
-                                                pt: 'Marcar como não chegou',
-                                                th: 'ทำเครื่องหมายว่ายังไม่มา',
-                                                id: 'Tandai belum datang',
-                                                hi: 'नहीं पहुँचा के रूप में चिह्नित करें',
-                                                bn: 'না আসা হিসেবে চিহ্নিত করুন',
-                                              )
-                                            : tr(
-                                                context,
-                                                'Mark as arrived',
-                                                zhTw: '標記為已到場',
-                                                zhCn: '标记为已到场',
-                                                ko: '도착으로 표시',
-                                                ja: '到着済みにする',
-                                                de: 'Als angekommen markieren',
-                                                fr: 'Marquer comme arrivé',
-                                                ar: 'تحديد كحاضر',
-                                                ru: 'Отметить как прибывшего',
-                                                trk: 'Geldi olarak işaretle',
-                                                es: 'Marcar como llegado',
-                                                it: 'Segna come arrivato',
-                                                pl: 'Oznacz jako przybyły',
-                                                pt: 'Marcar como chegou',
-                                                th: 'ทำเครื่องหมายว่ามาถึงแล้ว',
-                                                id: 'Tandai sudah datang',
-                                                hi: 'पहुंच गया के रूप में चिह्नित करें',
-                                                bn: 'এসেছে হিসেবে চিহ্নিত করুন',
-                                              ),
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      onTap: () =>
-                                          Navigator.pop(context, 'arrived'),
-                                    ),
-                                  if (canManageThisTable)
-                                    ListTile(
-                                      leading: const Icon(
-                                        Icons.drive_file_move_outline,
-                                        color: Colors.black87,
-                                      ),
-                                      title: Text(
-                                        tr(
-                                          context,
-                                          'Move / swap seat',
-                                          zhTw: '移動 / 交換座位',
-                                          zhCn: '移动 / 交换座位',
-                                          ko: '좌석 이동 / 교환',
-                                          ja: '席を移動 / 交換',
-                                          de: 'Sitz verschieben / tauschen',
-                                          fr: 'Déplacer / échanger le siège',
-                                          ar: 'نقل / تبديل المقعد',
-                                          ru: 'Переместить / обменять место',
-                                          trk: 'Koltuğu taşı / değiştir',
-                                          es: 'Mover / intercambiar asiento',
-                                          it: 'Sposta / scambia posto',
-                                          pl: 'Przenieś / zamień miejsce',
-                                          pt: 'Mover / trocar assento',
-                                          th: 'ย้าย / สลับที่นั่ง',
-                                          id: 'Pindah / Tukar kursi',
-                                          hi: 'सीट बदलें / स्वैप करें',
-                                          bn: 'সিট সরান / বদল করুন',
-                                        ),
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      onTap: () =>
-                                          Navigator.pop(context, 'move'),
-                                    ),
-                                  if (_canCurrentUserRemoveWaitingEntry(entry))
-                                    ListTile(
-                                      leading: const Icon(
-                                        Icons.person_remove,
-                                        color: Colors.black87,
-                                      ),
-                                      title: Text(
-                                        canManageThisTable
-                                            ? tr(
-                                                context,
-                                                'Remove from waiting list',
-                                                zhTw: '從等待名單移除',
-                                                zhCn: '从等待名单移除',
-                                                ko: '대기 목록에서 제거',
-                                                ja: 'ウェイティングリストから削除',
-                                                de: 'Von der Warteliste entfernen',
-                                                fr: 'Retirer de la liste d’attente',
-                                                ar: 'إزالة من قائمة الانتظار',
-                                                ru: 'Удалить из списка ожидания',
-                                                trk: 'Bekleme listesinden kaldır',
-                                                es: 'Eliminar de la lista de espera',
-                                                it: 'Rimuovi dalla lista d’attesa',
-                                                pl: 'Usuń z listy oczekujących',
-                                                pt: 'Remover da lista de espera',
-                                                th: 'นำออกจากรายชื่อรอ',
-                                                id: 'Hapus dari daftar tunggu',
-                                                hi: 'प्रतीक्षा सूची से हटाएँ',
-                                                bn: 'অপেক্ষমাণ তালিকা থেকে সরান',
-                                              )
-                                            : tr(
-                                                context,
-                                                'Leave waiting list',
-                                                zhTw: '離開等待名單',
-                                                zhCn: '离开等待名单',
-                                                ko: '대기 목록 나가기',
-                                                ja: 'ウェイティングリストを離れる',
-                                                de: 'Warteliste verlassen',
-                                                fr: 'Quitter la liste d’attente',
-                                                ar: 'مغادرة قائمة الانتظار',
-                                                ru: 'Покинуть список ожидания',
-                                                trk: 'Bekleme listesinden ayrıl',
-                                                es: 'Salir de la lista de espera',
-                                                it: 'Lascia la lista d’attesa',
-                                                pl: 'Opuść listę oczekujących',
-                                                pt: 'Sair da lista de espera',
-                                                th: 'ออกจากรายชื่อรอ',
-                                                id: 'Keluar dari daftar tunggu',
-                                                hi: 'प्रतीक्षा सूची छोड़ें',
-                                                bn: 'অপেক্ষমাণ তালিকা ত্যাগ করুন',
-                                              ),
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                        ),
-                                      ),
-                                      onTap: () =>
-                                          Navigator.pop(context, 'remove'),
-                                    ),
-                                  ListTile(
-                                    leading: const Icon(
-                                      Icons.close,
-                                      color: Colors.black87,
-                                    ),
-                                    title: Text(
-                                      tr(
-                                        context,
-                                        'Cancel',
-                                        zhTw: '取消',
-                                        zhCn: '取消',
-                                        ko: '취소',
-                                        ja: 'キャンセル',
-                                        de: 'Abbrechen',
-                                        fr: 'Annuler',
-                                        ar: 'إلغاء',
-                                        ru: 'Отмена',
-                                        trk: 'İptal',
-                                        es: 'Cancelar',
-                                        it: 'Annulla',
-                                        pl: 'Anuluj',
-                                        pt: 'Cancelar',
-                                        th: 'ยกเลิก',
-                                        id: 'Batal',
-                                        hi: 'रद्द करें',
-                                        bn: 'বাতিল',
-                                      ),
-                                      style: const TextStyle(
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    onTap: () =>
-                                        Navigator.pop(context, 'cancel'),
+                    final action = await showModalBottomSheet<String>(
+                      context: context,
+                      backgroundColor: isDark
+                          ? const Color(0xFF1E293B)
+                          : Colors.white,
+                      showDragHandle: true,
+                      builder: (context) {
+                        return SafeArea(
+                          child: Wrap(
+                            children: [
+                              if (canToggleMine)
+                                ListTile(
+                                  leading: Icon(
+                                    arrived
+                                        ? Icons.schedule
+                                        : Icons.check_circle,
+                                    color: isDark ? Colors.white : Colors.black87,
                                   ),
-                                ],
+                                  title: Text(
+                                    arrived
+                                        ? tr(
+                                            context,
+                                            'Mark as unarrived',
+                                            zhTw: '標記為未到場',
+                                            zhCn: '标记为未到场',
+                                            ko: '미도착으로 표시',
+                                            ja: '未到着にする',
+                                            de: 'Als nicht angekommen markieren',
+                                            fr: 'Marquer comme non arrivé',
+                                            ar: 'تحديد كغير حاضر',
+                                            ru: 'Отметить как не прибывшего',
+                                            trk: 'Gelmedi olarak işaretle',
+                                            es: 'Marcar como no llegado',
+                                            it: 'Segna come non arrivato',
+                                            pl: 'Oznacz jako nieprzybyły',
+                                            pt: 'Marcar como não chegou',
+                                            th: 'ทำเครื่องหมายว่ายังไม่มา',
+                                            id: 'Tandai belum datang',
+                                            hi: 'नहीं पहुँचा के रूप में चिह्नित करें',
+                                            bn: 'না আসা হিসেবে চিহ্নিত করুন',
+                                          )
+                                        : tr(
+                                            context,
+                                            'Mark as arrived',
+                                            zhTw: '標記為已到場',
+                                            zhCn: '标记为已到场',
+                                            ko: '도착으로 표시',
+                                            ja: '到着済みにする',
+                                            de: 'Als angekommen markieren',
+                                            fr: 'Marquer comme arrivé',
+                                            ar: 'تحديد كحاضر',
+                                            ru: 'Отметить как прибывшего',
+                                            trk: 'Geldi olarak işaretle',
+                                            es: 'Marcar como llegado',
+                                            it: 'Segna come arrivato',
+                                            pl: 'Oznacz jako przybyły',
+                                            pt: 'Marcar como chegou',
+                                            th: 'ทำเครื่องหมายว่ามาถึงแล้ว',
+                                            id: 'Tandai sudah datang',
+                                            hi: 'पहुंच गया के रूप में चिह्नित करें',
+                                            bn: 'এসেছে হিসেবে চিহ্নিত করুন',
+                                          ),
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  onTap: () =>
+                                      Navigator.pop(context, 'arrived'),
+                                ),
+                              if (canManageThisTable)
+                                ListTile(
+                                  leading: Icon(
+                                    Icons.drive_file_move_outline,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                  title: Text(
+                                    tr(
+                                      context,
+                                      'Move / swap seat',
+                                      zhTw: '移動 / 交換座位',
+                                      zhCn: '移动 / 交换座位',
+                                      ko: '좌석 이동 / 교환',
+                                      ja: '席を移動 / 交換',
+                                      de: 'Sitz verschieben / tauschen',
+                                      fr: 'Déplacer / échanger le siège',
+                                      ar: 'نقل / تبديل المقعد',
+                                      ru: 'Переместить / обменять место',
+                                      trk: 'Koltuğu taşı / değiştir',
+                                      es: 'Mover / intercambiar asiento',
+                                      it: 'Sposta / scambia posto',
+                                      pl: 'Przenieś / zamień miejsce',
+                                      pt: 'Mover / trocar assento',
+                                      th: 'ย้าย / สลับที่นั่ง',
+                                      id: 'Pindah / Tukar kursi',
+                                      hi: 'सीट बदलें / स्वैप करें',
+                                      bn: 'সিট সরান / বদল করুন',
+                                    ),
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  onTap: () =>
+                                      Navigator.pop(context, 'move'),
+                                ),
+                              if (_canCurrentUserRemoveWaitingEntry(entry))
+                                ListTile(
+                                  leading: Icon(
+                                    Icons.person_remove,
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                  title: Text(
+                                    canManageThisTable
+                                        ? tr(
+                                            context,
+                                            'Remove from waiting list',
+                                            zhTw: '從等待名單移除',
+                                            zhCn: '从等待名单移除',
+                                            ko: '대기 목록에서 제거',
+                                            ja: 'ウェイティングリストから削除',
+                                            de: 'Von der Warteliste entfernen',
+                                            fr: 'Retirer de la liste d’attente',
+                                            ar: 'إزالة من قائمة الانتظار',
+                                            ru: 'Удалить из списка ожидания',
+                                            trk: 'Bekleme listesinden kaldır',
+                                            es: 'Eliminar de la lista de espera',
+                                            it: 'Rimuovi dalla lista d’attesa',
+                                            pl: 'Usuń z listy oczekujących',
+                                            pt: 'Remover da lista de espera',
+                                            th: 'นำออกจากรายชื่อรอ',
+                                            id: 'Hapus dari daftar tunggu',
+                                            hi: 'प्रतीक्षा सूची से हटाएँ',
+                                            bn: 'অপেক্ষমাণ তালিকা থেকে সরান',
+                                          )
+                                        : tr(
+                                            context,
+                                            'Leave waiting list',
+                                            zhTw: '離開等待名單',
+                                            zhCn: '离开等待名单',
+                                            ko: '대기 목록 나가기',
+                                            ja: 'ウェイティングリストを離れる',
+                                            de: 'Warteliste verlassen',
+                                            fr: 'Quitter la liste d’attente',
+                                            ar: 'مغادرة قائمة الانتظار',
+                                            ru: 'Покинуть список ожидания',
+                                            trk: 'Bekleme listesinden ayrıl',
+                                            es: 'Salir de la lista de espera',
+                                            it: 'Lascia la lista d’attesa',
+                                            pl: 'Opuść listę oczekujących',
+                                            pt: 'Sair da lista de espera',
+                                            th: 'ออกจากรายชื่อรอ',
+                                            id: 'Keluar dari daftar tunggu',
+                                            hi: 'प्रतीक्षा सूची छोड़ें',
+                                            bn: 'অপেক্ষমাণ তালিকা ত্যাগ করুন',
+                                          ),
+                                    style: TextStyle(
+                                      color: isDark ? Colors.white : Colors.black87,
+                                    ),
+                                  ),
+                                  onTap: () =>
+                                      Navigator.pop(context, 'remove'),
+                                ),
+                              ListTile(
+                                leading: Icon(
+                                  Icons.close,
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                                title: Text(
+                                  tr(
+                                    context,
+                                    'Cancel',
+                                    zhTw: '取消',
+                                    zhCn: '取消',
+                                    ko: '취소',
+                                    ja: 'キャンセル',
+                                    de: 'Abbrechen',
+                                    fr: 'Annuler',
+                                    ar: 'إلغاء',
+                                    ru: 'Отмена',
+                                    trk: 'İptal',
+                                    es: 'Cancelar',
+                                    it: 'Annulla',
+                                    pl: 'Anuluj',
+                                    pt: 'Cancelar',
+                                    th: 'ยกเลิก',
+                                    id: 'Batal',
+                                    hi: 'रद्द करें',
+                                    bn: 'বাতিল',
+                                  ),
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white : Colors.black87,
+                                  ),
+                                ),
+                                onTap: () =>
+                                    Navigator.pop(context, 'cancel'),
                               ),
-                            ),
-                          );
-                        },
+                            ],
+                          ),
+                        );
+                      },
+                    );
+
+                    if (!mounted ||
+                        action == null ||
+                        action == 'cancel') {
+                      return;
+                    }
+
+                    if (action == 'arrived') {
+                      await _toggleWaitingArrived(index);
+                      return;
+                    }
+
+                    if (action == 'move') {
+                      final targetSeatIndex =
+                          await _showPickOpenSeatDialog();
+
+                      if (!mounted) return;
+                      if (targetSeatIndex == null) return;
+
+                      await _moveWaitingToSeat(
+                        index,
+                        targetSeatIndex,
                       );
 
-                      if (!mounted ||
-                          action == null ||
-                          action == 'cancel') {
-                        return;
-                      }
+                      return;
+                    }
 
-                      if (action == 'arrived') {
-                        await _toggleWaitingArrived(index);
-                        return;
-                      }
-
-                      if (action == 'move') {
-                        final targetSeatIndex =
-                            await _showPickOpenSeatDialog();
-
-                        if (!mounted) return;
-                        if (targetSeatIndex == null) return;
-
-                        await _moveWaitingToSeat(
-                          index,
-                          targetSeatIndex,
-                        );
-
-                        return;
-                      }
-
-                      if (action == 'remove') {
-                        await _removeFromWaitingListAt(index);
-                        return;
-                      }
-                    },
-                  );
-                }),
-              ),
-          ],
-        ),
+                    if (action == 'remove') {
+                      await _removeFromWaitingListAt(index);
+                      return;
+                    }
+                  },
+                );
+              }),
+            ),
+        ],
       ),
     );
   }
@@ -27896,13 +28856,21 @@ class _TableDetailPageState extends State<TableDetailPage> {
       return seatUid.isNotEmpty && seatUid == uid;
     });
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark
+            ? const Color(0xFF1E293B)
+            : Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
+        border: Border.all(
+          color: isDark
+              ? Colors.white12
+              : const Color(0xFFE5E7EB),
+        ),
         boxShadow: const [
           BoxShadow(
             color: Color(0x12000000),
@@ -27917,6 +28885,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
         children: [
           if (!isInWaitingList)
             FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+              ),
               onPressed: isAlreadySeated ? null : _addToWaitingList,
               icon: const Icon(Icons.playlist_add),
               label: Text(
@@ -27968,6 +28940,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
           if (isInWaitingList)
             OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor:
+                    isDark ? Colors.white : Colors.black87,
+                side: BorderSide(
+                  color: isDark
+                      ? Colors.white24
+                      : Colors.black12,
+                ),
+              ),
               onPressed: () async {
                 final index = table.waitingList.indexWhere((entry) {
                   final entryUid = (entry['uid'] ?? '').toString().trim();
@@ -28038,16 +29019,27 @@ class _TableDetailPageState extends State<TableDetailPage> {
   }
 
   Future<void> _showAddPlayerToWaitingListSheet() async {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
     final action = await showModalBottomSheet<String>(
       context: context,
-      backgroundColor: Colors.white,
+      backgroundColor: isDark
+          ? const Color(0xFF1E293B)
+          : Colors.white,
       showDragHandle: true,
       builder: (context) {
         return SafeArea(
           child: Wrap(
             children: [
               ListTile(
-                leading: const Icon(Icons.search),
+                leading: Icon(
+                  Icons.search,
+                  color:
+                      isDark
+                          ? Colors.white
+                          : Colors.black87,
+                ),
                 title: Text(
                   tr(
                     context,
@@ -28070,11 +29062,25 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     hi: 'खिलाड़ी चुनें',
                     bn: 'খেলোয়াড় নির্বাচন করুন',
                   ),
+                  style: TextStyle(
+                    color:
+                        isDark
+                            ? Colors.white
+                            : Colors.black87,
+                  ),
                 ),
-                onTap: () => Navigator.pop(context, 'select_player'),
+                onTap: () =>
+                    Navigator.pop(context, 'select_player'),
               ),
+
               ListTile(
-                leading: const Icon(Icons.person_add_alt_1),
+                leading: Icon(
+                  Icons.person_add_alt_1,
+                  color:
+                      isDark
+                          ? Colors.white
+                          : Colors.black87,
+                ),
                 title: Text(
                   tr(
                     context,
@@ -28097,8 +29103,15 @@ class _TableDetailPageState extends State<TableDetailPage> {
                     hi: 'मेहमान जोड़ें',
                     bn: 'অতিথি যোগ করুন',
                   ),
+                  style: TextStyle(
+                    color:
+                        isDark
+                            ? Colors.white
+                            : Colors.black87,
+                  ),
                 ),
-                onTap: () => Navigator.pop(context, 'add_guest'),
+                onTap: () =>
+                    Navigator.pop(context, 'add_guest'),
               ),
             ],
           ),
@@ -29003,7 +30016,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
   Widget _buildTableArea(TableData table) {
     final seatCount = table.playerSeatCount;
     final seats = table.seats;
-
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return LayoutBuilder(
       builder: (context, constraints) {
         final isMobile = constraints.maxWidth < 600;
@@ -29128,17 +30141,21 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   width: tableWidth,
                   height: tableHeight,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1B5E20),
+                    color: isDark
+                        ? const Color(0xFF14532D)
+                        : const Color(0xFF1B5E20),
                     borderRadius: BorderRadius.circular(999),
                     border: Border.all(
-                      color: const Color(0xFFD4AF37),
+                      color: isDark
+                          ? const Color(0xFFA16207)
+                          : const Color(0xFFD4AF37),
                       width: 4,
                     ),
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Color(0x22000000),
+                        color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.25),
                         blurRadius: 20,
-                        offset: Offset(0, 10),
+                        offset: const Offset(0, 10),
                       ),
                     ],
                   ),
@@ -29611,10 +30628,22 @@ class _TableDetailPageState extends State<TableDetailPage> {
       return;
     }
   
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;  
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+        ),
         title: Text(
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),          
           tr(
             context,
             'End Game',
@@ -29638,6 +30667,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
           ),
         ),
         content: Text(
+          style: TextStyle(
+            color: subTextColor,
+          ),          
           tr(
             context,
             'This will delete this table and return to Table List.\n\nDo you want to continue?',
@@ -29662,6 +30694,9 @@ class _TableDetailPageState extends State<TableDetailPage> {
         ),
         actions: [
           TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+            ),            
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               tr(
@@ -29688,6 +30723,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
             ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+            ),            
             onPressed: () => Navigator.pop(context, true),
             child: Text(
               tr(
@@ -29803,10 +30842,14 @@ class _TableDetailPageState extends State<TableDetailPage> {
   }
 
   Widget _buildFriendsPanelCard() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;    
     final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return Card(
-      color: Colors.white,
+      color: cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
@@ -29839,7 +30882,10 @@ class _TableDetailPageState extends State<TableDetailPage> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.people_alt_outlined),
+                    Icon(
+                      Icons.people_alt_outlined,
+                      color: textColor,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -29864,13 +30910,17 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           hi: 'मित्र',
                           bn: 'বন্ধুরা',
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
+                          color: textColor,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
                     ),
                     TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                      ),                      
                       onPressed: _openFriendsHub,
                       child: Text(
                         tr(
@@ -29922,7 +30972,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
                       hi: 'अभी तक कोई मित्र नहीं',
                       bn: 'এখনও কোনো বন্ধু নেই',
                     ),
-                    style: const TextStyle(color: Colors.black54),
+                    style: TextStyle(color: subTextColor),
                   )
                 else
                   Column(
@@ -29976,9 +31026,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
                             title: Text(
                               (otherUser['displayName'] ?? 'Unknown').toString(),
-                              style: const TextStyle(fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                color: textColor,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                             subtitle: Text(
+                              style: TextStyle(color: subTextColor),
                               unreadCount > 0
                                   ? tr(
                                       context,
@@ -30096,20 +31150,23 @@ class _TableDetailPageState extends State<TableDetailPage> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF7FAF8);
+    final appBarColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;    
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: tableDocRef.snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting &&
             !snapshot.hasData) {
           return Scaffold(
+            backgroundColor: bgColor,
             appBar: AppBar(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: appBarColor,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: textColor,
               elevation: 0,
               title: Text(
                 tr(
@@ -30142,10 +31199,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
 
         if (snapshot.hasError) {
           return Scaffold(
+            backgroundColor: bgColor,
             appBar: AppBar(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: appBarColor,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: textColor,
               elevation: 0,
               title: Text(
                 tr(
@@ -30203,10 +31261,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final data = snapshot.data?.data();
         if (data == null) {
           return Scaffold(
+            backgroundColor: bgColor,
             appBar: AppBar(
-              backgroundColor: Colors.white,
-              surfaceTintColor: Colors.white,
-              foregroundColor: Colors.black,
+              backgroundColor: appBarColor,
+              surfaceTintColor: Colors.transparent,
+              foregroundColor: textColor,
               elevation: 0,
               title: Text(
                 tr(
@@ -30267,10 +31326,11 @@ class _TableDetailPageState extends State<TableDetailPage> {
         final openCount = table.playerSeatCount - takenCount;
 
         return Scaffold(
+          backgroundColor: bgColor,
           appBar: AppBar(
-            backgroundColor: Colors.white,
-            surfaceTintColor: Colors.white,
-            foregroundColor: Colors.black,
+            backgroundColor: appBarColor,
+            surfaceTintColor: Colors.transparent,
+            foregroundColor: textColor,
             elevation: 0,
             title: Text(
               table.name,
@@ -30321,85 +31381,89 @@ class _TableDetailPageState extends State<TableDetailPage> {
                 if (canManageThisTable)
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: forceLightTheme(
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: const Color(0xFFE5E7EB),
-                          ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color(0xFF1E293B)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: const Color(0xFFE5E7EB),
                         ),
-                        child: DropdownButton<int>(
-                          value: table.playerSeatCount,
-                          underline: const SizedBox(),
-                          borderRadius: BorderRadius.circular(14),
-                          dropdownColor: Colors.white,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontWeight: FontWeight.w800,
-                          ),
-                          items: [
-                            DropdownMenuItem(
-                              value: 9,
-                              child: Text(
-                                tr(
-                                  context,
-                                  '9 Players',
-                                  zhTw: '9 人桌',
-                                  zhCn: '9 人桌',
-                                  ko: '9인 테이블',
-                                  ja: '9人テーブル',
-                                  de: '9 Spieler',
-                                  fr: '9 joueurs',
-                                  ar: '9 لاعبين',
-                                  ru: '9 игроков',
-                                  trk: '9 Oyuncu',
-                                  es: '9 jugadores',
-                                  it: '9 giocatori',
-                                  pl: '9 graczy',
-                                  pt: '9 jogadores',
-                                  th: '9 ผู้เล่น',
-                                  id: '9 Pemain',
-                                  hi: '9 खिलाड़ी',
-                                  bn: '৯ জন খেলোয়াড়',
-                                ),
+                      ),
+                      child: DropdownButton<int>(
+                        value: table.playerSeatCount,
+                        underline: const SizedBox(),
+                        borderRadius: BorderRadius.circular(14),
+                        dropdownColor:
+                            isDark ? const Color(0xFF1E293B) : Colors.white,
+
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+
+                        iconEnabledColor: textColor,
+                        items: [
+                          DropdownMenuItem(
+                            value: 9,
+                            child: Text(
+                              tr(
+                                context,
+                                '9 Players',
+                                zhTw: '9 人桌',
+                                zhCn: '9 人桌',
+                                ko: '9인 테이블',
+                                ja: '9人テーブル',
+                                de: '9 Spieler',
+                                fr: '9 joueurs',
+                                ar: '9 لاعبين',
+                                ru: '9 игроков',
+                                trk: '9 Oyuncu',
+                                es: '9 jugadores',
+                                it: '9 giocatori',
+                                pl: '9 graczy',
+                                pt: '9 jogadores',
+                                th: '9 ผู้เล่น',
+                                id: '9 Pemain',
+                                hi: '9 खिलाड़ी',
+                                bn: '৯ জন খেলোয়াড়',
                               ),
                             ),
-                            DropdownMenuItem(
-                              value: 10,
-                              child: Text(
-                                tr(
-                                  context,
-                                  '10 Players',
-                                  zhTw: '10 人桌',
-                                  zhCn: '10 人桌',
-                                  ko: '10인 테이블',
-                                  ja: '10人テーブル',
-                                  de: '10 Spieler',
-                                  fr: '10 joueurs',
-                                  ar: '10 لاعبين',
-                                  ru: '10 игроков',
-                                  trk: '10 Oyuncu',
-                                  es: '10 jugadores',
-                                  it: '10 giocatori',
-                                  pl: '10 graczy',
-                                  pt: '10 jogadores',
-                                  th: '10 ผู้เล่น',
-                                  id: '10 Pemain',
-                                  hi: '10 खिलाड़ी',
-                                  bn: '১০ জন খেলোয়াড়',
-                                ),
+                          ),
+                          DropdownMenuItem(
+                            value: 10,
+                            child: Text(
+                              tr(
+                                context,
+                                '10 Players',
+                                zhTw: '10 人桌',
+                                zhCn: '10 人桌',
+                                ko: '10인 테이블',
+                                ja: '10人テーブル',
+                                de: '10 Spieler',
+                                fr: '10 joueurs',
+                                ar: '10 لاعبين',
+                                ru: '10 игроков',
+                                trk: '10 Oyuncu',
+                                es: '10 jugadores',
+                                it: '10 giocatori',
+                                pl: '10 graczy',
+                                pt: '10 jogadores',
+                                th: '10 ผู้เล่น',
+                                id: '10 Pemain',
+                                hi: '10 खिलाड़ी',
+                                bn: '১০ জন খেলোয়াড়',
                               ),
                             ),
-                          ],
-                          onChanged: (value) async {
-                            if (value != null) {
-                              await _changeSeatCount(value);
-                            }
-                          },
-                        ),
+                          ),
+                        ],
+                        onChanged: (value) async {
+                          if (value != null) {
+                            await _changeSeatCount(value);
+                          }
+                        },
                       ),
                     ),
                   ),
@@ -30409,14 +31473,22 @@ class _TableDetailPageState extends State<TableDetailPage> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: isEffectiveHost
-                        ? const Color(0xFFEFF6FF)
-                        : const Color(0xFFEFF7F1),
+                    color: isDark
+                        ? const Color(0xFF1E293B)
+                        : (
+                            isEffectiveHost
+                                ? const Color(0xFFEFF6FF)
+                                : const Color(0xFFEFF7F1)
+                          ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isEffectiveHost
-                          ? const Color(0xFFBFDBFE)
-                          : const Color(0xFFD5E7D8),
+                      color: isDark
+                          ? const Color(0xFF334155)
+                          : (
+                              isEffectiveHost
+                                  ? const Color(0xFFBFDBFE)
+                                  : const Color(0xFFD5E7D8)
+                            ),
                     ),
                   ),
                   child: Text(
@@ -30465,9 +31537,13 @@ class _TableDetailPageState extends State<TableDetailPage> {
                           ),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
-                      color: isEffectiveHost
-                          ? Colors.blue.shade900
-                          : Colors.green.shade900,
+                      color: isDark
+                          ? Colors.white
+                          : (
+                              isEffectiveHost
+                                  ? Colors.blue.shade900
+                                  : Colors.green.shade900
+                            ),
                     ),
                   ),
                 ),
@@ -31955,7 +33031,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
 
   late bool _hasPaidAccess;
 
-  bool _showTournament = false;
+  int _selectedIndex = 0;
+  bool _isEditingPlayers = false;
+
 
   @override
   void initState() {
@@ -32033,6 +33111,50 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         .doc(currentUid)
         .collection('tournament_sessions');
   }  
+
+  CollectionReference<Map<String, dynamic>> _statPlayersRef() {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('stat_players');
+  }
+
+  Future<void> _ensureMePlayer() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .get();
+
+    final userData = userDoc.data() ?? {};
+
+    final firstName = (userData['shortName'] ??
+            userData['displayName'] ??
+            user.displayName ??
+            'Me')
+        .toString()
+        .trim();
+
+    final existing = await _statPlayersRef()
+        .where('source', isEqualTo: 'me')
+        .limit(1)
+        .get();
+
+    if (existing.docs.isNotEmpty) return;
+
+    await _statPlayersRef().add({
+      'uid': user.uid,
+      'name': firstName.isEmpty ? 'Me' : firstName,
+      'photoUrl': (userData['photoUrl'] ?? user.photoURL ?? '').toString(),
+      'source': 'me',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
 
   static const String _statsProPriceId =
       'price_1TMRxVCeafvLbyRizC2lvERT';
@@ -32416,37 +33538,43 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
     required String value,
     required Color color,
   }) {
-    return forceLightTheme(
-      Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: const Color(0xFFE5E7EB),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF111827)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF1F2937)
+              : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black54,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.black54,
-                fontWeight: FontWeight.w700,
-              ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: color,
             ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -33216,6 +34344,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
   }
 
   Widget _buildTournamentView() {
+
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _tournamentSessionsRef()
           .orderBy('startedAt', descending: true)
@@ -33402,7 +34534,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 bn: 'টুর্নামেন্ট',
               ),
               value: tournamentCount.toString(),
-              color: Colors.black87,
+              color: isDark
+                  ? Colors.white
+                  : Colors.black87,
             ),
 
             _buildSummaryCard(
@@ -33428,7 +34562,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 bn: 'গড় বাই-ইন',
               ),
               value: _moneyText(averageBuyIn),
-              color: Colors.black87,
+              color: isDark
+                  ? Colors.white
+                  : Colors.black87,
             ),
 
             _buildSummaryCard(
@@ -33481,7 +34617,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               ),
               value:
                   '${averageRank.toStringAsFixed(1)} / ${averagePlayers.toStringAsFixed(0)}',
-              color: Colors.black87,
+              color: isDark
+                  ? Colors.white
+                  : Colors.black87,
             ),
 
             _buildSummaryCard(
@@ -33555,7 +34693,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                     hi: 'घंटा',
                     bn: 'ঘন্টা',
                   )}',
-              color: Colors.black87,
+              color: isDark
+                  ? Colors.white
+                  : Colors.black87,
             ),
           ];
 
@@ -33648,106 +34788,267 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               const SizedBox(height: 16),
 
               for (final item in items)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item.name,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(_normalizeLocationForDisplay(item.location)),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Buy-in: ${_moneyText(item.totalCost)}',
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              'Prize: ${_moneyText(item.prize)}',
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              'ROI: ${item.roi.toStringAsFixed(1)}%',
-                              style: TextStyle(
-                                color: _profitColor(item.roi),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text('#${item.rank} / ${item.players}'),
-                            const SizedBox(height: 8),
-                            Text(
-                              _dateText(item.startedAt),
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
+                Builder(
+                  builder: (context) {
+                    final isDark =
+                        Theme.of(context).brightness == Brightness.dark;
+
+                    final cardColor =
+                        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+                    final borderColor =
+                        isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB);
+
+                    final titleColor =
+                        isDark ? Colors.white : Colors.black87;
+
+                    final subTextColor =
+                        isDark ? Colors.white70 : Colors.black54;
+
+                    final popupBgColor =
+                        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: borderColor),
                       ),
-                      Text(
-                        _moneyText(item.profit),
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                          color: _profitColor(item.profit),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      PopupMenuButton<String>(
-                        color: Colors.white,
-                        surfaceTintColor: Colors.white,
-                        iconColor: Colors.black,
-                        onSelected: (value) async {
-                          if (value == 'edit') {
-                            _openTournamentEditor(item: item);
-                          } else if (value == 'delete') {
-                            await _deleteTournamentSession(item.id);
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          PopupMenuItem<String>(
-                            value: 'edit',
-                            child: Text(tr(context, 'Edit', zhTw: '編輯', zhCn: '编辑')),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.name,
+                                  style: TextStyle(
+                                    color: titleColor,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _normalizeLocationForDisplay(item.location),
+                                  style: TextStyle(
+                                    color: subTextColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '${tr(
+                                    context,
+                                    'Buy-in',
+                                    zhTw: '買入',
+                                    zhCn: '买入',
+                                    ko: '바이인',
+                                    ja: 'バイイン',
+                                    de: 'Buy-in',
+                                    fr: 'Buy-in',
+                                    ar: 'الدخول',
+                                    ru: 'Бай-ин',
+                                    trk: 'Buy-in',
+                                    es: 'Buy-in',
+                                    it: 'Buy-in',
+                                    pl: 'Buy-in',
+                                    pt: 'Buy-in',
+                                    th: 'บายอิน',
+                                    id: 'Buy-in',
+                                    hi: 'बाय-इन',
+                                    bn: 'বাই-ইন',
+                                  )}: ${_moneyText(item.totalCost)}',
+                                  style: TextStyle(
+                                    color: subTextColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  '${tr(
+                                    context,
+                                    'Prize',
+                                    zhTw: '獎金',
+                                    zhCn: '奖金',
+                                    ko: '상금',
+                                    ja: '賞金',
+                                    de: 'Preisgeld',
+                                    fr: 'Prix',
+                                    ar: 'الجائزة',
+                                    ru: 'Приз',
+                                    trk: 'Ödül',
+                                    es: 'Premio',
+                                    it: 'Premio',
+                                    pl: 'Nagroda',
+                                    pt: 'Prêmio',
+                                    th: 'เงินรางวัล',
+                                    id: 'Hadiah',
+                                    hi: 'पुरस्कार',
+                                    bn: 'পুরস্কার',
+                                  )}: ${_moneyText(item.prize)}',
+                                  style: TextStyle(
+                                    color: subTextColor,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'ROI: ${item.roi.toStringAsFixed(1)}%',
+                                  style: TextStyle(
+                                    color: _profitColor(item.roi),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  '#${item.rank} / ${item.players}',
+                                  style: TextStyle(
+                                    color: titleColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  _dateText(item.startedAt),
+                                  style: TextStyle(
+                                    color: subTextColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Text(tr(context, 'Remove', zhTw: '刪除', zhCn: '删除')),
+                          Text(
+                            _moneyText(item.profit),
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: _profitColor(item.profit),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          PopupMenuButton<String>(
+                            color: popupBgColor,
+                            surfaceTintColor: popupBgColor,
+                            iconColor: titleColor,
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                _openTournamentEditor(item: item);
+                              } else if (value == 'hands') {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TournamentHandHistoryPage(
+                                      tournamentId: item.id,
+                                      tournamentName: item.name,
+                                    ),
+                                  ),
+                                );
+                              } else if (value == 'delete') {
+                                await _deleteTournamentSession(item.id);
+                              }
+                            },
+                            itemBuilder: (context) => [
+                              PopupMenuItem<String>(
+                                value: 'edit',
+                                child: Text(
+                                  tr(
+                                    context,
+                                    'Edit',
+                                    zhTw: '編輯',
+                                    zhCn: '编辑',
+                                    ko: '편집',
+                                    ja: '編集',
+                                    de: 'Bearbeiten',
+                                    fr: 'Modifier',
+                                    ar: 'تعديل',
+                                    ru: 'Редактировать',
+                                    trk: 'Düzenle',
+                                    es: 'Editar',
+                                    it: 'Modifica',
+                                    pl: 'Edytuj',
+                                    pt: 'Editar',
+                                    th: 'แก้ไข',
+                                    id: 'Edit',
+                                    hi: 'संपादित करें',
+                                    bn: 'এডিট',
+                                  ),
+                                  style: TextStyle(color: titleColor),
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'hands',
+                                child: Text(
+                                  tr(
+                                    context,
+                                    'Hand History',
+                                    zhTw: '手牌紀錄',
+                                    zhCn: '手牌记录',
+                                    ko: '핸드 기록',
+                                    ja: 'ハンド履歴',
+                                    de: 'Handverlauf',
+                                    fr: 'Historique des mains',
+                                    ar: 'سجل الأيدي',
+                                    ru: 'История раздач',
+                                    trk: 'El Geçmişi',
+                                    es: 'Historial de manos',
+                                    it: 'Cronologia mani',
+                                    pl: 'Historia rozdań',
+                                    pt: 'Histórico de mãos',
+                                    th: 'ประวัติมือ',
+                                    id: 'Riwayat Hand',
+                                    hi: 'हैंड हिस्ट्री',
+                                    bn: 'হ্যান্ড হিস্ট্রি',
+                                  ),
+                                  style: TextStyle(color: titleColor),
+                                ),
+                              ),
+                              PopupMenuItem<String>(
+                                value: 'delete',
+                                child: Text(
+                                  tr(
+                                    context,
+                                    'Remove',
+                                    zhTw: '刪除',
+                                    zhCn: '删除',
+                                    ko: '삭제',
+                                    ja: '削除',
+                                    de: 'Entfernen',
+                                    fr: 'Supprimer',
+                                    ar: 'إزالة',
+                                    ru: 'Удалить',
+                                    trk: 'Kaldır',
+                                    es: 'Eliminar',
+                                    it: 'Rimuovi',
+                                    pl: 'Usuń',
+                                    pt: 'Remover',
+                                    th: 'ลบ',
+                                    id: 'Hapus',
+                                    hi: 'हटाएँ',
+                                    bn: 'মুছুন',
+                                  ),
+                                  style: TextStyle(color: titleColor),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
             ],
           );
         }
 
-        Widget buildTournamentGroupList(Map<String, Map<String, double>> grouped) {
+        Widget buildTournamentGroupList(
+          Map<String, Map<String, double>> grouped,
+        ) {
           final entries = grouped.entries.toList()
             ..sort(
               (a, b) => b.key.compareTo(a.key),
@@ -33758,6 +35059,21 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
             itemCount: entries.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
+              final isDark =
+                  Theme.of(context).brightness == Brightness.dark;
+
+              final cardColor =
+                  isDark ? const Color(0xFF1E293B) : Colors.white;
+
+              final borderColor =
+                  isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB);
+
+              final titleColor =
+                  isDark ? Colors.white : Colors.black87;
+
+              final subTextColor =
+                  isDark ? Colors.white70 : Colors.black54;
+
               final entry = entries[index];
 
               final profit =
@@ -33777,20 +35093,23 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               return Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardColor,
                   borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: borderColor),
                 ),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         entry.key,
-                        style: const TextStyle(
+                        style: TextStyle(
+                          color: titleColor,
                           fontSize: 20,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
+
                     Column(
                       crossAxisAlignment:
                           CrossAxisAlignment.end,
@@ -33818,9 +35137,29 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                         const SizedBox(height: 2),
 
                         Text(
-                          '${count.toInt()} tournaments',
-                          style: const TextStyle(
-                            color: Colors.black54,
+                          '${count.toInt()} ${tr(
+                            context,
+                            'tournaments',
+                            zhTw: '場錦標賽',
+                            zhCn: '场锦标赛',
+                            ko: '개 토너먼트',
+                            ja: '件のトーナメント',
+                            de: 'Turniere',
+                            fr: 'tournois',
+                            ar: 'بطولات',
+                            ru: 'турниров',
+                            trk: 'turnuva',
+                            es: 'torneos',
+                            it: 'tornei',
+                            pl: 'turniejów',
+                            pt: 'torneios',
+                            th: 'ทัวร์นาเมนต์',
+                            id: 'turnamen',
+                            hi: 'टूर्नामेंट',
+                            bn: 'টুর্নামেন্ট',
+                          )}',
+                          style: TextStyle(
+                            color: subTextColor,
                             fontSize: 12,
                           ),
                         ),
@@ -33836,13 +35175,15 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
         return DefaultTabController(
           length: 4,
           child: Container(
-            color: Theme.of(context).brightness == Brightness.dark
-                ? const Color(0xFF0F172A)
-                : const Color(0xFFF4F6F8),
+          color: isDark
+              ? const Color(0xFF0F172A)
+              : const Color(0xFFF4F6F8),
             child: Column(
               children: [
                 Container(
-                  color: Colors.white,
+                  color: isDark
+                      ? const Color(0xFF0F172A)
+                      : Colors.white,
                   child: Theme(
                     data: ThemeData.light().copyWith(
                       dividerColor: Colors.transparent,
@@ -33854,7 +35195,8 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                       isScrollable: true,
                       tabAlignment: TabAlignment.start,
                       labelColor: const Color(0xFF2E7D32),
-                      unselectedLabelColor: Colors.black54,
+                      unselectedLabelColor:
+                          isDark ? Colors.white70 : Colors.black54,
                       indicatorColor: const Color(0xFF2E7D32),
                       dividerColor: Colors.transparent,
                       tabs: [
@@ -33888,19 +35230,19 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                             'Location Profits',
                             zhTw: '地點盈利',
                             zhCn: '地点盈利',
-                            ko: '장소별 수익',
+                            ko: '장소 수익',
                             ja: '場所別利益',
                             de: 'Standortgewinne',
                             fr: 'Profits par lieu',
-                            ar: 'أرباح المواقع',
-                            ru: 'Прибыль по местам',
+                            ar: 'أرباح الموقع',
+                            ru: 'Прибыль по локациям',
                             trk: 'Konum Kârları',
                             es: 'Ganancias por ubicación',
-                            it: 'Profitti per luogo',
+                            it: 'Profitti per località',
                             pl: 'Zyski według lokalizacji',
                             pt: 'Lucros por localização',
                             th: 'กำไรตามสถานที่',
-                            id: 'Keuntungan lokasi',
+                            id: 'Keuntungan Lokasi',
                             hi: 'स्थान लाभ',
                             bn: 'লোকেশন লাভ',
                           ),
@@ -33921,10 +35263,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                             trk: 'Haftalık Kârlar',
                             es: 'Ganancias semanales',
                             it: 'Profitti settimanali',
-                            pl: 'Zyski tygodniowe',
+                            pl: 'Tygodniowe zyski',
                             pt: 'Lucros semanais',
                             th: 'กำไรรายสัปดาห์',
-                            id: 'Keuntungan mingguan',
+                            id: 'Keuntungan Mingguan',
                             hi: 'साप्ताहिक लाभ',
                             bn: 'সাপ্তাহিক লাভ',
                           ),
@@ -33945,10 +35287,10 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                             trk: 'Aylık Kârlar',
                             es: 'Ganancias mensuales',
                             it: 'Profitti mensili',
-                            pl: 'Zyski miesięczne',
+                            pl: 'Miesięczne zyski',
                             pt: 'Lucros mensais',
                             th: 'กำไรรายเดือน',
-                            id: 'Keuntungan bulanan',
+                            id: 'Keuntungan Bulanan',
                             hi: 'मासिक लाभ',
                             bn: 'মাসিক লাভ',
                           ),
@@ -33971,6 +35313,7 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               ],
             ),
           ),
+          
         );
       },
     );
@@ -34008,282 +35351,367 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
       );
     }
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final pageBgColor = isDark
+        ? const Color(0xFF0B1120)
+        : const Color(0xFFF2F2F7);
+
+    final appBarBgColor = isDark
+        ? const Color(0xFF0B1120)
+        : Colors.white;
+
+    final appBarTextColor = isDark
+        ? Colors.white
+        : Colors.black;
+
     return DefaultTabController(
       length: 5,
       child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          title: Text(
-            tr(
-              context,
-              'Cash Game Stats',
-              zhTw: '現金局統計',
-              zhCn: '现金局统计',
-              ko: '캐시 게임 통계',
-              ja: 'キャッシュゲーム統計',
-              de: 'Cash Game Statistiken',
-              fr: 'Stats cash game',
-              ar: 'إحصائيات اللعبة النقدية',
-              ru: 'Статистика кэш-игр',
-              trk: 'Nakit Oyun İstatistikleri',
-              es: 'Estadísticas cash game',
-              it: 'Statistiche cash game',
-              pl: 'Statystyki gier cash',
-              pt: 'Estatísticas cash game',
-              th: 'สถิติเกมเงินสด',
-              id: 'Statistik Cash Game',
-              hi: 'कैश गेम आँकड़े',
-              bn: 'ক্যাশ গেম পরিসংখ্যান',
+        backgroundColor: pageBgColor,
+
+        bottomNavigationBar: NavigationBar(
+          backgroundColor: isDark
+              ? const Color(0xFF0F172A)
+              : Colors.white,
+          indicatorColor: const Color(0xFF2E7D32),
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          labelTextStyle: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return TextStyle(
+                color: isDark ? Colors.white : Colors.black,
+                fontWeight: FontWeight.w800,
+              );
+            }
+
+            return TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontWeight: FontWeight.w600,
+            );
+          }),
+
+          destinations: [
+            NavigationDestination(
+              icon: Icon(
+                Icons.attach_money,
+                color: _selectedIndex == 0
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white70 : Colors.black54),
+              ),
+              label: tr(
+                context,
+                'Cash',
+                zhTw: '現金桌',
+                zhCn: '现金桌',
+                ko: '캐시',
+                ja: 'キャッシュ',
+                de: 'Cash',
+                fr: 'Cash',
+                ar: 'كاش',
+                ru: 'Кэш',
+                trk: 'Nakit',
+                es: 'Cash',
+                it: 'Cash',
+                pl: 'Cash',
+                pt: 'Cash',
+                th: 'เงินสด',
+                id: 'Cash',
+                hi: 'कैश',
+                bn: 'ক্যাশ',
+              ),
             ),
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-
-          bottom: PreferredSize(
-            preferredSize: Size.fromHeight(
-              _showTournament ? 56 : 96,
+            NavigationDestination(
+              icon: Icon(
+                Icons.emoji_events,
+                color: _selectedIndex == 1
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white70 : Colors.black54),
+              ),
+              label: tr(
+                context,
+                'Tournament',
+                zhTw: '錦標賽',
+                zhCn: '锦标赛',
+                ko: '토너먼트',
+                ja: 'トーナメント',
+                de: 'Turnier',
+                fr: 'Tournoi',
+                ar: 'بطولة',
+                ru: 'Турнир',
+                trk: 'Turnuva',
+                es: 'Torneo',
+                it: 'Torneo',
+                pl: 'Turniej',
+                pt: 'Torneio',
+                th: 'ทัวร์นาเมนต์',
+                id: 'Turnamen',
+                hi: 'टूर्नामेंट',
+                bn: 'টুর্নামেন্ট',
+              ),
             ),
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: !_showTournament
-                                ? const Color(0xFF2E7D32)
-                                : Colors.grey.shade300,
-                            foregroundColor: !_showTournament
-                                ? Colors.white
-                                : Colors.black87,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showTournament = false;
-                            });
-                          },
-                          child: Text(
-                            tr(
-                              context,
-                              'Cash Game',
-                              zhTw: '現金桌',
-                              zhCn: '现金桌',
-                              ko: '캐시 게임',
-                              ja: 'キャッシュゲーム',
-                              de: 'Cash Game',
-                              fr: 'Cash Game',
-                              ar: 'لعبة نقدية',
-                              ru: 'Кэш-игра',
-                              trk: 'Nakit Oyunu',
-                              es: 'Juego en efectivo',
-                              it: 'Cash Game',
-                              pl: 'Gra gotówkowa',
-                              pt: 'Cash Game',
-                              th: 'แคชเกม',
-                              id: 'Cash Game',
-                              hi: 'कैश गेम',
-                              bn: 'ক্যাশ গেম',
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      Expanded(
-                        child: FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: _showTournament
-                                ? const Color(0xFF2E7D32)
-                                : Colors.grey.shade300,
-                            foregroundColor: _showTournament
-                                ? Colors.white
-                                : Colors.black87,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _showTournament = true;
-                            });
-                          },
-                          child: Text(
-                            tr(
-                              context,
-                              'Tournament',
-                              zhTw: '錦標賽',
-                              zhCn: '锦标赛',
-                              ko: '토너먼트',
-                              ja: 'トーナメント',
-                              de: 'Turnier',
-                              fr: 'Tournoi',
-                              ar: 'البطولة',
-                              ru: 'Турнир',
-                              trk: 'Turnuva',
-                              es: 'Torneo',
-                              it: 'Torneo',
-                              pl: 'Turniej',
-                              pt: 'Torneio',
-                              th: 'ทัวร์นาเมนต์',
-                              id: 'Turnamen',
-                              hi: 'टूर्नामेंट',
-                              bn: 'টুর্নামেন্ট',
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                if (!_showTournament)
-                  TabBar(
-                    isScrollable: true,
-                    tabAlignment: TabAlignment.start,
-                    labelColor: const Color(0xFF2E7D32),
-                    unselectedLabelColor: Colors.black54,
-                    indicatorColor: const Color(0xFF2E7D32),
-                    tabs: [
-                      Tab(
-                        text: tr(
-                          context,
-                          'All Games',
-                          zhTw: '全部牌局',
-                          zhCn: '全部牌局',
-                          ko: '전체 게임',
-                          ja: '全ゲーム',
-                          de: 'Alle Spiele',
-                          fr: 'Toutes les parties',
-                          ar: 'كل الألعاب',
-                          ru: 'Все игры',
-                          trk: 'Tüm Oyunlar',
-                          es: 'Todas las partidas',
-                          it: 'Tutte le partite',
-                          pl: 'Wszystkie gry',
-                          pt: 'Todos os jogos',
-                          th: 'เกมทั้งหมด',
-                          id: 'Semua Game',
-                          hi: 'सभी गेम',
-                          bn: 'সব গেম',
-                        ),
-                      ),
-                      Tab(
-                        text: tr(
-                          context,
-                          'Location Profits',
-                          zhTw: '地點盈利',
-                          zhCn: '地点盈利',
-                          ko: '장소별 수익',
-                          ja: '場所別利益',
-                          de: 'Gewinn nach Ort',
-                          fr: 'Profits par lieu',
-                          ar: 'أرباح المواقع',
-                          ru: 'Прибыль по местам',
-                          trk: 'Konum Kârları',
-                          es: 'Ganancias por ubicación',
-                          it: 'Profitti per luogo',
-                          pl: 'Zyski według lokalizacji',
-                          pt: 'Lucros por local',
-                          th: 'กำไรตามสถานที่',
-                          id: 'Profit Lokasi',
-                          hi: 'स्थान लाभ',
-                          bn: 'স্থানভিত্তিক লাভ',
-                        ),
-                      ),
-                      Tab(
-                        text: tr(
-                          context,
-                          'Game Profits',
-                          zhTw: '遊戲盈利',
-                          zhCn: '游戏盈利',
-                          ko: '게임별 수익',
-                          ja: 'ゲーム別利益',
-                          de: 'Gewinn nach Spiel',
-                          fr: 'Profits par jeu',
-                          ar: 'أرباح الألعاب',
-                          ru: 'Прибыль по играм',
-                          trk: 'Oyun Kârları',
-                          es: 'Ganancias por juego',
-                          it: 'Profitti per gioco',
-                          pl: 'Zyski według gry',
-                          pt: 'Lucros por jogo',
-                          th: 'กำไรตามเกม',
-                          id: 'Profit Game',
-                          hi: 'गेम लाभ',
-                          bn: 'গেমভিত্তিক লাভ',
-                        ),
-                      ),
-                      Tab(
-                        text: tr(
-                          context,
-                          'Weekly Profits',
-                          zhTw: '每週盈利',
-                          zhCn: '每周盈利',
-                          ko: '주간 수익',
-                          ja: '週間利益',
-                          de: 'Wöchentliche Gewinne',
-                          fr: 'Profits hebdomadaires',
-                          ar: 'الأرباح الأسبوعية',
-                          ru: 'Недельная прибыль',
-                          trk: 'Haftalık Kârlar',
-                          es: 'Ganancias semanales',
-                          it: 'Profitti settimanali',
-                          pl: 'Tygodniowe zyski',
-                          pt: 'Lucros semanais',
-                          th: 'กำไรรายสัปดาห์',
-                          id: 'Profit Mingguan',
-                          hi: 'साप्ताहिक लाभ',
-                          bn: 'সाप्तাহিক লাভ',
-                        ),
-                      ),
-                      Tab(
-                        text: tr(
-                          context,
-                          'Monthly Profits',
-                          zhTw: '每月盈利',
-                          zhCn: '每月盈利',
-                          ko: '월간 수익',
-                          ja: '月間利益',
-                          de: 'Monatliche Gewinne',
-                          fr: 'Profits mensuels',
-                          ar: 'الأرباح الشهرية',
-                          ru: 'Месячная прибыль',
-                          trk: 'Aylık Kârlar',
-                          es: 'Ganancias mensuales',
-                          it: 'Profitti mensili',
-                          pl: 'Miesięczne zyski',
-                          pt: 'Lucros mensais',
-                          th: 'กำไรรายเดือน',
-                          id: 'Profit Bulanan',
-                          hi: 'मासिक लाभ',
-                          bn: 'মাসিক লাভ',
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
+            NavigationDestination(
+              icon: Icon(
+                Icons.bar_chart,
+                color: _selectedIndex == 2
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white70 : Colors.black54),
+              ),
+              label: tr(
+                context,
+                'Overall',
+                zhTw: '總覽',
+                zhCn: '总览',
+                ko: '전체',
+                ja: '全体',
+                de: 'Gesamt',
+                fr: 'Global',
+                ar: 'الإجمالي',
+                ru: 'Общий',
+                trk: 'Genel',
+                es: 'General',
+                it: 'Totale',
+                pl: 'Ogólne',
+                pt: 'Geral',
+                th: 'ภาพรวม',
+                id: 'Keseluruhan',
+                hi: 'कुल',
+                bn: 'সামগ্রিক',
+              ),
             ),
-          ),
+            NavigationDestination(
+              icon: Icon(
+                Icons.people,
+                color: _selectedIndex == 3
+                    ? (isDark ? Colors.white : Colors.black)
+                    : (isDark ? Colors.white70 : Colors.black54),
+              ),
+              label: tr(
+                context,
+                'Player',
+                zhTw: '玩家',
+                zhCn: '玩家',
+                ko: '플레이어',
+                ja: 'プレイヤー',
+                de: 'Spieler',
+                fr: 'Joueur',
+                ar: 'لاعب',
+                ru: 'Игрок',
+                trk: 'Oyuncu',
+                es: 'Jugador',
+                it: 'Giocatore',
+                pl: 'Gracz',
+                pt: 'Jogador',
+                th: 'ผู้เล่น',
+                id: 'Pemain',
+                hi: 'खिलाड़ी',
+                bn: 'প্লেয়ার',
+              ),
+            ),
+          ],
         ),
 
-        floatingActionButton: _hasPaidAccess
-            ? PopupMenuButton<String>(
-                color: Colors.white,
-                surfaceTintColor: Colors.white,
-                iconColor: Colors.black,              
-                onSelected: (value) {
-                  if (value == 'cash') {
-                    _openEditor();
-                  } else if (value == 'tournament') {
-                    _openTournamentEditor();
-                  }
+        appBar: AppBar(
+          backgroundColor: appBarBgColor,
+          surfaceTintColor: appBarBgColor,
+          foregroundColor: appBarTextColor,
+          elevation: 0,
+          title: Text(
+            _selectedIndex == 0
+                ? tr(
+                    context,
+                    'Cash Game Stats',
+                    zhTw: '現金局統計',
+                    zhCn: '现金局统计',
+                    ko: '캐시 게임 통계',
+                    ja: 'キャッシュゲーム統計',
+                    de: 'Cashgame-Statistiken',
+                    fr: 'Statistiques Cash Game',
+                    ar: 'إحصائيات الألعاب النقدية',
+                    ru: 'Статистика кэш-игр',
+                    trk: 'Nakit Oyun İstatistikleri',
+                    es: 'Estadísticas de Cash Game',
+                    it: 'Statistiche Cash Game',
+                    pl: 'Statystyki Cash Game',
+                    pt: 'Estatísticas de Cash Game',
+                    th: 'สถิติเกมเงินสด',
+                    id: 'Statistik Cash Game',
+                    hi: 'कैश गेम आँकड़े',
+                    bn: 'ক্যাশ গেম পরিসংখ্যান',
+                  )
+                : _selectedIndex == 1
+                    ? tr(
+                        context,
+                        'Tournament Stats',
+                        zhTw: '錦標賽統計',
+                        zhCn: '锦标赛统计',
+                        ko: '토너먼트 통계',
+                        ja: 'トーナメント統計',
+                        de: 'Turnierstatistiken',
+                        fr: 'Statistiques des tournois',
+                        ar: 'إحصائيات البطولات',
+                        ru: 'Статистика турниров',
+                        trk: 'Turnuva İstatistikleri',
+                        es: 'Estadísticas de Torneos',
+                        it: 'Statistiche Tornei',
+                        pl: 'Statystyki Turniejów',
+                        pt: 'Estatísticas de Torneios',
+                        th: 'สถิติทัวร์นาเมนต์',
+                        id: 'Statistik Turnamen',
+                        hi: 'टूर्नामेंट आँकड़े',
+                        bn: 'টুর্নামেন্ট পরিসংখ্যান',
+                      )
+                    : _selectedIndex == 2
+                        ? tr(
+                            context,
+                            'Overall Stats',
+                            zhTw: '總統計',
+                            zhCn: '总统计',
+                            ko: '전체 통계',
+                            ja: '総合統計',
+                            de: 'Gesamtstatistik',
+                            fr: 'Statistiques globales',
+                            ar: 'الإحصائيات العامة',
+                            ru: 'Общая статистика',
+                            trk: 'Genel İstatistikler',
+                            es: 'Estadísticas Generales',
+                            it: 'Statistiche Generali',
+                            pl: 'Statystyki Ogólne',
+                            pt: 'Estatísticas Gerais',
+                            th: 'สถิติรวม',
+                            id: 'Statistik Keseluruhan',
+                            hi: 'कुल आँकड़े',
+                            bn: 'মোট পরিসংখ্যান',
+                          )
+                        : tr(
+                            context,
+                            'Player',
+                            zhTw: '玩家',
+                            zhCn: '玩家',
+                            ko: '플레이어',
+                            ja: 'プレイヤー',
+                            de: 'Spieler',
+                            fr: 'Joueur',
+                            ar: 'لاعب',
+                            ru: 'Игрок',
+                            trk: 'Oyuncu',
+                            es: 'Jugador',
+                            it: 'Giocatore',
+                            pl: 'Gracz',
+                            pt: 'Jogador',
+                            th: 'ผู้เล่น',
+                            id: 'Pemain',
+                            hi: 'खिलाड़ी',
+                            bn: 'প্লেয়ার',
+                          ),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          actions: [
+            if (_selectedIndex == 3)
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _isEditingPlayers = !_isEditingPlayers;
+                  });
                 },
-                itemBuilder: (context) => [
-                  PopupMenuItem<String>(
-                    value: 'cash',
-                    child: Text(
+                child: Text(
+                  _isEditingPlayers
+                      ? tr(
+                          context,
+                          'Done',
+                          zhTw: '完成',
+                          zhCn: '完成',
+                          ko: '완료',
+                          ja: '完了',
+                          de: 'Fertig',
+                          fr: 'Terminé',
+                          ar: 'تم',
+                          ru: 'Готово',
+                          trk: 'Tamam',
+                          es: 'Hecho',
+                          it: 'Fatto',
+                          pl: 'Gotowe',
+                          pt: 'Concluído',
+                          th: 'เสร็จสิ้น',
+                          id: 'Selesai',
+                          hi: 'पूर्ण',
+                          bn: 'সম্পন্ন',
+                        )
+                      : tr(
+                          context,
+                          'Edit',
+                          zhTw: '編輯',
+                          zhCn: '编辑',
+                          ko: '편집',
+                          ja: '編集',
+                          de: 'Bearbeiten',
+                          fr: 'Modifier',
+                          ar: 'تعديل',
+                          ru: 'Редактировать',
+                          trk: 'Düzenle',
+                          es: 'Editar',
+                          it: 'Modifica',
+                          pl: 'Edytuj',
+                          pt: 'Editar',
+                          th: 'แก้ไข',
+                          id: 'Edit',
+                          hi: 'संपादित करें',
+                          bn: 'এডিট',
+                        ),
+                ),
+              ),
+
+            if (_selectedIndex == 3)
+              IconButton(
+                onPressed: _showAddPlayerOptions,
+                icon: const Icon(Icons.add),
+              ),
+          ],
+        ),
+
+        floatingActionButton: !_hasPaidAccess
+            ? FloatingActionButton.extended(
+                onPressed: _showStatsProSubscribeDialog,
+                backgroundColor: const Color(0xFFDBEAFE),
+                foregroundColor: const Color(0xFF1D4ED8),
+                icon: const Icon(Icons.workspace_premium),
+                label: Text(
+                  tr(
+                    context,
+                    'Upgrade to Stats Pro',
+                    zhTw: '升級至 Stats Pro',
+                    zhCn: '升级至 Stats Pro',
+                    ko: 'Stats Pro로 업그레이드',
+                    ja: 'Stats Pro にアップグレード',
+                    de: 'Auf Stats Pro upgraden',
+                    fr: 'Passer à Stats Pro',
+                    ar: 'الترقية إلى Stats Pro',
+                    ru: 'Обновить до Stats Pro',
+                    trk: 'Stats Pro’ya yükselt',
+                    es: 'Actualizar a Stats Pro',
+                    it: 'Passa a Stats Pro',
+                    pl: 'Ulepsz do Stats Pro',
+                    pt: 'Atualizar para Stats Pro',
+                    th: 'อัปเกรดเป็น Stats Pro',
+                    id: 'Upgrade ke Stats Pro',
+                    hi: 'Stats Pro में अपग्रेड करें',
+                    bn: 'Stats Pro-তে আপগ্রেড করুন',
+                  ),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              )
+            : _selectedIndex == 0
+                ? FloatingActionButton.extended(
+                    onPressed: () => _openEditor(),
+                    icon: const Icon(Icons.add),
+                    label: Text(
                       tr(
                         context,
                         'Add Cash Game',
@@ -34305,107 +35733,47 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                         hi: 'कैश गेम जोड़ें',
                         bn: 'ক্যাশ গেম যোগ করুন',
                       ),
-                    ),
-                  ),
-
-                  PopupMenuItem<String>(
-                    value: 'tournament',
-                    child: Text(
-                      tr(
-                        context,
-                        'Add tournament',
-                        zhTw: '新增錦標賽',
-                        zhCn: '新增锦标赛',
-                        ko: '토너먼트 추가',
-                        ja: 'トーナメント追加',
-                        de: 'Turnier hinzufügen',
-                        fr: 'Ajouter un tournoi',
-                        ar: 'إضافة بطولة',
-                        ru: 'Добавить турнир',
-                        trk: 'Turnuva ekle',
-                        es: 'Agregar torneo',
-                        it: 'Aggiungi torneo',
-                        pl: 'Dodaj turniej',
-                        pt: 'Adicionar torneio',
-                        th: 'เพิ่มทัวร์นาเมนต์',
-                        id: 'Tambah turnamen',
-                        hi: 'टूर्नामेंट जोड़ें',
-                        bn: 'টুর্নামেন্ট যোগ করুন',
-                      ),
-                    ),
-                  ),
-
-                ],
-                child: FloatingActionButton.extended(
-                  onPressed: null,
-                  icon: const Icon(Icons.add),
-                  label: Text(
-                    tr(
-                      context,
-                      'Add game',
-                      zhTw: '新增牌局',
-                      zhCn: '新增牌局',
-                      ko: '게임 추가',
-                      ja: 'ゲーム追加',
-                      de: 'Spiel hinzufügen',
-                      fr: 'Ajouter une partie',
-                      ar: 'إضافة لعبة',
-                      ru: 'Добавить игру',
-                      trk: 'Oyun ekle',
-                      es: 'Agregar partida',
-                      it: 'Aggiungi partita',
-                      pl: 'Dodaj grę',
-                      pt: 'Adicionar jogo',
-                      th: 'เพิ่มเกม',
-                      id: 'Tambah game',
-                      hi: 'गेम जोड़ें',
-                      bn: 'গেম যোগ করুন',
-                    ),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-              )
-            : Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-
-                  FloatingActionButton.extended(
-                    onPressed: _showStatsProSubscribeDialog,
-                    backgroundColor: const Color(0xFFDBEAFE),
-                    foregroundColor: const Color(0xFF1D4ED8),
-                    icon: const Icon(Icons.workspace_premium),
-                    label: Text(
-                      tr(
-                        context,
-                        'Upgrade to Stats Pro',
-                        zhTw: '升級至 Stats Pro',
-                        zhCn: '升级至 Stats Pro',
-                        ko: 'Stats Pro로 업그레이드',
-                        ja: 'Stats Pro にアップグレード',
-                        de: 'Auf Stats Pro upgraden',
-                        fr: 'Passer à Stats Pro',
-                        ar: 'الترقية إلى Stats Pro',
-                        ru: 'Обновить до Stats Pro',
-                        trk: 'Stats Pro’ya yükselt',
-                        es: 'Actualizar a Stats Pro',
-                        it: 'Passa a Stats Pro',
-                        pl: 'Ulepsz do Stats Pro',
-                        pt: 'Atualizar para Stats Pro',
-                        th: 'อัปเกรดเป็น Stats Pro',
-                        id: 'Upgrade ke Stats Pro',
-                        hi: 'Stats Pro में अपग्रेड करें',
-                        bn: 'Stats Pro-তে আপগ্রেড করুন',
-                      ),
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
-                  ),
-                  
-                ],
-              ),
-        body: _showTournament
+                  )
+                : _selectedIndex == 1
+                    ? FloatingActionButton.extended(
+                        onPressed: () => _openTournamentEditor(),
+                        icon: const Icon(Icons.add),
+                        label: Text(
+                          tr(
+                            context,
+                            'Add tournament',
+                            zhTw: '新增錦標賽',
+                            zhCn: '新增锦标赛',
+                            ko: '토너먼트 추가',
+                            ja: 'トーナメント追加',
+                            de: 'Turnier hinzufügen',
+                            fr: 'Ajouter un tournoi',
+                            ar: 'إضافة بطولة',
+                            ru: 'Добавить турнир',
+                            trk: 'Turnuva ekle',
+                            es: 'Agregar torneo',
+                            it: 'Aggiungi torneo',
+                            pl: 'Dodaj turniej',
+                            pt: 'Adicionar torneio',
+                            th: 'เพิ่มทัวร์นาเมนต์',
+                            id: 'Tambah turnamen',
+                            hi: 'टूर्नामेंट जोड़ें',
+                            bn: 'টুর্নামেন্ট যোগ করুন',
+                          ),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      )
+                    : null,
+
+        body: _selectedIndex == 1
             ? _buildTournamentView()
-            : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            : _selectedIndex == 2
+                ? _buildOverallView()
+                : _selectedIndex == 3
+                    ? _buildPlayerView()
+                    : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: _sessionsRef()
               .orderBy('startedAt', descending: true)
               .snapshots(),
@@ -34564,6 +35932,9 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                 );
               }
 
+              final isDark =
+                  Theme.of(context).brightness == Brightness.dark;
+
               return ListView.separated(
                 padding: const EdgeInsets.all(16),
                 itemCount: entries.length,
@@ -34574,62 +35945,66 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                   final hours = entry.value['hours'] ?? 0.0;
                   final hourly = hours <= 0 ? 0.0 : profit / hours;
 
-                  return forceLightTheme(
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(
-                          color: const Color(0xFFE5E7EB),
-                        ),
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color(0xFF1E293B)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE5E7EB),
                       ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              entry.key,
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w900,
-                              ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            entry.key,
+                            style: TextStyle(
+                              color: isDark
+                                  ? Colors.white
+                                  : Colors.black87,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _moneyShortText(profit),
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w900,
-                                  color: _profitColor(profit),
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _moneyShortText(profit),
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w900,
+                                color: _profitColor(profit),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _profitColor(hourly),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                '\$/${_hourText(hourly)}/hr',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: _profitColor(hourly),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '\$/${_hourText(hourly)}/hr',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -34640,150 +36015,347 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
               return ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  GridView.count(
-                    crossAxisCount: MediaQuery.of(context).size.width > 720 ? 4 : 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.5,
-                    children: [
-                      _buildSummaryCard(
-                        label: tr(
-                          context,
-                          'Profit/Loss',
-                          zhTw: '盈利/虧損',
-                          zhCn: '盈利/亏损',
-                          ko: '수익/손실',
-                          ja: '利益/損失',
-                          de: 'Gewinn/Verlust',
-                          fr: 'Profit/Perte',
-                          ar: 'الربح/الخسارة',
-                          ru: 'Прибыль/Убыток',
-                          trk: 'Kâr/Zarar',
-                          es: 'Ganancia/Pérdida',
-                          it: 'Profitto/Perdita',
-                          pl: 'Zysk/Strata',
-                          pt: 'Lucro/Prejuízo',
-                          th: 'กำไร/ขาดทุน',
-                          id: 'Untung/Rugi',
-                          hi: 'लाभ/हानि',
-                          bn: 'লাভ/ক্ষতি',
-                        ),
-                        value: _moneyText(totalProfit),
-                        color: _profitColor(totalProfit),
-                      ),
+                  if (MediaQuery.of(context).size.width < 720)
+                    SizedBox(
+                      height: 170,
+                      child: Stack(
+                        children: [
 
-                      _buildSummaryCard(
-                        label: tr(
-                          context,
-                          '\$/Hour',
-                          zhTw: '平均每小時',
-                          zhCn: '平均每小时',
-                          ko: '시간당 평균',
-                          ja: '1時間あたり平均',
-                          de: 'Durchschnitt pro Stunde',
-                          fr: 'Moyenne par heure',
-                          ar: 'المتوسط لكل ساعة',
-                          ru: 'Среднее за час',
-                          trk: 'Saat Başına Ortalama',
-                          es: 'Promedio por hora',
-                          it: 'Media per ora',
-                          pl: 'Średnio na godzinę',
-                          pt: 'Média por hora',
-                          th: 'เฉลี่ยต่อชั่วโมง',
-                          id: 'Rata-rata per jam',
-                          hi: 'प्रति घंटा औसत',
-                          bn: 'প্রতি ঘণ্টার গড়',
-                        ),
-                        value: _moneyText(hourly),
-                        color: _profitColor(hourly),
-                      ),
+                          /// Summary cards
+                          ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 26),
+                            itemCount: 4,
+                            separatorBuilder: (_, __) => const SizedBox(width: 12),
+                            itemBuilder: (context, index) {
+                              final cards = [
+                                _buildSummaryCard(
+                                  label: tr(
+                                    context,
+                                    'Profit/Loss',
+                                    zhTw: '盈利/虧損',
+                                    zhCn: '盈利/亏损',
+                                    ko: '수익/손실',
+                                    ja: '利益/損失',
+                                    de: 'Gewinn/Verlust',
+                                    fr: 'Profit/Perte',
+                                    ar: 'الربح/الخسارة',
+                                    ru: 'Прибыль/Убыток',
+                                    trk: 'Kâr/Zarar',
+                                    es: 'Ganancia/Pérdida',
+                                    it: 'Profitto/Perdita',
+                                    pl: 'Zysk/Strata',
+                                    pt: 'Lucro/Prejuízo',
+                                    th: 'กำไร/ขาดทุน',
+                                    id: 'Untung/Rugi',
+                                    hi: 'लाभ/हानि',
+                                    bn: 'লাভ/ক্ষতি',
+                                  ),
+                                  value: _moneyText(totalProfit),
+                                  color: _profitColor(totalProfit),
+                                ),
 
-                      _buildSummaryCard(
-                        label: tr(
-                          context,
-                          '\$/Game',
-                          zhTw: '平均每場',
-                          zhCn: '平均每场',
-                          ko: '게임당 평균',
-                          ja: '1ゲームあたり平均',
-                          de: 'Durchschnitt pro Spiel',
-                          fr: 'Moyenne par partie',
-                          ar: 'المتوسط لكل لعبة',
-                          ru: 'Среднее за игру',
-                          trk: 'Oyun Başına Ortalama',
-                          es: 'Promedio por juego',
-                          it: 'Media per partita',
-                          pl: 'Średnio na grę',
-                          pt: 'Média por jogo',
-                          th: 'เฉลี่ยต่อเกม',
-                          id: 'Rata-rata per game',
-                          hi: 'प्रति गेम औसत',
-                          bn: 'প্রতি গেম গড়',
-                        ),
-                        value: _moneyText(perSession),
-                        color: _profitColor(perSession),
-                      ),
+                                _buildSummaryCard(
+                                  label: tr(
+                                    context,
+                                    '\$/Hour',
+                                    zhTw: '平均每小時',
+                                    zhCn: '平均每小时',
+                                    ko: '시간당 평균',
+                                    ja: '1時間あたり平均',
+                                    de: 'Pro Stunde',
+                                    fr: 'Par heure',
+                                    ar: 'لكل ساعة',
+                                    ru: 'В час',
+                                    trk: 'Saat Başına',
+                                    es: 'Por hora',
+                                    it: 'Per ora',
+                                    pl: 'Na godzinę',
+                                    pt: 'Por hora',
+                                    th: 'ต่อชั่วโมง',
+                                    id: 'Per Jam',
+                                    hi: 'प्रति घंटा',
+                                    bn: 'প্রতি ঘণ্টা',
+                                  ),
+                                  value: _moneyText(hourly),
+                                  color: _profitColor(hourly),
+                                ),
 
-                      _buildSummaryCard(
-                        label: tr(
-                          context,
-                          'Spending Time',
-                          zhTw: '花費時間',
-                          zhCn: '花费时间',
-                          ko: '소요 시간',
-                          ja: 'プレイ時間',
-                          de: 'Verbrachte Zeit',
-                          fr: 'Temps passé',
-                          ar: 'الوقت المستغرق',
-                          ru: 'Потраченное время',
-                          trk: 'Harcanan Süre',
-                          es: 'Tiempo invertido',
-                          it: 'Tempo trascorso',
-                          pl: 'Spędzony czas',
-                          pt: 'Tempo gasto',
-                          th: 'เวลาที่ใช้',
-                          id: 'Waktu bermain',
-                          hi: 'खर्च किया गया समय',
-                          bn: 'ব্যয়িত সময়',
-                        ),
-                        value:
-                            '${_hourText(totalHours)} '
-                            '${tr(
-                              context,
-                              'Hour',
-                              zhTw: '小時',
-                              zhCn: '小时',
-                              ko: '시간',
-                              ja: '時間',
-                              de: 'Stunden',
-                              fr: 'Heures',
-                              ar: 'ساعة',
-                              ru: 'Час',
-                              trk: 'Saat',
-                              es: 'Hora',
-                              it: 'Ore',
-                              pl: 'Godzin',
-                              pt: 'Horas',
-                              th: 'ชั่วโมง',
-                              id: 'Jam',
-                              hi: 'घंटा',
-                              bn: 'ঘণ্টা',
-                            )}',
-                        color: Colors.black87,
+                                _buildSummaryCard(
+                                  label: tr(
+                                    context,
+                                    '\$/Game',
+                                    zhTw: '平均每場',
+                                    zhCn: '平均每场',
+                                    ko: '게임당 평균',
+                                    ja: '1ゲームあたり平均',
+                                    de: 'Pro Spiel',
+                                    fr: 'Par partie',
+                                    ar: 'لكل لعبة',
+                                    ru: 'За игру',
+                                    trk: 'Oyun Başına',
+                                    es: 'Por juego',
+                                    it: 'Per partita',
+                                    pl: 'Na grę',
+                                    pt: 'Por jogo',
+                                    th: 'ต่อเกม',
+                                    id: 'Per Game',
+                                    hi: 'प्रति गेम',
+                                    bn: 'প্রতি গেম',
+                                  ),
+                                  value: _moneyText(perSession),
+                                  color: _profitColor(perSession),
+                                ),
+
+                                _buildSummaryCard(
+                                  label: tr(
+                                    context,
+                                    'Spending Time',
+                                    zhTw: '花費時間',
+                                    zhCn: '花费时间',
+                                    ko: '소요 시간',
+                                    ja: 'プレイ時間',
+                                    de: 'Spielzeit',
+                                    fr: 'Temps passé',
+                                    ar: 'الوقت المستغرق',
+                                    ru: 'Потраченное время',
+                                    trk: 'Harcanan Süre',
+                                    es: 'Tiempo invertido',
+                                    it: 'Tempo trascorso',
+                                    pl: 'Spędzony czas',
+                                    pt: 'Tempo gasto',
+                                    th: 'เวลาที่ใช้',
+                                    id: 'Waktu Bermain',
+                                    hi: 'खर्च किया गया समय',
+                                    bn: 'ব্যয়িত সময়',
+                                  ),
+                                  value:
+                                      '${_hourText(totalHours)} ${tr(
+                                    context,
+                                    'Hour',
+                                    zhTw: '小時',
+                                    zhCn: '小时',
+                                    ko: '시간',
+                                    ja: '時間',
+                                    de: 'Stunden',
+                                    fr: 'Heures',
+                                    ar: 'ساعة',
+                                    ru: 'Часов',
+                                    trk: 'Saat',
+                                    es: 'Horas',
+                                    it: 'Ore',
+                                    pl: 'Godzin',
+                                    pt: 'Horas',
+                                    th: 'ชั่วโมง',
+                                    id: 'Jam',
+                                    hi: 'घंटे',
+                                    bn: 'ঘণ্টা',
+                                  )}',
+                                  color: isDark ? Colors.white : Colors.black87,
+                                ),
+                              ];
+
+                              return SizedBox(
+                                width: 220,
+                                child: cards[index],
+                              );
+                            },
+                          ),
+
+                          /// 左箭頭
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: IgnorePointer(
+                              child: Center(
+                                child: Container(
+                                  width: 24,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Icon(
+                                    Icons.chevron_left,
+                                    color: Colors.black45,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          /// 右箭頭
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            child: IgnorePointer(
+                              child: Center(
+                                child: Container(
+                                  width: 24,
+                                  height: 48,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.85),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: const Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.black45,
+                                    size: 22,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    )
+                  else
+                    GridView.count(
+                      crossAxisCount: 4,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.5,
+                      children: [
+                        _buildSummaryCard(
+                          label: tr(
+                            context,
+                            'Profit/Loss',
+                            zhTw: '盈利/虧損',
+                            zhCn: '盈利/亏损',
+                            ko: '수익/손실',
+                            ja: '利益/損失',
+                            de: 'Gewinn/Verlust',
+                            fr: 'Profit/Perte',
+                            ar: 'الربح/الخسارة',
+                            ru: 'Прибыль/Убыток',
+                            trk: 'Kâr/Zarar',
+                            es: 'Ganancia/Pérdida',
+                            it: 'Profitto/Perdita',
+                            pl: 'Zysk/Strata',
+                            pt: 'Lucro/Prejuízo',
+                            th: 'กำไร/ขาดทุน',
+                            id: 'Untung/Rugi',
+                            hi: 'लाभ/हानि',
+                            bn: 'লাভ/ক্ষতি',
+                          ),
+                          value: _moneyText(totalProfit),
+                          color: _profitColor(totalProfit),
+                        ),
+                        _buildSummaryCard(
+                          label: tr(
+                            context,
+                            '\$/Hour',
+                            zhTw: '平均每小時',
+                            zhCn: '平均每小时',
+                            ko: '시간당 평균',
+                            ja: '1時間あたり平均',
+                            de: 'Pro Stunde',
+                            fr: 'Par heure',
+                            ar: 'لكل ساعة',
+                            ru: 'В час',
+                            trk: 'Saat Başına',
+                            es: 'Por hora',
+                            it: 'Per ora',
+                            pl: 'Na godzinę',
+                            pt: 'Por hora',
+                            th: 'ต่อชั่วโมง',
+                            id: 'Per Jam',
+                            hi: 'प्रति घंटा',
+                            bn: 'প্রতি ঘণ্টা',
+                          ),
+                          value: _moneyText(hourly),
+                          color: _profitColor(hourly),
+                        ),
+                        _buildSummaryCard(
+                          label: tr(
+                            context,
+                            '\$/Game',
+                            zhTw: '平均每場',
+                            zhCn: '平均每场',
+                            ko: '게임당 평균',
+                            ja: '1ゲームあたり平均',
+                            de: 'Pro Spiel',
+                            fr: 'Par partie',
+                            ar: 'لكل لعبة',
+                            ru: 'За игру',
+                            trk: 'Oyun Başına',
+                            es: 'Por juego',
+                            it: 'Per partita',
+                            pl: 'Na grę',
+                            pt: 'Por jogo',
+                            th: 'ต่อเกม',
+                            id: 'Per Game',
+                            hi: 'प्रति गेम',
+                            bn: 'প্রতি গেম',
+                          ),
+                          value: _moneyText(perSession),
+                          color: _profitColor(perSession),
+                        ),
+                        _buildSummaryCard(
+                          label: tr(
+                            context,
+                            'Spending Time',
+                            zhTw: '花費時間',
+                            zhCn: '花费时间',
+                            ko: '소요 시간',
+                            ja: 'プレイ時間',
+                            de: 'Spielzeit',
+                            fr: 'Temps passé',
+                            ar: 'الوقت المستغرق',
+                            ru: 'Потраченное время',
+                            trk: 'Harcanan Süre',
+                            es: 'Tiempo invertido',
+                            it: 'Tempo trascorso',
+                            pl: 'Spędzony czas',
+                            pt: 'Tempo gasto',
+                            th: 'เวลาที่ใช้',
+                            id: 'Waktu Bermain',
+                            hi: 'खर्च किया गया समय',
+                            bn: 'ব্যয়িত সময়',
+                          ),
+                          value: '${_hourText(totalHours)} ${tr(
+                            context,
+                            'Hour',
+                            zhTw: '小時',
+                            zhCn: '小时',
+                            ko: '시간',
+                            ja: '時間',
+                            de: 'Stunden',
+                            fr: 'Heures',
+                            ar: 'ساعة',
+                            ru: 'Часов',
+                            trk: 'Saat',
+                            es: 'Horas',
+                            it: 'Ore',
+                            pl: 'Godzin',
+                            pt: 'Horas',
+                            th: 'ชั่วโมง',
+                            id: 'Jam',
+                            hi: 'घंटे',
+                            bn: 'ঘণ্টা',
+                          )}',
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ],
+                    ),
                   const SizedBox(height: 16),
                   forceLightTheme(
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: isDark
+                            ? const Color(0xFF111827)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
-                          color: const Color(0xFFE5E7EB),
+                          color: isDark
+                              ? const Color(0xFF1F2937)
+                              : const Color(0xFFE5E7EB),
                         ),
                       ),
                       child: Row(
@@ -34811,8 +36383,8 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                                 hi: 'जीत दर',
                                 bn: 'জয়ের হার',
                               ),
-                              style: const TextStyle(
-                                color: Colors.black87,
+                              style: TextStyle(
+                                color: isDark ? Colors.white : Colors.black87,
                                 fontSize: 18,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -34821,8 +36393,8 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                           Text(
                             '$winningCount/$sessionsCount '
                             '(${sessionsCount == 0 ? 0 : ((winningCount / sessionsCount) * 100).round()}%)',
-                            style: const TextStyle(
-                              color: Colors.black87,
+                            style: TextStyle(
+                              color: isDark ? Colors.white : Colors.black87,
                               fontSize: 18,
                               fontWeight: FontWeight.w900,
                             ),
@@ -34875,222 +36447,8007 @@ class _CashGameStatsHomePageState extends State<CashGameStatsHomePage>
                         ),
                       ),
                     ),
-                  for (final item in items) ...[
-                    forceLightTheme(
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(
-                            color: const Color(0xFFE5E7EB),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    item.location.isEmpty
-                                        ? tr(
-                                            context,
-                                            'Unknown Location',
-                                            zhTw: '未知地點',
-                                            zhCn: '未知地点',
-                                            ko: '알 수 없는 장소',
-                                            ja: '不明な場所',
-                                            de: 'Unbekannter Ort',
-                                            fr: 'Lieu inconnu',
-                                            ar: 'موقع غير معروف',
-                                            ru: 'Неизвестное место',
-                                            trk: 'Bilinmeyen Konum',
-                                            es: 'Ubicación desconocida',
-                                            it: 'Posizione sconosciuta',
-                                            pl: 'Nieznana lokalizacja',
-                                            pt: 'Local desconhecido',
-                                            th: 'สถานที่ไม่ทราบ',
-                                            id: 'Lokasi tidak diketahui',
-                                            hi: 'अज्ञात स्थान',
-                                            bn: 'অজানা অবস্থান',
-                                          )
-                                        : _normalizeLocationForDisplay(item.location),
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 22,
-                                      fontWeight: FontWeight.w900,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    '${_hourText(item.hours)}h - ${item.gameLabel}',
-                                    style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    _dateText(item.startedAt),
-                                    style: const TextStyle(
-                                      color: Colors.black54,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  if (item.isOngoing)
-                                    Container(
-                                      margin: const EdgeInsets.only(top: 8),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFDBEAFE),
-                                        borderRadius: BorderRadius.circular(999),
-                                      ),
-                                      child: Text(
-                                        tr(
-                                          context,
-                                          'Is Ongoing',
-                                          zhTw: '進行中',
-                                          zhCn: '进行中',
-                                          ko: '진행 중',
-                                          ja: '進行中',
-                                          de: 'Läuft',
-                                          fr: 'En cours',
-                                          ar: 'جارٍ',
-                                          ru: 'В процессе',
-                                          trk: 'Devam Ediyor',
-                                          es: 'En curso',
-                                          it: 'In corso',
-                                          pl: 'W trakcie',
-                                          pt: 'Em andamento',
-                                          th: 'กำลังดำเนินอยู่',
-                                          id: 'Sedang berlangsung',
-                                          hi: 'चल रहा है',
-                                          bn: 'চলমান',
-                                        ),
-                                        style: const TextStyle(
-                                          color: Color(0xFF1D4ED8),
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
+                    for (final item in items) ...[
+                      Builder(
+                        builder: (context) {
+                          final isDark =
+                              Theme.of(context).brightness == Brightness.dark;
+
+                          final cardColor =
+                              isDark ? const Color(0xFF1E293B) : Colors.white;
+
+                          final borderColor =
+                              isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB);
+
+                          final titleColor =
+                              isDark ? Colors.white : Colors.black87;
+
+                          final subTextColor =
+                              isDark ? Colors.white70 : Colors.black54;
+
+                          final popupBgColor =
+                              isDark ? const Color(0xFF1E293B) : Colors.white;
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: borderColor),
                             ),
-                            const SizedBox(width: 12),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _moneyText(item.profit),
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.w900,
-                                    color: _profitColor(item.profit),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.location.isEmpty
+                                            ? tr(
+                                                context,
+                                                'Unknown Location',
+                                                zhTw: '未知地點',
+                                                zhCn: '未知地点',
+                                                ko: '알 수 없는 장소',
+                                                ja: '不明な場所',
+                                                de: 'Unbekannter Ort',
+                                                fr: 'Lieu inconnu',
+                                                ar: 'موقع غير معروف',
+                                                ru: 'Неизвестное место',
+                                                trk: 'Bilinmeyen Konum',
+                                                es: 'Ubicación desconocida',
+                                                it: 'Posizione sconosciuta',
+                                                pl: 'Nieznana lokalizacja',
+                                                pt: 'Localização desconhecida',
+                                                th: 'สถานที่ไม่ทราบ',
+                                                id: 'Lokasi Tidak Diketahui',
+                                                hi: 'अज्ञात स्थान',
+                                                bn: 'অজানা অবস্থান',
+                                              )
+                                            : _normalizeLocationForDisplay(item.location),
+                                        style: TextStyle(
+                                          color: titleColor,
+                                          fontSize: 22,
+                                          fontWeight: FontWeight.w900,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '${_hourText(item.hours)}h - ${item.gameLabel}',
+                                        style: TextStyle(
+                                          color: subTextColor,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        _dateText(item.startedAt),
+                                        style: TextStyle(
+                                          color: subTextColor,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                      if (item.isOngoing)
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 8),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 10,
+                                            vertical: 5,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFDBEAFE),
+                                            borderRadius: BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Is Ongoing',
+                                              zhTw: '進行中',
+                                              zhCn: '进行中',
+                                              ko: '진행 중',
+                                              ja: '進行中',
+                                              de: 'Läuft',
+                                              fr: 'En cours',
+                                              ar: 'قيد التنفيذ',
+                                              ru: 'В процессе',
+                                              trk: 'Devam Ediyor',
+                                              es: 'En curso',
+                                              it: 'In corso',
+                                              pl: 'W trakcie',
+                                              pt: 'Em andamento',
+                                              th: 'กำลังดำเนินการ',
+                                              id: 'Sedang Berlangsung',
+                                              hi: 'चल रहा है',
+                                              bn: 'চলমান',
+                                            ),
+                                            style: const TextStyle(
+                                              color: Color(0xFF1D4ED8),
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 10),
-                                PopupMenuButton<String>(
-                                  color: Colors.white,
-                                  surfaceTintColor: Colors.white,
-                                  iconColor: Colors.black,
-                                  onSelected: (value) async {
-                                    if (value == 'edit') {
-                                      _openEditor(item: item);
-                                    } else if (value == 'delete') {
-                                      await _deleteSession(item.id);
-                                    }
-                                  },
-                                  itemBuilder: (context) => [
-                                    PopupMenuItem<String>(
-                                      value: 'edit',
-                                      child: Text(
-                                        tr(
-                                          context,
-                                          'Edit',
-                                          zhTw: '編輯',
-                                          zhCn: '编辑',
-                                          ko: '수정',
-                                          ja: '編集',
-                                          de: 'Bearbeiten',
-                                          fr: 'Modifier',
-                                          ar: 'تعديل',
-                                          ru: 'Редактировать',
-                                          trk: 'Düzenle',
-                                          es: 'Editar',
-                                          it: 'Modifica',
-                                          pl: 'Edytuj',
-                                          pt: 'Editar',
-                                          th: 'แก้ไข',
-                                          id: 'Edit',
-                                          hi: 'संपादित करें',
-                                          bn: 'এডিট',
-                                        ),
-                                        style: const TextStyle(
-                                          color: Colors.black87,
-                                        ),
+                                const SizedBox(width: 12),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      _moneyText(item.profit),
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w900,
+                                        color: _profitColor(item.profit),
                                       ),
                                     ),
-                                    PopupMenuItem<String>(
-                                      value: 'delete',
-                                      child: Text(
-                                        tr(
-                                          context,
-                                          'Remove',
-                                          zhTw: '移除',
-                                          zhCn: '移除',
-                                          ko: '삭제',
-                                          ja: '削除',
-                                          de: 'Entfernen',
-                                          fr: 'Supprimer',
-                                          ar: 'إزالة',
-                                          ru: 'Удалить',
-                                          trk: 'Kaldır',
-                                          es: 'Eliminar',
-                                          it: 'Rimuovi',
-                                          pl: 'Usuń',
-                                          pt: 'Remover',
-                                          th: 'ลบ',
-                                          id: 'Hapus',
-                                          hi: 'हटाएँ',
-                                          bn: 'মুছুন',
+                                    const SizedBox(height: 10),
+                                    PopupMenuButton<String>(
+                                      color: popupBgColor,
+                                      surfaceTintColor: popupBgColor,
+                                      iconColor: titleColor,
+                                      onSelected: (value) async {
+                                        if (value == 'edit') {
+                                          _openEditor(item: item);
+                                        } else if (value == 'hands') {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => CashSessionHandHistoryPage(
+                                                sessionId: item.id,
+                                                sessionName: item.location,
+                                              ),
+                                            ),
+                                          );
+                                        } else if (value == 'delete') {
+                                          await _deleteSession(item.id);
+                                        }
+                                      },
+                                      itemBuilder: (context) => [
+                                        PopupMenuItem<String>(
+                                          value: 'edit',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Edit',
+                                              zhTw: '編輯',
+                                              zhCn: '编辑',
+                                              ko: '편집',
+                                              ja: '編集',
+                                              de: 'Bearbeiten',
+                                              fr: 'Modifier',
+                                              ar: 'تعديل',
+                                              ru: 'Редактировать',
+                                              trk: 'Düzenle',
+                                              es: 'Editar',
+                                              it: 'Modifica',
+                                              pl: 'Edytuj',
+                                              pt: 'Editar',
+                                              th: 'แก้ไข',
+                                              id: 'Edit',
+                                              hi: 'संपादित करें',
+                                              bn: 'এডিট',
+                                            ),
+                                            style: TextStyle(color: titleColor),
+                                          ),
                                         ),
-                                        style: const TextStyle(
-                                          color: Colors.black87,
+                                        PopupMenuItem<String>(
+                                          value: 'hands',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Hand History',
+                                              zhTw: '手牌紀錄',
+                                              zhCn: '手牌记录',
+                                              ko: '핸드 기록',
+                                              ja: 'ハンド履歴',
+                                              de: 'Handverlauf',
+                                              fr: 'Historique des mains',
+                                              ar: 'سجل الأيدي',
+                                              ru: 'История раздач',
+                                              trk: 'El Geçmişi',
+                                              es: 'Historial de manos',
+                                              it: 'Cronologia mani',
+                                              pl: 'Historia rozdań',
+                                              pt: 'Histórico de mãos',
+                                              th: 'ประวัติมือ',
+                                              id: 'Riwayat Hand',
+                                              hi: 'हैंड हिस्ट्री',
+                                              bn: 'হ্যান্ড হিস্ট্রি',
+                                            ),
+                                            style: TextStyle(color: titleColor),
+                                          ),
                                         ),
-                                      ),
+                                        PopupMenuItem<String>(
+                                          value: 'delete',
+                                          child: Text(
+                                            tr(
+                                              context,
+                                              'Remove',
+                                              zhTw: '移除',
+                                              zhCn: '移除',
+                                              ko: '삭제',
+                                              ja: '削除',
+                                              de: 'Entfernen',
+                                              fr: 'Supprimer',
+                                              ar: 'إزالة',
+                                              ru: 'Удалить',
+                                              trk: 'Kaldır',
+                                              es: 'Eliminar',
+                                              it: 'Rimuovi',
+                                              pl: 'Usuń',
+                                              pt: 'Remover',
+                                              th: 'ลบ',
+                                              id: 'Hapus',
+                                              hi: 'हटाएँ',
+                                              bn: 'মুছুন',
+                                            ),
+                                            style: TextStyle(color: titleColor),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
-                    ),
-                  ],
+                    ],
                 ],
               );
             }
 
-            return TabBarView(
+            return Column(
               children: [
-                buildAllSessions(),
-                buildGroupList(groupedByLocation),
-                buildGroupList(groupedByGame),
-                buildGroupList(groupedByWeek, sortByDate: true),
-                buildGroupList(groupedByMonth),
+
+                TabBar(
+                  isScrollable: true,
+                  tabAlignment: TabAlignment.start,
+
+                  labelColor: isDark
+                      ? const Color(0xFF4ADE80)
+                      : const Color(0xFF2E7D32),
+
+                  unselectedLabelColor:
+                      isDark ? Colors.white70 : Colors.black54,
+
+                  indicatorColor: isDark
+                      ? const Color(0xFF4ADE80)
+                      : const Color(0xFF2E7D32),
+
+                  dividerColor: Colors.transparent,
+
+                  tabs: [
+                    Tab(
+                      text: tr(
+                        context,
+                        'All Cash',
+                        zhTw: '全部現金桌',
+                        zhCn: '全部现金桌',
+                        ko: '전체 캐시',
+                        ja: 'すべてのキャッシュ',
+                        de: 'Alle Cashgames',
+                        fr: 'Tout le cash',
+                        ar: 'كل الكاش',
+                        ru: 'Весь кэш',
+                        trk: 'Tüm Nakit',
+                        es: 'Todo Cash',
+                        it: 'Tutto Cash',
+                        pl: 'Cały Cash',
+                        pt: 'Todo Cash',
+                        th: 'แคชทั้งหมด',
+                        id: 'Semua Cash',
+                        hi: 'सभी कैश',
+                        bn: 'সব ক্যাশ',
+                      ),
+                    ),
+
+                    Tab(
+                      text: tr(
+                        context,
+                        'Location Profits',
+                        zhTw: '地點盈利',
+                        zhCn: '地点盈利',
+                        ko: '장소 수익',
+                        ja: '場所別利益',
+                        de: 'Standortgewinne',
+                        fr: 'Profits par lieu',
+                        ar: 'أرباح الموقع',
+                        ru: 'Прибыль по локациям',
+                        trk: 'Konum Kârları',
+                        es: 'Ganancias por ubicación',
+                        it: 'Profitti per località',
+                        pl: 'Zyski według lokalizacji',
+                        pt: 'Lucros por localização',
+                        th: 'กำไรตามสถานที่',
+                        id: 'Keuntungan Lokasi',
+                        hi: 'स्थान लाभ',
+                        bn: 'লোকেশন লাভ',
+                      ),
+                    ),
+
+                    Tab(
+                      text: tr(
+                        context,
+                        'Game Profits',
+                        zhTw: '遊戲盈利',
+                        zhCn: '游戏盈利',
+                        ko: '게임 수익',
+                        ja: 'ゲーム別利益',
+                        de: 'Spielgewinne',
+                        fr: 'Profits par jeu',
+                        ar: 'أرباح اللعبة',
+                        ru: 'Прибыль по играм',
+                        trk: 'Oyun Kârları',
+                        es: 'Ganancias por juego',
+                        it: 'Profitti per gioco',
+                        pl: 'Zyski według gry',
+                        pt: 'Lucros por jogo',
+                        th: 'กำไรตามเกม',
+                        id: 'Keuntungan Game',
+                        hi: 'गेम लाभ',
+                        bn: 'গেম লাভ',
+                      ),
+                    ),
+
+                    Tab(
+                      text: tr(
+                        context,
+                        'Weekly Profits',
+                        zhTw: '每週盈利',
+                        zhCn: '每周盈利',
+                        ko: '주간 수익',
+                        ja: '週間利益',
+                        de: 'Wöchentliche Gewinne',
+                        fr: 'Profits hebdomadaires',
+                        ar: 'الأرباح الأسبوعية',
+                        ru: 'Недельная прибыль',
+                        trk: 'Haftalık Kârlar',
+                        es: 'Ganancias semanales',
+                        it: 'Profitti settimanali',
+                        pl: 'Tygodniowe zyski',
+                        pt: 'Lucros semanais',
+                        th: 'กำไรรายสัปดาห์',
+                        id: 'Keuntungan Mingguan',
+                        hi: 'साप्ताहिक लाभ',
+                        bn: 'সাপ্তাহিক লাভ',
+                      ),
+                    ),
+
+                    Tab(
+                      text: tr(
+                        context,
+                        'Monthly Profits',
+                        zhTw: '每月盈利',
+                        zhCn: '每月盈利',
+                        ko: '월간 수익',
+                        ja: '月間利益',
+                        de: 'Monatliche Gewinne',
+                        fr: 'Profits mensuels',
+                        ar: 'الأرباح الشهرية',
+                        ru: 'Месячная прибыль',
+                        trk: 'Aylık Kârlar',
+                        es: 'Ganancias mensuales',
+                        it: 'Profitti mensili',
+                        pl: 'Miesięczne zyski',
+                        pt: 'Lucros mensais',
+                        th: 'กำไรรายเดือน',
+                        id: 'Keuntungan Bulanan',
+                        hi: 'मासिक लाभ',
+                        bn: 'মাসিক লাভ',
+                      ),
+                    ),
+                  ],
+                ),
+
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      buildAllSessions(),
+                      buildGroupList(groupedByLocation),
+                      buildGroupList(groupedByGame),
+                      buildGroupList(groupedByWeek, sortByDate: true),
+                      buildGroupList(groupedByMonth),
+                    ],
+                  ),
+                ),
               ],
             );
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildOverallView() {
+    return const OverallStatsPageBody();
+  }
+
+  Future<void> _confirmDeletePlayer({
+    required String docId,
+    required String name,
+  }) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+
+          title: Text(
+            tr(
+              context,
+              'Delete Player',
+              zhTw: '刪除玩家',
+              zhCn: '删除玩家',
+              ko: '플레이어 삭제',
+              ja: 'プレイヤー削除',
+              de: 'Spieler löschen',
+              fr: 'Supprimer le joueur',
+              ar: 'حذف اللاعب',
+              ru: 'Удалить игрока',
+              trk: 'Oyuncuyu Sil',
+              es: 'Eliminar jugador',
+              it: 'Elimina giocatore',
+              pl: 'Usuń gracza',
+              pt: 'Excluir jogador',
+              th: 'ลบผู้เล่น',
+              id: 'Hapus Pemain',
+              hi: 'खिलाड़ी हटाएँ',
+              bn: 'প্লেয়ার মুছুন',
+            ),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          content: Text(
+            tr(
+              context,
+              'Are you sure you want to delete this player?',
+              zhTw: '你確定要刪除此玩家嗎？',
+              zhCn: '你确定要删除此玩家吗？',
+              ko: '이 플레이어를 삭제하시겠습니까?',
+              ja: 'このプレイヤーを削除してもよろしいですか？',
+              de: 'Möchten Sie diesen Spieler wirklich löschen?',
+              fr: 'Êtes-vous sûr de vouloir supprimer ce joueur ?',
+              ar: 'هل أنت متأكد أنك تريد حذف هذا اللاعب؟',
+              ru: 'Вы уверены, что хотите удалить этого игрока?',
+              trk: 'Bu oyuncuyu silmek istediğinizden emin misiniz?',
+              es: '¿Estás seguro de que deseas eliminar a este jugador?',
+              it: 'Sei sicuro di voler eliminare questo giocatore?',
+              pl: 'Czy na pewno chcesz usunąć tego gracza?',
+              pt: 'Tem certeza de que deseja excluir este jogador?',
+              th: 'คุณแน่ใจหรือไม่ว่าต้องการลบผู้เล่นคนนี้?',
+              id: 'Apakah Anda yakin ingin menghapus pemain ini?',
+              hi: 'क्या आप वाकई इस खिलाड़ी को हटाना चाहते हैं?',
+              bn: 'আপনি কি নিশ্চিত যে এই প্লেয়ারকে মুছে ফেলতে চান?',
+            ),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : const Color(0xFF2E7D32),
+                ),
+              ),
+            ),
+
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                tr(
+                  context,
+                  'Confirm',
+                  zhTw: '確認',
+                  zhCn: '确认',
+                  ko: '확인',
+                  ja: '確認',
+                  de: 'Bestätigen',
+                  fr: 'Confirmer',
+                  ar: 'تأكيد',
+                  ru: 'Подтвердить',
+                  trk: 'Onayla',
+                  es: 'Confirmar',
+                  it: 'Conferma',
+                  pl: 'Potwierdź',
+                  pt: 'Confirmar',
+                  th: 'ยืนยัน',
+                  id: 'Konfirmasi',
+                  hi: 'पुष्टि करें',
+                  bn: 'নিশ্চিত করুন',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    await _statPlayersRef().doc(docId).delete();
+  }
+
+  Widget _buildPlayerView() {
+    Future.microtask(_ensureMePlayer);
+
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF2F2F7);
+
+    final cardColor =
+        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    final borderColor =
+        isDark ? const Color(0xFF334155) : const Color(0xFFE5E7EB);
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black45;
+
+    return Container(
+      color: bgColor,
+      child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: _statPlayersRef()
+            .orderBy('createdAt', descending: false)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          final docs = [...snapshot.data!.docs];
+
+          docs.sort((a, b) {
+            final aName =
+                (a.data()['name'] ?? '')
+                    .toString()
+                    .toLowerCase();
+
+            final bName =
+                (b.data()['name'] ?? '')
+                    .toString()
+                    .toLowerCase();
+
+            final aIsMe =
+                a.data()['source'] == 'me';
+
+            final bIsMe =
+                b.data()['source'] == 'me';
+
+            if (aIsMe && !bIsMe) return -1;
+            if (!aIsMe && bIsMe) return 1;
+
+            return aName.compareTo(bName);
+          });
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Text(
+                tr(
+                  context,
+                  'No players yet',
+                  zhTw: '目前沒有玩家',
+                  zhCn: '目前没有玩家',
+                ),
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) =>
+                const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final doc = docs[index];
+              final data = doc.data();
+
+              final name =
+                  (data['name'] ?? 'Player')
+                      .toString();
+
+              final photoUrl =
+                  (data['photoUrl'] ?? '')
+                      .toString()
+                      .trim();
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius:
+                      BorderRadius.circular(18),
+                  border: Border.all(
+                    color: borderColor,
+                  ),
+                ),
+                child: ListTile(
+                  tileColor: Colors.transparent,
+
+                  leading: _isEditingPlayers &&
+                          data['source'] != 'me'
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.remove_circle,
+                            color: Colors.red,
+                          ),
+                          onPressed: () async {
+                            await _confirmDeletePlayer(
+                              docId: doc.id,
+                              name: name,
+                            );
+                          },
+                        )
+                      : CircleAvatar(
+                          backgroundImage:
+                              photoUrl.isNotEmpty
+                                  ? NetworkImage(photoUrl)
+                                  : null,
+                          child: photoUrl.isEmpty
+                              ? const Icon(Icons.person)
+                              : null,
+                        ),
+
+                  title: Text(
+                    name,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  trailing: _isEditingPlayers
+                      ? null
+                      : Icon(
+                          Icons.chevron_right,
+                          color: subTextColor,
+                        ),
+
+                  onLongPress:
+                      data['source'] == 'me'
+                          ? null
+                          : () async {
+                              await _confirmDeletePlayer(
+                                docId: doc.id,
+                                name: name,
+                              );
+                            },
+
+                  onTap: () async {
+                    if (_isEditingPlayers) {
+                      if (data['source'] == 'me') {
+                        return;
+                      }
+
+                      await _confirmDeletePlayer(
+                        docId: doc.id,
+                        name: name,
+                      );
+
+                      return;
+                    }
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => PlayerDetailPage(
+                          playerId: doc.id,
+                          data: data,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _showAddPlayerOptions() async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final result = await showModalBottomSheet<String>(
+      context: context,
+
+      backgroundColor:
+          isDark ? const Color(0xFF1E293B) : Colors.white,
+
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(24),
+        ),
+      ),
+
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(
+              top: 12,
+              bottom: 20,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+
+                ListTile(
+                  leading: Icon(
+                    Icons.people,
+                    color: isDark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+
+                  title: Text(
+                    tr(
+                      context,
+                      'Add from friends',
+                      zhTw: '從好友中新增',
+                      zhCn: '从好友中新增',
+                      ko: '친구에서 추가',
+                      ja: '友達から追加',
+                      de: 'Aus Freunden hinzufügen',
+                      fr: 'Ajouter depuis les amis',
+                      ar: 'إضافة من الأصدقاء',
+                      ru: 'Добавить из друзей',
+                      trk: 'Arkadaşlardan ekle',
+                      es: 'Agregar desde amigos',
+                      it: 'Aggiungi dagli amici',
+                      pl: 'Dodaj ze znajomych',
+                      pt: 'Adicionar dos amigos',
+                      th: 'เพิ่มจากเพื่อน',
+                      id: 'Tambahkan dari teman',
+                      hi: 'दोस्तों से जोड़ें',
+                      bn: 'বন্ধুদের থেকে যোগ করুন',
+                    ),
+
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.white
+                          : Colors.black87,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  onTap: () =>
+                      Navigator.pop(context, 'friends'),
+                ),
+
+                Divider(
+                  color: isDark
+                      ? Colors.white12
+                      : Colors.black12,
+                  height: 1,
+                ),
+
+                ListTile(
+                  leading: Icon(
+                    Icons.person_add,
+                    color: isDark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+
+                  title: Text(
+                    tr(
+                      context,
+                      'Add player',
+                      zhTw: '新增玩家',
+                      zhCn: '新增玩家',
+                      ko: '플레이어 추가',
+                      ja: 'プレイヤー追加',
+                      de: 'Spieler hinzufügen',
+                      fr: 'Ajouter un joueur',
+                      ar: 'إضافة لاعب',
+                      ru: 'Добавить игрока',
+                      trk: 'Oyuncu ekle',
+                      es: 'Agregar jugador',
+                      it: 'Aggiungi giocatore',
+                      pl: 'Dodaj gracza',
+                      pt: 'Adicionar jogador',
+                      th: 'เพิ่มผู้เล่น',
+                      id: 'Tambah pemain',
+                      hi: 'खिलाड़ी जोड़ें',
+                      bn: 'প্লেয়ার যোগ করুন',
+                    ),
+
+                    style: TextStyle(
+                      color: isDark
+                          ? Colors.white
+                          : Colors.black87,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  onTap: () =>
+                      Navigator.pop(context, 'manual'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == 'manual') {
+      await _addManualPlayer();
+    }
+
+    if (result == 'friends') {
+      await _addPlayerFromFriends();
+    }
+  }
+
+  Future<void> _addManualPlayer() async {
+    final controller = TextEditingController();
+
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor:
+              isDark
+                  ? const Color(0xFF1E293B)
+                  : Colors.white,
+
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+
+          title: Text(
+            tr(
+              context,
+              'Add player',
+              zhTw: '新增玩家',
+              zhCn: '新增玩家',
+              ko: '플레이어 추가',
+              ja: 'プレイヤー追加',
+              de: 'Spieler hinzufügen',
+              fr: 'Ajouter un joueur',
+              ar: 'إضافة لاعب',
+              ru: 'Добавить игрока',
+              trk: 'Oyuncu ekle',
+              es: 'Agregar jugador',
+              it: 'Aggiungi giocatore',
+              pl: 'Dodaj gracza',
+              pt: 'Adicionar jogador',
+              th: 'เพิ่มผู้เล่น',
+              id: 'Tambah pemain',
+              hi: 'खिलाड़ी जोड़ें',
+              bn: 'প্লেয়ার যোগ করুন',
+            ),
+
+            style: TextStyle(
+              color:
+                  isDark
+                      ? Colors.white
+                      : Colors.black87,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          content: TextField(
+            controller: controller,
+
+            style: TextStyle(
+              color:
+                  isDark
+                      ? Colors.white
+                      : Colors.black87,
+            ),
+
+            decoration: InputDecoration(
+              labelText: tr(
+                context,
+                'Player name',
+                zhTw: '玩家名字',
+                zhCn: '玩家名字',
+                ko: '플레이어 이름',
+                ja: 'プレイヤー名',
+                de: 'Spielername',
+                fr: 'Nom du joueur',
+                ar: 'اسم اللاعب',
+                ru: 'Имя игрока',
+                trk: 'Oyuncu adı',
+                es: 'Nombre del jugador',
+                it: 'Nome del giocatore',
+                pl: 'Nazwa gracza',
+                pt: 'Nome do jogador',
+                th: 'ชื่อผู้เล่น',
+                id: 'Nama pemain',
+                hi: 'खिलाड़ी का नाम',
+                bn: 'প্লেয়ারের নাম',
+              ),
+
+              labelStyle: TextStyle(
+                color:
+                    isDark
+                        ? Colors.white70
+                        : Colors.black54,
+              ),
+
+              filled: true,
+
+              fillColor:
+                  isDark
+                      ? const Color(0xFF0F172A)
+                      : const Color(0xFFF3F4F6),
+
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide(
+                  color:
+                      isDark
+                          ? Colors.white12
+                          : Colors.black12,
+                ),
+              ),
+
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: BorderSide(
+                  color:
+                      isDark
+                          ? Colors.white12
+                          : Colors.black12,
+                ),
+              ),
+
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(
+                  color: Color(0xFF4ADE80),
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(context, false),
+
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+
+                style: TextStyle(
+                  color:
+                      isDark
+                          ? Colors.white70
+                          : Colors.black54,
+                ),
+              ),
+            ),
+
+            FilledButton(
+              onPressed: () =>
+                  Navigator.pop(context, true),
+
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF16A34A),
+                foregroundColor: Colors.white,
+              ),
+
+              child: Text(
+                tr(
+                  context,
+                  'Add',
+                  zhTw: '新增',
+                  zhCn: '新增',
+                  ko: '추가',
+                  ja: '追加',
+                  de: 'Hinzufügen',
+                  fr: 'Ajouter',
+                  ar: 'إضافة',
+                  ru: 'Добавить',
+                  trk: 'Ekle',
+                  es: 'Agregar',
+                  it: 'Aggiungi',
+                  pl: 'Dodaj',
+                  pt: 'Adicionar',
+                  th: 'เพิ่ม',
+                  id: 'Tambah',
+                  hi: 'जोड़ें',
+                  bn: 'যোগ করুন',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (saved != true) return;
+
+    final name = controller.text.trim();
+
+    if (name.isEmpty) return;
+
+    await _statPlayersRef().add({
+      'name': name,
+      'source': 'manual',
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _addPlayerFromFriends() async {
+    final currentUid =
+        FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    final friendshipSnap = await FirebaseFirestore.instance
+        .collection('friendships')
+        .where('memberUids', arrayContains: currentUid)
+        .get();
+
+    if (!mounted) return;
+
+    final friendDocs = friendshipSnap.docs;
+
+    if (friendDocs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            tr(
+              context,
+              'No friends found',
+              zhTw: '沒有好友',
+              zhCn: '没有好友',
+              ko: '친구가 없습니다',
+              ja: '友達がいません',
+              de: 'Keine Freunde gefunden',
+              fr: 'Aucun ami trouvé',
+              ar: 'لم يتم العثور على أصدقاء',
+              ru: 'Друзья не найдены',
+              trk: 'Arkadaş bulunamadı',
+              es: 'No se encontraron amigos',
+              it: 'Nessun amico trovato',
+              pl: 'Nie znaleziono znajomych',
+              pt: 'Nenhum amigo encontrado',
+              th: 'ไม่พบเพื่อน',
+              id: 'Tidak ada teman ditemukan',
+              hi: 'कोई दोस्त नहीं मिला',
+              bn: 'কোনো বন্ধু পাওয়া যায়নি',
+            ),
+          ),
+        ),
+      );
+
+      return;
+    }
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: friendDocs.length,
+            itemBuilder: (context, index) {
+              final data = friendDocs[index].data();
+
+              final memberUids =
+                  List<String>.from(data['memberUids'] ?? []);
+
+              final friendUid = memberUids.firstWhere(
+                (uid) => uid != currentUid,
+                orElse: () => '',
+              );
+
+              final userA = Map<String, dynamic>.from(data['userA'] ?? {});
+              final userB = Map<String, dynamic>.from(data['userB'] ?? {});
+
+              final friendData =
+                  (userA['uid'] ?? '').toString() == friendUid ? userA : userB;
+
+              final nicknames = Map<String, dynamic>.from(data['nicknames'] ?? {});
+
+              final customNickname =
+                  (nicknames[currentUid] ?? '').toString().trim();
+
+              final shortName =
+                  (friendData['shortName'] ?? '').toString().trim();
+
+              final firstName =
+                  (friendData['displayName'] ?? 'Friend').toString().trim();
+
+              final friendName = customNickname.isNotEmpty
+                  ? customNickname
+                  : shortName.isNotEmpty
+                      ? shortName
+                      : firstName;
+
+              final friendPhoto =
+                  (friendData['photoUrl'] ?? '').toString().trim();
+
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage:
+                      friendPhoto.toString().trim().isNotEmpty
+                          ? NetworkImage(friendPhoto)
+                          : null,
+                  child:
+                      friendPhoto.toString().trim().isEmpty
+                          ? const Icon(Icons.person)
+                          : null,
+                ),
+
+                title: Text(friendName.toString()),
+
+                onTap: () async {
+                  await _statPlayersRef().add({
+                    'uid': friendUid,
+                    'name': friendName,
+                    'photoUrl': friendPhoto,
+                    'source': 'friend',
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'updatedAt': FieldValue.serverTimestamp(),
+                  });
+
+                  if (!mounted) return;
+
+                  Navigator.pop(context);
+
+                  ScaffoldMessenger.of(this.context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        tr(
+                          this.context,
+                          'Player added',
+                          zhTw: '玩家已新增',
+                          zhCn: '玩家已新增',
+                          ko: '플레이어가 추가되었습니다',
+                          ja: 'プレイヤーが追加されました',
+                          de: 'Spieler hinzugefügt',
+                          fr: 'Joueur ajouté',
+                          ar: 'تمت إضافة اللاعب',
+                          ru: 'Игрок добавлен',
+                          trk: 'Oyuncu eklendi',
+                          es: 'Jugador agregado',
+                          it: 'Giocatore aggiunto',
+                          pl: 'Dodano gracza',
+                          pt: 'Jogador adicionado',
+                          th: 'เพิ่มผู้เล่นแล้ว',
+                          id: 'Pemain ditambahkan',
+                          hi: 'खिलाड़ी जोड़ दिया गया',
+                          bn: 'প্লেয়ার যোগ করা হয়েছে',
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+}
+
+class PlayerDetailPage extends StatefulWidget {
+  final String playerId;
+  final Map<String, dynamic> data;
+
+  const PlayerDetailPage({
+    super.key,
+    required this.playerId,
+    required this.data,
+  });
+
+  @override
+  State<PlayerDetailPage> createState() => _PlayerDetailPageState();
+}
+
+class CashSessionHandHistoryPage extends StatelessWidget {
+  final String sessionId;
+  final String sessionName;
+
+  const CashSessionHandHistoryPage({
+    super.key,
+    required this.sessionId,
+    required this.sessionName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0B1020) : const Color(0xFFF2F2F7);
+
+    final cardColor =
+        isDark ? const Color(0xFF1F2937) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: Text(
+          sessionName.isEmpty
+              ? tr(
+                  context,
+                  'Hand History',
+                  zhTw: '手牌紀錄',
+                  zhCn: '手牌记录',
+                  ko: '핸드 기록',
+                  ja: 'ハンド履歴',
+                  de: 'Handverlauf',
+                  fr: 'Historique des mains',
+                  ar: 'سجل الأيدي',
+                  ru: 'История раздач',
+                  trk: 'El Geçmişi',
+                  es: 'Historial de manos',
+                  it: 'Cronologia mani',
+                  pl: 'Historia rozdań',
+                  pt: 'Histórico de mãos',
+                  th: 'ประวัติมือ',
+                  id: 'Riwayat Hand',
+                  hi: 'हैंड हिस्ट्री',
+                  bn: 'হ্যান্ড হিস্ট্রি',
+                )
+              : sessionName,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser?.uid ?? '')
+            .collection('cash_game_sessions')
+            .doc(sessionId)
+            .collection('hands')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Text(
+                tr(
+                  context,
+                  'No hands yet',
+                  zhTw: '目前沒有手牌紀錄',
+                  zhCn: '目前没有手牌记录',
+                  ko: '아직 핸드 기록이 없습니다',
+                  ja: 'まだハンド履歴がありません',
+                  de: 'Noch keine Hände',
+                  fr: 'Aucune main pour le moment',
+                  ar: 'لا توجد أيدي بعد',
+                  ru: 'Пока нет раздач',
+                  trk: 'Henüz el yok',
+                  es: 'Aún no hay manos',
+                  it: 'Nessuna mano al momento',
+                  pl: 'Brak rozdań',
+                  pt: 'Ainda não há mãos',
+                  th: 'ยังไม่มีมือ',
+                  id: 'Belum ada hand',
+                  hi: 'अभी तक कोई हैंड नहीं है',
+                  bn: 'এখনও কোনো হ্যান্ড নেই',
+                ),
+                style: TextStyle(
+                  color: subTextColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final data = docs[index].data();
+              final title = (data['title'] ??
+                      tr(
+                        context,
+                        'Hand',
+                        zhTw: '手牌',
+                        zhCn: '手牌',
+                        ko: '핸드',
+                        ja: 'ハンド',
+                        de: 'Hand',
+                        fr: 'Main',
+                        ar: 'يد',
+                        ru: 'Раздача',
+                        trk: 'El',
+                        es: 'Mano',
+                        it: 'Mano',
+                        pl: 'Ręka',
+                        pt: 'Mão',
+                        th: 'มือ',
+                        id: 'Hand',
+                        hi: 'हैंड',
+                        bn: 'হ্যান্ড',
+                      ))
+                  .toString();
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.black12,
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.style, color: subTextColor),
+                  title: Text(
+                    title,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  trailing: Icon(Icons.chevron_right, color: subTextColor),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => HandChartPage(
+                          data: data,
+                          sessionId: sessionId,
+                          handId: docs[index].id,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddHandPage(
+                sessionId: sessionId,
+                sessionName: sessionName,
+              ),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: Text(
+          tr(
+            context,
+            'Add Hand',
+            zhTw: '新增手牌',
+            zhCn: '新增手牌',
+            ko: '핸드 추가',
+            ja: 'ハンド追加',
+            de: 'Hand hinzufügen',
+            fr: 'Ajouter une main',
+            ar: 'إضافة يد',
+            ru: 'Добавить раздачу',
+            trk: 'El Ekle',
+            es: 'Agregar mano',
+            it: 'Aggiungi mano',
+            pl: 'Dodaj rękę',
+            pt: 'Adicionar mão',
+            th: 'เพิ่มมือ',
+            id: 'Tambah Hand',
+            hi: 'हैंड जोड़ें',
+            bn: 'হ্যান্ড যোগ করুন',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class TournamentHandHistoryPage extends StatelessWidget {
+  final String tournamentId;
+  final String tournamentName;
+
+  const TournamentHandHistoryPage({
+    super.key,
+    required this.tournamentId,
+    required this.tournamentName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0B1020) : const Color(0xFFF2F2F7);
+
+    final cardColor =
+        isDark ? const Color(0xFF1F2937) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: Text(
+          tournamentName.isEmpty
+              ? tr(
+                  context,
+                  'Hand History',
+                  zhTw: '手牌紀錄',
+                  zhCn: '手牌记录',
+                  ko: '핸드 기록',
+                  ja: 'ハンド履歴',
+                  de: 'Handverlauf',
+                  fr: 'Historique des mains',
+                  ar: 'سجل الأيدي',
+                  ru: 'История раздач',
+                  trk: 'El Geçmişi',
+                  es: 'Historial de manos',
+                  it: 'Cronologia mani',
+                  pl: 'Historia rozdań',
+                  pt: 'Histórico de mãos',
+                  th: 'ประวัติมือ',
+                  id: 'Riwayat Hand',
+                  hi: 'हैंड हिस्ट्री',
+                  bn: 'হ্যান্ড হিস্ট্রি',
+                )
+              : tournamentName,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser?.uid ?? '')
+            .collection('tournament_sessions')
+            .doc(tournamentId)
+            .collection('hands')
+            .orderBy('createdAt', descending: true)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Text(
+                tr(
+                  context,
+                  'No hands yet',
+                  zhTw: '目前沒有手牌紀錄',
+                  zhCn: '目前没有手牌记录',
+                  ko: '아직 핸드 기록이 없습니다',
+                  ja: 'まだハンド履歴がありません',
+                  de: 'Noch keine Hände',
+                  fr: 'Aucune main pour le moment',
+                  ar: 'لا توجد أيدي بعد',
+                  ru: 'Пока нет раздач',
+                  trk: 'Henüz el yok',
+                  es: 'Aún no hay manos',
+                  it: 'Nessuna mano al momento',
+                  pl: 'Brak rozdań',
+                  pt: 'Ainda não há mãos',
+                  th: 'ยังไม่มีมือ',
+                  id: 'Belum ada hand',
+                  hi: 'अभी तक कोई हैंड नहीं है',
+                  bn: 'এখনও কোনো হ্যান্ড নেই',
+                ),
+                style: TextStyle(
+                  color: subTextColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: docs.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              final data = docs[index].data();
+              final title = (data['title'] ??
+                      tr(
+                        context,
+                        'Hand',
+                        zhTw: '手牌',
+                        zhCn: '手牌',
+                        ko: '핸드',
+                        ja: 'ハンド',
+                        de: 'Hand',
+                        fr: 'Main',
+                        ar: 'يد',
+                        ru: 'Раздача',
+                        trk: 'El',
+                        es: 'Mano',
+                        it: 'Mano',
+                        pl: 'Ręka',
+                        pt: 'Mão',
+                        th: 'มือ',
+                        id: 'Hand',
+                        hi: 'हैंड',
+                        bn: 'হ্যান্ড',
+                      ))
+                  .toString();
+
+              return Container(
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: isDark ? Colors.white12 : Colors.black12,
+                  ),
+                ),
+                child: ListTile(
+                  leading: Icon(Icons.style, color: subTextColor),
+                  title: Text(
+                    title,
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  trailing: Icon(Icons.chevron_right, color: subTextColor),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => HandChartPage(
+                          data: {
+                            ...data,
+                            'isTournament': true,
+                          },
+                          sessionId: tournamentId,
+                          handId: docs[index].id,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: const Color(0xFF2E7D32),
+        foregroundColor: Colors.white,
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => AddHandPage(
+                sessionId: tournamentId,
+                sessionName: tournamentName,
+                isTournament: true,
+              ),
+            ),
+          );
+        },
+        icon: const Icon(Icons.add),
+        label: Text(
+          tr(
+            context,
+            'Add Hand',
+            zhTw: '新增手牌',
+            zhCn: '新增手牌',
+            ko: '핸드 추가',
+            ja: 'ハンド追加',
+            de: 'Hand hinzufügen',
+            fr: 'Ajouter une main',
+            ar: 'إضافة يد',
+            ru: 'Добавить раздачу',
+            trk: 'El Ekle',
+            es: 'Agregar mano',
+            it: 'Aggiungi mano',
+            pl: 'Dodaj rękę',
+            pt: 'Adicionar mão',
+            th: 'เพิ่มมือ',
+            id: 'Tambah Hand',
+            hi: 'हैंड जोड़ें',
+            bn: 'হ্যান্ড যোগ করুন',
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class HandChartPage extends StatelessWidget {
+  final Map<String, dynamic> data;
+
+  final String sessionId;
+  final String handId;   
+
+  const HandChartPage({
+    super.key,
+    required this.data,
+    required this.sessionId,
+    required this.handId,
+  });
+
+  Widget _infoChip(
+    BuildContext context,
+    String label,
+    String value,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final chipColor =
+        isDark ? const Color(0xFF111827) : Colors.black12;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: chipColor,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: subTextColor,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _stackBbText() {
+    final stack =
+        ((data['approxStack'] ?? 0) as num).toDouble();
+
+    final bb =
+        ((data['bigBlind'] ?? 0) as num).toDouble();
+
+    if (stack <= 0 || bb <= 0) {
+      return stack.toStringAsFixed(0);
+    }
+
+    final bbCount = stack / bb;
+
+    return '${stack.toStringAsFixed(0)} '
+        '(${bbCount.toStringAsFixed(1)} BB)';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark ? const Color(0xFF0B1020) : const Color(0xFFF2F2F7);
+    final cardColor = isDark ? const Color(0xFF1F2937) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+
+    final smallBlind = ((data['smallBlind'] ?? 0) as num).toDouble();
+    final bigBlind = ((data['bigBlind'] ?? 0) as num).toDouble();
+
+    final straddlePosition = (data['straddlePosition'] ?? '').toString();
+    final straddleAmount = ((data['straddleAmount'] ?? 0) as num).toDouble();
+
+    final ante = ((data['ante'] ?? 0) as num).toDouble();
+    final isTournament = data['isTournament'] == true;
+
+    final initialPaid = {
+      'SB': smallBlind,
+      'BB': bigBlind,
+      if (!isTournament && straddlePosition.isNotEmpty)
+        straddlePosition: straddleAmount,
+      if (isTournament) 'ANTE': ante,
+    };
+
+    final preflopPot = _streetPot(
+      data['preflopActions'] ?? [],
+      initialPaid: initialPaid,
+    );
+
+    final flopPot = preflopPot + _streetPot(data['flopActions'] ?? []);
+    final turnPot = flopPot + _streetPot(data['turnActions'] ?? []);
+    final riverPot = turnPot + _streetPot(data['riverActions'] ?? []);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          (data['title'] ??
+                  tr(
+                    context,
+                    'Hand Detail',
+                    zhTw: '手牌詳情',
+                    zhCn: '手牌详情',
+                    ko: '핸드 상세',
+                    ja: 'ハンド詳細',
+                    de: 'Handdetails',
+                    fr: 'Détails de la main',
+                    ar: 'تفاصيل اليد',
+                    ru: 'Детали раздачи',
+                    trk: 'El Detayı',
+                    es: 'Detalle de la mano',
+                    it: 'Dettaglio mano',
+                    pl: 'Szczegóły rozdania',
+                    pt: 'Detalhes da mão',
+                    th: 'รายละเอียดมือ',
+                    id: 'Detail Hand',
+                    hi: 'हैंड विवरण',
+                    bn: 'হ্যান্ড বিস্তারিত',
+                  ))
+              .toString(),
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit, color: textColor),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AddHandPage(
+                    sessionId: sessionId,
+                    sessionName: (data['sessionName'] ?? '').toString(),
+                    handId: handId,
+                    initialTitle: (data['title'] ?? '').toString(),
+                    initialData: data,
+                    isTournament: isTournament,
+                  ),
+                ),
+              );
+
+              if (result == 'deleted') {
+                if (context.mounted) Navigator.pop(context);
+                return;
+              }
+
+              if (result is Map<String, dynamic>) {
+                if (!context.mounted) return;
+
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HandChartPage(
+                      data: result,
+                      sessionId: sessionId,
+                      handId: handId,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+
+      backgroundColor: bgColor,
+
+      body: Column(
+        children: [
+          if (isTournament)
+            Container(
+              color: cardColor,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _infoChip(
+                          context,
+                          tr(
+                            context,
+                            'Level',
+                            zhTw: '級別',
+                            zhCn: '级别',
+                            ko: '레벨',
+                            ja: 'レベル',
+                            de: 'Level',
+                            fr: 'Niveau',
+                            ar: 'المستوى',
+                            ru: 'Уровень',
+                            trk: 'Seviye',
+                            es: 'Nivel',
+                            it: 'Livello',
+                            pl: 'Poziom',
+                            pt: 'Nível',
+                            th: 'เลเวล',
+                            id: 'Level',
+                            hi: 'लेवल',
+                            bn: 'লেভেল',
+                          ),
+                          (data['level'] ?? '-').toString(),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      Expanded(
+                        child: _infoChip(
+                          context,
+                          tr(
+                            context,
+                            'Ante',
+                            zhTw: '前注',
+                            zhCn: '前注',
+                            ko: '앤티',
+                            ja: 'アンティ',
+                            de: 'Ante',
+                            fr: 'Ante',
+                            ar: 'الرهان الإجباري',
+                            ru: 'Анте',
+                            trk: 'Ante',
+                            es: 'Ante',
+                            it: 'Ante',
+                            pl: 'Ante',
+                            pt: 'Ante',
+                            th: 'แอนตี',
+                            id: 'Ante',
+                            hi: 'एंटी',
+                            bn: 'অ্যান্টি',
+                          ),
+                          '\$${data['ante'] ?? 0}',
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _infoChip(
+                          context,
+                          tr(
+                            context,
+                            'Effective Stack (BB)',
+                            zhTw: '有效籌碼（大盲）',
+                            zhCn: '有效筹码（大盲）',
+                            ko: '유효 스택 (BB)',
+                            ja: '実効スタック (BB)',
+                            de: 'Effektiver Stack (BB)',
+                            fr: 'Tapis effectif (BB)',
+                            ar: 'الستاك الفعّال (BB)',
+                            ru: 'Эффективный стек (BB)',
+                            trk: 'Efektif Stack (BB)',
+                            es: 'Stack efectivo (BB)',
+                            it: 'Stack effettivo (BB)',
+                            pl: 'Efektywny stack (BB)',
+                            pt: 'Stack efetivo (BB)',
+                            th: 'สแตกที่มีผล (BB)',
+                            id: 'Stack Efektif (BB)',
+                            hi: 'प्रभावी स्टैक (BB)',
+                            bn: 'কার্যকর স্ট্যাক (BB)',
+                          ),
+                          _stackBbText(),
+                        ),
+                      ),
+
+                      const SizedBox(width: 8),
+
+                      Expanded(
+                        child: _infoChip(
+                          context,
+                          tr(
+                            context,
+                            'Bubble',
+                            zhTw: '泡沫期',
+                            zhCn: '泡沫期',
+                            ko: '버블',
+                            ja: 'バブル',
+                            de: 'Bubble',
+                            fr: 'Bulle',
+                            ar: 'الفقاعة',
+                            ru: 'Баббл',
+                            trk: 'Bubble',
+                            es: 'Burbuja',
+                            it: 'Bubble',
+                            pl: 'Bubble',
+                            pt: 'Bolha',
+                            th: 'บับเบิล',
+                            id: 'Bubble',
+                            hi: 'बबल',
+                            bn: 'বাবল',
+                          ),
+                          data['isBubble'] == true
+                              ? tr(
+                                  context,
+                                  'Yes',
+                                  zhTw: '是',
+                                  zhCn: '是',
+                                  ko: '예',
+                                  ja: 'はい',
+                                  de: 'Ja',
+                                  fr: 'Oui',
+                                  ar: 'نعم',
+                                  ru: 'Да',
+                                  trk: 'Evet',
+                                  es: 'Sí',
+                                  it: 'Sì',
+                                  pl: 'Tak',
+                                  pt: 'Sim',
+                                  th: 'ใช่',
+                                  id: 'Ya',
+                                  hi: 'हाँ',
+                                  bn: 'হ্যাঁ',
+                                )
+                              : tr(
+                                  context,
+                                  'No',
+                                  zhTw: '否',
+                                  zhCn: '否',
+                                  ko: '아니오',
+                                  ja: 'いいえ',
+                                  de: 'Nein',
+                                  fr: 'Non',
+                                  ar: 'لا',
+                                  ru: 'Нет',
+                                  trk: 'Hayır',
+                                  es: 'No',
+                                  it: 'No',
+                                  pl: 'Nie',
+                                  pt: 'Não',
+                                  th: 'ไม่',
+                                  id: 'Tidak',
+                                  hi: 'नहीं',
+                                  bn: 'না',
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _streetColumn(
+                    tr(
+                      context,
+                      'Preflop',
+                      zhTw: '翻牌前',
+                      zhCn: '翻牌前',
+                      ko: '프리플랍',
+                      ja: 'プリフロップ',
+                      de: 'Preflop',
+                      fr: 'Préflop',
+                      ar: 'قبل الفلوب',
+                      ru: 'Префлоп',
+                      trk: 'Preflop',
+                      es: 'Preflop',
+                      it: 'Preflop',
+                      pl: 'Preflop',
+                      pt: 'Pré-flop',
+                      th: 'พรีฟล็อป',
+                      id: 'Preflop',
+                      hi: 'प्रीफ्लॉप',
+                      bn: 'প্রিফ্লপ',
+                    ),
+                    data['preflopActions'] ?? [],
+                    '',
+                    preflopPot,
+                  ),
+
+                  _streetColumn(
+                    tr(
+                      context,
+                      'Flop',
+                      zhTw: '翻牌',
+                      zhCn: '翻牌',
+                      ko: '플랍',
+                      ja: 'フロップ',
+                      de: 'Flop',
+                      fr: 'Flop',
+                      ar: 'الفلوب',
+                      ru: 'Флоп',
+                      trk: 'Flop',
+                      es: 'Flop',
+                      it: 'Flop',
+                      pl: 'Flop',
+                      pt: 'Flop',
+                      th: 'ฟล็อป',
+                      id: 'Flop',
+                      hi: 'फ्लॉप',
+                      bn: 'ফ্লপ',
+                    ),
+                    data['flopActions'] ?? [],
+                    (data['flopCards'] ?? []).join(' '),
+                    flopPot,
+                  ),
+
+                  _streetColumn(
+                    tr(
+                      context,
+                      'Turn',
+                      zhTw: '轉牌',
+                      zhCn: '转牌',
+                      ko: '턴',
+                      ja: 'ターン',
+                      de: 'Turn',
+                      fr: 'Turn',
+                      ar: 'التيرن',
+                      ru: 'Тёрн',
+                      trk: 'Turn',
+                      es: 'Turn',
+                      it: 'Turn',
+                      pl: 'Turn',
+                      pt: 'Turn',
+                      th: 'เทิร์น',
+                      id: 'Turn',
+                      hi: 'टर्न',
+                      bn: 'টার্ন',
+                    ),
+                    data['turnActions'] ?? [],
+                    data['turnCard'] ?? '',
+                    turnPot,
+                  ),
+
+                  _streetColumn(
+                    tr(
+                      context,
+                      'River',
+                      zhTw: '河牌',
+                      zhCn: '河牌',
+                      ko: '리버',
+                      ja: 'リバー',
+                      de: 'River',
+                      fr: 'River',
+                      ar: 'الريفر',
+                      ru: 'Ривер',
+                      trk: 'River',
+                      es: 'River',
+                      it: 'River',
+                      pl: 'River',
+                      pt: 'River',
+                      th: 'ริเวอร์',
+                      id: 'River',
+                      hi: 'रिवर',
+                      bn: 'রিভার',
+                    ),
+                    data['riverActions'] ?? [],
+                    data['riverCard'] ?? '',
+                    riverPot,
+                  ),
+
+                  _showdownColumn(data['showdownCards'] ?? {}),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _streetPot(
+    dynamic actions, {
+    Map<String, double> initialPaid = const {},
+  }) {
+    final paid = Map<String, double>.from(initialPaid);
+
+    for (final a in actions) {
+      final position = (a['position'] ?? '').toString();
+      final action = (a['action'] ?? '').toString();
+      final amount = ((a['amount'] ?? 0) as num).toDouble();
+
+      if (position.isEmpty) continue;
+
+      if (action == 'bet' || action == 'raise') {
+        paid[position] = amount;
+      }
+
+      if (action == 'call') {
+        paid[position] = (paid[position] ?? 0) + amount;
+      }
+    }
+
+    return paid.values.fold<double>(
+      0,
+      (total, value) => total + value,
+    );
+  }
+
+  String _playerName(String position) {
+    final positions = Map<String, dynamic>.from(
+      data['positions'] ?? {},
+    );
+
+    final player = Map<String, dynamic>.from(
+      positions[position] ?? {},
+    );
+
+    final isMe =
+        player['type'] == 'player' &&
+        player['source'] == 'me';
+
+    if (isMe) {
+      return 'Me';
+    }
+
+    return (player['name'] ?? position).toString();
+  }
+
+  bool _isFolded(String position) {
+    final allActions = [
+      ...(data['preflopActions'] ?? []),
+      ...(data['flopActions'] ?? []),
+      ...(data['turnActions'] ?? []),
+      ...(data['riverActions'] ?? []),
+    ];
+
+    return allActions.any(
+      (a) =>
+          (a['position'] ?? '').toString() == position &&
+          (a['action'] ?? '').toString() == 'fold',
+    );
+  }
+
+
+
+  final List<String> _handRankOrder = const [
+    'Royal Flush',
+    'Straight Flush',
+    'Quads',
+    'Full House',
+    'Flush',
+    'Straight',
+    'Trips',
+    'Two Pairs',
+    'One Pair',
+    'High Card',
+  ];
+
+  int _rankValue(String card) {
+    final rank = card.replaceAll(RegExp(r'[♠♥♦♣]'), '');
+
+    switch (rank) {
+      case 'A':
+        return 14;
+      case 'K':
+        return 13;
+      case 'Q':
+        return 12;
+      case 'J':
+        return 11;
+      default:
+        return int.tryParse(rank) ?? 0;
+    }
+  }
+
+  String _suitValue(String card) {
+    if (card.contains('♠')) return '♠';
+    if (card.contains('♥')) return '♥';
+    if (card.contains('♦')) return '♦';
+    if (card.contains('♣')) return '♣';
+    return '';
+  }
+
+  List<List<String>> _fiveCardCombos(List<String> cards) {
+    final combos = <List<String>>[];
+
+    for (int a = 0; a < cards.length - 4; a++) {
+      for (int b = a + 1; b < cards.length - 3; b++) {
+        for (int c = b + 1; c < cards.length - 2; c++) {
+          for (int d = c + 1; d < cards.length - 1; d++) {
+            for (int e = d + 1; e < cards.length; e++) {
+              combos.add([
+                cards[a],
+                cards[b],
+                cards[c],
+                cards[d],
+                cards[e],
+              ]);
+            }
+          }
+        }
+      }
+    }
+
+    return combos;
+  }
+
+  List<List<String>> _threeCardCombos(List<String> cards) {
+    final combos = <List<String>>[];
+
+    for (int a = 0; a < cards.length - 2; a++) {
+      for (int b = a + 1; b < cards.length - 1; b++) {
+        for (int c = b + 1; c < cards.length; c++) {
+          combos.add([
+            cards[a],
+            cards[b],
+            cards[c],
+          ]);
+        }
+      }
+    }
+
+    return combos;
+  }
+
+  Map<String, dynamic> _evaluateFiveCards(
+    List<String> cards,
+  ) {
+    final ranks = cards
+        .map((c) => _rankValue(c))
+        .toList()
+      ..sort();
+
+    final suits = cards
+        .map((c) => c.substring(c.length - 1))
+        .toList();
+
+    final counts = <int, int>{};
+
+    for (final r in ranks) {
+      counts[r] = (counts[r] ?? 0) + 1;
+    }
+
+    final sortedCounts = counts.entries.toList()
+      ..sort((a, b) {
+        if (a.value != b.value) {
+          return b.value.compareTo(a.value);
+        }
+
+        return b.key.compareTo(a.key);
+      });
+
+    final isFlush = suits.toSet().length == 1;
+
+    bool isStraight = false;
+    int straightHigh = ranks.last;
+
+    final uniqueRanks = ranks.toSet().toList()..sort();
+
+    if (uniqueRanks.length == 5) {
+      if (uniqueRanks.last - uniqueRanks.first == 4) {
+        isStraight = true;
+        straightHigh = uniqueRanks.last;
+      }
+
+      if (uniqueRanks.join(',') == '2,3,4,5,14') {
+        isStraight = true;
+        straightHigh = 5;
+      }
+    }
+
+    if (isFlush && isStraight && straightHigh == 14) {
+      return {
+        'category': 'Royal Flush',
+        'bestCards': cards,
+        'categoryValue': 9,
+        'kickers': [14],
+      };
+    }
+
+    if (isFlush && isStraight) {
+      return {
+        'category': 'Straight Flush',
+        'bestCards': cards,
+        'categoryValue': 8,
+        'kickers': [straightHigh],
+      };
+    }
+
+    if (sortedCounts.first.value == 4) {
+      return {
+        'category': 'Quads',
+        'bestCards': cards,
+        'categoryValue': 7,
+        'kickers': [
+          sortedCounts.first.key,
+          sortedCounts.last.key,
+        ],
+      };
+    }
+
+    if (sortedCounts.first.value == 3 &&
+        sortedCounts.last.value == 2) {
+      return {
+        'category': 'Full House',
+        'bestCards': cards,
+        'categoryValue': 6,
+        'kickers': [
+          sortedCounts.first.key,
+          sortedCounts.last.key,
+        ],
+      };
+    }
+
+    if (isFlush) {
+      final desc = [...ranks]..sort((a, b) => b.compareTo(a));
+
+      return {
+        'category': 'Flush',
+        'bestCards': cards,
+        'categoryValue': 5,
+        'kickers': desc,
+      };
+    }
+
+    if (isStraight) {
+      return {
+        'category': 'Straight',
+        'bestCards': cards,
+        'categoryValue': 4,
+        'kickers': [straightHigh],
+      };
+    }
+
+    if (sortedCounts.first.value == 3) {
+      final kickers = sortedCounts
+          .where((e) => e.value == 1)
+          .map((e) => e.key)
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
+
+      return {
+        'category': 'Trips',
+        'bestCards': cards,
+        'categoryValue': 3,
+        'kickers': [
+          sortedCounts.first.key,
+          ...kickers,
+        ],
+      };
+    }
+
+    if (sortedCounts.where((e) => e.value == 2).length == 2) {
+      final pairs = sortedCounts
+          .where((e) => e.value == 2)
+          .map((e) => e.key)
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
+
+      final kicker = sortedCounts
+          .firstWhere((e) => e.value == 1)
+          .key;
+
+      return {
+        'category': 'Two Pair',
+        'bestCards': cards,
+        'categoryValue': 2,
+        'kickers': [
+          ...pairs,
+          kicker,
+        ],
+      };
+    }
+
+    if (sortedCounts.first.value == 2) {
+      final kickers = sortedCounts
+          .where((e) => e.value == 1)
+          .map((e) => e.key)
+          .toList()
+        ..sort((a, b) => b.compareTo(a));
+
+      return {
+        'category': 'One Pair',
+        'bestCards': cards,
+        'categoryValue': 1,
+        'kickers': [
+          sortedCounts.first.key,
+          ...kickers,
+        ],
+      };
+    }
+
+    final desc = [...ranks]..sort((a, b) => b.compareTo(a));
+
+    return {
+      'category': 'High Card',
+      'bestCards': cards,
+      'categoryValue': 0,
+      'kickers': desc,
+    };
+  }
+
+  int _compareHands(
+    Map<String, dynamic> a,
+    Map<String, dynamic> b,
+  ) {
+    final aCategory = (a['categoryValue'] ?? 0) as int;
+    final bCategory = (b['categoryValue'] ?? 0) as int;
+
+    if (aCategory != bCategory) {
+      return aCategory.compareTo(bCategory);
+    }
+
+    final aKickers = List<int>.from(a['kickers'] ?? []);
+    final bKickers = List<int>.from(b['kickers'] ?? []);
+
+    for (int i = 0; i < aKickers.length && i < bKickers.length; i++) {
+      if (aKickers[i] != bKickers[i]) {
+        return aKickers[i].compareTo(bKickers[i]);
+      }
+    }
+
+    return 0;
+  }
+
+  Map<String, dynamic> _evaluateBestHand(List<String> cards) {
+    final combos = _fiveCardCombos(cards);
+
+    Map<String, dynamic>? best;
+
+    for (final combo in combos) {
+      final evaluated = _evaluateFiveCards(combo);
+
+      if (best == null || _compareHands(evaluated, best) > 0) {
+        best = evaluated;
+      }
+    }
+
+    return best ??
+        {
+          'category': 'High Card',
+          'categoryValue': 0,
+          'kickers': <int>[],
+          'cards': <String>[],
+        };
+  }
+
+  Map<String, dynamic> _evaluateBestHandByGame({
+    required List<String> playerCards,
+    required List<String> board,
+  }) {
+    final gameType = (data['gameType'] ?? 'holdem').toString();
+
+    if (gameType == 'omaha4' || gameType == 'omaha5') {
+      Map<String, dynamic>? best;
+
+      for (int a = 0; a < playerCards.length - 1; a++) {
+        for (int b = a + 1; b < playerCards.length; b++) {
+          final twoHoleCards = [
+            playerCards[a],
+            playerCards[b],
+          ];
+
+          for (final threeBoardCards in _threeCardCombos(board)) {
+            final evaluated = _evaluateFiveCards([
+              ...twoHoleCards,
+              ...threeBoardCards,
+            ]);
+
+            if (best == null || _compareHands(evaluated, best) > 0) {
+              best = evaluated;
+            }
+          }
+        }
+      }
+
+      return best ??
+          {
+            'category': 'High Card',
+            'categoryValue': 0,
+            'kickers': <int>[],
+            'cards': <String>[],
+          };
+    }
+
+    return _evaluateBestHand([
+      ...playerCards,
+      ...board,
+    ]);
+  }
+
+  String _autoShowdownResultText() {
+    final riverActions = List<Map<String, dynamic>>.from(
+      (data['riverActions'] ?? []).map(
+        (e) => Map<String, dynamic>.from(e),
+      ),
+    );
+
+    if (riverActions.isEmpty) return '';
+
+    final board = <String>[
+      ...List<String>.from(data['flopCards'] ?? []),
+      (data['turnCard'] ?? '').toString(),
+      (data['riverCard'] ?? '').toString(),
+    ].where((card) => card.isNotEmpty).toList();
+
+    if (board.length != 5) return '';
+
+    final showdownCards = Map<String, dynamic>.from(
+      data['showdownCards'] ?? {},
+    );
+
+    final results = <Map<String, dynamic>>[];
+
+    for (final entry in showdownCards.entries) {
+      final position = entry.key;
+      final value = Map<String, dynamic>.from(entry.value);
+
+      if (value['showed'] != true) continue;
+
+      final playerCards = List<String>.from(value['cards'] ?? []);
+
+      if (playerCards.isEmpty) continue;
+
+      final best = _evaluateBestHandByGame(
+        playerCards: playerCards,
+        board: board,
+      );
+
+      results.add({
+        'position': position,
+        'best': best,
+      });
+    }
+
+    if (results.length < 2) return '';
+
+    results.sort((a, b) {
+      return _compareHands(
+        Map<String, dynamic>.from(b['best']),
+        Map<String, dynamic>.from(a['best']),
+      );
+    });
+
+    final bestHand = Map<String, dynamic>.from(results.first['best']);
+
+    final winners = results.where((result) {
+      return _compareHands(
+            Map<String, dynamic>.from(result['best']),
+            bestHand,
+          ) ==
+          0;
+    }).toList();
+
+    final handName = (bestHand['category'] ?? '').toString();
+
+    if (winners.length == 1) {
+      final position = winners.first['position'].toString();
+
+      final cards = List<String>.from(bestHand['bestCards'] ?? []).join(' ');
+      return '$position (${_playerName(position)}) wins with $handName\n$cards';
+    }
+
+    final winnerText = winners.map((w) {
+      final position = w['position'].toString();
+      return '$position (${_playerName(position)})';
+    }).join(' / ');
+
+    final cards = List<String>.from(bestHand['bestCards'] ?? []).join(' ');
+    return '$winnerText chop with $handName\n$cards';
+  }
+
+  Color _actionColor(String action) {
+    switch (action) {
+      case 'fold':
+        return Colors.grey;
+      case 'call':
+        return Colors.lightBlueAccent;
+      case 'check':
+        return Colors.white70;
+      case 'bet':
+      case 'raise':
+      case 'straddle':
+        return Colors.orangeAccent;
+      default:
+        return Colors.white;
+    }
+  }
+
+  Widget _streetColumn(
+    String title,
+    dynamic actions,
+    String cards,
+    double pot,
+  ) {
+    final list = List<Map<String, dynamic>>.from(
+      (actions as List).map((e) => Map<String, dynamic>.from(e)),
+    );
+
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
+      color: const Color(0xFF3A3A40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+            ),
+          ),
+
+          Text(
+            'Pot: \$${pot.toStringAsFixed(0)}',
+            style: const TextStyle(
+              color: Colors.orange,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          if (title == 'Preflop') ...[
+            const SizedBox(height: 8),
+
+            Text(
+              'SB blind \$${data['smallBlind'] ?? 0}',
+              style: const TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+
+            Text(
+              'BB blind \$${data['bigBlind'] ?? 0}',
+              style: const TextStyle(
+                color: Colors.white70,
+              ),
+            ),
+
+            if (data['isTournament'] == true &&
+                ((data['ante'] ?? 0) as num).toDouble() > 0)
+              Text(
+                'Total Ante \$${data['ante'] ?? 0}',
+                style: const TextStyle(
+                  color: Colors.white70,
+                ),
+              ),
+
+            if ((data['straddlePosition'] ?? '')
+                .toString()
+                .isNotEmpty)
+              Text(
+                '${data['straddlePosition']} straddle '
+                '\$${data['straddleAmount'] ?? 0}',
+                style: const TextStyle(
+                  color: Colors.orangeAccent,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
+
+          if (cards.isNotEmpty)
+            Text(
+              cards,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+
+          const SizedBox(height: 12),
+
+          for (final a in list)
+            Text(
+              '${a['position']} (${_playerName(a['position'])}) '
+              '${a['action']}'
+              '${(a['action'] == 'fold' || a['action'] == 'check') ? '' : ' \$${a['amount'] ?? 0}'}',
+              style: TextStyle(
+                color: _actionColor(
+                  (a['action'] ?? '').toString(),
+                ),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _showdownColumn(dynamic showdown) {
+    final map = Map<String, dynamic>.from(showdown);
+
+    final resultText = _autoShowdownResultText();
+
+    final myEntries = map.entries.where((entry) {
+      final isMe = _playerName(entry.key) == 'Me';
+      return isMe && _isFolded(entry.key);
+    }).toList();
+
+    final otherEntries = map.entries.where((entry) {
+      return !myEntries.any((me) => me.key == entry.key);
+    }).toList();
+
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
+      color: const Color(0xFF3A3A40),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Showdown', style: TextStyle(color: Colors.white, fontSize: 22)),
+
+          if (resultText.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              resultText,
+              style: const TextStyle(
+                color: Colors.greenAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 14),
+          ],
+
+          const SizedBox(height: 12),
+          for (final entry in myEntries)
+
+            Builder(
+              builder: (_) {
+
+                final showed =
+                    entry.value['showed'] == true;
+
+                final cards = List<String>.from(
+                  entry.value['cards'] ?? [],
+                );
+
+                return Text(
+                  showed
+                      ? '${entry.key} (${_playerName(entry.key)}): ${cards.join(' ')}'
+                      : '${entry.key} (${_playerName(entry.key)}): No show',
+                  style: TextStyle(
+                    color: showed
+                        ? Colors.white
+                        : Colors.white54,
+                  ),
+                );
+              },
+            ),
+
+          if (myEntries.isNotEmpty)
+            const SizedBox(height: 18),
+
+          for (final entry in otherEntries)
+
+            Builder(
+              builder: (_) {
+
+                final showed =
+                    entry.value['showed'] == true;
+
+                final cards = List<String>.from(
+                  entry.value['cards'] ?? [],
+                );
+
+                return Text(
+                  showed
+                      ? '${entry.key} (${_playerName(entry.key)}): ${cards.join(' ')}'
+                      : '${entry.key} (${_playerName(entry.key)}): No show',
+                  style: TextStyle(
+                    color: showed
+                        ? Colors.white
+                        : Colors.white54,
+                  ),
+                );
+              },
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class AddHandPage extends StatefulWidget {
+  final String sessionId;
+  final String sessionName;
+  final String? handId;
+  final String? initialTitle;
+  final Map<String, dynamic>? initialData;
+  final bool isTournament;
+
+  const AddHandPage({
+    super.key,
+    required this.sessionId,
+    required this.sessionName,
+    this.handId,
+    this.initialTitle,
+    this.initialData,
+    this.isTournament = false,
+  });
+
+  @override
+  State<AddHandPage> createState() => _AddHandPageState();
+}
+
+class _AddHandPageState extends State<AddHandPage> {
+  int _tableSize = 6;
+
+  String _gameType = 'holdem';
+
+  final TextEditingController _titleController =
+      TextEditingController();
+
+  final TextEditingController _smallBlindController =
+      TextEditingController();
+
+  final TextEditingController _bigBlindController =
+      TextEditingController();
+
+  String _straddlePosition = '';
+  final TextEditingController _straddleController =
+      TextEditingController();
+
+  final TextEditingController _anteController = TextEditingController();
+  final TextEditingController _levelController = TextEditingController();
+  final TextEditingController _stackController = TextEditingController();
+
+  bool _isBubble = false;
+
+  final Map<String, Map<String, dynamic>> _seatPlayers = {};
+  final List<Map<String, dynamic>> _preflopActions = [];
+
+  final List<String> _flopCards = [];
+  final List<Map<String, dynamic>> _flopActions = [];
+
+  String _turnCard = '';
+  final List<Map<String, dynamic>> _turnActions = [];
+
+  String _riverCard = '';
+  final List<Map<String, dynamic>> _riverActions = [];
+
+  final Map<String, Map<String, dynamic>> _showdownCards = {};
+
+  int _holeCardCount() {
+    if (_gameType == 'omaha4') return 4;
+    if (_gameType == 'omaha5') return 5;
+    return 2;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    final data = widget.initialData ?? {};
+
+    _titleController.text =
+        (widget.initialTitle ?? data['title'] ?? '').toString();
+
+    _tableSize = (data['tableSize'] ?? 6) as int;
+
+    _gameType = (data['gameType'] ?? 'holdem').toString();
+
+    final positionsData = Map<String, dynamic>.from(
+      data['positions'] ?? {},
+    );
+
+    for (final entry in positionsData.entries) {
+      _seatPlayers[entry.key] =
+          Map<String, dynamic>.from(entry.value);
+    }
+
+    final actionsData = List<Map<String, dynamic>>.from(
+      (data['preflopActions'] ?? []).map(
+        (item) => Map<String, dynamic>.from(item),
+      ),
+    );
+
+    _preflopActions.clear();
+
+    if (_straddlePosition.isNotEmpty &&
+        !actionsData.any((a) => a['action'] == 'straddle')) {
+      _preflopActions.add({
+        'position': _straddlePosition,
+        'action': 'straddle',
+        'amount': double.tryParse(_straddleController.text) ?? 0,
+      });
+    }
+
+    _preflopActions.addAll(actionsData);
+
+    _smallBlindController.text =
+        (data['smallBlind'] ?? '').toString();
+
+    _bigBlindController.text =
+        (data['bigBlind'] ?? '').toString();
+    
+    _straddlePosition = (data['straddlePosition'] ?? '').toString();
+
+    _straddleController.text =
+        (data['straddleAmount'] ?? '').toString();
+
+    _anteController.text = (data['ante'] ?? '').toString();
+    _levelController.text = (data['level'] ?? '').toString();
+    _stackController.text = (data['approxStack'] ?? '').toString();
+    _isBubble = data['isBubble'] == true;
+
+    final flopCardsData = List<String>.from(
+      data['flopCards'] ?? [],
+    );
+
+    _flopCards.clear();
+    _flopCards.addAll(flopCardsData);
+
+    final flopActionsData = List<Map<String, dynamic>>.from(
+      (data['flopActions'] ?? []).map(
+        (item) => Map<String, dynamic>.from(item),
+      ),
+    );
+
+    _flopActions.clear();
+    _flopActions.addAll(flopActionsData);
+
+    _turnCard = (data['turnCard'] ?? '').toString();
+
+    final turnActionsData = List<Map<String, dynamic>>.from(
+      (data['turnActions'] ?? []).map(
+        (item) => Map<String, dynamic>.from(item),
+      ),
+    );
+
+    _turnActions.clear();
+    _turnActions.addAll(turnActionsData);
+
+    _riverCard = (data['riverCard'] ?? '').toString();
+
+    final riverActionsData = List<Map<String, dynamic>>.from(
+      (data['riverActions'] ?? []).map(
+        (item) => Map<String, dynamic>.from(item),
+      ),
+    );
+
+    _riverActions.clear();
+    _riverActions.addAll(riverActionsData);
+
+    final showdownData = Map<String, dynamic>.from(
+      data['showdownCards'] ?? {},
+    );
+
+    _showdownCards.clear();
+
+    for (final entry in showdownData.entries) {
+      _showdownCards[entry.key] =
+          Map<String, dynamic>.from(entry.value);
+    }
+
+  }
+
+  bool get _isEditing => widget.handId != null;
+
+  List<String> _positionsForSize(int size) {
+    switch (size) {
+      case 3:
+        return ['SB', 'BB', 'BTN'];
+      case 4:
+        return ['SB', 'BB', 'UTG', 'BTN'];
+      case 5:
+        return ['SB', 'BB', 'UTG', 'CO', 'BTN'];
+      case 6:
+        return ['SB', 'BB', 'UTG', 'HJ', 'CO', 'BTN'];
+      case 7:
+        return ['SB', 'BB', 'UTG', 'MP', 'HJ', 'CO', 'BTN'];
+      case 8:
+        return ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'HJ', 'CO', 'BTN'];
+      case 9:
+        return ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'];
+      case 10:
+        return ['SB', 'BB', 'UTG', 'UTG+1', 'UTG+2', 'MP', 'LJ', 'HJ', 'CO', 'BTN'];
+      default:
+        return ['SB', 'BB', 'UTG', 'HJ', 'CO', 'BTN'];
+    }
+  }
+
+  CollectionReference<Map<String, dynamic>> _handsRef() {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    final collectionName = widget.isTournament
+        ? 'tournament_sessions'
+        : 'cash_game_sessions';
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection(collectionName)
+        .doc(widget.sessionId)
+        .collection('hands');
+  }
+
+  CollectionReference<Map<String, dynamic>> _playersRef() {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('stat_players');
+  }
+
+  Future<void> _selectPlayerForPosition(String position) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF2F2F7);
+
+    final sheetColor =
+        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    final cardColor =
+        isDark ? const Color(0xFF243044) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: sheetColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            color: sheetColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.person_add, color: subTextColor),
+                  title: Text(
+                    tr(
+                      context,
+                      'Add Player',
+                      zhTw: '新增玩家',
+                      zhCn: '新增玩家',
+                      ko: '플레이어 추가',
+                      ja: 'プレイヤー追加',
+                      de: 'Spieler hinzufügen',
+                      fr: 'Ajouter un joueur',
+                      ar: 'إضافة لاعب',
+                      ru: 'Добавить игрока',
+                      trk: 'Oyuncu Ekle',
+                      es: 'Agregar jugador',
+                      it: 'Aggiungi giocatore',
+                      pl: 'Dodaj gracza',
+                      pt: 'Adicionar jogador',
+                      th: 'เพิ่มผู้เล่น',
+                      id: 'Tambah Pemain',
+                      hi: 'खिलाड़ी जोड़ें',
+                      bn: 'প্লেয়ার যোগ করুন',
+                    ),
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () async {
+                    final controller = TextEditingController();
+
+                    final name = await showDialog<String>(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          backgroundColor: sheetColor,
+                          title: Text(
+                            tr(
+                              context,
+                              'Add Player',
+                              zhTw: '新增玩家',
+                              zhCn: '新增玩家',
+                              ko: '플레이어 추가',
+                              ja: 'プレイヤー追加',
+                              de: 'Spieler hinzufügen',
+                              fr: 'Ajouter un joueur',
+                              ar: 'إضافة لاعب',
+                              ru: 'Добавить игрока',
+                              trk: 'Oyuncu Ekle',
+                              es: 'Agregar jugador',
+                              it: 'Aggiungi giocatore',
+                              pl: 'Dodaj gracza',
+                              pt: 'Adicionar jogador',
+                              th: 'เพิ่มผู้เล่น',
+                              id: 'Tambah Pemain',
+                              hi: 'खिलाड़ी जोड़ें',
+                              bn: 'প্লেয়ার যোগ করুন',
+                            ),
+                            style: TextStyle(color: textColor),
+                          ),
+                          content: TextField(
+                            controller: controller,
+                            style: TextStyle(color: textColor),
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: bgColor,
+                              hintText: tr(
+                                context,
+                                'Player name',
+                                zhTw: '玩家名字',
+                                zhCn: '玩家名字',
+                                ko: '플레이어 이름',
+                                ja: 'プレイヤー名',
+                                de: 'Spielername',
+                                fr: 'Nom du joueur',
+                                ar: 'اسم اللاعب',
+                                ru: 'Имя игрока',
+                                trk: 'Oyuncu adı',
+                                es: 'Nombre del jugador',
+                                it: 'Nome del giocatore',
+                                pl: 'Nazwa gracza',
+                                pt: 'Nome do jogador',
+                                th: 'ชื่อผู้เล่น',
+                                id: 'Nama pemain',
+                                hi: 'खिलाड़ी का नाम',
+                                bn: 'প্লেয়ারের নাম',
+                              ),
+                              hintStyle: TextStyle(color: subTextColor),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: Text(
+                                tr(
+                                  context,
+                                  'Cancel',
+                                  zhTw: '取消',
+                                  zhCn: '取消',
+                                  ko: '취소',
+                                  ja: 'キャンセル',
+                                  de: 'Abbrechen',
+                                  fr: 'Annuler',
+                                  ar: 'إلغاء',
+                                  ru: 'Отмена',
+                                  trk: 'İptal',
+                                  es: 'Cancelar',
+                                  it: 'Annulla',
+                                  pl: 'Anuluj',
+                                  pt: 'Cancelar',
+                                  th: 'ยกเลิก',
+                                  id: 'Batal',
+                                  hi: 'रद्द करें',
+                                  bn: 'বাতিল',
+                                ),
+                                style: TextStyle(color: subTextColor),
+                              ),
+                            ),
+                            FilledButton(
+                              onPressed: () =>
+                                  Navigator.pop(context, controller.text.trim()),
+                              child: Text(
+                                tr(
+                                  context,
+                                  'Add',
+                                  zhTw: '新增',
+                                  zhCn: '新增',
+                                  ko: '추가',
+                                  ja: '追加',
+                                  de: 'Hinzufügen',
+                                  fr: 'Ajouter',
+                                  ar: 'إضافة',
+                                  ru: 'Добавить',
+                                  trk: 'Ekle',
+                                  es: 'Agregar',
+                                  it: 'Aggiungi',
+                                  pl: 'Dodaj',
+                                  pt: 'Adicionar',
+                                  th: 'เพิ่ม',
+                                  id: 'Tambah',
+                                  hi: 'जोड़ें',
+                                  bn: 'যোগ করুন',
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+
+                    if (name == null || name.trim().isEmpty) return;
+
+                    final playerDoc = await _playersRef().add({
+                      'name': name.trim(),
+                      'source': 'manual',
+                      'createdAt': FieldValue.serverTimestamp(),
+                      'updatedAt': FieldValue.serverTimestamp(),
+                    });
+
+                    if (!context.mounted) return;
+
+                    Navigator.pop(context, {
+                      'playerId': playerDoc.id,
+                      'name': name.trim(),
+                      'source': 'manual',
+                      'type': 'player',
+                    });
+                  },
+                ),
+
+                ListTile(
+                  leading: Icon(Icons.person_outline, color: subTextColor),
+                  title: Text(
+                    tr(
+                      context,
+                      'Stranger',
+                      zhTw: '陌生人',
+                      zhCn: '陌生人',
+                      ko: '낯선 사람',
+                      ja: '知らない人',
+                      de: 'Fremder',
+                      fr: 'Inconnu',
+                      ar: 'غريب',
+                      ru: 'Незнакомец',
+                      trk: 'Yabancı',
+                      es: 'Desconocido',
+                      it: 'Sconosciuto',
+                      pl: 'Nieznajomy',
+                      pt: 'Estranho',
+                      th: 'คนแปลกหน้า',
+                      id: 'Orang Asing',
+                      hi: 'अजनबी',
+                      bn: 'অপরিচিত',
+                    ),
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context, {
+                      'name': tr(
+                        context,
+                        'Stranger',
+                        zhTw: '陌生人',
+                        zhCn: '陌生人',
+                        ko: '낯선 사람',
+                        ja: '知らない人',
+                        de: 'Fremder',
+                        fr: 'Inconnu',
+                        ar: 'غريب',
+                        ru: 'Незнакомец',
+                        trk: 'Yabancı',
+                        es: 'Desconocido',
+                        it: 'Sconosciuto',
+                        pl: 'Nieznajomy',
+                        pt: 'Estranho',
+                        th: 'คนแปลกหน้า',
+                        id: 'Orang Asing',
+                        hi: 'अजनबी',
+                        bn: 'অপরিচিত',
+                      ),
+                      'type': 'stranger',
+                    });
+                  },
+                ),
+
+                Divider(
+                  height: 1,
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
+
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: _playersRef().orderBy('name').snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final docs = snapshot.data!.docs;
+
+                      final selectedPlayerIds = _seatPlayers.entries
+                          .where((entry) => entry.key != position)
+                          .map((entry) => (entry.value['playerId'] ?? '').toString())
+                          .where((id) => id.isNotEmpty)
+                          .toSet();
+
+                      final availableDocs = docs.where((doc) {
+                        return !selectedPlayerIds.contains(doc.id);
+                      }).toList();
+
+                      availableDocs.sort((a, b) {
+                        final aData = a.data();
+                        final bData = b.data();
+
+                        final aIsMe = aData['source'] == 'me';
+                        final bIsMe = bData['source'] == 'me';
+
+                        if (aIsMe && !bIsMe) return -1;
+                        if (!aIsMe && bIsMe) return 1;
+
+                        final aName =
+                            (aData['name'] ?? '').toString().toLowerCase();
+                        final bName =
+                            (bData['name'] ?? '').toString().toLowerCase();
+
+                        return aName.compareTo(bName);
+                      });
+
+                      return ListView(
+                        children: availableDocs.map((doc) {
+                          final data = doc.data();
+                          final name = (data['name'] ?? 'Player').toString();
+
+                          final isMe = data['source'] == 'me';
+                          final displayName = isMe ? '$name(myself)' : name;
+
+                          final photoUrl =
+                              (data['photoUrl'] ?? '').toString().trim();
+
+                          return Container(
+                            color: cardColor,
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: const Color(0xFF2E7D32),
+                                backgroundImage:
+                                    photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                                child: photoUrl.isEmpty
+                                    ? const Icon(Icons.person, color: Colors.white)
+                                    : null,
+                              ),
+                              title: Text(
+                                displayName,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              onTap: () {
+                                Navigator.pop(context, {
+                                  'playerId': doc.id,
+                                  'name': name,
+                                  'photoUrl': photoUrl,
+                                  'source': data['source'],
+                                  'type': 'player',
+                                });
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      _seatPlayers[position] = result;
+    });
+  }
+
+  double _preflopPot() {
+    final paid = <String, double>{};
+
+    paid['SB'] = double.tryParse(_smallBlindController.text) ?? 0;
+    paid['BB'] = double.tryParse(_bigBlindController.text) ?? 0;
+
+    if (_straddlePosition.isNotEmpty) {
+      paid[_straddlePosition] =
+          double.tryParse(_straddleController.text) ?? 0;
+    }
+
+    for (final action in _preflopActions) {
+      final position = (action['position'] ?? '').toString();
+      final actionType = (action['action'] ?? '').toString();
+      final amount = ((action['amount'] ?? 0) as num).toDouble();
+
+      if (position.isEmpty) continue;
+
+      if (actionType == 'straddle') {
+        paid[position] = amount;
+      }
+
+      if (actionType == 'call') {
+        paid[position] = (paid[position] ?? 0) + amount;
+      }
+
+      if (actionType == 'raise') {
+        paid[position] = amount;
+      }
+    }
+
+    final ante = double.tryParse(_anteController.text) ?? 0;
+
+    final anteTotal = widget.isTournament
+        ? ante
+        : 0;
+
+    return paid.values.fold<double>(0, (total, value) => total + value) +
+        anteTotal;
+  }
+
+  double _flopPot() {
+    final paid = <String, double>{};
+
+    for (final action in _flopActions) {
+      final position = (action['position'] ?? '').toString();
+      final actionType = (action['action'] ?? '').toString();
+      final amount = ((action['amount'] ?? 0) as num).toDouble();
+
+      if (position.isEmpty) continue;
+
+      if (actionType == 'call') {
+        paid[position] = (paid[position] ?? 0) + amount;
+      }
+
+      if (actionType == 'bet' || actionType == 'raise') {
+        paid[position] = amount;
+      }
+    }
+
+    final flopRoundPot =
+        paid.values.fold<double>(0, (total, value) => total + value);
+
+    return _preflopPot() + flopRoundPot;
+  }
+
+  double _turnPot() {
+    final paid = <String, double>{};
+
+    for (final action in _turnActions) {
+      final position = (action['position'] ?? '').toString();
+      final actionType = (action['action'] ?? '').toString();
+      final amount = ((action['amount'] ?? 0) as num).toDouble();
+
+      if (position.isEmpty) continue;
+
+      if (actionType == 'call') {
+        paid[position] = (paid[position] ?? 0) + amount;
+      }
+
+      if (actionType == 'bet' || actionType == 'raise') {
+        paid[position] = amount;
+      }
+    }
+
+    final turnRoundPot =
+        paid.values.fold<double>(0, (total, value) => total + value);
+
+    return _flopPot() + turnRoundPot;
+  }
+
+  double _riverPot() {
+    final paid = <String, double>{};
+
+    for (final action in _riverActions) {
+      final position = (action['position'] ?? '').toString();
+      final actionType = (action['action'] ?? '').toString();
+      final amount = ((action['amount'] ?? 0) as num).toDouble();
+
+      if (position.isEmpty) continue;
+
+      if (actionType == 'call') {
+        paid[position] = (paid[position] ?? 0) + amount;
+      }
+
+      if (actionType == 'bet' || actionType == 'raise') {
+        paid[position] = amount;
+      }
+    }
+
+    final riverRoundPot =
+        paid.values.fold<double>(0, (total, value) => total + value);
+
+    return _turnPot() + riverRoundPot;
+  }
+
+  double _currentPreflopBet() {
+    double currentBet = _straddlePosition.isNotEmpty
+        ? (double.tryParse(_straddleController.text) ?? 0)
+        : (double.tryParse(_bigBlindController.text) ?? 0);
+
+    for (final action in _preflopActions) {
+      if (action['action'] == 'raise') {
+        currentBet = ((action['amount'] ?? 0) as num).toDouble();
+      }
+    }
+
+    return currentBet;
+  }
+
+  double _alreadyPaidPreflop(String position) {
+    double paid = 0;
+
+    if (position == 'SB') {
+      paid = double.tryParse(_smallBlindController.text) ?? 0;
+    }
+
+    if (position == 'BB') {
+      paid = double.tryParse(_bigBlindController.text) ?? 0;
+    }
+
+    if (position == _straddlePosition) {
+      paid = double.tryParse(_straddleController.text) ?? 0;
+    }
+
+    for (final action in _preflopActions) {
+      if ((action['position'] ?? '').toString() != position) continue;
+
+      final actionType = (action['action'] ?? '').toString();
+      final amount = ((action['amount'] ?? 0) as num).toDouble();
+
+      if (actionType == 'call') {
+        paid += amount;
+      }
+
+      if (actionType == 'raise') {
+        paid = amount;
+      }
+    }
+
+    return paid;
+  }
+
+  double _callAmountForPosition(String position) {
+    final currentBet = _currentPreflopBet();
+    final paid = _alreadyPaidPreflop(position);
+    final amount = currentBet - paid;
+
+    return amount < 0 ? 0 : amount;
+  }
+
+  Future<String?> _selectCard({
+    Set<String> extraUsedCards = const {},
+  }) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final sheetColor =
+        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    final cardColor =
+        isDark ? const Color(0xFF243044) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final suits = ['♠', '♥', '♦', '♣'];
+
+    final ranks = [
+      'A',
+      'K',
+      'Q',
+      'J',
+      '10',
+      '9',
+      '8',
+      '7',
+      '6',
+      '5',
+      '4',
+      '3',
+      '2',
+    ];
+
+    final usedCards = {
+      ..._flopCards,
+      if (_turnCard.isNotEmpty) _turnCard,
+      if (_riverCard.isNotEmpty) _riverCard,
+      ...extraUsedCards,
+    };
+
+    final suit = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: sheetColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            color: sheetColor,
+            child: Wrap(
+              children: suits.map((s) {
+                Color suitColor = textColor;
+
+                if (s == '♥' || s == '♦') {
+                  suitColor = Colors.redAccent;
+                }
+
+                return Container(
+                  color: cardColor,
+                  child: ListTile(
+                    title: Center(
+                      child: Text(
+                        s,
+                        style: TextStyle(
+                          fontSize: 32,
+                          color: suitColor,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    onTap: () => Navigator.pop(context, s),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (suit == null) return null;
+
+    final rank = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: sheetColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            color: sheetColor,
+            child: Wrap(
+              children: ranks.where((r) {
+                return !usedCards.contains('$r$suit');
+              }).map((r) {
+                return Container(
+                  color: cardColor,
+                  child: ListTile(
+                    title: Center(
+                      child: Text(
+                        r,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    onTap: () => Navigator.pop(context, r),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (rank == null) return null;
+
+    return '$rank$suit';
+  }
+
+  void _addPreflopAction() {
+    final positions = _positionsForSize(_tableSize);
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        final lastRaiseIndex = _preflopActions.lastIndexWhere(
+          (a) => a['action'] == 'raise' || a['action'] == 'straddle',
+        );
+
+        final actionsToCheck = lastRaiseIndex == -1
+            ? _preflopActions
+            : _preflopActions.sublist(lastRaiseIndex + 1);
+
+        final lastRaiserPosition = lastRaiseIndex == -1
+            ? ''
+            : (_preflopActions[lastRaiseIndex]['position'] ?? '').toString();
+
+        final actedPositions = actionsToCheck
+            .map((a) => (a['position'] ?? '').toString())
+            .toSet();
+
+        final foldedPositions = _preflopActions
+            .where((a) => a['action'] == 'fold')
+            .map((a) => (a['position'] ?? '').toString())
+            .toSet();
+
+        final baseOrder = [
+          ...positions.where((p) => p != 'SB' && p != 'BB'),
+          'SB',
+          'BB',
+        ];
+
+        final straddlePosition = _straddlePosition;
+        final straddleIndex = baseOrder.indexOf(straddlePosition);
+
+        final preflopOrder = straddlePosition.isNotEmpty && straddleIndex != -1
+            ? [
+                ...baseOrder.sublist(straddleIndex + 1),
+                ...baseOrder.sublist(0, straddleIndex + 1),
+              ]
+            : baseOrder;
+
+        final startIndex = lastRaiserPosition.isEmpty
+            ? 0
+            : (preflopOrder.indexOf(lastRaiserPosition) + 1) %
+                preflopOrder.length;
+
+        final orderedPreflopPositions = [
+          ...preflopOrder.sublist(startIndex),
+          ...preflopOrder.sublist(0, startIndex),
+        ];
+
+        final actionPositions = orderedPreflopPositions.where((p) =>
+            !actedPositions.contains(p) &&
+            !foldedPositions.contains(p) &&
+            p != lastRaiserPosition
+        ).toList();
+
+        if (actionPositions.isEmpty) {
+          Navigator.pop(context);
+          return const SizedBox.shrink();
+        }
+
+        String selectedPosition = actionPositions.first;
+        String selectedAction = 'fold';
+        final amountController = TextEditingController();
+
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+
+            final hasRaise = _preflopActions.any(
+              (a) => a['action'] == 'raise',
+            );
+
+            final currentBet = _currentPreflopBet();
+            final alreadyPaid = _alreadyPaidPreflop(selectedPosition);
+
+            final canCheck = alreadyPaid >= currentBet && !hasRaise;
+
+            final availableActions = canCheck
+                ? ['fold', 'check', 'raise']
+                : ['fold', 'call', 'raise'];
+
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            final cardColor = isDark ? const Color(0xFF1F2937) : Colors.white;
+            final textColor = isDark ? Colors.white : Colors.black87;
+            final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+            return SafeArea(
+              child: Container(
+                color: cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+
+                        dropdownColor: cardColor,
+
+                        iconEnabledColor: textColor,
+
+                        initialValue: selectedPosition,
+
+                        decoration: InputDecoration(
+                          filled: true,
+
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
+
+                          labelText: tr(
+                            context,
+                            'Position',
+                            zhTw: '位置',
+                            zhCn: '位置',
+                            ko: '포지션',
+                            ja: 'ポジション',
+                            de: 'Position',
+                            fr: 'Position',
+                            ar: 'الموضع',
+                            ru: 'Позиция',
+                            trk: 'Pozisyon',
+                            es: 'Posición',
+                            it: 'Posizione',
+                            pl: 'Pozycja',
+                            pt: 'Posição',
+                            th: 'ตำแหน่ง',
+                            id: 'Posisi',
+                            hi: 'पोजीशन',
+                            bn: 'পজিশন',
+                          ),
+
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+
+                        items: actionPositions.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+
+                            child: Text(p),
+                          );
+                        }).toList(),
+
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedPosition = value;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+
+                        dropdownColor: cardColor,
+
+                        iconEnabledColor: textColor,
+
+                        initialValue: selectedAction,
+
+                        decoration: InputDecoration(
+                          filled: true,
+
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
+
+                          labelText: tr(
+                            context,
+                            'Action',
+                            zhTw: '動作',
+                            zhCn: '动作',
+                            ko: '액션',
+                            ja: 'アクション',
+                            de: 'Aktion',
+                            fr: 'Action',
+                            ar: 'الإجراء',
+                            ru: 'Действие',
+                            trk: 'Aksiyon',
+                            es: 'Acción',
+                            it: 'Azione',
+                            pl: 'Akcja',
+                            pt: 'Ação',
+                            th: 'แอ็กชัน',
+                            id: 'Aksi',
+                            hi: 'एक्शन',
+                            bn: 'অ্যাকশন',
+                          ),
+
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+
+                        items: availableActions.map((action) {
+                          return DropdownMenuItem(
+                            value: action,
+
+                            child: Text(
+                              action.toUpperCase(),
+                            ),
+                          );
+                        }).toList(),
+
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedAction = value;
+                          });
+                        },
+                      ),
+
+                      if (selectedAction == 'raise') ...[
+                        const SizedBox(height: 16),
+
+                        TextField(
+                          controller: amountController,
+
+                          keyboardType: TextInputType.number,
+
+                          style: TextStyle(color: textColor),
+
+                          decoration: InputDecoration(
+                            filled: true,
+
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
+
+                            labelText: tr(
+                              context,
+                              'Raise Amount',
+                              zhTw: '加注金額',
+                              zhCn: '加注金额',
+                              ko: '레이즈 금액',
+                              ja: 'レイズ額',
+                              de: 'Raise-Betrag',
+                              fr: 'Montant de la relance',
+                              ar: 'مبلغ الزيادة',
+                              ru: 'Сумма рейза',
+                              trk: 'Raise Miktarı',
+                              es: 'Cantidad de subida',
+                              it: 'Importo del raise',
+                              pl: 'Kwota podbicia',
+                              pt: 'Valor do raise',
+                              th: 'จำนวนเงินเรส',
+                              id: 'Jumlah Raise',
+                              hi: 'रेज़ राशि',
+                              bn: 'রেইজ পরিমাণ',
+                            ),
+
+                            labelStyle: TextStyle(
+                              color: subTextColor,
+                            ),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 20),
+
+                      FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            final currentBet = _currentPreflopBet();
+
+                            _preflopActions.add({
+                              'position': selectedPosition,
+
+                              'action': selectedAction,
+
+                              'amount': selectedAction == 'raise'
+                                  ? (double.tryParse(
+                                          amountController.text,
+                                        ) ??
+                                      0)
+                                  : selectedAction == 'call'
+                                      ? _callAmountForPosition(
+                                          selectedPosition,
+                                        )
+                                      : 0,
+                            });
+                          });
+
+                          Navigator.pop(context);
+                        },
+
+                        child: Text(
+                          tr(
+                            context,
+                            'Add Action',
+                            zhTw: '新增動作',
+                            zhCn: '新增动作',
+                            ko: '액션 추가',
+                            ja: 'アクション追加',
+                            de: 'Aktion hinzufügen',
+                            fr: 'Ajouter une action',
+                            ar: 'إضافة إجراء',
+                            ru: 'Добавить действие',
+                            trk: 'Aksiyon Ekle',
+                            es: 'Agregar acción',
+                            it: 'Aggiungi azione',
+                            pl: 'Dodaj akcję',
+                            pt: 'Adicionar ação',
+                            th: 'เพิ่มแอ็กชัน',
+                            id: 'Tambah Aksi',
+                            hi: 'एक्शन जोड़ें',
+                            bn: 'অ্যাকশন যোগ করুন',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );  
+          },
+        );
+      },
+    );
+  }
+
+  double _currentFlopBet() {
+    double currentBet = 0;
+
+    for (final action in _flopActions) {
+      final actionType = (action['action'] ?? '').toString();
+
+      if (actionType == 'bet' || actionType == 'raise') {
+        currentBet = ((action['amount'] ?? 0) as num).toDouble();
+      }
+    }
+
+    return currentBet;
+  }
+
+  double _alreadyPaidOnStreet(
+    List<Map<String, dynamic>> actions,
+    String position,
+  ) {
+    double paid = 0;
+
+    for (final action in actions) {
+      if ((action['position'] ?? '').toString() != position) continue;
+
+      final actionType = (action['action'] ?? '').toString();
+      final amount = ((action['amount'] ?? 0) as num).toDouble();
+
+      if (actionType == 'call') {
+        paid += amount;
+      }
+
+      if (actionType == 'bet' ||
+          actionType == 'raise') {
+        paid = amount;
+      }
+    }
+
+    return paid;
+  }
+
+  double _callAmountOnStreet(
+    List<Map<String, dynamic>> actions,
+    String position,
+  ) {
+    double currentBet = 0;
+
+    for (final action in actions) {
+      final actionType = (action['action'] ?? '').toString();
+
+      if (actionType == 'bet' || actionType == 'raise') {
+        currentBet = ((action['amount'] ?? 0) as num).toDouble();
+      }
+    }
+
+    final alreadyPaid = _alreadyPaidOnStreet(actions, position);
+    final callAmount = currentBet - alreadyPaid;
+
+    return callAmount < 0 ? 0 : callAmount;
+  }
+
+  void _addFlopAction() {
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final cardColor =
+        isDark ? const Color(0xFF1F2937) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    final positions = _positionsForSize(_tableSize);
+
+    final foldedPreflop = _preflopActions
+        .where((a) => a['action'] == 'fold')
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final lastAggressiveIndex = _flopActions.lastIndexWhere(
+      (a) => a['action'] == 'bet' || a['action'] == 'raise',
+    );
+
+    final actionsToCheck = lastAggressiveIndex == -1
+        ? _flopActions
+        : _flopActions.sublist(lastAggressiveIndex + 1);
+
+    final actedFlopPositions = actionsToCheck
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final lastAggressivePosition = lastAggressiveIndex == -1
+        ? ''
+        : (_flopActions[lastAggressiveIndex]['position'] ?? '').toString();
+
+    final flopOrder = [
+      'SB',
+      'BB',
+      ...positions.where((p) => p != 'SB' && p != 'BB'),
+    ];
+
+    final startIndex = lastAggressivePosition.isEmpty
+        ? 0
+        : (flopOrder.indexOf(lastAggressivePosition) + 1) % flopOrder.length;
+
+    final orderedFlopPositions = [
+      ...flopOrder.sublist(startIndex),
+      ...flopOrder.sublist(0, startIndex),
+    ];
+
+    final availablePositions = orderedFlopPositions
+        .where((p) =>
+            !foldedPreflop.contains(p) &&
+            !actedFlopPositions.contains(p) &&
+            p != lastAggressivePosition)
+        .toList();
+
+    if (availablePositions.isEmpty) return;
+
+    String selectedPosition = availablePositions.first;
+    String selectedAction = 'check';
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final hasBetOrRaise = _flopActions.any(
+              (a) => a['action'] == 'bet' || a['action'] == 'raise',
+            );
+
+            final availableActions = hasBetOrRaise
+                ? ['call', 'raise', 'fold']
+                : ['check', 'bet', 'fold'];
+
+            if (!availableActions.contains(selectedAction)) {
+              selectedAction = availableActions.first;
+            }
+
+            return SafeArea(
+              child: Container(
+                color: cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        initialValue: selectedPosition,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF111827),
+                          labelText: tr(
+                            context,
+                            'Position',
+                            zhTw: '位置',
+                            zhCn: '位置',
+                            ko: '포지션',
+                            ja: 'ポジション',
+                            de: 'Position',
+                            fr: 'Position',
+                            ar: 'الموضع',
+                            ru: 'Позиция',
+                            trk: 'Pozisyon',
+                            es: 'Posición',
+                            it: 'Posizione',
+                            pl: 'Pozycja',
+                            pt: 'Posição',
+                            th: 'ตำแหน่ง',
+                            id: 'Posisi',
+                            hi: 'पोजीशन',
+                            bn: 'পজিশন',
+                          ),
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+                        items: availablePositions.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: TextStyle(color: textColor),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedPosition = value;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        initialValue: selectedAction,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: const Color(0xFF111827),
+                          labelText: tr(
+                            context,
+                            'Action',
+                            zhTw: '動作',
+                            zhCn: '动作',
+                            ko: '액션',
+                            ja: 'アクション',
+                            de: 'Aktion',
+                            fr: 'Action',
+                            ar: 'الإجراء',
+                            ru: 'Действие',
+                            trk: 'Aksiyon',
+                            es: 'Acción',
+                            it: 'Azione',
+                            pl: 'Akcja',
+                            pt: 'Ação',
+                            th: 'แอ็กชัน',
+                            id: 'Aksi',
+                            hi: 'एक्शन',
+                            bn: 'অ্যাকশন',
+                          ),
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+                        items: availableActions.map((action) {
+                          return DropdownMenuItem(
+                            value: action,
+                            child: Text(
+                              action.toUpperCase(),
+                              style: TextStyle(color: textColor),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedAction = value;
+                          });
+                        },
+                      ),
+
+                      if (selectedAction == 'bet' ||
+                          selectedAction == 'raise') ...[
+                        const SizedBox(height: 16),
+
+                        TextField(
+                          style: TextStyle(color: textColor),
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: const Color(0xFF111827),
+                            labelText: tr(
+                              context,
+                              'Bet Amount',
+                              zhTw: '下注金額',
+                              zhCn: '下注金额',
+                              ko: '베팅 금액',
+                              ja: 'ベット額',
+                              de: 'Einsatzbetrag',
+                              fr: 'Montant de la mise',
+                              ar: 'مبلغ الرهان',
+                              ru: 'Сумма ставки',
+                              trk: 'Bahis Miktarı',
+                              es: 'Cantidad de apuesta',
+                              it: 'Importo puntata',
+                              pl: 'Kwota zakładu',
+                              pt: 'Valor da aposta',
+                              th: 'จำนวนเงินเดิมพัน',
+                              id: 'Jumlah Bet',
+                              hi: 'बेट राशि',
+                              bn: 'বেটের পরিমাণ',
+                            ),
+                            labelStyle: TextStyle(color: subTextColor),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 20),
+
+                      FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _flopActions.add({
+                              'position': selectedPosition,
+                              'action': selectedAction,
+                              'amount': selectedAction == 'bet' ||
+                                      selectedAction == 'raise'
+                                  ? (double.tryParse(amountController.text) ?? 0)
+                                  : selectedAction == 'call'
+                                      ? _callAmountOnStreet(
+                                          _flopActions,
+                                          selectedPosition,
+                                        )
+                                      : 0,
+                            });
+                          });
+
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          tr(
+                            context,
+                            'Add Action',
+                            zhTw: '新增動作',
+                            zhCn: '新增动作',
+                            ko: '액션 추가',
+                            ja: 'アクション追加',
+                            de: 'Aktion hinzufügen',
+                            fr: 'Ajouter une action',
+                            ar: 'إضافة إجراء',
+                            ru: 'Добавить действие',
+                            trk: 'Aksiyon Ekle',
+                            es: 'Agregar acción',
+                            it: 'Aggiungi azione',
+                            pl: 'Dodaj akcję',
+                            pt: 'Adicionar ação',
+                            th: 'เพิ่มแอ็กชัน',
+                            id: 'Tambah Aksi',
+                            hi: 'एक्शन जोड़ें',
+                            bn: 'অ্যাকশন যোগ করুন',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  double _currentTurnBet() {
+    double currentBet = 0;
+
+    for (final action in _turnActions) {
+      final actionType = (action['action'] ?? '').toString();
+
+      if (actionType == 'bet' || actionType == 'raise') {
+        currentBet = ((action['amount'] ?? 0) as num).toDouble();
+      }
+    }
+
+    return currentBet;
+  }
+
+  void _addTurnAction() {
+    final positions = _positionsForSize(_tableSize);
+
+    final foldedPreflop = _preflopActions
+        .where((a) => a['action'] == 'fold')
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final foldedFlop = _flopActions
+        .where((a) => a['action'] == 'fold')
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final lastAggressiveIndex = _turnActions.lastIndexWhere(
+      (a) => a['action'] == 'bet' || a['action'] == 'raise',
+    );
+
+    final actionsToCheck = lastAggressiveIndex == -1
+        ? _turnActions
+        : _turnActions.sublist(lastAggressiveIndex + 1);
+
+    final actedPositions = actionsToCheck
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final lastAggressivePosition = lastAggressiveIndex == -1
+        ? ''
+        : (_turnActions[lastAggressiveIndex]['position'] ?? '').toString();
+
+    final flopOrder = [
+      'SB',
+      'BB',
+      ...positions.where((p) => p != 'SB' && p != 'BB'),
+    ];
+
+    final startIndex = lastAggressivePosition.isEmpty
+        ? 0
+        : (flopOrder.indexOf(lastAggressivePosition) + 1) %
+            flopOrder.length;
+
+    final orderedTurnPositions = [
+      ...flopOrder.sublist(startIndex),
+      ...flopOrder.sublist(0, startIndex),
+    ];
+
+    final availablePositions = orderedTurnPositions.where((p) {
+
+      if (foldedPreflop.contains(p)) return false;
+      if (foldedFlop.contains(p)) return false;
+
+      if (!actedPositions.contains(p)) return true;
+
+      if (lastAggressivePosition.isNotEmpty) {
+        final lastAggressiveOrder =
+            orderedTurnPositions.indexOf(lastAggressivePosition);
+
+        final currentOrder =
+            orderedTurnPositions.indexOf(p);
+
+        return currentOrder > lastAggressiveOrder;
+      }
+
+      return false;
+    }).toList();
+
+    if (availablePositions.isEmpty) return;
+
+    String selectedPosition = availablePositions.first;
+
+    String selectedAction = 'check';
+
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final hasBetOrRaise = _turnActions.any(
+              (a) =>
+                  a['action'] == 'bet' ||
+                  a['action'] == 'raise',
+            );
+
+            final availableActions = hasBetOrRaise
+                ? ['call', 'raise', 'fold']
+                : ['check', 'bet', 'fold'];
+
+            if (!availableActions.contains(selectedAction)) {
+              selectedAction = availableActions.first;
+            }
+
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            final cardColor = isDark ? const Color(0xFF1F2937) : Colors.white;
+            final textColor = isDark ? Colors.white : Colors.black87;
+            final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+            return SafeArea(
+              child: Container(
+                color: cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        initialValue: selectedPosition,
+                        items: availablePositions.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+                            child: Text(p, style: TextStyle(color: textColor)),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          if (v == null) return;
+
+                          setModalState(() {
+                            selectedPosition = v;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
+                          labelText: tr(
+                            context,
+                            'Position',
+                            zhTw: '位置',
+                            zhCn: '位置',
+                            ko: '포지션',
+                            ja: 'ポジション',
+                            de: 'Position',
+                            fr: 'Position',
+                            ar: 'الموضع',
+                            ru: 'Позиция',
+                            trk: 'Pozisyon',
+                            es: 'Posición',
+                            it: 'Posizione',
+                            pl: 'Pozycja',
+                            pt: 'Posição',
+                            th: 'ตำแหน่ง',
+                            id: 'Posisi',
+                            hi: 'पोजीशन',
+                            bn: 'পজিশন',
+                          ),
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        initialValue: selectedAction,
+                        items: availableActions.map((a) {
+                          return DropdownMenuItem(
+                            value: a,
+                            child: Text(
+                              a.toUpperCase(),
+                              style: TextStyle(color: textColor),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          if (v == null) return;
+
+                          setModalState(() {
+                            selectedAction = v;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
+                          labelText: tr(
+                            context,
+                            'Action',
+                            zhTw: '動作',
+                            zhCn: '动作',
+                            ko: '액션',
+                            ja: 'アクション',
+                            de: 'Aktion',
+                            fr: 'Action',
+                            ar: 'الإجراء',
+                            ru: 'Действие',
+                            trk: 'Aksiyon',
+                            es: 'Acción',
+                            it: 'Azione',
+                            pl: 'Akcja',
+                            pt: 'Ação',
+                            th: 'แอ็กชัน',
+                            id: 'Aksi',
+                            hi: 'एक्शन',
+                            bn: 'অ্যাকশন',
+                          ),
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+                      ),
+
+                      if (selectedAction == 'bet' ||
+                          selectedAction == 'raise')
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: TextField(
+                            style: TextStyle(color: textColor),
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: isDark
+                                  ? const Color(0xFF111827)
+                                  : Colors.white,
+                              labelText: tr(
+                                context,
+                                'Amount',
+                                zhTw: '金額',
+                                zhCn: '金额',
+                                ko: '금액',
+                                ja: '金額',
+                                de: 'Betrag',
+                                fr: 'Montant',
+                                ar: 'المبلغ',
+                                ru: 'Сумма',
+                                trk: 'Tutar',
+                                es: 'Cantidad',
+                                it: 'Importo',
+                                pl: 'Kwota',
+                                pt: 'Valor',
+                                th: 'จำนวนเงิน',
+                                id: 'Jumlah',
+                                hi: 'राशि',
+                                bn: 'পরিমাণ',
+                              ),
+                              labelStyle: TextStyle(color: subTextColor),
+                            ),
+                          ),
+                        ),
+
+                      const SizedBox(height: 20),
+
+                      FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _turnActions.add({
+                              'position': selectedPosition,
+                              'action': selectedAction,
+                              'amount': selectedAction == 'bet' ||
+                                      selectedAction == 'raise'
+                                  ? (double.tryParse(amountController.text) ?? 0)
+                                  : selectedAction == 'call'
+                                      ? _callAmountOnStreet(
+                                          _turnActions,
+                                          selectedPosition,
+                                        )
+                                      : 0,
+                            });
+                          });
+
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          tr(
+                            context,
+                            'Add Action',
+                            zhTw: '新增動作',
+                            zhCn: '新增动作',
+                            ko: '액션 추가',
+                            ja: 'アクション追加',
+                            de: 'Aktion hinzufügen',
+                            fr: 'Ajouter une action',
+                            ar: 'إضافة إجراء',
+                            ru: 'Добавить действие',
+                            trk: 'Aksiyon Ekle',
+                            es: 'Agregar acción',
+                            it: 'Aggiungi azione',
+                            pl: 'Dodaj akcję',
+                            pt: 'Adicionar ação',
+                            th: 'เพิ่มแอ็กชัน',
+                            id: 'Tambah Aksi',
+                            hi: 'एक्शन जोड़ें',
+                            bn: 'অ্যাকশন যোগ করুন',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _addRiverAction() {
+    final positions = _positionsForSize(_tableSize);
+
+    final foldedPreflop = _preflopActions
+        .where((a) => a['action'] == 'fold')
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final foldedFlop = _flopActions
+        .where((a) => a['action'] == 'fold')
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final foldedTurn = _turnActions
+        .where((a) => a['action'] == 'fold')
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final lastAggressiveIndex = _riverActions.lastIndexWhere(
+      (a) => a['action'] == 'bet' || a['action'] == 'raise',
+    );
+
+    final actionsToCheck = lastAggressiveIndex == -1
+        ? _riverActions
+        : _riverActions.sublist(lastAggressiveIndex + 1);
+
+    final actedPositions = actionsToCheck
+        .map((a) => (a['position'] ?? '').toString())
+        .toSet();
+
+    final lastAggressivePosition = lastAggressiveIndex == -1
+        ? ''
+        : (_riverActions[lastAggressiveIndex]['position'] ?? '').toString();
+
+    final riverOrder = [
+      'SB',
+      'BB',
+      ...positions.where((p) => p != 'SB' && p != 'BB'),
+    ];
+
+    final startIndex = lastAggressivePosition.isEmpty
+        ? 0
+        : (riverOrder.indexOf(lastAggressivePosition) + 1) %
+            riverOrder.length;
+
+    final orderedRiverPositions = [
+      ...riverOrder.sublist(startIndex),
+      ...riverOrder.sublist(0, startIndex),
+    ];
+
+    final availablePositions = orderedRiverPositions.where((p) {
+
+      if (foldedPreflop.contains(p)) return false;
+      if (foldedFlop.contains(p)) return false;
+      if (foldedTurn.contains(p)) return false;
+
+      if (!actedPositions.contains(p)) return true;
+
+      if (lastAggressivePosition.isNotEmpty) {
+
+        final lastAggressiveOrder =
+            orderedRiverPositions.indexOf(lastAggressivePosition);
+
+        final currentOrder =
+            orderedRiverPositions.indexOf(p);
+
+        return currentOrder > lastAggressiveOrder;
+      }
+
+      return false;
+
+    }).toList();
+
+    if (availablePositions.isEmpty) return;
+
+    String selectedPosition = availablePositions.first;
+    String selectedAction = 'check';
+    final amountController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final hasBetOrRaise = _riverActions.any(
+              (a) => a['action'] == 'bet' || a['action'] == 'raise',
+            );
+
+            final availableActions = hasBetOrRaise
+                ? ['call', 'raise', 'fold']
+                : ['check', 'bet', 'fold'];
+
+            if (!availableActions.contains(selectedAction)) {
+              selectedAction = availableActions.first;
+            }
+
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            final cardColor = isDark ? const Color(0xFF1F2937) : Colors.white;
+            final textColor = isDark ? Colors.white : Colors.black87;
+            final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+            return SafeArea(
+              child: Container(
+                color: cardColor,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        initialValue: selectedPosition,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
+                          labelText: tr(
+                            context,
+                            'Position',
+                            zhTw: '位置',
+                            zhCn: '位置',
+                            ko: '포지션',
+                            ja: 'ポジション',
+                            de: 'Position',
+                            fr: 'Position',
+                            ar: 'الموضع',
+                            ru: 'Позиция',
+                            trk: 'Pozisyon',
+                            es: 'Posición',
+                            it: 'Posizione',
+                            pl: 'Pozycja',
+                            pt: 'Posição',
+                            th: 'ตำแหน่ง',
+                            id: 'Posisi',
+                            hi: 'पोजीशन',
+                            bn: 'পজিশন',
+                          ),
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+                        items: availablePositions.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+                            child: Text(p, style: TextStyle(color: textColor)),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedPosition = value;
+                          });
+                        },
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      DropdownButtonFormField<String>(
+                        style: TextStyle(color: textColor),
+                        dropdownColor: cardColor,
+                        iconEnabledColor: textColor,
+                        initialValue: selectedAction,
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
+                          labelText: tr(
+                            context,
+                            'Action',
+                            zhTw: '動作',
+                            zhCn: '动作',
+                            ko: '액션',
+                            ja: 'アクション',
+                            de: 'Aktion',
+                            fr: 'Action',
+                            ar: 'الإجراء',
+                            ru: 'Действие',
+                            trk: 'Aksiyon',
+                            es: 'Acción',
+                            it: 'Azione',
+                            pl: 'Akcja',
+                            pt: 'Ação',
+                            th: 'แอ็กชัน',
+                            id: 'Aksi',
+                            hi: 'एक्शन',
+                            bn: 'অ্যাকশন',
+                          ),
+                          labelStyle: TextStyle(color: subTextColor),
+                        ),
+                        items: availableActions.map((action) {
+                          return DropdownMenuItem(
+                            value: action,
+                            child: Text(
+                              action.toUpperCase(),
+                              style: TextStyle(color: textColor),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedAction = value;
+                          });
+                        },
+                      ),
+
+                      if (selectedAction == 'bet' ||
+                          selectedAction == 'raise') ...[
+                        const SizedBox(height: 16),
+
+                        TextField(
+                          style: TextStyle(color: textColor),
+                          controller: amountController,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
+                            labelText: tr(
+                              context,
+                              'Amount',
+                              zhTw: '金額',
+                              zhCn: '金额',
+                              ko: '금액',
+                              ja: '金額',
+                              de: 'Betrag',
+                              fr: 'Montant',
+                              ar: 'المبلغ',
+                              ru: 'Сумма',
+                              trk: 'Tutar',
+                              es: 'Cantidad',
+                              it: 'Importo',
+                              pl: 'Kwota',
+                              pt: 'Valor',
+                              th: 'จำนวนเงิน',
+                              id: 'Jumlah',
+                              hi: 'राशि',
+                              bn: 'পরিমাণ',
+                            ),
+                            labelStyle: TextStyle(color: subTextColor),
+                          ),
+                        ),
+                      ],
+
+                      const SizedBox(height: 20),
+
+                      FilledButton(
+                        onPressed: () {
+                          setState(() {
+                            _riverActions.add({
+                              'position': selectedPosition,
+                              'action': selectedAction,
+                              'amount': selectedAction == 'bet' ||
+                                      selectedAction == 'raise'
+                                  ? (double.tryParse(amountController.text) ?? 0)
+                                  : selectedAction == 'call'
+                                      ? _callAmountOnStreet(
+                                          _riverActions,
+                                          selectedPosition,
+                                        )
+                                      : 0,
+                            });
+                          });
+
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          tr(
+                            context,
+                            'Add Action',
+                            zhTw: '新增動作',
+                            zhCn: '新增动作',
+                            ko: '액션 추가',
+                            ja: 'アクション追加',
+                            de: 'Aktion hinzufügen',
+                            fr: 'Ajouter une action',
+                            ar: 'إضافة إجراء',
+                            ru: 'Добавить действие',
+                            trk: 'Aksiyon Ekle',
+                            es: 'Agregar acción',
+                            it: 'Aggiungi azione',
+                            pl: 'Dodaj akcję',
+                            pt: 'Adicionar ação',
+                            th: 'เพิ่มแอ็กชัน',
+                            id: 'Tambah Aksi',
+                            hi: 'एक्शन जोड़ें',
+                            bn: 'অ্যাকশন যোগ করুন',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  List<String> _showdownPositions() {
+    final positions = _positionsForSize(_tableSize);
+
+    final folded = {
+      ..._preflopActions
+          .where((a) => a['action'] == 'fold')
+          .map((a) => a['position'].toString()),
+
+      ..._flopActions
+          .where((a) => a['action'] == 'fold')
+          .map((a) => a['position'].toString()),
+
+      ..._turnActions
+          .where((a) => a['action'] == 'fold')
+          .map((a) => a['position'].toString()),
+
+      ..._riverActions
+          .where((a) => a['action'] == 'fold')
+          .map((a) => a['position'].toString()),
+    };
+
+    return positions.where((p) {
+
+      final player = _seatPlayers[p];
+
+      if (player == null) return false;
+
+      final type = (player['type'] ?? '').toString();
+
+      if (type == 'empty') return false;
+
+      final isMe =
+          player['type'] == 'player' &&
+          player['source'] == 'me';
+
+      if (isMe) return true;
+
+      return !folded.contains(p);
+
+    }).toList();
+  }
+
+  Set<String> _usedShowdownCardsExcept(String position) {
+    final used = <String>{};
+
+    for (final entry in _showdownCards.entries) {
+      if (entry.key == position) continue;
+
+      final cards = List<String>.from(entry.value['cards'] ?? []);
+
+      for (final card in cards) {
+        if (card.isNotEmpty) {
+          used.add(card);
+        }
+      }
+    }
+
+    return used;
+  }
+
+  Future<void> _editShowdownCards(String position) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final sheetColor =
+        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    Future<List<String>?> pickCards(int count) async {
+      final usedCards = _usedShowdownCardsExcept(position);
+      final selectedCards = <String>[];
+
+      for (int i = 0; i < count; i++) {
+        final card = await _selectCard(
+          extraUsedCards: {
+            ...usedCards,
+            ...selectedCards,
+          },
+        );
+
+        if (card == null) return null;
+
+        selectedCards.add(card);
+      }
+
+      return selectedCards;
+    }
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      backgroundColor: sheetColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Container(
+            color: sheetColor,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ListTile(
+                  leading: Icon(Icons.visibility_off, color: subTextColor),
+                  title: Text(
+                    tr(
+                      context,
+                      'No Show',
+                      zhTw: '未亮牌',
+                      zhCn: '未亮牌',
+                      ko: '공개 안 함',
+                      ja: 'ショーなし',
+                      de: 'Nicht zeigen',
+                      fr: 'Ne pas montrer',
+                      ar: 'عدم الكشف',
+                      ru: 'Не показывать',
+                      trk: 'Gösterme',
+                      es: 'No mostrar',
+                      it: 'Non mostrare',
+                      pl: 'Nie pokazuj',
+                      pt: 'Não mostrar',
+                      th: 'ไม่โชว์ไพ่',
+                      id: 'Tidak Show',
+                      hi: 'नहीं दिखाएँ',
+                      bn: 'দেখাবে না',
+                    ),
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context, {
+                      'showType': 'none',
+                      'showed': false,
+                      'cards': <String>[],
+                    });
+                  },
+                ),
+
+                ListTile(
+                  leading: Icon(Icons.style, color: subTextColor),
+                  title: Text(
+                    tr(
+                      context,
+                      'Show One Card',
+                      zhTw: '亮一張牌',
+                      zhCn: '亮一张牌',
+                      ko: '카드 한 장 공개',
+                      ja: 'カードを1枚見せる',
+                      de: 'Eine Karte zeigen',
+                      fr: 'Montrer une carte',
+                      ar: 'إظهار بطاقة واحدة',
+                      ru: 'Показать одну карту',
+                      trk: 'Bir Kart Göster',
+                      es: 'Mostrar una carta',
+                      it: 'Mostra una carta',
+                      pl: 'Pokaż jedną kartę',
+                      pt: 'Mostrar uma carta',
+                      th: 'โชว์ไพ่หนึ่งใบ',
+                      id: 'Tampilkan Satu Kartu',
+                      hi: 'एक कार्ड दिखाएँ',
+                      bn: 'একটি কার্ড দেখান',
+                    ),
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () async {
+                    final cards = await pickCards(1);
+                    if (cards == null) return;
+                    if (!context.mounted) return;
+
+                    Navigator.pop(context, {
+                      'showType': 'one',
+                      'showed': true,
+                      'cards': cards,
+                    });
+                  },
+                ),
+
+                ListTile(
+                  leading: Icon(Icons.style, color: subTextColor),
+                  title: Text(
+                    '${tr(
+                      context,
+                      'Show',
+                      zhTw: '亮出',
+                      zhCn: '亮出',
+                      ko: '공개',
+                      ja: '見せる',
+                      de: 'Zeigen',
+                      fr: 'Montrer',
+                      ar: 'إظهار',
+                      ru: 'Показать',
+                      trk: 'Göster',
+                      es: 'Mostrar',
+                      it: 'Mostra',
+                      pl: 'Pokaż',
+                      pt: 'Mostrar',
+                      th: 'โชว์',
+                      id: 'Tampilkan',
+                      hi: 'दिखाएँ',
+                      bn: 'দেখান',
+                    )} ${_holeCardCount()} ${tr(
+                      context,
+                      'Cards',
+                      zhTw: '張牌',
+                      zhCn: '张牌',
+                      ko: '장 카드',
+                      ja: '枚のカード',
+                      de: 'Karten',
+                      fr: 'cartes',
+                      ar: 'بطاقات',
+                      ru: 'карт',
+                      trk: 'Kart',
+                      es: 'cartas',
+                      it: 'carte',
+                      pl: 'kart',
+                      pt: 'cartas',
+                      th: 'ใบ',
+                      id: 'Kartu',
+                      hi: 'कार्ड',
+                      bn: 'কার্ড',
+                    )}',
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  onTap: () async {
+                    final cards = await pickCards(_holeCardCount());
+                    if (cards == null) return;
+                    if (!context.mounted) return;
+
+                    Navigator.pop(context, {
+                      'showType': 'all',
+                      'showed': true,
+                      'cards': cards,
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      _showdownCards[position] = result;
+    });
+  }
+
+  Future<void> _saveHand() async {
+    final positions = _positionsForSize(_tableSize);
+
+    final title = _titleController.text.trim().isEmpty
+        ? '$_tableSize players hand'
+        : _titleController.text.trim();
+
+    final data = {
+
+      'ownerUid': FirebaseAuth.instance.currentUser?.uid ?? '',
+      'isTournament': widget.isTournament,
+
+      'sessionName': widget.sessionName,
+      'sessionStartedAt': widget.initialData?['sessionStartedAt'],
+
+      'title': title,
+      'tableSize': _tableSize,
+
+      'playerIds': _seatPlayers.values
+          .map((player) => (player['playerId'] ?? '').toString())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList(),
+
+      'gameType': _gameType,
+
+      'smallBlind':
+          double.tryParse(_smallBlindController.text) ?? 0,
+
+      'bigBlind':
+          double.tryParse(_bigBlindController.text) ?? 0,
+
+      'ante': double.tryParse(_anteController.text) ?? 0,
+      'level': _levelController.text.trim(),
+      'isBubble': _isBubble,
+      'approxStack': double.tryParse(_stackController.text) ?? 0,
+
+      if (!widget.isTournament)
+        'straddlePosition': _straddlePosition,
+
+      if (!widget.isTournament)
+        'straddleAmount':
+            double.tryParse(_straddleController.text) ?? 0,
+
+      'positions': {
+        for (final position in positions)
+          position: _seatPlayers[position] ?? {
+            'name': '',
+            'type': 'empty',
+          },
+      },
+
+      'preflopActions': _preflopActions,
+
+      'flopCards': _flopCards,
+      'flopActions': _flopActions,
+      
+      'turnCard': _turnCard,
+      'turnActions': _turnActions,
+      
+      'riverCard': _riverCard,
+      'riverActions': _riverActions,
+      
+      'showdownCards': _showdownCards,
+
+      'updatedAt': FieldValue.serverTimestamp(),
+
+    };
+
+    if (_isEditing) {
+      await _handsRef().doc(widget.handId).set(data, SetOptions(merge: true));
+    } else {
+      await _handsRef().add({
+        ...data,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context, data);
+  }
+
+  Future<void> _deleteHand() async {
+    if (widget.handId == null) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor:
+              isDark ? const Color(0xFF1E293B) : Colors.white,
+
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+
+          title: Text(
+            tr(
+              context,
+              'Delete Hand',
+              zhTw: '刪除手牌',
+              zhCn: '删除手牌',
+              ko: '핸드 삭제',
+              ja: 'ハンドを削除',
+              de: 'Hand löschen',
+              fr: 'Supprimer la main',
+              ar: 'حذف اليد',
+              ru: 'Удалить раздачу',
+              trk: 'Eli Sil',
+              es: 'Eliminar mano',
+              it: 'Elimina mano',
+              pl: 'Usuń rozdanie',
+              pt: 'Excluir mão',
+              th: 'ลบมือ',
+              id: 'Hapus Hand',
+              hi: 'हैंड हटाएँ',
+              bn: 'হ্যান্ড মুছুন',
+            ),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+
+          content: Text(
+            tr(
+              context,
+              'Are you sure you want to delete this hand?',
+              zhTw: '你確定要刪除這手牌嗎？',
+              zhCn: '你确定要删除这手牌吗？',
+              ko: '이 핸드를 삭제하시겠습니까?',
+              ja: 'このハンドを削除してもよろしいですか？',
+              de: 'Möchtest du diese Hand wirklich löschen?',
+              fr: 'Voulez-vous vraiment supprimer cette main ?',
+              ar: 'هل أنت متأكد أنك تريد حذف هذه اليد؟',
+              ru: 'Вы уверены, что хотите удалить эту раздачу?',
+              trk: 'Bu eli silmek istediğine emin misin?',
+              es: '¿Seguro que quieres eliminar esta mano?',
+              it: 'Sei sicuro di voler eliminare questa mano?',
+              pl: 'Czy na pewno chcesz usunąć to rozdanie?',
+              pt: 'Tem certeza de que deseja excluir esta mão?',
+              th: 'คุณแน่ใจหรือไม่ว่าต้องการลบมือนี้?',
+              id: 'Yakin ingin menghapus hand ini?',
+              hi: 'क्या आप वाकई इस हैंड को हटाना चाहते हैं?',
+              bn: 'আপনি কি নিশ্চিত এই হ্যান্ডটি মুছতে চান?',
+            ),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontSize: 16,
+            ),
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+                style: TextStyle(
+                  color:
+                      isDark ? Colors.white70 : Colors.black54,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                tr(
+                  context,
+                  'Delete',
+                  zhTw: '刪除',
+                  zhCn: '删除',
+                  ko: '삭제',
+                  ja: '削除',
+                  de: 'Löschen',
+                  fr: 'Supprimer',
+                  ar: 'حذف',
+                  ru: 'Удалить',
+                  trk: 'Sil',
+                  es: 'Eliminar',
+                  it: 'Elimina',
+                  pl: 'Usuń',
+                  pt: 'Excluir',
+                  th: 'ลบ',
+                  id: 'Hapus',
+                  hi: 'हटाएँ',
+                  bn: 'মুছুন',
+                ),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
+    await _handsRef().doc(widget.handId).delete();
+
+    if (!mounted) return;
+
+    Navigator.pop(context, 'deleted');
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final positions = _positionsForSize(_tableSize);
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark
+        ? const Color(0xFF0F172A)
+        : const Color(0xFFF2F2F7);
+
+    final cardColor = isDark
+        ? const Color(0xFF1E293B)
+        : Colors.white;
+
+    final textColor = isDark
+        ? Colors.white
+        : Colors.black87;
+
+    final subTextColor = isDark
+        ? Colors.white70
+        : Colors.black54;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: Text(
+          _isEditing
+              ? tr(
+                  context,
+                  'Edit Hand',
+                  zhTw: '編輯手牌',
+                  zhCn: '编辑手牌',
+                  ko: '핸드 수정',
+                  ja: 'ハンド編集',
+                  de: 'Hand bearbeiten',
+                  fr: 'Modifier la main',
+                  ar: 'تعديل اليد',
+                  ru: 'Редактировать раздачу',
+                  trk: 'Eli Düzenle',
+                  es: 'Editar mano',
+                  it: 'Modifica mano',
+                  pl: 'Edytuj rozdanie',
+                  pt: 'Editar mão',
+                  th: 'แก้ไขมือ',
+                  id: 'Edit Hand',
+                  hi: 'हैंड संपादित करें',
+                  bn: 'হ্যান্ড সম্পাদনা করুন',
+                )
+              : tr(
+                  context,
+                  'Add Hand',
+                  zhTw: '新增手牌',
+                  zhCn: '新增手牌',
+                  ko: '핸드 추가',
+                  ja: 'ハンド 추가',
+                  de: 'Hand hinzufügen',
+                  fr: 'Ajouter une main',
+                  ar: 'إضافة يد',
+                  ru: 'Добавить раздачу',
+                  trk: 'El Ekle',
+                  es: 'Agregar mano',
+                  it: 'Aggiungi mano',
+                  pl: 'Dodaj rozdanie',
+                  pt: 'Adicionar mão',
+                  th: 'เพิ่มมือ',
+                  id: 'Tambah Hand',
+                  hi: 'हैंड जोड़ें',
+                  bn: 'হ্যান্ড যোগ করুন',
+                ),
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: _deleteHand,
+            ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: TextFormField(
+              controller: _titleController,
+              style: TextStyle(color: textColor),
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark
+                    ? const Color(0xFF111827)
+                    : Colors.white,
+
+                labelText: tr(
+                  context,
+                  'Hand Name',
+                  zhTw: '手牌名稱',
+                  zhCn: '手牌名称',
+                  ko: '핸드 이름',
+                  ja: 'ハンド名',
+                  de: 'Handname',
+                  fr: 'Nom de la main',
+                  ar: 'اسم اليد',
+                  ru: 'Название раздачи',
+                  trk: 'El Adı',
+                  es: 'Nombre de la mano',
+                  it: 'Nome della mano',
+                  pl: 'Nazwa rozdania',
+                  pt: 'Nome da mão',
+                  th: 'ชื่อมือ',
+                  id: 'Nama Hand',
+                  hi: 'हैंड का नाम',
+                  bn: 'হ্যান্ডের নাম',
+                ),
+
+                labelStyle: TextStyle(color: subTextColor),
+
+                hintText: tr(
+                  context,
+                  'Example: AA vs KK all in preflop',
+                  zhTw: '例如：AA vs KK 翻牌前全下',
+                  zhCn: '例如：AA vs KK 翻牌前全下',
+                  ko: '예: AA vs KK 프리플랍 올인',
+                  ja: '例：AA vs KK プリフロップオールイン',
+                  de: 'Beispiel: AA vs KK All-in Preflop',
+                  fr: 'Exemple : AA vs KK tapis préflop',
+                  ar: 'مثال: AA ضد KK الكل في قبل الفلوب',
+                  ru: 'Пример: AA против KK олл-ин на префлопе',
+                  trk: 'Örnek: AA vs KK preflop all-in',
+                  es: 'Ejemplo: AA vs KK all in preflop',
+                  it: 'Esempio: AA vs KK all in preflop',
+                  pl: 'Przykład: AA vs KK all-in preflop',
+                  pt: 'Exemplo: AA vs KK all in pré-flop',
+                  th: 'ตัวอย่าง: AA vs KK ออลอินพรีฟล็อป',
+                  id: 'Contoh: AA vs KK all in preflop',
+                  hi: 'उदाहरण: AA vs KK प्रीफ्लॉप ऑल-इन',
+                  bn: 'উদাহরণ: AA vs KK প্রিফ্লপ অল-ইন',
+                ),
+
+                hintStyle: TextStyle(color: subTextColor),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white10
+                        : Colors.black12,
+                  ),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white24
+                        : Colors.black26,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: DropdownButtonFormField<int>(
+
+              style: TextStyle(color: textColor),
+              dropdownColor: cardColor,
+              iconEnabledColor: textColor,
+
+              initialValue: _tableSize,
+
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark
+                    ? const Color(0xFF111827)
+                    : Colors.white,
+
+                labelText: tr(
+                  context,
+                  'Table Size',
+                  zhTw: '幾人桌',
+                  zhCn: '几人桌',
+                  ko: '테이블 인원',
+                  ja: 'テーブル人数',
+                  de: 'Tischgröße',
+                  fr: 'Taille de la table',
+                  ar: 'حجم الطاولة',
+                  ru: 'Размер стола',
+                  trk: 'Masa Boyutu',
+                  es: 'Tamaño de la mesa',
+                  it: 'Dimensione tavolo',
+                  pl: 'Rozmiar stołu',
+                  pt: 'Tamanho da mesa',
+                  th: 'ขนาดโต๊ะ',
+                  id: 'Ukuran Meja',
+                  hi: 'टेबल का आकार',
+                  bn: 'টেবিলের আকার',
+                ),
+
+                labelStyle: TextStyle(color: subTextColor),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white10
+                        : Colors.black12,
+                  ),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white24
+                        : Colors.black26,
+                  ),
+                ),
+              ),
+
+              items: [3, 4, 5, 6, 7, 8, 9, 10]
+                  .map(
+                    (size) => DropdownMenuItem(
+                      value: size,
+                      child: Text(
+                        tr(
+                          context,
+                          '$size players',
+                          zhTw: '$size 人桌',
+                          zhCn: '$size 人桌',
+                          ko: '$size인 테이블',
+                          ja: '$size人テーブル',
+                          de: '$size Spieler',
+                          fr: '$size joueurs',
+                          ar: '$size لاعبين',
+                          ru: '$size игроков',
+                          trk: '$size oyunculu masa',
+                          es: '$size jugadores',
+                          it: '$size giocatori',
+                          pl: '$size graczy',
+                          pt: '$size jogadores',
+                          th: '$size ผู้เล่น',
+                          id: '$size pemain',
+                          hi: '$size खिलाड़ी',
+                          bn: '$size জন খেলোয়াড়',
+                        ),
+                        style: TextStyle(color: textColor),
+                      ),
+                    ),
+                  )
+                  .toList(),
+
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  _tableSize = value;
+                  _seatPlayers.clear();
+                });
+              },
+            ),
+          ),
+
+          const SizedBox(height: 16),
+
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: DropdownButtonFormField<String>(
+
+              style: TextStyle(color: textColor),
+              dropdownColor: cardColor,
+              iconEnabledColor: textColor,
+
+              initialValue: _gameType,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: isDark
+                    ? const Color(0xFF111827)
+                    : Colors.white,
+
+                labelText: tr(
+                  context,
+                  'Game Type',
+                  zhTw: '遊戲類型',
+                  zhCn: '游戏类型',
+                  ko: '게임 종류',
+                  ja: 'ゲームタイプ',
+                  de: 'Spieltyp',
+                  fr: 'Type de jeu',
+                  ar: 'نوع اللعبة',
+                  ru: 'Тип игры',
+                  trk: 'Oyun Türü',
+                  es: 'Tipo de juego',
+                  it: 'Tipo di gioco',
+                  pl: 'Typ gry',
+                  pt: 'Tipo de jogo',
+                  th: 'ประเภทเกม',
+                  id: 'Jenis Permainan',
+                  hi: 'गेम प्रकार',
+                  bn: 'গেমের ধরন',
+                ),
+
+                labelStyle: TextStyle(color: subTextColor),
+
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white10
+                        : Colors.black12,
+                  ),
+                ),
+
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: isDark
+                        ? Colors.white24
+                        : Colors.black26,
+                  ),
+                ),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'holdem',
+                  child: Text(
+                    tr(
+                      context,
+                      'Texas Hold’em',
+                      zhTw: '德州撲克',
+                      zhCn: '德州扑克',
+                      ko: '텍사스 홀덤',
+                      ja: 'テキサスホールデム',
+                      de: 'Texas Hold’em',
+                      fr: 'Texas Hold’em',
+                      ar: 'تكساس هولدم',
+                      ru: 'Техасский Холдем',
+                      trk: 'Texas Hold’em',
+                      es: 'Texas Hold’em',
+                      it: 'Texas Hold’em',
+                      pl: 'Texas Hold’em',
+                      pt: 'Texas Hold’em',
+                      th: 'เท็กซัสโฮลเอ็ม',
+                      id: 'Texas Hold’em',
+                      hi: 'टेक्सास होल्डम',
+                      bn: 'টেক্সাস হোল্ডেম',
+                    ),
+                    style: TextStyle(color: textColor),
+                  ),
+                ),
+
+                DropdownMenuItem(
+                  value: 'omaha4',
+                  child: Text(
+                    tr(
+                      context,
+                      '4 Card Omaha',
+                      zhTw: '四張奧馬哈',
+                      zhCn: '四张奥马哈',
+                      ko: '4장 오마하',
+                      ja: '4枚オマハ',
+                      de: '4-Karten Omaha',
+                      fr: 'Omaha à 4 cartes',
+                      ar: 'أوماها 4 أوراق',
+                      ru: 'Омаха 4 карты',
+                      trk: '4 Kart Omaha',
+                      es: 'Omaha de 4 cartas',
+                      it: 'Omaha a 4 carte',
+                      pl: 'Omaha 4-kartowa',
+                      pt: 'Omaha 4 cartas',
+                      th: 'โอมาฮ่า 4 ใบ',
+                      id: 'Omaha 4 Kartu',
+                      hi: '4 कार्ड ओमाहा',
+                      bn: '৪ কার্ড ওমাহা',
+                    ),
+                    style: TextStyle(color: textColor),
+                  ),
+                ),
+
+                DropdownMenuItem(
+                  value: 'omaha5',
+                  child: Text(
+                    tr(
+                      context,
+                      '5 Card Omaha',
+                      zhTw: '五張奧馬哈',
+                      zhCn: '五张奥马哈',
+                      ko: '5장 오마하',
+                      ja: '5枚オマハ',
+                      de: '5-Karten Omaha',
+                      fr: 'Omaha à 5 cartes',
+                      ar: 'أوماها 5 أوراق',
+                      ru: 'Омаха 5 карт',
+                      trk: '5 Kart Omaha',
+                      es: 'Omaha de 5 cartas',
+                      it: 'Omaha a 5 carte',
+                      pl: 'Omaha 5-kartowa',
+                      pt: 'Omaha 5 cartas',
+                      th: 'โอมาฮ่า 5 ใบ',
+                      id: 'Omaha 5 Kartu',
+                      hi: '5 कार्ड ओमाहा',
+                      bn: '৫ কার্ড ওমাহা',
+                    ),
+                    style: TextStyle(color: textColor),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+
+                setState(() {
+                  _gameType = value;
+                });
+              },
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          for (final position in positions)
+            Card(
+              color: cardColor,
+              child: ListTile(
+                title: Text(
+                  position,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                  ),
+                ),
+
+                subtitle: Text(
+                  (_seatPlayers[position]?['name'] ??
+                          tr(
+                            context,
+                            'Select Player',
+                            zhTw: '選擇玩家',
+                            zhCn: '选择玩家',
+                            ko: '플레이어 선택',
+                            ja: 'プレイヤー選択',
+                            de: 'Spieler auswählen',
+                            fr: 'Sélectionner un joueur',
+                            ar: 'اختر لاعب',
+                            ru: 'Выбрать игрока',
+                            trk: 'Oyuncu Seç',
+                            es: 'Seleccionar jugador',
+                            it: 'Seleziona giocatore',
+                            pl: 'Wybierz gracza',
+                            pt: 'Selecionar jogador',
+                            th: 'เลือกผู้เล่น',
+                            id: 'Pilih Pemain',
+                            hi: 'खिलाड़ी चुनें',
+                            bn: 'প্লেয়ার নির্বাচন করুন',
+                          ))
+                      .toString(),
+
+                  style: TextStyle(color: subTextColor),
+                ),
+
+                trailing: Icon(
+                  Icons.chevron_right,
+                  color: subTextColor,
+                ),
+
+                onTap: () => _selectPlayerForPosition(position),
+              ),
+            ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tr(
+                          context,
+                          'Preflop Actions',
+                          zhTw: '翻牌前動作',
+                          zhCn: '翻牌前动作',
+                          ko: '프리플랍 액션',
+                          ja: 'プリフロップアクション',
+                          de: 'Preflop-Aktionen',
+                          fr: 'Actions préflop',
+                          ar: 'إجراءات ما قبل الفلوب',
+                          ru: 'Действия на префлопе',
+                          trk: 'Preflop Aksiyonları',
+                          es: 'Acciones preflop',
+                          it: 'Azioni preflop',
+                          pl: 'Akcje preflop',
+                          pt: 'Ações pré-flop',
+                          th: 'แอ็กชันพรีฟล็อป',
+                          id: 'Aksi Preflop',
+                          hi: 'प्रीफ्लॉप एक्शन',
+                          bn: 'প্রিফ্লপ অ্যাকশন',
+                        ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '${tr(
+                        context,
+                        'Pot',
+                        zhTw: '底池',
+                        zhCn: '底池',
+                        ko: '팟',
+                        ja: 'ポット',
+                        de: 'Pot',
+                        fr: 'Pot',
+                        ar: 'البوت',
+                        ru: 'Банк',
+                        trk: 'Pot',
+                        es: 'Bote',
+                        it: 'Piatto',
+                        pl: 'Pula',
+                        pt: 'Pote',
+                        th: 'พ็อต',
+                        id: 'Pot',
+                        hi: 'पॉट',
+                        bn: 'পট',
+                      )}: \$${_preflopPot().toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF4CAF50),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: _smallBlindController,
+
+                  style: TextStyle(color: textColor),
+
+                  keyboardType: TextInputType.number,
+
+                  decoration: InputDecoration(
+                    filled: true,
+
+                    fillColor: isDark
+                        ? const Color(0xFF111827)
+                        : Colors.white,
+
+                    labelText: tr(
+                      context,
+                      'Small Blind',
+                      zhTw: '小盲',
+                      zhCn: '小盲',
+                      ko: '스몰 블라인드',
+                      ja: 'スモールブラインド',
+                      de: 'Small Blind',
+                      fr: 'Petite blind',
+                      ar: 'البلاند الصغير',
+                      ru: 'Малый блайнд',
+                      trk: 'Small Blind',
+                      es: 'Ciega pequeña',
+                      it: 'Small blind',
+                      pl: 'Mały blind',
+                      pt: 'Small blind',
+                      th: 'สมอลบลายด์',
+                      id: 'Small Blind',
+                      hi: 'स्मॉल ब्लाइंड',
+                      bn: 'স্মল ব্লাইন্ড',
+                    ),
+
+                    labelStyle: TextStyle(color: subTextColor),
+
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black12,
+                      ),
+                    ),
+
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? Colors.white24
+                            : Colors.black26,
+                      ),
+                    ),
+                  ),
+
+                  onChanged: (_) => setState(() {}),
+                ),
+
+                const SizedBox(height: 12),
+
+                TextField(
+                  controller: _bigBlindController,
+
+                  style: TextStyle(color: textColor),
+
+                  keyboardType: TextInputType.number,
+
+                  decoration: InputDecoration(
+                    filled: true,
+
+                    fillColor: isDark
+                        ? const Color(0xFF111827)
+                        : Colors.white,
+
+                    labelText: tr(
+                      context,
+                      'Big Blind',
+                      zhTw: '大盲',
+                      zhCn: '大盲',
+                      ko: '빅 블라인드',
+                      ja: 'ビッグブラインド',
+                      de: 'Big Blind',
+                      fr: 'Grosse blind',
+                      ar: 'البلاند الكبير',
+                      ru: 'Большой блайнд',
+                      trk: 'Big Blind',
+                      es: 'Ciega grande',
+                      it: 'Big blind',
+                      pl: 'Duży blind',
+                      pt: 'Big blind',
+                      th: 'บิ๊กบลายด์',
+                      id: 'Big Blind',
+                      hi: 'बिग ब्लाइंड',
+                      bn: 'বিগ ব্লাইন্ড',
+                    ),
+
+                    labelStyle: TextStyle(color: subTextColor),
+
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? Colors.white10
+                            : Colors.black12,
+                      ),
+                    ),
+
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+
+                      borderSide: BorderSide(
+                        color: isDark
+                            ? Colors.white24
+                            : Colors.black26,
+                      ),
+                    ),
+                  ),
+
+                  onChanged: (_) => setState(() {}),
+                ),
+
+                if (!widget.isTournament) ...[
+                  const SizedBox(height: 12),
+
+                  DropdownButtonFormField<String>(
+                    initialValue:
+                        _straddlePosition.isEmpty
+                            ? null
+                            : _straddlePosition,
+
+                    style: TextStyle(color: textColor),
+
+                    dropdownColor: cardColor,
+
+                    iconEnabledColor: textColor,
+
+                    decoration: InputDecoration(
+                      filled: true,
+
+                      fillColor: isDark
+                          ? const Color(0xFF111827)
+                          : Colors.white,
+
+                      labelText: tr(
+                        context,
+                        'Straddle Position',
+                        zhTw: '跨注位置',
+                        zhCn: '跨注位置',
+                        ko: '스트래들 위치',
+                        ja: 'ストラドル位置',
+                        de: 'Straddle-Position',
+                        fr: 'Position du straddle',
+                        ar: 'موضع السترادل',
+                        ru: 'Позиция страддла',
+                        trk: 'Straddle Pozisyonu',
+                        es: 'Posición del straddle',
+                        it: 'Posizione straddle',
+                        pl: 'Pozycja straddle',
+                        pt: 'Posição do straddle',
+                        th: 'ตำแหน่งสแตรดเดิล',
+                        id: 'Posisi Straddle',
+                        hi: 'स्ट्रैडल पोजीशन',
+                        bn: 'স্ট্র্যাডল পজিশন',
+                      ),
+
+                      labelStyle: TextStyle(color: subTextColor),
+
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black12,
+                        ),
+                      ),
+
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white24
+                              : Colors.black26,
+                        ),
+                      ),
+                    ),
+
+                    items: [
+                      DropdownMenuItem(
+                        value: '',
+
+                        child: Text(
+                          tr(
+                            context,
+                            'No Straddle',
+                            zhTw: '無跨注',
+                            zhCn: '无跨注',
+                            ko: '스트래들 없음',
+                            ja: 'ストラドルなし',
+                            de: 'Kein Straddle',
+                            fr: 'Pas de straddle',
+                            ar: 'بدون سترادل',
+                            ru: 'Без страддла',
+                            trk: 'Straddle Yok',
+                            es: 'Sin straddle',
+                            it: 'Nessuno straddle',
+                            pl: 'Brak straddle',
+                            pt: 'Sem straddle',
+                            th: 'ไม่มีสแตรดเดิล',
+                            id: 'Tanpa Straddle',
+                            hi: 'कोई स्ट्रैडल नहीं',
+                            bn: 'কোনো স্ট্র্যাডল নেই',
+                          ),
+                          style: TextStyle(color: textColor),
+                        ),
+                      ),
+
+                      ...positions
+                          .where(
+                            (p) => p == 'UTG' || p == 'BTN',
+                          )
+                          .map(
+                            (p) => DropdownMenuItem(
+                              value: p,
+
+                              child: Text(
+                                p,
+                                style: TextStyle(color: textColor),
+                              ),
+                            ),
+                          ),
+                    ],
+
+                    onChanged: (value) {
+                      setState(() {
+                        _straddlePosition = value ?? '';
+
+                        if (_straddlePosition.isEmpty) {
+                          _straddleController.clear();
+                        }
+                      });
+                    },
+                  ),
+
+                  if (_straddlePosition.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: _straddleController,
+
+                      style: TextStyle(color: textColor),
+
+                      keyboardType: TextInputType.number,
+
+                      decoration: InputDecoration(
+                        filled: true,
+
+                        fillColor: isDark
+                            ? const Color(0xFF111827)
+                            : Colors.white,
+
+                        labelText: tr(
+                          context,
+                          'Straddle Amount',
+                          zhTw: '跨注金額',
+                          zhCn: '跨注金额',
+                          ko: '스트래들 금액',
+                          ja: 'ストラドル額',
+                          de: 'Straddle-Betrag',
+                          fr: 'Montant du straddle',
+                          ar: 'مبلغ السترادل',
+                          ru: 'Сумма страддла',
+                          trk: 'Straddle Miktarı',
+                          es: 'Cantidad del straddle',
+                          it: 'Importo straddle',
+                          pl: 'Kwota straddle',
+                          pt: 'Valor do straddle',
+                          th: 'จำนวนเงินสแตรดเดิล',
+                          id: 'Jumlah Straddle',
+                          hi: 'स्ट्रैडल राशि',
+                          bn: 'স্ট্র্যাডল পরিমাণ',
+                        ),
+
+                        labelStyle: TextStyle(color: subTextColor),
+
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white10
+                                : Colors.black12,
+                          ),
+                        ),
+
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+
+                          borderSide: BorderSide(
+                            color: isDark
+                                ? Colors.white24
+                                : Colors.black26,
+                          ),
+                        ),
+                      ),
+
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ],
+                ],
+
+                if (widget.isTournament) ...[
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: _anteController,
+
+                    style: TextStyle(color: textColor),
+
+                    keyboardType: TextInputType.number,
+
+                    decoration: InputDecoration(
+                      filled: true,
+
+                      fillColor: isDark
+                          ? const Color(0xFF111827)
+                          : Colors.white,
+
+                      labelText: tr(
+                        context,
+                        'Total Ante',
+                        zhTw: '總前注',
+                        zhCn: '总前注',
+                        ko: '총 앤티',
+                        ja: '合計アンティ',
+                        de: 'Gesamte Ante',
+                        fr: 'Ante totale',
+                        ar: 'إجمالي الأنتي',
+                        ru: 'Общий анте',
+                        trk: 'Toplam Ante',
+                        es: 'Ante total',
+                        it: 'Ante totale',
+                        pl: 'Łączne ante',
+                        pt: 'Ante total',
+                        th: 'แอนตีรวม',
+                        id: 'Total Ante',
+                        hi: 'कुल एंटी',
+                        bn: 'মোট অ্যান্টি',
+                      ),
+
+                      labelStyle: TextStyle(color: subTextColor),
+
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black12,
+                        ),
+                      ),
+
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white24
+                              : Colors.black26,
+                        ),
+                      ),
+                    ),
+
+                    onChanged: (_) => setState(() {}),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: _levelController,
+
+                    style: TextStyle(color: textColor),
+
+                    decoration: InputDecoration(
+                      filled: true,
+
+                      fillColor: isDark
+                          ? const Color(0xFF111827)
+                          : Colors.white,
+
+                      labelText: tr(
+                        context,
+                        'Level',
+                        zhTw: '級別',
+                        zhCn: '级别',
+                        ko: '레벨',
+                        ja: 'レベル',
+                        de: 'Level',
+                        fr: 'Niveau',
+                        ar: 'المستوى',
+                        ru: 'Уровень',
+                        trk: 'Seviye',
+                        es: 'Nivel',
+                        it: 'Livello',
+                        pl: 'Poziom',
+                        pt: 'Nível',
+                        th: 'เลเวล',
+                        id: 'Level',
+                        hi: 'लेवल',
+                        bn: 'লেভেল',
+                      ),
+
+                      labelStyle: TextStyle(color: subTextColor),
+
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black12,
+                        ),
+                      ),
+
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white24
+                              : Colors.black26,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+
+                    title: Text(
+                      tr(
+                        context,
+                        'Bubble No/Yes',
+                        zhTw: '泡沫期 否/是',
+                        zhCn: '泡沫期 否/是',
+                        ko: '버블 아니오/예',
+                        ja: 'バブル いいえ/はい',
+                        de: 'Bubble Nein/Ja',
+                        fr: 'Bulle Non/Oui',
+                        ar: 'الفقاعة لا/نعم',
+                        ru: 'Баббл Нет/Да',
+                        trk: 'Bubble Hayır/Evet',
+                        es: 'Burbuja No/Sí',
+                        it: 'Bubble No/Sì',
+                        pl: 'Bubble Nie/Tak',
+                        pt: 'Bolha Não/Sim',
+                        th: 'บับเบิล ไม่/ใช่',
+                        id: 'Bubble Tidak/Ya',
+                        hi: 'बबल नहीं/हाँ',
+                        bn: 'বাবল না/হ্যাঁ',
+                      ),
+                      style: TextStyle(color: textColor),
+                    ),
+
+                    value: _isBubble,
+
+                    onChanged: (v) {
+                      setState(() {
+                        _isBubble = v;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: _stackController,
+
+                    style: TextStyle(color: textColor),
+
+                    keyboardType: TextInputType.number,
+
+                    decoration: InputDecoration(
+                      filled: true,
+
+                      fillColor: isDark
+                          ? const Color(0xFF111827)
+                          : Colors.white,
+
+                      labelText: tr(
+                        context,
+                        'Effective Stack (BB)',
+                        zhTw: '有效籌碼（大盲）',
+                        zhCn: '有效筹码（大盲）',
+                        ko: '유효 스택 (BB)',
+                        ja: '実効スタック (BB)',
+                        de: 'Effektiver Stack (BB)',
+                        fr: 'Tapis effectif (BB)',
+                        ar: 'الستاك الفعّال (BB)',
+                        ru: 'Эффективный стек (BB)',
+                        trk: 'Efektif Stack (BB)',
+                        es: 'Stack efectivo (BB)',
+                        it: 'Stack effettivo (BB)',
+                        pl: 'Efektywny stack (BB)',
+                        pt: 'Stack efetivo (BB)',
+                        th: 'สแตกที่มีผล (BB)',
+                        id: 'Stack Efektif (BB)',
+                        hi: 'प्रभावी स्टैक (BB)',
+                        bn: 'কার্যকর স্ট্যাক (BB)',
+                      ),
+
+                      labelStyle: TextStyle(color: subTextColor),
+
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black12,
+                        ),
+                      ),
+
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+
+                        borderSide: BorderSide(
+                          color: isDark
+                              ? Colors.white24
+                              : Colors.black26,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 16),
+
+                for (int i = 0; i < _preflopActions.length; i++)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+
+                    title: Text(
+                      '${_preflopActions[i]['position']} ${_preflopActions[i]['action']}',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_preflopActions[i]['action'] == 'call' ||
+                            _preflopActions[i]['action'] == 'raise' ||
+                            _preflopActions[i]['action'] == 'straddle')
+                          Text(
+                            '\$${(_preflopActions[i]['amount'] ?? 0)}',
+                            style: TextStyle(
+                              color: subTextColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _preflopActions.removeAt(i);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                FilledButton.icon(
+                  onPressed: _addPreflopAction,
+
+                  icon: const Icon(Icons.add),
+
+                  label: Text(
+                    tr(
+                      context,
+                      'Add Action',
+                      zhTw: '新增動作',
+                      zhCn: '新增动作',
+                      ko: '액션 추가',
+                      ja: 'アクション追加',
+                      de: 'Aktion hinzufügen',
+                      fr: 'Ajouter une action',
+                      ar: 'إضافة إجراء',
+                      ru: 'Добавить действие',
+                      trk: 'Aksiyon Ekle',
+                      es: 'Agregar acción',
+                      it: 'Aggiungi azione',
+                      pl: 'Dodaj akcję',
+                      pt: 'Adicionar ação',
+                      th: 'เพิ่มแอ็กชัน',
+                      id: 'Tambah Aksi',
+                      hi: 'एक्शन जोड़ें',
+                      bn: 'অ্যাকশন যোগ করুন',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ), // Container
+
+          const SizedBox(height: 20),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tr(
+                          context,
+                          'Flop',
+                          zhTw: '翻牌',
+                          zhCn: '翻牌',
+                          ko: '플랍',
+                          ja: 'フロップ',
+                          de: 'Flop',
+                          fr: 'Flop',
+                          ar: 'الفلوب',
+                          ru: 'Флоп',
+                          trk: 'Flop',
+                          es: 'Flop',
+                          it: 'Flop',
+                          pl: 'Flop',
+                          pt: 'Flop',
+                          th: 'ฟล็อป',
+                          id: 'Flop',
+                          hi: 'फ्लॉप',
+                          bn: 'ফ্লপ',
+                        ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '${tr(
+                        context,
+                        'Pot',
+                        zhTw: '底池',
+                        zhCn: '底池',
+                        ko: '팟',
+                        ja: 'ポット',
+                        de: 'Pot',
+                        fr: 'Pot',
+                        ar: 'البوت',
+                        ru: 'Банк',
+                        trk: 'Pot',
+                        es: 'Bote',
+                        it: 'Piatto',
+                        pl: 'Pula',
+                        pt: 'Pote',
+                        th: 'พ็อต',
+                        id: 'Pot',
+                        hi: 'पॉट',
+                        bn: 'পট',
+                      )}: \$${_flopPot().toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF4CAF50),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                Row(
+                  children: List.generate(3, (index) {
+                    final card =
+                        index < _flopCards.length
+                            ? _flopCards[index]
+                            : '';
+
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: textColor,
+
+                            side: BorderSide(
+                              color: isDark
+                                  ? Colors.white24
+                                  : Colors.black26,
+                            ),
+                          ),
+
+                          onPressed: () async {
+                            final selected = await _selectCard();
+
+                            if (selected == null) return;
+
+                            setState(() {
+                              if (index < _flopCards.length) {
+                                _flopCards[index] = selected;
+                              } else {
+                                _flopCards.add(selected);
+                              }
+                            });
+                          },
+
+                          child: Text(
+                            card.isEmpty
+                                ? tr(
+                                    context,
+                                    'Card ${index + 1}',
+                                    zhTw: '牌 ${index + 1}',
+                                    zhCn: '牌 ${index + 1}',
+                                    ko: '카드 ${index + 1}',
+                                    ja: 'カード ${index + 1}',
+                                    de: 'Karte ${index + 1}',
+                                    fr: 'Carte ${index + 1}',
+                                    ar: 'البطاقة ${index + 1}',
+                                    ru: 'Карта ${index + 1}',
+                                    trk: 'Kart ${index + 1}',
+                                    es: 'Carta ${index + 1}',
+                                    it: 'Carta ${index + 1}',
+                                    pl: 'Karta ${index + 1}',
+                                    pt: 'Carta ${index + 1}',
+                                    th: 'ไพ่ ${index + 1}',
+                                    id: 'Kartu ${index + 1}',
+                                    hi: 'कार्ड ${index + 1}',
+                                    bn: 'কার্ড ${index + 1}',
+                                  )
+                                : card,
+
+                            style: TextStyle(
+                              color: textColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
+                const SizedBox(height: 16),
+
+                for (int i = 0; i < _flopActions.length; i++)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      '${_flopActions[i]['position']} ${_flopActions[i]['action']}',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_flopActions[i]['action'] == 'bet' ||
+                            _flopActions[i]['action'] == 'raise' ||
+                            _flopActions[i]['action'] == 'call')
+                          Text(
+                            '\$${_flopActions[i]['amount']}',
+                            style: TextStyle(
+                              color: subTextColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _flopActions.removeAt(i);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                FilledButton.icon(
+                  onPressed:
+                      _flopCards.length == 3
+                          ? _addFlopAction
+                          : null,
+
+                  icon: const Icon(Icons.add),
+
+                  label: Text(
+                    tr(
+                      context,
+                      'Add Flop Action',
+                      zhTw: '新增翻牌動作',
+                      zhCn: '新增翻牌动作',
+                      ko: '플랍 액션 추가',
+                      ja: 'フロップアクション追加',
+                      de: 'Flop-Aktion hinzufügen',
+                      fr: 'Ajouter une action au flop',
+                      ar: 'إضافة إجراء الفلوب',
+                      ru: 'Добавить действие на флопе',
+                      trk: 'Flop Aksiyonu Ekle',
+                      es: 'Agregar acción en flop',
+                      it: 'Aggiungi azione flop',
+                      pl: 'Dodaj akcję flopa',
+                      pt: 'Adicionar ação no flop',
+                      th: 'เพิ่มแอ็กชันฟล็อป',
+                      id: 'Tambah Aksi Flop',
+                      hi: 'फ्लॉप एक्शन जोड़ें',
+                      bn: 'ফ্লপ অ্যাকশন যোগ করুন',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tr(
+                          context,
+                          'Turn',
+                          zhTw: '轉牌',
+                          zhCn: '转牌',
+                          ko: '턴',
+                          ja: 'ターン',
+                          de: 'Turn',
+                          fr: 'Turn',
+                          ar: 'التيرن',
+                          ru: 'Тёрн',
+                          trk: 'Turn',
+                          es: 'Turn',
+                          it: 'Turn',
+                          pl: 'Turn',
+                          pt: 'Turn',
+                          th: 'เทิร์น',
+                          id: 'Turn',
+                          hi: 'टर्न',
+                          bn: 'টার্ন',
+                        ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '${tr(
+                        context,
+                        'Pot',
+                        zhTw: '底池',
+                        zhCn: '底池',
+                        ko: '팟',
+                        ja: 'ポット',
+                        de: 'Pot',
+                        fr: 'Pot',
+                        ar: 'البوت',
+                        ru: 'Банк',
+                        trk: 'Pot',
+                        es: 'Bote',
+                        it: 'Piatto',
+                        pl: 'Pula',
+                        pt: 'Pote',
+                        th: 'พ็อต',
+                        id: 'Pot',
+                        hi: 'पॉट',
+                        bn: 'পট',
+                      )}: \$${_turnPot().toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF4CAF50),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: textColor,
+                    side: BorderSide(
+                      color: isDark ? Colors.white24 : Colors.black26,
+                    ),
+                  ),
+                  onPressed: () async {
+                    final selected = await _selectCard();
+
+                    if (selected == null) return;
+
+                    setState(() {
+                      _turnCard = selected;
+                    });
+                  },
+                  child: Text(
+                    _turnCard.isEmpty
+                        ? tr(
+                            context,
+                            'Turn Card',
+                            zhTw: '轉牌',
+                            zhCn: '转牌',
+                            ko: '턴 카드',
+                            ja: 'ターンカード',
+                            de: 'Turn-Karte',
+                            fr: 'Carte Turn',
+                            ar: 'بطاقة التيرن',
+                            ru: 'Карта тёрна',
+                            trk: 'Turn Kartı',
+                            es: 'Carta del turn',
+                            it: 'Carta turn',
+                            pl: 'Karta turn',
+                            pt: 'Carta do turn',
+                            th: 'ไพ่เทิร์น',
+                            id: 'Kartu Turn',
+                            hi: 'टर्न कार्ड',
+                            bn: 'টার্ন কার্ড',
+                          )
+                        : _turnCard,
+
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                for (int i = 0; i < _turnActions.length; i++)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      '${_turnActions[i]['position']} ${_turnActions[i]['action']}',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_turnActions[i]['action'] == 'bet' ||
+                            _turnActions[i]['action'] == 'raise' ||
+                            _turnActions[i]['action'] == 'call')
+                          Text(
+                            '\$${_turnActions[i]['amount']}',
+                            style: TextStyle(
+                              color: subTextColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _turnActions.removeAt(i);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                FilledButton.icon(
+                  onPressed:
+                      _turnCard.isNotEmpty
+                          ? _addTurnAction
+                          : null,
+
+                  icon: const Icon(Icons.add),
+
+                  label: Text(
+                    tr(
+                      context,
+                      'Add Turn Action',
+                      zhTw: '新增轉牌動作',
+                      zhCn: '新增转牌动作',
+                      ko: '턴 액션 추가',
+                      ja: 'ターンアクション追加',
+                      de: 'Turn-Aktion hinzufügen',
+                      fr: 'Ajouter une action au turn',
+                      ar: 'إضافة إجراء التيرن',
+                      ru: 'Добавить действие на тёрне',
+                      trk: 'Turn Aksiyonu Ekle',
+                      es: 'Agregar acción en turn',
+                      it: 'Aggiungi azione turn',
+                      pl: 'Dodaj akcję turn',
+                      pt: 'Adicionar ação no turn',
+                      th: 'เพิ่มแอ็กชันเทิร์น',
+                      id: 'Tambah Aksi Turn',
+                      hi: 'टर्न एक्शन जोड़ें',
+                      bn: 'টার্ন অ্যাকশন যোগ করুন',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        tr(
+                          context,
+                          'River',
+                          zhTw: '河牌',
+                          zhCn: '河牌',
+                          ko: '리버',
+                          ja: 'リバー',
+                          de: 'River',
+                          fr: 'River',
+                          ar: 'الريفر',
+                          ru: 'Ривер',
+                          trk: 'River',
+                          es: 'River',
+                          it: 'River',
+                          pl: 'River',
+                          pt: 'River',
+                          th: 'ริเวอร์',
+                          id: 'River',
+                          hi: 'रिवर',
+                          bn: 'রিভার',
+                        ),
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: textColor,
+                        ),
+                      ),
+                    ),
+
+                    Text(
+                      '${tr(
+                        context,
+                        'Pot',
+                        zhTw: '底池',
+                        zhCn: '底池',
+                        ko: '팟',
+                        ja: 'ポット',
+                        de: 'Pot',
+                        fr: 'Pot',
+                        ar: 'البوت',
+                        ru: 'Банк',
+                        trk: 'Pot',
+                        es: 'Bote',
+                        it: 'Piatto',
+                        pl: 'Pula',
+                        pt: 'Pote',
+                        th: 'พ็อต',
+                        id: 'Pot',
+                        hi: 'पॉट',
+                        bn: 'পট',
+                      )}: \$${_riverPot().toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF4CAF50),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 12),
+
+                OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: textColor,
+                    side: BorderSide(
+                      color: isDark ? Colors.white24 : Colors.black26,
+                    ),
+                  ),
+                  onPressed: () async {
+                    final selected = await _selectCard();
+
+                    if (selected == null) return;
+
+                    setState(() {
+                      _riverCard = selected;
+                    });
+                  },
+                  child: Text(
+                    _riverCard.isEmpty
+                        ? tr(
+                            context,
+                            'River Card',
+                            zhTw: '河牌',
+                            zhCn: '河牌',
+                            ko: '리버 카드',
+                            ja: 'リバーカード',
+                            de: 'River-Karte',
+                            fr: 'Carte River',
+                            ar: 'بطاقة الريفر',
+                            ru: 'Карта ривера',
+                            trk: 'River Kartı',
+                            es: 'Carta del river',
+                            it: 'Carta river',
+                            pl: 'Karta river',
+                            pt: 'Carta do river',
+                            th: 'ไพ่ริเวอร์',
+                            id: 'Kartu River',
+                            hi: 'रिवर कार्ड',
+                            bn: 'রিভার কার্ড',
+                          )
+                        : _riverCard,
+
+                    style: TextStyle(
+                      color: textColor,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                for (int i = 0; i < _riverActions.length; i++)
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(
+                      '${_riverActions[i]['position']} ${_riverActions[i]['action']}',
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_riverActions[i]['action'] == 'bet' ||
+                            _riverActions[i]['action'] == 'raise' ||
+                            _riverActions[i]['action'] == 'call')
+                          Text(
+                            '\$${_riverActions[i]['amount']}',
+                            style: TextStyle(
+                              color: subTextColor,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                        IconButton(
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _riverActions.removeAt(i);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                FilledButton.icon(
+                  onPressed:
+                      _riverCard.isNotEmpty
+                          ? _addRiverAction
+                          : null,
+
+                  icon: const Icon(Icons.add),
+
+                  label: Text(
+                    tr(
+                      context,
+                      'Add River Action',
+                      zhTw: '新增河牌動作',
+                      zhCn: '新增河牌动作',
+                      ko: '리버 액션 추가',
+                      ja: 'リバーアクション追加',
+                      de: 'River-Aktion hinzufügen',
+                      fr: 'Ajouter une action à la river',
+                      ar: 'إضافة إجراء الريفر',
+                      ru: 'Добавить действие на ривере',
+                      trk: 'River Aksiyonu Ekle',
+                      es: 'Agregar acción en river',
+                      it: 'Aggiungi azione river',
+                      pl: 'Dodaj akcję river',
+                      pt: 'Adicionar ação no river',
+                      th: 'เพิ่มแอ็กชันริเวอร์',
+                      id: 'Tambah Aksi River',
+                      hi: 'रिवर एक्शन जोड़ें',
+                      bn: 'রিভার অ্যাকশন যোগ করুন',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  tr(
+                    context,
+                    'Showdown',
+                    zhTw: '攤牌',
+                    zhCn: '摊牌',
+                    ko: '쇼다운',
+                    ja: 'ショーダウン',
+                    de: 'Showdown',
+                    fr: 'Abattage',
+                    ar: 'كشف الأوراق',
+                    ru: 'Шоудаун',
+                    trk: 'Showdown',
+                    es: 'Showdown',
+                    it: 'Showdown',
+                    pl: 'Showdown',
+                    pt: 'Showdown',
+                    th: 'โชว์ดาวน์',
+                    id: 'Showdown',
+                    hi: 'शोडाउन',
+                    bn: 'শোডাউন',
+                  ),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: textColor,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                for (final position in _showdownPositions())
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+
+                    title: Text(
+                      _seatPlayers[position]?['source'] == 'me'
+                          ? '$position (${tr(
+                              context,
+                              'Me',
+                              zhTw: '我',
+                              zhCn: '我',
+                              ko: '나',
+                              ja: '自分',
+                              de: 'Ich',
+                              fr: 'Moi',
+                              ar: 'أنا',
+                              ru: 'Я',
+                              trk: 'Ben',
+                              es: 'Yo',
+                              it: 'Io',
+                              pl: 'Ja',
+                              pt: 'Eu',
+                              th: 'ฉัน',
+                              id: 'Saya',
+                              hi: 'मैं',
+                              bn: 'আমি',
+                            )})'
+                          : position,
+
+                      style: TextStyle(
+                        color: textColor,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    subtitle: Text(
+                      _showdownCards[position]?['showed'] == true
+                          ? List<String>.from(
+                              _showdownCards[position]?['cards'] ?? [],
+                            ).join(' ')
+                          : tr(
+                              context,
+                              'No show',
+                              zhTw: '未亮牌',
+                              zhCn: '未亮牌',
+                              ko: '공개 안 함',
+                              ja: 'ショーなし',
+                              de: 'Nicht gezeigt',
+                              fr: 'Non montré',
+                              ar: 'لم يكشف',
+                              ru: 'Не показал',
+                              trk: 'Göstermedi',
+                              es: 'No muestra',
+                              it: 'Non mostra',
+                              pl: 'Nie pokazano',
+                              pt: 'Não mostrou',
+                              th: 'ไม่โชว์ไพ่',
+                              id: 'Tidak show',
+                              hi: 'नहीं दिखाया',
+                              bn: 'দেখায়নি',
+                            ),
+
+                      style: TextStyle(
+                        color: subTextColor,
+                      ),
+                    ),
+
+                    trailing: Icon(
+                      Icons.chevron_right,
+                      color: subTextColor,
+                    ),
+
+                    onTap: () => _editShowdownCards(position),
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          FilledButton(
+            onPressed: _saveHand,
+
+            child: Text(
+              _isEditing
+                  ? tr(
+                      context,
+                      'Save Changes',
+                      zhTw: '儲存變更',
+                      zhCn: '保存更改',
+                      ko: '변경사항 저장',
+                      ja: '変更を保存',
+                      de: 'Änderungen speichern',
+                      fr: 'Enregistrer les modifications',
+                      ar: 'حفظ التغييرات',
+                      ru: 'Сохранить изменения',
+                      trk: 'Değişiklikleri Kaydet',
+                      es: 'Guardar cambios',
+                      it: 'Salva modifiche',
+                      pl: 'Zapisz zmiany',
+                      pt: 'Salvar alterações',
+                      th: 'บันทึกการเปลี่ยนแปลง',
+                      id: 'Simpan Perubahan',
+                      hi: 'परिवर्तन सहेजें',
+                      bn: 'পরিবর্তন সংরক্ষণ করুন',
+                    )
+                  : tr(
+                      context,
+                      'Save Hand',
+                      zhTw: '儲存手牌',
+                      zhCn: '保存手牌',
+                      ko: '핸드 저장',
+                      ja: 'ハンドを保存',
+                      de: 'Hand speichern',
+                      fr: 'Enregistrer la main',
+                      ar: 'حفظ اليد',
+                      ru: 'Сохранить раздачу',
+                      trk: 'Eli Kaydet',
+                      es: 'Guardar mano',
+                      it: 'Salva mano',
+                      pl: 'Zapisz rozdanie',
+                      pt: 'Salvar mão',
+                      th: 'บันทึกมือ',
+                      id: 'Simpan Hand',
+                      hi: 'हैंड सहेजें',
+                      bn: 'হ্যান্ড সংরক্ষণ করুন',
+                    ),
+            ),
+          ),
+        ],
+      ),
+    
+    );
+  }
+}
+
+
+class _PlayerDetailPageState extends State<PlayerDetailPage> {
+  late final TextEditingController _noteController;
+
+  @override
+  void initState() {
+    super.initState();
+    _noteController = TextEditingController(
+      text: (widget.data['note'] ?? '').toString(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _saveNote() async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    if (currentUid.isEmpty) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('stat_players')
+        .doc(widget.playerId)
+        .set({
+      'note': _noteController.text.trim(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Note saved',
+            zhTw: '備註已儲存',
+            zhCn: '备注已保存',
+            ko: '메모가 저장되었습니다',
+            ja: 'メモが保存されました',
+            de: 'Notiz gespeichert',
+            fr: 'Note enregistrée',
+            ar: 'تم حفظ الملاحظة',
+            ru: 'Заметка сохранена',
+            trk: 'Not kaydedildi',
+            es: 'Nota guardada',
+            it: 'Nota salvata',
+            pl: 'Notatka zapisana',
+            pt: 'Nota salva',
+            th: 'บันทึกหมายเหตุแล้ว',
+            id: 'Catatan disimpan',
+            hi: 'नोट सहेजा गया',
+            bn: 'নোট সংরক্ষণ করা হয়েছে',
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<int> _cashGameCount() async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('cash_game_sessions')
+        .where(
+          'playerIds',
+          arrayContains: widget.playerId,
+        )
+        .get();
+
+    return snapshot.docs.length;
+  }
+
+  Future<int> _tournamentCount() async {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    final snapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('tournament_sessions')
+        .where(
+          'playerIds',
+          arrayContains: widget.playerId,
+        )
+        .get();
+
+    return snapshot.docs.length;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = (widget.data['name'] ?? 'Player').toString();
+
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF2F2F7);
+
+    final cardColor =
+        isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        title: Text(
+          name,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: _saveNote,
+            child: Text(
+              tr(
+                context,
+                'Save',
+                zhTw: '儲存',
+                zhCn: '保存',
+                ko: '저장',
+                ja: '保存',
+                de: 'Speichern',
+                fr: 'Enregistrer',
+                ar: 'حفظ',
+                ru: 'Сохранить',
+                trk: 'Kaydet',
+                es: 'Guardar',
+                it: 'Salva',
+                pl: 'Zapisz',
+                pt: 'Salvar',
+                th: 'บันทึก',
+                id: 'Simpan',
+                hi: 'सहेजें',
+                bn: 'সংরক্ষণ করুন',
+              ),
+              style: TextStyle(
+                color: isDark ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+
+      body: ListView(
+        children: [
+          Container(
+            color: cardColor,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 38,
+                  child: Text(name.isNotEmpty ? name[0].toUpperCase() : 'P'),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  name,
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            color: cardColor,
+            padding: const EdgeInsets.all(16),
+
+            child: TextField(
+              controller: _noteController,
+              maxLines: 3,
+
+              style: TextStyle(
+                color: textColor,
+                fontSize: 16,
+              ),
+
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: cardColor,
+
+                hintText: tr(
+                  context,
+                  'Note',
+                  zhTw: '備註',
+                  zhCn: '备注',
+                  ko: '메모',
+                  ja: 'メモ',
+                  de: 'Notiz',
+                  fr: 'Note',
+                  ar: 'ملاحظة',
+                  ru: 'Заметка',
+                  trk: 'Not',
+                  es: 'Nota',
+                  it: 'Nota',
+                  pl: 'Notatka',
+                  pt: 'Nota',
+                  th: 'หมายเหตุ',
+                  id: 'Catatan',
+                  hi: 'नोट',
+                  bn: 'নোট',
+                ),
+
+                hintStyle: TextStyle(
+                  color: subTextColor,
+                ),
+
+                border: InputBorder.none,
+
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            color: cardColor,
+            child: Column(
+              children: [
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collectionGroup('hands')
+                      .where('playerIds', arrayContains: widget.playerId)
+                      .where(
+                        'ownerUid',
+                        isEqualTo:
+                            FirebaseAuth.instance.currentUser?.uid ?? '',
+                      )
+                      .where('isTournament', isEqualTo: false)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final docs = snapshot.data?.docs ?? [];
+
+                    final sessionIds = docs
+                        .map((doc) => doc.reference.parent.parent?.id ?? '')
+                        .where((id) => id.isNotEmpty)
+                        .toSet();
+
+                    return _buildStatRow(
+                      tr(
+                        context,
+                        'Cash Games',
+                        zhTw: '現金局',
+                        zhCn: '现金局',
+                        ko: '캐시 게임',
+                        ja: 'キャッシュゲーム',
+                        de: 'Cash Games',
+                        fr: 'Parties cash',
+                        ar: 'ألعاب الكاش',
+                        ru: 'Кэш-игры',
+                        trk: 'Nakit Oyunları',
+                        es: 'Juegos cash',
+                        it: 'Cash game',
+                        pl: 'Gry cashowe',
+                        pt: 'Jogos cash',
+                        th: 'เกมเงินสด',
+                        id: 'Game Cash',
+                        hi: 'कैश गेम्स',
+                        bn: 'ক্যাশ গেম',
+                      ),
+                      sessionIds.length.toString(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlayerHandsPage(
+                              playerId: widget.playerId,
+                              playerName: name,
+                              isTournament: false,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+
+                StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                  stream: FirebaseFirestore.instance
+                      .collectionGroup('hands')
+                      .where('playerIds', arrayContains: widget.playerId)
+                      .where(
+                        'ownerUid',
+                        isEqualTo:
+                            FirebaseAuth.instance.currentUser?.uid ?? '',
+                      )
+                      .where('isTournament', isEqualTo: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    final docs = snapshot.data?.docs ?? [];
+
+                    final sessionIds = docs
+                        .map((doc) => doc.reference.parent.parent?.id ?? '')
+                        .where((id) => id.isNotEmpty)
+                        .toSet();
+
+                    return _buildStatRow(
+                      tr(
+                        context,
+                        'Tournaments',
+                        zhTw: '錦標賽',
+                        zhCn: '锦标赛',
+                        ko: '토너먼트',
+                        ja: 'トーナメント',
+                        de: 'Turniere',
+                        fr: 'Tournois',
+                        ar: 'البطولات',
+                        ru: 'Турниры',
+                        trk: 'Turnuvalar',
+                        es: 'Torneos',
+                        it: 'Tornei',
+                        pl: 'Turnieje',
+                        pt: 'Torneios',
+                        th: 'ทัวร์นาเมนต์',
+                        id: 'Turnamen',
+                        hi: 'टूर्नामेंट',
+                        bn: 'টুর্নামেন্ট',
+                      ),
+                      sessionIds.length.toString(),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlayerHandsPage(
+                              playerId: widget.playerId,
+                              playerName: name,
+                              isTournament: true,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow(
+    String title,
+    String value, {
+    VoidCallback? onTap,
+  }) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      children: [
+        ListTile(
+          title: Text(
+            title,
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              if (onTap != null) const SizedBox(width: 8),
+              if (onTap != null)
+                Icon(
+                  Icons.chevron_right,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
+            ],
+          ),
+          onTap: onTap,
+        ),
+        Divider(
+          height: 1,
+          color: isDark ? Colors.white12 : Colors.black12,
+        ),
+      ],
     );
   }
 }
@@ -35213,6 +44570,195 @@ class _TournamentSessionEditorPageState
   bool isOngoing = false;
   CashGameLocationType locationType =
       CashGameLocationType.homeGame;
+
+  Future<void> _deleteTournament() async {
+    if (widget.item == null) return;
+
+    final userUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        final isDark =
+            Theme.of(context).brightness == Brightness.dark;
+
+        return AlertDialog(
+          backgroundColor:
+              isDark ? const Color(0xFF1E293B) : Colors.white,
+
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: Text(
+            tr(
+              context,
+              'Delete Tournament',
+              zhTw: '刪除錦標賽',
+              zhCn: '删除锦标赛',
+              ko: '토너먼트 삭제',
+              ja: 'トーナメント削除',
+              de: 'Turnier löschen',
+              fr: 'Supprimer le tournoi',
+              ar: 'حذف البطولة',
+              ru: 'Удалить турнир',
+              trk: 'Turnuvayı Sil',
+              es: 'Eliminar torneo',
+              it: 'Elimina torneo',
+              pl: 'Usuń turniej',
+              pt: 'Excluir torneio',
+              th: 'ลบทัวร์นาเมนต์',
+              id: 'Hapus Turnamen',
+              hi: 'टूर्नामेंट हटाएँ',
+              bn: 'টুর্নামেন্ট মুছুন',
+            ),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black,
+              fontWeight: FontWeight.w800,
+            ),            
+          ),
+          content: Text(
+            tr(
+              context,
+              'Are you sure you want to delete this game?',
+              zhTw: '你確定要刪除這場牌局嗎？',
+              zhCn: '你确定要删除这场牌局吗？',
+              ko: '이 게임을 삭제하시겠습니까?',
+              ja: 'このゲームを削除しますか？',
+              de: 'Möchtest du dieses Spiel wirklich löschen?',
+              fr: 'Voulez-vous vraiment supprimer cette partie ?',
+              ar: 'هل أنت متأكد أنك تريد حذف هذه اللعبة؟',
+              ru: 'Вы уверены, что хотите удалить эту игру?',
+              trk: 'Bu oyunu silmek istediğinizden emin misiniz?',
+              es: '¿Seguro que deseas eliminar esta partida?',
+              it: 'Sei sicuro di voler eliminare questa partita?',
+              pl: 'Czy na pewno chcesz usunąć tę grę?',
+              pt: 'Tem certeza que deseja excluir este jogo?',
+              th: 'คุณแน่ใจหรือไม่ว่าต้องการลบเกมนี้?',
+              id: 'Apakah Anda yakin ingin menghapus game ini?',
+              hi: 'क्या आप वाकई इस गेम को हटाना चाहते हैं?',
+              bn: 'আপনি কি নিশ্চিত এই গেম মুছতে চান?',
+            ),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+
+              style: TextButton.styleFrom(
+                foregroundColor:
+                    isDark ? Colors.white70 : Colors.black87,
+              ),
+
+              child: Text(
+                tr(
+                  context,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    isDark ? const Color(0xFF22C55E) : null,
+
+                foregroundColor:
+                    Colors.white,
+
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(
+                tr(
+                  context,
+                  'Delete',
+                  zhTw: '刪除',
+                  zhCn: '删除',
+                  ko: '삭제',
+                  ja: '削除',
+                  de: 'Löschen',
+                  fr: 'Supprimer',
+                  ar: 'حذف',
+                  ru: 'Удалить',
+                  trk: 'Sil',
+                  es: 'Eliminar',
+                  it: 'Elimina',
+                  pl: 'Usuń',
+                  pt: 'Excluir',
+                  th: 'ลบ',
+                  id: 'Hapus',
+                  hi: 'हटाएँ',
+                  bn: 'মুছুন',
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userUid)
+        .collection('tournament_sessions')
+        .doc(widget.item!.id)
+        .delete();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          tr(
+            context,
+            'Game deleted',
+            zhTw: '牌局已刪除',
+            zhCn: '牌局已删除',
+            ko: '게임이 삭제되었습니다',
+            ja: 'ゲームを削除しました',
+            de: 'Spiel gelöscht',
+            fr: 'Partie supprimée',
+            ar: 'تم حذف اللعبة',
+            ru: 'Игра удалена',
+            trk: 'Oyun silindi',
+            es: 'Partida eliminada',
+            it: 'Partita eliminata',
+            pl: 'Gra usunięta',
+            pt: 'Jogo excluído',
+            th: 'ลบเกมแล้ว',
+            id: 'Game dihapus',
+            hi: 'गेम हटा दिया गया',
+            bn: 'গেম মুছে ফেলা হয়েছে',
+          ),
+        ),
+      ),
+    );
+
+    Navigator.pop(context);
+  }
 
   @override
   void initState() {
@@ -35483,34 +45029,110 @@ class _TournamentSessionEditorPageState
   @override
   Widget build(BuildContext context) {
 
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
     return Theme(
-      data: ThemeData.light(),
+      data: Theme.of(context).copyWith(
+        scaffoldBackgroundColor:
+            isDark ? const Color(0xFF0F172A) : Colors.white,
+
+        appBarTheme: AppBarTheme(
+          backgroundColor:
+              isDark ? const Color(0xFF0F172A) : Colors.white,
+          surfaceTintColor:
+              isDark ? const Color(0xFF0F172A) : Colors.white,
+          foregroundColor:
+              isDark ? Colors.white : Colors.black,
+          elevation: 0,
+        ),
+
+        textTheme: Theme.of(context).textTheme.apply(
+          bodyColor:
+              isDark ? Colors.white : Colors.black87,
+          displayColor:
+              isDark ? Colors.white : Colors.black87,
+        ),
+
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: isDark
+              ? const Color(0xFF1E293B)
+              : const Color(0xFFF5F5F5),
+
+          labelStyle: TextStyle(
+            color:
+                isDark ? Colors.white70 : Colors.black87,
+          ),
+
+          hintStyle: TextStyle(
+            color:
+                isDark ? Colors.white54 : Colors.black54,
+          ),
+
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+        ),
+      ),
       child: Scaffold(
 
         appBar: AppBar(
           title: Text(
-            tr(
-              context,
-              'Tournament',
-              zhTw: '錦標賽',
-              zhCn: '锦标赛',
-              ko: '토너먼트',
-              ja: 'トーナメント',
-              de: 'Turnier',
-              fr: 'Tournoi',
-              ar: 'البطولة',
-              ru: 'Турнир',
-              trk: 'Turnuva',
-              es: 'Torneo',
-              it: 'Torneo',
-              pl: 'Turniej',
-              pt: 'Torneio',
-              th: 'ทัวร์นาเมนต์',
-              id: 'Turnamen',
-              hi: 'टूर्नामेंट',
-              bn: 'টুর্নামেন্ট',
+            widget.item == null
+                ? tr(
+                    context,
+                    'Add Tournament',
+                    zhTw: '新增錦標賽',
+                    zhCn: '新增锦标赛',
+                    ko: '토너먼트 추가',
+                    ja: 'トーナメント追加',
+                    de: 'Turnier hinzufügen',
+                    fr: 'Ajouter un tournoi',
+                    ar: 'إضافة بطولة',
+                    ru: 'Добавить турнир',
+                    trk: 'Turnuva Ekle',
+                    es: 'Agregar torneo',
+                    it: 'Aggiungi torneo',
+                    pl: 'Dodaj turniej',
+                    pt: 'Adicionar torneio',
+                    th: 'เพิ่มทัวร์นาเมนต์',
+                    id: 'Tambah Turnamen',
+                    hi: 'टूर्नामेंट जोड़ें',
+                    bn: 'টুর্নামেন্ট যোগ করুন',
+                  )
+                : tr(
+                    context,
+                    'Edit Tournament',
+                    zhTw: '編輯錦標賽',
+                    zhCn: '编辑锦标赛',
+                    ko: '토너먼트 편집',
+                    ja: 'トーナメント編集',
+                    de: 'Turnier bearbeiten',
+                    fr: 'Modifier le tournoi',
+                    ar: 'تعديل البطولة',
+                    ru: 'Редактировать турнир',
+                    trk: 'Turnuvayı Düzenle',
+                    es: 'Editar torneo',
+                    it: 'Modifica torneo',
+                    pl: 'Edytuj turniej',
+                    pt: 'Editar torneio',
+                    th: 'แก้ไขทัวร์นาเมนต์',
+                    id: 'Edit Turnamen',
+                    hi: 'टूर्नामेंट संपादित करें',
+                    bn: 'টুর্নামেন্ট সম্পাদনা করুন',
+                  ),
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
             ),
           ),
+          actions: [
+            if (widget.item != null)
+              IconButton(
+                onPressed: _deleteTournament,
+                icon: const Icon(Icons.delete_outline),
+              ),
+          ],
         ),
 
         body: ListView(
@@ -35770,13 +45392,23 @@ class _TournamentSessionEditorPageState
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
+
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F5),
+                  color:
+                      isDark
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF5F5F5),
+
                   borderRadius: BorderRadius.circular(16),
+
                   border: Border.all(
-                    color: Colors.black12,
+                    color:
+                        isDark
+                            ? Colors.white24
+                            : Colors.black12,
                   ),
                 ),
+
                 child: Builder(
                   builder: (_) {
 
@@ -35800,11 +45432,36 @@ class _TournamentSessionEditorPageState
                           CrossAxisAlignment.start,
                       children: [
 
-                        const Text(
-                          'Total Cost',
+                        Text(
+                          tr(
+                            context,
+                            'Total Cost',
+                            zhTw: '總成本',
+                            zhCn: '总成本',
+                            ko: '총 비용',
+                            ja: '総費用',
+                            de: 'Gesamtkosten',
+                            fr: 'Coût total',
+                            ar: 'إجمالي التكلفة',
+                            ru: 'Общая стоимость',
+                            trk: 'Toplam Maliyet',
+                            es: 'Costo total',
+                            it: 'Costo totale',
+                            pl: 'Całkowity koszt',
+                            pt: 'Custo total',
+                            th: 'ต้นทุนรวม',
+                            id: 'Total Biaya',
+                            hi: 'कुल लागत',
+                            bn: 'মোট খরচ',
+                          ),
+
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.black54,
+
+                            color:
+                                isDark
+                                    ? Colors.white70
+                                    : Colors.black54,
                           ),
                         ),
 
@@ -35812,9 +45469,15 @@ class _TournamentSessionEditorPageState
 
                         Text(
                           '\$${totalCost.toStringAsFixed(2)}',
-                          style: const TextStyle(
+
+                          style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w700,
+
+                            color:
+                                isDark
+                                    ? Colors.white
+                                    : Colors.black87,
                           ),
                         ),
                       ],
@@ -35877,7 +45540,12 @@ class _TournamentSessionEditorPageState
             ),
 
             SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+
+              activeThumbColor: const Color(0xFF22C55E),
+
               value: isOngoing,
+
               title: Text(
                 tr(
                   context,
@@ -35886,21 +45554,26 @@ class _TournamentSessionEditorPageState
                   zhCn: '进行中',
                   ko: '진행 중',
                   ja: '進行中',
-                  de: 'Läuft noch',
+                  de: 'Läuft',
                   fr: 'En cours',
-                  ar: 'قيد التشغيل',
+                  ar: 'قيد التنفيذ',
                   ru: 'В процессе',
                   trk: 'Devam Ediyor',
                   es: 'En curso',
                   it: 'In corso',
                   pl: 'W trakcie',
                   pt: 'Em andamento',
-                  th: 'กำลังดำเนินอยู่',
-                  id: 'Sedang berlangsung',
-                  hi: 'जारी है',
+                  th: 'กำลังดำเนินการ',
+                  id: 'Sedang Berlangsung',
+                  hi: 'चल रहा है',
                   bn: 'চলমান',
                 ),
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
               ),
+
               onChanged: (value) {
                 setState(() {
                   isOngoing = value;
@@ -35913,36 +45586,83 @@ class _TournamentSessionEditorPageState
             ),
 
             ListTile(
+              contentPadding: EdgeInsets.zero,
+
               title: Text(
                 tr(
                   context,
-                  'Start at',
-                  zhTw: '開始時間',
-                  zhCn: '开始时间',
-                  ko: '시작 시간',
-                  ja: '開始時間',
-                  de: 'Startzeit',
-                  fr: 'Heure de début',
-                  ar: 'وقت البدء',
-                  ru: 'Время начала',
-                  trk: 'Başlangıç zamanı',
-                  es: 'Hora de inicio',
-                  it: 'Ora di inizio',
-                  pl: 'Czas rozpoczęcia',
-                  pt: 'Hora de início',
-                  th: 'เวลาเริ่มต้น',
-                  id: 'Waktu mulai',
-                  hi: 'शुरू होने का समय',
-                  bn: 'শুরুর সময়',
+                  'Start',
+                  zhTw: '開始',
+                  zhCn: '开始',
+                  ko: '시작',
+                  ja: '開始',
+                  de: 'Start',
+                  fr: 'Début',
+                  ar: 'البدء',
+                  ru: 'Начало',
+                  trk: 'Başlangıç',
+                  es: 'Inicio',
+                  it: 'Inizio',
+                  pl: 'Start',
+                  pt: 'Início',
+                  th: 'เริ่ม',
+                  id: 'Mulai',
+                  hi: 'प्रारंभ',
+                  bn: 'শুরু',
+                ),
+
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color:
+                      isDark
+                          ? Colors.white
+                          : Colors.black87,
                 ),
               ),
+
               subtitle: Text(
                 startedAt.toString().substring(0, 16),
+
+                style: TextStyle(
+                  fontSize: 13,
+                  color:
+                      isDark
+                          ? Colors.white70
+                          : Colors.black54,
+                ),
               ),
-              trailing: const Icon(Icons.calendar_month),
+
+              trailing: Icon(
+                Icons.schedule,
+
+                color:
+                    isDark
+                        ? Colors.white70
+                        : Colors.black54,
+              ),
+
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
+
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.dark(
+                          primary: const Color(0xFF22C55E),
+                          surface: const Color(0xFF1E293B),
+                          onSurface: Colors.white,
+                        ),
+
+                        dialogTheme: const DialogThemeData(
+                          backgroundColor: Color(0xFF1E293B),
+                        ),
+                      ),
+
+                      child: child!,
+                    );
+                  },
+
                   initialDate: startedAt,
                   firstDate: DateTime(2020),
                   lastDate: DateTime(2100),
@@ -35953,6 +45673,24 @@ class _TournamentSessionEditorPageState
                 final time = await showTimePicker(
                   context: context,
                   initialTime: TimeOfDay.fromDateTime(startedAt),
+
+                  builder: (context, child) {
+                    return Theme(
+                      data: Theme.of(context).copyWith(
+                        colorScheme: ColorScheme.dark(
+                          primary: const Color(0xFF22C55E),
+                          surface: const Color(0xFF1E293B),
+                          onSurface: Colors.white,
+                        ),
+
+                        dialogTheme: const DialogThemeData(
+                          backgroundColor: Color(0xFF1E293B),
+                        ),
+                      ),
+
+                      child: child!,
+                    );
+                  },
                 );
 
                 if (time == null || !mounted) return;
@@ -35971,29 +45709,40 @@ class _TournamentSessionEditorPageState
 
             if (!isOngoing)
               ListTile(
+                contentPadding: EdgeInsets.zero,
+
                 title: Text(
                   tr(
                     context,
-                    'End at',
-                    zhTw: '結束時間',
-                    zhCn: '结束时间',
-                    ko: '종료 시간',
-                    ja: '終了時間',
-                    de: 'Endzeit',
-                    fr: 'Heure de fin',
-                    ar: 'وقت الانتهاء',
-                    ru: 'Время окончания',
-                    trk: 'Bitiş zamanı',
-                    es: 'Hora de finalización',
-                    it: 'Ora di fine',
-                    pl: 'Czas zakończenia',
-                    pt: 'Hora de término',
-                    th: 'เวลาสิ้นสุด',
-                    id: 'Waktu selesai',
-                    hi: 'समाप्ति समय',
-                    bn: 'শেষ সময়',
+                    'End',
+                    zhTw: '結束',
+                    zhCn: '结束',
+                    ko: '종료',
+                    ja: '終了',
+                    de: 'Ende',
+                    fr: 'Fin',
+                    ar: 'النهاية',
+                    ru: 'Конец',
+                    trk: 'Bitiş',
+                    es: 'Final',
+                    it: 'Fine',
+                    pl: 'Koniec',
+                    pt: 'Fim',
+                    th: 'สิ้นสุด',
+                    id: 'Selesai',
+                    hi: 'समाप्त',
+                    bn: 'শেষ',
+                  ),
+
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color:
+                        isDark
+                            ? Colors.white
+                            : Colors.black87,
                   ),
                 ),
+
                 subtitle: Text(
                   endedAt == null
                       ? tr(
@@ -36006,7 +45755,7 @@ class _TournamentSessionEditorPageState
                           de: 'Nicht festgelegt',
                           fr: 'Non défini',
                           ar: 'غير محدد',
-                          ru: 'Не задано',
+                          ru: 'Не установлено',
                           trk: 'Ayarlanmadı',
                           es: 'No establecido',
                           it: 'Non impostato',
@@ -36014,17 +45763,53 @@ class _TournamentSessionEditorPageState
                           pt: 'Não definido',
                           th: 'ยังไม่ได้ตั้งค่า',
                           id: 'Belum diatur',
-                          hi: 'सेट नहीं है',
-                          bn: 'সেট করা হয়নি',
+                          hi: 'सेट नहीं किया गया',
+                          bn: 'সেট করা হয়নি',
                         )
                       : endedAt.toString().substring(0, 16),
+
+                  style: TextStyle(
+                    fontSize: 13,
+                    color:
+                        isDark
+                            ? Colors.white70
+                            : Colors.black54,
+                  ),
                 ),
-                trailing: const Icon(Icons.calendar_month),
+
+                trailing: Icon(
+                  Icons.schedule,
+
+                  color:
+                      isDark
+                          ? Colors.white70
+                          : Colors.black54,
+                ),
+
                 onTap: () async {
                   final initial = endedAt ?? DateTime.now();
 
                   final date = await showDatePicker(
                     context: context,
+
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.dark(
+                            primary: const Color(0xFF22C55E),
+                            surface: const Color(0xFF1E293B),
+                            onSurface: Colors.white,
+                          ),
+
+                          dialogTheme: const DialogThemeData(
+                            backgroundColor: Color(0xFF1E293B),
+                          ),
+                        ),
+
+                        child: child!,
+                      );
+                    },
+
                     initialDate: initial,
                     firstDate: DateTime(2020),
                     lastDate: DateTime(2100),
@@ -36035,6 +45820,24 @@ class _TournamentSessionEditorPageState
                   final time = await showTimePicker(
                     context: context,
                     initialTime: TimeOfDay.fromDateTime(initial),
+
+                    builder: (context, child) {
+                      return Theme(
+                        data: Theme.of(context).copyWith(
+                          colorScheme: ColorScheme.dark(
+                            primary: const Color(0xFF22C55E),
+                            surface: const Color(0xFF1E293B),
+                            onSurface: Colors.white,
+                          ),
+
+                          dialogTheme: const DialogThemeData(
+                            backgroundColor: Color(0xFF1E293B),
+                          ),
+                        ),
+
+                        child: child!,
+                      );
+                    },
                   );
 
                   if (time == null || !mounted) return;
@@ -36091,24 +45894,24 @@ class _TournamentSessionEditorPageState
                     : Text(
                         tr(
                           context,
-                          'Save Tournament',
-                          zhTw: '儲存錦標賽',
-                          zhCn: '保存锦标赛',
-                          ko: '토너먼트 저장',
-                          ja: 'トーナメントを保存',
-                          de: 'Turnier speichern',
-                          fr: 'Enregistrer le tournoi',
-                          ar: 'حفظ البطولة',
-                          ru: 'Сохранить турнир',
-                          trk: 'Turnuvayı Kaydet',
-                          es: 'Guardar torneo',
-                          it: 'Salva torneo',
-                          pl: 'Zapisz turniej',
-                          pt: 'Salvar torneio',
-                          th: 'บันทึกทัวร์นาเมนต์',
-                          id: 'Simpan turnamen',
-                          hi: 'टूर्नामेंट सहेजें',
-                          bn: 'টুর্নামেন্ট সংরক্ষণ করুন',
+                          'Save',
+                          zhTw: '儲存',
+                          zhCn: '保存',
+                          ko: '저장',
+                          ja: '保存',
+                          de: 'Speichern',
+                          fr: 'Enregistrer',
+                          ar: 'حفظ',
+                          ru: 'Сохранить',
+                          trk: 'Kaydet',
+                          es: 'Guardar',
+                          it: 'Salva',
+                          pl: 'Zapisz',
+                          pt: 'Salvar',
+                          th: 'บันทึก',
+                          id: 'Simpan',
+                          hi: 'सहेजें',
+                          bn: 'সংরক্ষণ করুন',
                         ),
                       ),
               ),
@@ -36205,10 +46008,28 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
     final date = await showDatePicker(
       context: context,
+
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFF22C55E),
+              surface: const Color(0xFF1E293B),
+              onSurface: Colors.white,
+            ),
+
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Color(0xFF1E293B),
+            ),
+          ),
+
+          child: child!,
+        );
+      },
+
       initialDate: startedAt,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
-      builder: _lightPickerTheme,
     );
 
     if (!mounted || date == null) return;
@@ -36218,7 +46039,24 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(startedAt),
-      builder: _lightPickerTheme,
+
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFF22C55E),
+              surface: const Color(0xFF1E293B),
+              onSurface: Colors.white,
+            ),
+
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Color(0xFF1E293B),
+            ),
+          ),
+
+          child: child!,
+        );
+      },
     );
 
     if (!mounted || time == null) return;
@@ -36243,10 +46081,28 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
     final date = await showDatePicker(
       context: context,
-      initialDate: initial,
+
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFF22C55E),
+              surface: const Color(0xFF1E293B),
+              onSurface: Colors.white,
+            ),
+
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Color(0xFF1E293B),
+            ),
+          ),
+
+          child: child!,
+        );
+      },
+
+      initialDate: startedAt,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
-      builder: _lightPickerTheme,
     );
 
     if (!mounted || date == null) return;
@@ -36256,7 +46112,24 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     final time = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
-      builder: _lightPickerTheme,
+
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.dark(
+              primary: const Color(0xFF22C55E),
+              surface: const Color(0xFF1E293B),
+              onSurface: Colors.white,
+            ),
+
+            dialogTheme: const DialogThemeData(
+              backgroundColor: Color(0xFF1E293B),
+            ),
+          ),
+
+          child: child!,
+        );
+      },
     );
 
     if (!mounted || time == null) return;
@@ -36276,20 +46149,31 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
   Widget _lightPickerTheme(BuildContext context, Widget? child) {
     return Theme(
-      data: ThemeData.light().copyWith(
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFF2E7D32),
+      data: Theme.of(context).copyWith(
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF22C55E),
           onPrimary: Colors.white,
-          surface: Colors.white,
-          onSurface: Colors.black87,
+          surface: Color(0xFF1E293B),
+          onSurface: Colors.white,
         ),
         dialogTheme: const DialogThemeData(
-          backgroundColor: Colors.white,
+          backgroundColor: Color(0xFF1E293B),
+        ),
+        timePickerTheme: const TimePickerThemeData(
+          backgroundColor: Color(0xFF1E293B),
+          hourMinuteColor: Color(0xFF334155),
+          hourMinuteTextColor: Colors.white,
+          dialBackgroundColor: Color(0xFF334155),
+          dialHandColor: Color(0xFF22C55E),
+          dialTextColor: Colors.white,
+          entryModeIconColor: Colors.white70,
+          dayPeriodTextColor: Colors.white,
+          dayPeriodColor: Color(0xFF334155),
         ),
       ),
       child: child!,
     );
-  }  
+  }
 
   Future<void> _deleteGame() async {
     if (widget.item == null) return;
@@ -36299,7 +46183,16 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final isDark =
+            Theme.of(context).brightness == Brightness.dark;
+
         return AlertDialog(
+          backgroundColor:
+              isDark ? const Color(0xFF1E293B) : Colors.white,
+
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
           title: Text(
             tr(
               context,
@@ -36322,6 +46215,10 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
               hi: 'गेम हटाएँ',
               bn: 'গেম মুছুন',
             ),
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black,
+              fontWeight: FontWeight.w800,
+            ),            
           ),
           content: Text(
             tr(
@@ -36345,10 +46242,19 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
               hi: 'क्या आप वाकई इस गेम को हटाना चाहते हैं?',
               bn: 'আপনি কি নিশ্চিত এই গেম মুছতে চান?',
             ),
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black87,
+            ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
+
+              style: TextButton.styleFrom(
+                foregroundColor:
+                    isDark ? Colors.white70 : Colors.black87,
+              ),
+
               child: Text(
                 tr(
                   context,
@@ -36374,6 +46280,18 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
               ),
             ),
             FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor:
+                    isDark ? const Color(0xFF22C55E) : null,
+
+                foregroundColor:
+                    Colors.white,
+
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+
               onPressed: () => Navigator.pop(context, true),
               child: Text(
                 tr(
@@ -36610,27 +46528,31 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData.light().copyWith(
-        scaffoldBackgroundColor: Colors.white,
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
 
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          foregroundColor: Colors.black,
+    return Theme(
+      data: Theme.of(context).copyWith(
+        scaffoldBackgroundColor:
+            isDark ? const Color(0xFF0F172A) : Colors.white,
+
+        appBarTheme: AppBarTheme(
+          backgroundColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          surfaceTintColor: isDark ? const Color(0xFF0F172A) : Colors.white,
+          foregroundColor: isDark ? Colors.white : Colors.black,
           elevation: 0,
         ),
 
-        textTheme: ThemeData.light().textTheme.apply(
-          bodyColor: Colors.black87,
-          displayColor: Colors.black87,
+        textTheme: Theme.of(context).textTheme.apply(
+          bodyColor: isDark ? Colors.white : Colors.black87,
+          displayColor: isDark ? Colors.white : Colors.black87,
         ),
 
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFF5F5F5),
-          labelStyle: const TextStyle(color: Colors.black87),
-          hintStyle: const TextStyle(color: Colors.black54),
+          fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F5F5),
+          labelStyle: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+          hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black54),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -37043,7 +46965,9 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                     hi: 'जारी है',
                     bn: 'চলমান',
                   ),
-                  style: const TextStyle(color: Colors.black),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -37077,13 +47001,20 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                     hi: 'शुरू',
                     bn: 'শুরু',
                   ),
-                  style: const TextStyle(color: Colors.black),
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                 ),
                 subtitle: Text(
                   _dateTimeText(startedAt),
-                  style: const TextStyle(color: Colors.black54),
+                  style: TextStyle(
+                    color: isDark ? Colors.white70 : Colors.black54,
+                  ),
                 ),
-                trailing: const Icon(Icons.schedule, color: Colors.black),
+                trailing: Icon(
+                  Icons.schedule,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
                 onTap: _pickStartTime,
               ),
 
@@ -37112,7 +47043,9 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                       hi: 'समाप्त',
                       bn: 'শেষ',
                     ),
-                    style: const TextStyle(color: Colors.black),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
                   ),
                   subtitle: Text(
                     endedAt == null
@@ -37138,9 +47071,14 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
                             bn: 'অনুগ্রহ করে নির্বাচন করুন',
                           )
                         : _dateTimeText(endedAt!),
-                    style: const TextStyle(color: Colors.black54),
+                    style: TextStyle(
+                      color: isDark ? Colors.white70 : Colors.black54,
+                    ),
                   ),
-                  trailing: const Icon(Icons.schedule, color: Colors.black),
+                  trailing: Icon(
+                    Icons.schedule,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
                   onTap: _pickEndTime,
                 ),
 
@@ -37217,6 +47155,8 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
     List<TextInputFormatter>? inputFormatters,
     TextInputAction textInputAction = TextInputAction.done,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextField(
@@ -37225,11 +47165,16 @@ class _CashGameSessionEditorPageState extends State<CashGameSessionEditorPage> {
         inputFormatters: inputFormatters,
         textInputAction: textInputAction,
         onSubmitted: (_) => FocusScope.of(context).unfocus(),
-        style: const TextStyle(color: Colors.black87),
+        style: TextStyle(
+          color: isDark ? Colors.white : Colors.black87,
+        ),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(
+            color: isDark ? Colors.white70 : Colors.black54,
+          ),
           filled: true,
-          fillColor: const Color(0xFFF5F5F5),
+          fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF5F5F5),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -37346,5 +47291,1547 @@ Future<void> deleteNotificationsForTable(String tableId) async {
 
   if (count > 0) {
     await batch.commit();
+  }
+}
+
+class PlayerHandsPage extends StatelessWidget {
+  final String playerId;
+  final String playerName;
+  final bool isTournament;
+
+  const PlayerHandsPage({
+    super.key,
+    required this.playerId,
+    required this.playerName,
+    required this.isTournament,
+  });
+
+  Timestamp? _handTime(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    return (data['updatedAt'] ?? data['createdAt']) as Timestamp?;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF2F2F7);
+    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        title: Text(
+          isTournament
+              ? '$playerName ${tr(
+                  context,
+                  'Tournament Hands',
+                  zhTw: '錦標賽手牌',
+                  zhCn: '锦标赛手牌',
+                  ko: '토너먼트 핸드',
+                  ja: 'トーナメントハンド',
+                  de: 'Turnierhände',
+                  fr: 'Mains de tournoi',
+                  ar: 'أيدي البطولة',
+                  ru: 'Турнирные раздачи',
+                  trk: 'Turnuva Elleri',
+                  es: 'Manos de torneo',
+                  it: 'Mani torneo',
+                  pl: 'Rozdania turniejowe',
+                  pt: 'Mãos de torneio',
+                  th: 'มือทัวร์นาเมนต์',
+                  id: 'Hand Turnamen',
+                  hi: 'टूर्नामेंट हैंड्स',
+                  bn: 'টুর্নামেন্ট হ্যান্ড',
+                )}'
+              : '$playerName ${tr(
+                  context,
+                  'Cash Hands',
+                  zhTw: '現金桌手牌',
+                  zhCn: '现金桌手牌',
+                  ko: '캐시 핸드',
+                  ja: 'キャッシュハンド',
+                  de: 'Cashgame-Hände',
+                  fr: 'Mains cash game',
+                  ar: 'أيدي الكاش',
+                  ru: 'Кэш-раздачи',
+                  trk: 'Cash Elleri',
+                  es: 'Manos cash',
+                  it: 'Mani cash',
+                  pl: 'Rozdania cash',
+                  pt: 'Mãos cash',
+                  th: 'มือแคชเกม',
+                  id: 'Hand Cash',
+                  hi: 'कैश हैंड्स',
+                  bn: 'ক্যাশ হ্যান্ড',
+                )}',
+
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance
+            .collectionGroup('hands')
+            .where('playerIds', arrayContains: playerId)
+            .where('ownerUid', isEqualTo: currentUid)
+            .where('isTournament', isEqualTo: isTournament)
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                snapshot.error.toString(),
+                style: const TextStyle(color: Colors.red),
+              ),
+            );
+          }
+
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final docs = snapshot.data!.docs;
+
+          if (docs.isEmpty) {
+            return Center(
+              child: Text(
+                'No hands yet',
+                style: TextStyle(
+                  color: subTextColor,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            );
+          }
+
+          final groupedHands =
+              <String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>{};
+
+          for (final doc in docs) {
+            final sessionId = doc.reference.parent.parent?.id ?? '';
+            if (sessionId.isEmpty) continue;
+
+            groupedHands.putIfAbsent(sessionId, () => []);
+            groupedHands[sessionId]!.add(doc);
+          }
+
+          return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
+            future: Future.wait(
+              groupedHands.keys.map((sessionId) {
+                return FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(currentUid)
+                    .collection(
+                      isTournament
+                          ? 'tournament_sessions'
+                          : 'cash_game_sessions',
+                    )
+                    .doc(sessionId)
+                    .get();
+              }),
+            ),
+            builder: (context, sessionsSnapshot) {
+              if (!sessionsSnapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final sessionDocs = sessionsSnapshot.data!;
+              final sessionDataById = <String, Map<String, dynamic>>{};
+
+              for (final sessionDoc in sessionDocs) {
+                sessionDataById[sessionDoc.id] = sessionDoc.data() ?? {};
+              }
+
+              final sortedEntries = groupedHands.entries.toList()
+                ..sort((a, b) {
+                  final aData = sessionDataById[a.key] ?? {};
+                  final bData = sessionDataById[b.key] ?? {};
+
+                  final aTime = aData['startedAt'] as Timestamp?;
+                  final bTime = bData['startedAt'] as Timestamp?;
+
+                  if (aTime == null || bTime == null) return 0;
+
+                  return bTime.toDate().compareTo(aTime.toDate());
+                });
+
+              return ListView.separated(
+                padding: const EdgeInsets.all(16),
+                itemCount: sortedEntries.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final entry = sortedEntries[index];
+                  final sessionId = entry.key;
+                  final hands = entry.value;
+
+                  final sessionData = sessionDataById[sessionId] ?? {};
+
+                  final sessionName = isTournament
+                      ? (sessionData['name'] ??
+                              sessionData['title'] ??
+                              'Unknown Tournament')
+                          .toString()
+                      : (sessionData['location'] ??
+                              sessionData['sessionName'] ??
+                              sessionData['title'] ??
+                              sessionData['game'] ??
+                              'Unknown Game')
+                          .toString();
+
+                  final sessionTime = sessionData['startedAt'] as Timestamp?;
+
+                  final sessionDate = sessionTime == null
+                      ? ''
+                      : DateFormat('yyyy-MM-dd').format(sessionTime.toDate());
+
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: isDark ? Colors.white12 : Colors.black12,
+                      ),
+                    ),
+                    child: ListTile(
+                      leading: Icon(Icons.style, color: subTextColor),
+                      title: Text(
+                        sessionName,
+                        style: TextStyle(
+                          color: textColor,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${hands.length} hands • $sessionDate',
+                        style: TextStyle(
+                          color: subTextColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      trailing: Icon(Icons.chevron_right, color: subTextColor),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => PlayerSessionHandsPage(
+                              sessionName: sessionName,
+                              hands: hands,
+                              isTournament: isTournament,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class PlayerSessionHandsPage extends StatelessWidget {
+  final String sessionName;
+  final List<QueryDocumentSnapshot<Map<String, dynamic>>> hands;
+  final bool isTournament;
+
+  const PlayerSessionHandsPage({
+    super.key,
+    required this.sessionName,
+    required this.hands,
+    required this.isTournament,
+  });
+
+  Timestamp? _handTime(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
+    final data = doc.data();
+    return (data['updatedAt'] ?? data['createdAt']) as Timestamp?;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sortedHands = [...hands]
+      ..sort((a, b) {
+        final aTime = _handTime(a);
+        final bTime = _handTime(b);
+
+        if (aTime == null || bTime == null) return 0;
+
+        return bTime.toDate().compareTo(aTime.toDate());
+      });
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor =
+        isDark ? const Color(0xFF0B1020) : const Color(0xFFF2F2F7);
+
+    final cardColor =
+        isDark ? const Color(0xFF1F2937) : Colors.white;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    return Scaffold(
+      backgroundColor: bgColor,
+      appBar: AppBar(
+        title: Text(
+          sessionName,
+          style: TextStyle(
+            color: textColor,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
+        elevation: 0,
+      ),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: sortedHands.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final doc = sortedHands[index];
+          final data = doc.data();
+
+          final title = (data['title'] ?? 'Hand').toString();
+          final sessionId = doc.reference.parent.parent?.id ?? '';
+
+          return Container(
+            decoration: BoxDecoration(
+              color: cardColor,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isDark ? Colors.white12 : Colors.black12,
+              ),
+            ),
+            child: ListTile(
+              leading: Icon(
+                Icons.style,
+                color: subTextColor,
+              ),
+              title: Text(
+                title,
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              trailing: Icon(
+                Icons.chevron_right,
+                color: subTextColor,
+              ),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => HandChartPage(
+                      data: {
+                        ...data,
+                        'isTournament': isTournament,
+                      },
+                      sessionId: sessionId,
+                      handId: doc.id,
+                    ),
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class OverallStatsPageBody extends StatefulWidget {
+  const OverallStatsPageBody({super.key});
+
+  @override
+  State<OverallStatsPageBody> createState() =>
+      _OverallStatsPageBodyState();
+}
+
+class _OverallStatsPageBodyState
+    extends State<OverallStatsPageBody> {
+
+  String _chartMode = 'all';
+  String _profitMode = 'total';
+
+  double _toDouble(dynamic value) {
+    if (value == null) return 0;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  DateTime? _toDate(dynamic value) {
+    if (value is Timestamp) return value.toDate();
+    return null;
+  }
+
+  String _moneyText(double value) {
+    final sign = value < 0 ? '-' : '';
+    return '$sign\$${value.abs().toStringAsFixed(2)}';
+  }
+
+  Color _profitColor(double value) {
+    if (value > 0) return Colors.green;
+    if (value < 0) return Colors.red;
+    return Colors.black87;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    final textColor =
+        isDark ? Colors.white : Colors.black87;
+
+    final subTextColor =
+        isDark ? Colors.white70 : Colors.black54;
+
+    final currentUid =
+        FirebaseAuth.instance.currentUser?.uid ?? '';
+
+    return FutureBuilder<List<QuerySnapshot<Map<String, dynamic>>>>(
+      future: Future.wait([
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUid)
+            .collection('cash_game_sessions')
+            .get(),
+
+        FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUid)
+            .collection('tournament_sessions')
+            .get(),
+      ]),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        final cashDocs = snapshot.data![0].docs;
+        final tournamentDocs = snapshot.data![1].docs;
+
+        final allPoints = <Map<String, dynamic>>[];
+        final cashPoints = <Map<String, dynamic>>[];
+        final tournamentPoints = <Map<String, dynamic>>[];
+
+        double cashProfit = 0;
+        double tournamentProfit = 0;
+
+        for (final doc in cashDocs) {
+          final data = doc.data();
+
+          final buyIn = _toDouble(data['buyIn']);
+          final cashOut = _toDouble(data['cashOut']);
+          final tips = _toDouble(data['tips']);
+
+          final profit = cashOut - buyIn - tips;
+
+          final date = _toDate(data['startedAt']);
+
+          if (date == null) continue;
+
+          cashProfit += profit;
+
+          cashPoints.add({
+            'date': date,
+            'profit': profit,
+          });
+
+          allPoints.add({
+            'date': date,
+            'profit': profit,
+          });
+        }
+
+        for (final doc in tournamentDocs) {
+          final data = doc.data();
+
+          final buyIn = _toDouble(data['buyIn']);
+          final rebuys = _toDouble(data['rebuys']);
+          final prize = _toDouble(data['prize']);
+
+          final totalCost =
+              buyIn + (buyIn * rebuys);
+
+          final profit = prize - totalCost;
+
+          final date = _toDate(data['startedAt']);
+
+          if (date == null) continue;
+
+          tournamentProfit += profit;
+
+          tournamentPoints.add({
+            'date': date,
+            'profit': profit,
+          });
+
+          allPoints.add({
+            'date': date,
+            'profit': profit,
+          });
+        }
+
+        allPoints.sort((a, b) {
+          return (a['date'] as DateTime)
+              .compareTo(b['date'] as DateTime);
+        });
+
+        cashPoints.sort((a, b) {
+          return (a['date'] as DateTime)
+              .compareTo(b['date'] as DateTime);
+        });
+
+        tournamentPoints.sort((a, b) {
+          return (a['date'] as DateTime)
+              .compareTo(b['date'] as DateTime);
+        });
+
+        final totalProfit =
+            cashProfit + tournamentProfit;
+
+        String dateKey(DateTime date) {
+          return DateFormat('yyyy-MM-dd').format(date);
+        }
+
+        String dateLabel(String key) {
+          final date = DateTime.parse(key);
+          return '${date.month}/${date.day}';
+        }
+
+        Map<String, double> groupByDate(List<Map<String, dynamic>> points) {
+          final result = <String, double>{};
+
+          for (final point in points) {
+            final date = point['date'] as DateTime;
+            final profit = point['profit'] as double;
+            final key = dateKey(date);
+
+            result[key] = (result[key] ?? 0) + profit;
+          }
+
+          return result;
+        }
+
+        final cashByDate = groupByDate(cashPoints);
+        final tournamentByDate = groupByDate(tournamentPoints);
+        final totalByDate = groupByDate(allPoints);
+
+        final activePoints = _chartMode == 'cash'
+            ? cashPoints
+            : _chartMode == 'tournament'
+                ? tournamentPoints
+                : allPoints;
+
+        final activeByDate = _chartMode == 'cash'
+            ? cashByDate
+            : _chartMode == 'tournament'
+                ? tournamentByDate
+                : totalByDate;
+
+        final activeDates = activePoints
+            .map((e) => e['date'] as DateTime)
+            .toList()
+          ..sort();
+
+        final uniqueDates = <String>[];
+
+        for (final date in activeDates) {
+          final key = dateKey(date);
+          if (!uniqueDates.contains(key)) {
+            uniqueDates.add(key);
+          }
+        }
+
+        List<FlSpot> buildSpots(Map<String, double> byDate) {
+          double running = 0;
+          final spots = <FlSpot>[];
+
+          for (var i = 0; i < uniqueDates.length; i++) {
+            final key = uniqueDates[i];
+            final dailyProfit = byDate[key] ?? 0;
+
+            if (_profitMode == 'daily') {
+              spots.add(FlSpot(i.toDouble(), dailyProfit));
+            } else {
+              running += dailyProfit;
+              spots.add(FlSpot(i.toDouble(), running));
+            }
+          }
+
+          return spots;
+        }
+
+        final chartSpots = buildSpots(activeByDate);
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+
+            if (MediaQuery.of(context).size.width < 720)
+              SizedBox(
+                height: 140,
+                child: Stack(
+                  children: [
+
+                    /// Summary cards
+                    ListView(
+                      scrollDirection: Axis.horizontal,
+
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 26,
+                      ),
+
+                      children: [
+                        _summaryCard(
+                          context,
+
+                          tr(
+                            context,
+                            'Total Profit/Loss',
+                            zhTw: '總盈利/虧損',
+                            zhCn: '总盈利/亏损',
+                            ko: '총 수익/손실',
+                            ja: '総利益/損失',
+                            de: 'Gesamtgewinn/-verlust',
+                            fr: 'Profit/Perte total',
+                            ar: 'إجمالي الربح/الخسارة',
+                            ru: 'Общая прибыль/убыток',
+                            trk: 'Toplam Kâr/Zarar',
+                            es: 'Ganancia/Pérdida total',
+                            it: 'Profitto/Perdita totale',
+                            pl: 'Łączny zysk/strata',
+                            pt: 'Lucro/Prejuízo total',
+                            th: 'กำไร/ขาดทุนรวม',
+                            id: 'Total Profit/Loss',
+                            hi: 'कुल लाभ/हानि',
+                            bn: 'মোট লাভ/ক্ষতি',
+                          ),
+
+                          _moneyText(totalProfit),
+
+                          _profitColor(totalProfit),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        _summaryCard(
+                          context,
+
+                          tr(
+                            context,
+                            'Cash Profit',
+                            zhTw: '現金桌盈利',
+                            zhCn: '现金桌盈利',
+                            ko: '캐시 수익',
+                            ja: 'キャッシュ利益',
+                            de: 'Cash-Gewinn',
+                            fr: 'Profit cash game',
+                            ar: 'ربح الكاش',
+                            ru: 'Прибыль кэша',
+                            trk: 'Cash Kârı',
+                            es: 'Ganancia cash',
+                            it: 'Profitto cash',
+                            pl: 'Zysk cash',
+                            pt: 'Lucro cash',
+                            th: 'กำไรแคชเกม',
+                            id: 'Profit Cash',
+                            hi: 'कैश लाभ',
+                            bn: 'ক্যাশ লাভ',
+                          ),
+
+                          _moneyText(cashProfit),
+
+                          _profitColor(cashProfit),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        _summaryCard(
+                          context,
+
+                          tr(
+                            context,
+                            'Tournament Profit',
+                            zhTw: '錦標賽盈利',
+                            zhCn: '锦标赛盈利',
+                            ko: '토너먼트 수익',
+                            ja: 'トーナメント利益',
+                            de: 'Turniergewinn',
+                            fr: 'Profit tournoi',
+                            ar: 'ربح البطولة',
+                            ru: 'Прибыль турниров',
+                            trk: 'Turnuva Kârı',
+                            es: 'Ganancia de torneo',
+                            it: 'Profitto torneo',
+                            pl: 'Zysk turniejowy',
+                            pt: 'Lucro de torneio',
+                            th: 'กำไรทัวร์นาเมนต์',
+                            id: 'Profit Turnamen',
+                            hi: 'टूर्नामेंट लाभ',
+                            bn: 'টুর্নামেন্ট লাভ',
+                          ),
+
+                          _moneyText(tournamentProfit),
+
+                          _profitColor(tournamentProfit),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        _summaryCard(
+                          context,
+
+                          tr(
+                            context,
+                            'Total Games',
+                            zhTw: '總場次',
+                            zhCn: '总场次',
+                            ko: '총 게임 수',
+                            ja: '総ゲーム数',
+                            de: 'Gesamtspiele',
+                            fr: 'Nombre total de parties',
+                            ar: 'إجمالي الألعاب',
+                            ru: 'Всего игр',
+                            trk: 'Toplam Oyun',
+                            es: 'Juegos totales',
+                            it: 'Partite totali',
+                            pl: 'Łączna liczba gier',
+                            pt: 'Total de jogos',
+                            th: 'จำนวนเกมทั้งหมด',
+                            id: 'Total Game',
+                            hi: 'कुल गेम',
+                            bn: 'মোট গেম',
+                          ),
+
+                          allPoints.length.toString(),
+
+                          isDark
+                              ? Colors.white
+                              : Colors.black87,
+                        ),
+                      ],
+                    ),
+
+                    /// 左箭頭
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: IgnorePointer(
+                        child: Center(
+                          child: Container(
+                            width: 24,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Icon(
+                              Icons.chevron_left,
+                              color: Colors.black45,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    /// 右箭頭
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      bottom: 0,
+                      child: IgnorePointer(
+                        child: Center(
+                          child: Container(
+                            width: 24,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Icon(
+                              Icons.chevron_right,
+                              color: Colors.black45,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Wrap(
+                spacing: 12,
+
+                runSpacing: 12,
+
+                children: [
+                  _summaryCard(
+                    context,
+
+                    tr(
+                      context,
+                      'Total Profit/Loss',
+                      zhTw: '總盈利/虧損',
+                      zhCn: '总盈利/亏损',
+                      ko: '총 수익/손실',
+                      ja: '総利益/損失',
+                      de: 'Gesamtgewinn/-verlust',
+                      fr: 'Profit/Perte total',
+                      ar: 'إجمالي الربح/الخسارة',
+                      ru: 'Общая прибыль/убыток',
+                      trk: 'Toplam Kâr/Zarar',
+                      es: 'Ganancia/Pérdida total',
+                      it: 'Profitto/Perdita totale',
+                      pl: 'Łączny zysk/strata',
+                      pt: 'Lucro/Prejuízo total',
+                      th: 'กำไร/ขาดทุนรวม',
+                      id: 'Total Profit/Loss',
+                      hi: 'कुल लाभ/हानि',
+                      bn: 'মোট লাভ/ক্ষতি',
+                    ),
+
+                    _moneyText(totalProfit),
+
+                    _profitColor(totalProfit),
+                  ),
+
+                  _summaryCard(
+                    context,
+
+                    tr(
+                      context,
+                      'Cash Profit',
+                      zhTw: '現金桌盈利',
+                      zhCn: '现金桌盈利',
+                      ko: '캐시 수익',
+                      ja: 'キャッシュ利益',
+                      de: 'Cash-Gewinn',
+                      fr: 'Profit cash game',
+                      ar: 'ربح الكاش',
+                      ru: 'Прибыль кэша',
+                      trk: 'Cash Kârı',
+                      es: 'Ganancia cash',
+                      it: 'Profitto cash',
+                      pl: 'Zysk cash',
+                      pt: 'Lucro cash',
+                      th: 'กำไรแคชเกม',
+                      id: 'Profit Cash',
+                      hi: 'कैश लाभ',
+                      bn: 'ক্যাশ লাভ',
+                    ),
+
+                    _moneyText(cashProfit),
+
+                    _profitColor(cashProfit),
+                  ),
+
+                  _summaryCard(
+                    context,
+
+                    tr(
+                      context,
+                      'Tournament Profit',
+                      zhTw: '錦標賽盈利',
+                      zhCn: '锦标赛盈利',
+                      ko: '토너먼트 수익',
+                      ja: 'トーナメント利益',
+                      de: 'Turniergewinn',
+                      fr: 'Profit tournoi',
+                      ar: 'ربح البطولة',
+                      ru: 'Прибыль турниров',
+                      trk: 'Turnuva Kârı',
+                      es: 'Ganancia de torneo',
+                      it: 'Profitto torneo',
+                      pl: 'Zysk turniejowy',
+                      pt: 'Lucro de torneio',
+                      th: 'กำไรทัวร์นาเมนต์',
+                      id: 'Profit Turnamen',
+                      hi: 'टूर्नामेंट लाभ',
+                      bn: 'টুর্নামেন্ট লাভ',
+                    ),
+
+                    _moneyText(tournamentProfit),
+
+                    _profitColor(tournamentProfit),
+                  ),
+
+                  _summaryCard(
+                    context,
+
+                    tr(
+                      context,
+                      'Total Games',
+                      zhTw: '總場次',
+                      zhCn: '总场次',
+                      ko: '총 게임 수',
+                      ja: '総ゲーム数',
+                      de: 'Gesamtspiele',
+                      fr: 'Nombre total de parties',
+                      ar: 'إجمالي الألعاب',
+                      ru: 'Всего игр',
+                      trk: 'Toplam Oyun',
+                      es: 'Juegos totales',
+                      it: 'Partite totali',
+                      pl: 'Łączna liczba gier',
+                      pt: 'Total de jogos',
+                      th: 'จำนวนเกมทั้งหมด',
+                      id: 'Total Game',
+                      hi: 'कुल गेम',
+                      bn: 'মোট গেম',
+                    ),
+
+                    allPoints.length.toString(),
+
+                    isDark
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
+                ],
+              ),
+
+            const SizedBox(height: 20),
+
+            Row(
+              children: [
+                Text(
+                  tr(
+                    context,
+                    'Chart Mode',
+                    zhTw: '圖表模式',
+                    zhCn: '图表模式',
+                    ko: '차트 모드',
+                    ja: 'チャートモード',
+                    de: 'Diagrammmodus',
+                    fr: 'Mode graphique',
+                    ar: 'وضع الرسم البياني',
+                    ru: 'Режим графика',
+                    trk: 'Grafik Modu',
+                    es: 'Modo gráfico',
+                    it: 'Modalità grafico',
+                    pl: 'Tryb wykresu',
+                    pt: 'Modo gráfico',
+                    th: 'โหมดกราฟ',
+                    id: 'Mode Chart',
+                    hi: 'चार्ट मोड',
+                    bn: 'চার্ট মোড',
+                  ),
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                DropdownButton<String>(
+
+                  iconEnabledColor: textColor,
+                  underline: Container(
+                    height: 1,
+                    color: subTextColor,
+                  ),
+
+                  style: TextStyle(
+                    color: textColor,
+                  ),
+                  dropdownColor: isDark
+                      ? const Color(0xFF1E293B)
+                      : Colors.white,
+
+                  value: _chartMode,
+                  items: [
+                    DropdownMenuItem(
+                      value: 'all',
+                      child: Text(
+                        tr(
+                          context,
+                          'All',
+                          zhTw: '全部',
+                          zhCn: '全部',
+                          ko: '전체',
+                          ja: 'すべて',
+                          de: 'Alle',
+                          fr: 'Tous',
+                          ar: 'الكل',
+                          ru: 'Все',
+                          trk: 'Tümü',
+                          es: 'Todo',
+                          it: 'Tutti',
+                          pl: 'Wszystkie',
+                          pt: 'Todos',
+                          th: 'ทั้งหมด',
+                          id: 'Semua',
+                          hi: 'सभी',
+                          bn: 'সব',
+                        ),
+                      ),
+                    ),
+
+                    DropdownMenuItem(
+                      value: 'cash',
+                      child: Text(
+                        tr(
+                          context,
+                          'Cash Only',
+                          zhTw: '僅現金桌',
+                          zhCn: '仅现金桌',
+                          ko: '캐시만',
+                          ja: 'キャッシュのみ',
+                          de: 'Nur Cash',
+                          fr: 'Cash uniquement',
+                          ar: 'الكاش فقط',
+                          ru: 'Только кэш',
+                          trk: 'Sadece Cash',
+                          es: 'Solo cash',
+                          it: 'Solo cash',
+                          pl: 'Tylko cash',
+                          pt: 'Apenas cash',
+                          th: 'เฉพาะแคชเกม',
+                          id: 'Cash Saja',
+                          hi: 'केवल कैश',
+                          bn: 'শুধু ক্যাশ',
+                        ),
+                      ),
+                    ),
+
+                    DropdownMenuItem(
+                      value: 'tournament',
+                      child: Text(
+                        tr(
+                          context,
+                          'Tournament Only',
+                          zhTw: '僅錦標賽',
+                          zhCn: '仅锦标赛',
+                          ko: '토너먼트만',
+                          ja: 'トーナメントのみ',
+                          de: 'Nur Turniere',
+                          fr: 'Tournoi uniquement',
+                          ar: 'البطولات فقط',
+                          ru: 'Только турниры',
+                          trk: 'Sadece Turnuva',
+                          es: 'Solo torneos',
+                          it: 'Solo tornei',
+                          pl: 'Tylko turnieje',
+                          pt: 'Apenas torneios',
+                          th: 'เฉพาะทัวร์นาเมนต์',
+                          id: 'Turnamen Saja',
+                          hi: 'केवल टूर्नामेंट',
+                          bn: 'শুধু টুর্নামেন্ট',
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+
+                    setState(() {
+                      _chartMode = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            Row(
+              children: [
+                Text(
+                  tr(
+                    context,
+                    'Y Axis',
+                    zhTw: 'Y 軸',
+                    zhCn: 'Y 轴',
+                    ko: 'Y축',
+                    ja: 'Y軸',
+                    de: 'Y-Achse',
+                    fr: 'Axe Y',
+                    ar: 'المحور Y',
+                    ru: 'Ось Y',
+                    trk: 'Y Ekseni',
+                    es: 'Eje Y',
+                    it: 'Asse Y',
+                    pl: 'Oś Y',
+                    pt: 'Eixo Y',
+                    th: 'แกน Y',
+                    id: 'Sumbu Y',
+                    hi: 'Y अक्ष',
+                    bn: 'Y অক্ষ',
+                  ),
+                  style: TextStyle(
+                    color: textColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                DropdownButton<String>(
+                  iconEnabledColor: textColor,
+
+                  underline: Container(
+                    height: 1,
+                    color: subTextColor,
+                  ),
+
+                  style: TextStyle(
+                    color: textColor,
+                  ),
+
+                  dropdownColor: isDark
+                      ? const Color(0xFF1E293B)
+                      : Colors.white,
+
+                  value: _profitMode,
+
+                  items: [
+                    DropdownMenuItem(
+                      value: 'total',
+
+                      child: Text(
+                        tr(
+                          context,
+                          'Total Profit',
+                          zhTw: '總盈利',
+                          zhCn: '总盈利',
+                          ko: '총 수익',
+                          ja: '総利益',
+                          de: 'Gesamtgewinn',
+                          fr: 'Profit total',
+                          ar: 'إجمالي الربح',
+                          ru: 'Общая прибыль',
+                          trk: 'Toplam Kâr',
+                          es: 'Ganancia total',
+                          it: 'Profitto totale',
+                          pl: 'Łączny zysk',
+                          pt: 'Lucro total',
+                          th: 'กำไรรวม',
+                          id: 'Total Profit',
+                          hi: 'कुल लाभ',
+                          bn: 'মোট লাভ',
+                        ),
+                      ),
+                    ),
+
+                    DropdownMenuItem(
+                      value: 'daily',
+
+                      child: Text(
+                        tr(
+                          context,
+                          'Daily Profit',
+                          zhTw: '每日盈利',
+                          zhCn: '每日盈利',
+                          ko: '일일 수익',
+                          ja: '日別利益',
+                          de: 'Tagesgewinn',
+                          fr: 'Profit quotidien',
+                          ar: 'الربح اليومي',
+                          ru: 'Дневная прибыль',
+                          trk: 'Günlük Kâr',
+                          es: 'Ganancia diaria',
+                          it: 'Profitto giornaliero',
+                          pl: 'Dzienny zysk',
+                          pt: 'Lucro diário',
+                          th: 'กำไรรายวัน',
+                          id: 'Profit Harian',
+                          hi: 'दैनिक लाभ',
+                          bn: 'দৈনিক লাভ',
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  onChanged: (value) {
+                    if (value == null) return;
+
+                    setState(() {
+                      _profitMode = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
+            Container(
+              height: 430,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+              decoration: BoxDecoration(
+                color: isDark
+                    ? const Color(0xFF111827)
+                    : Colors.white,
+
+              border: Border.all(
+                color: isDark
+                    ? const Color(0xFF2A3441)
+                    : const Color(0xFFE5E7EB),
+              ),
+
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tr(
+                      context,
+                      'Profit Over Time',
+                      zhTw: '盈利趨勢',
+                      zhCn: '盈利趋势',
+                      ko: '시간별 수익',
+                      ja: '利益推移',
+                      de: 'Gewinn im Zeitverlauf',
+                      fr: 'Profit au fil du temps',
+                      ar: 'الربح بمرور الوقت',
+                      ru: 'Прибыль со временем',
+                      trk: 'Zaman İçinde Kâr',
+                      es: 'Ganancia a lo largo del tiempo',
+                      it: 'Profitto nel tempo',
+                      pl: 'Zysk w czasie',
+                      pt: 'Lucro ao longo do tempo',
+                      th: 'กำไรตามเวลา',
+                      id: 'Profit Seiring Waktu',
+                      hi: 'समय के साथ लाभ',
+                      bn: 'সময়ের সাথে লাভ',
+                    ),
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.show_chart,
+                        color: _chartMode == 'cash'
+                            ? Colors.blue
+                            : _chartMode == 'tournament'
+                                ? Colors.orange
+                                : Colors.green,
+                        size: 16,
+                      ),
+
+                      const SizedBox(width: 4),
+
+                      Text(
+                        _chartMode == 'cash'
+                            ? tr(
+                                context,
+                                'Cash',
+                                zhTw: '現金桌',
+                                zhCn: '现金桌',
+                                ko: '캐시',
+                                ja: 'キャッシュ',
+                                de: 'Cash',
+                                fr: 'Cash',
+                                ar: 'كاش',
+                                ru: 'Кэш',
+                                trk: 'Cash',
+                                es: 'Cash',
+                                it: 'Cash',
+                                pl: 'Cash',
+                                pt: 'Cash',
+                                th: 'แคชเกม',
+                                id: 'Cash',
+                                hi: 'कैश',
+                                bn: 'ক্যাশ',
+                              )
+                            : _chartMode == 'tournament'
+                                ? tr(
+                                    context,
+                                    'Tournament',
+                                    zhTw: '錦標賽',
+                                    zhCn: '锦标赛',
+                                    ko: '토너먼트',
+                                    ja: 'トーナメント',
+                                    de: 'Turnier',
+                                    fr: 'Tournoi',
+                                    ar: 'بطولة',
+                                    ru: 'Турнир',
+                                    trk: 'Turnuva',
+                                    es: 'Torneo',
+                                    it: 'Torneo',
+                                    pl: 'Turniej',
+                                    pt: 'Torneio',
+                                    th: 'ทัวร์นาเมนต์',
+                                    id: 'Turnamen',
+                                    hi: 'टूर्नामेंट',
+                                    bn: 'টুর্নামেন্ট',
+                                  )
+                                : tr(
+                                    context,
+                                    'Total',
+                                    zhTw: '總計',
+                                    zhCn: '总计',
+                                    ko: '전체',
+                                    ja: '合計',
+                                    de: 'Gesamt',
+                                    fr: 'Total',
+                                    ar: 'الإجمالي',
+                                    ru: 'Всего',
+                                    trk: 'Toplam',
+                                    es: 'Total',
+                                    it: 'Totale',
+                                    pl: 'Łącznie',
+                                    pt: 'Total',
+                                    th: 'รวม',
+                                    id: 'Total',
+                                    hi: 'कुल',
+                                    bn: 'মোট',
+                                  ),
+
+                        style: TextStyle(
+                          color: textColor,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Expanded(
+                    child: LineChart(
+                      LineChartData(
+                        gridData: FlGridData(
+                          show: true,
+                          drawVerticalLine: true,
+                          horizontalInterval: 100,
+                          verticalInterval: 1,
+                          getDrawingHorizontalLine: (value) {
+                            return FlLine(
+                              color: isDark
+                                  ? Colors.white10
+                                  : Colors.black12,
+                              strokeWidth: 1,
+                            );
+                          },
+                          getDrawingVerticalLine: (value) {
+                            return FlLine(
+                              color: isDark
+                                  ? Colors.white10
+                                  : Colors.black12,
+                              strokeWidth: 1,
+                            );
+                          },
+                        ),
+
+                        titlesData: FlTitlesData(
+                        leftTitles: AxisTitles(
+                          axisNameWidget: Padding(
+                            padding: EdgeInsets.only(right: 8),
+                            child: Text(
+                              tr(
+                                context,
+                                'Profit',
+                                zhTw: '盈利',
+                                zhCn: '盈利',
+                                ko: '수익',
+                                ja: '利益',
+                                de: 'Gewinn',
+                                fr: 'Profit',
+                                ar: 'الربح',
+                                ru: 'Прибыль',
+                                trk: 'Kâr',
+                                es: 'Ganancia',
+                                it: 'Profitto',
+                                pl: 'Zysk',
+                                pt: 'Lucro',
+                                th: 'กำไร',
+                                id: 'Profit',
+                                hi: 'लाभ',
+                                bn: 'লাভ',
+                              ),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                          ),
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 70,
+                            getTitlesWidget: (value, meta) {
+                              return Text(
+                                '\$${value.toInt()}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: subTextColor,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                          bottomTitles: AxisTitles(
+                            axisNameWidget: Padding(
+                              padding: EdgeInsets.only(top: 18),
+                              child: Text(
+                                tr(
+                                  context,
+                                  'Time',
+                                  zhTw: '時間',
+                                  zhCn: '时间',
+                                  ko: '시간',
+                                  ja: '時間',
+                                  de: 'Zeit',
+                                  fr: 'Temps',
+                                  ar: 'الوقت',
+                                  ru: 'Время',
+                                  trk: 'Zaman',
+                                  es: 'Tiempo',
+                                  it: 'Tempo',
+                                  pl: 'Czas',
+                                  pt: 'Tempo',
+                                  th: 'เวลา',
+                                  id: 'Waktu',
+                                  hi: 'समय',
+                                  bn: 'সময়',
+                                ),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: textColor,
+                                ),
+                              ),
+                            ),
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              reservedSize: 48,
+                              interval: 1,
+                              getTitlesWidget: (value, meta) {
+                                final index = value.toInt();
+
+                                if (index < 0 || index >= uniqueDates.length) {
+                                  return const SizedBox.shrink();
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(
+                                    dateLabel(uniqueDates[index]),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: subTextColor,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+
+                          topTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                          rightTitles: const AxisTitles(
+                            sideTitles: SideTitles(showTitles: false),
+                          ),
+                        ),
+
+                        borderData: FlBorderData(show: true),
+
+                        lineBarsData: [
+                          LineChartBarData(
+                            spots: chartSpots,
+                            isCurved: false,
+                            barWidth: 4,
+                            color: _chartMode == 'cash'
+                                ? Colors.blue
+                                : _chartMode == 'tournament'
+                                    ? Colors.orange
+                                    : Colors.green,
+                            dotData: const FlDotData(show: true),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _summaryCard(
+    BuildContext context,
+    String label,
+    String value,
+    Color color,
+  ) {
+    final isDark =
+        Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      width: 180,
+      height: 110,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark
+            ? const Color(0xFF1E293B)
+            : Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isDark
+              ? const Color(0xFF334155)
+              : const Color(0xFFE5E7EB),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: isDark ? Colors.white70 : Colors.black54,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

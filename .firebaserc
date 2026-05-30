@@ -2,6 +2,17 @@
   "projects": {
     "default": "poker-scheduler-fd8c7"
   },
-  "targets": {},
+  "targets": {
+    "poker-scheduler-fd8c7": {
+      "hosting": {
+        "app": [
+          "app-pokerscheduler"
+        ],
+        "default": [
+          "pokerscheduler"
+        ]
+      }
+    }
+  },
   "etags": {}
 }
