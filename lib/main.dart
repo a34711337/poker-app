@@ -5278,6 +5278,12 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? const Color(0xFF111827) : Colors.white;
+    final inputColor = isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -5287,7 +5293,7 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
               constraints: const BoxConstraints(maxWidth: 460),
               child: Card(
                 elevation: 1,
-                color: Colors.white,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -5458,7 +5464,7 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                       Text(
                         tr(
                           context,
-                          'Poker Table Reservation',
+                          'Poker Scheduler',
                           zhTw: '撲克桌預約',
                           zhCn: '扑克桌预约',
                           ko: '포커 테이블 예약',
@@ -5477,9 +5483,10 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           hi: 'पोकर टेबल आरक्षण',
                           bn: 'পোকার টেবিল রিজার্ভেশন',
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
+                          color: textColor,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -5509,8 +5516,8 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                           bn: 'চালিয়ে যেতে লগইন করুন',
                         ),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: subTextColor,
                           height: 1.4,
                         ),
                       ),
@@ -5567,7 +5574,15 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                             bn: 'আপনার ইমেইল লিখুন',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
+                          labelStyle: TextStyle(
+                            color: subTextColor,
+                          ),
+
+                          hintStyle: TextStyle(
+                            color: subTextColor,
+                          ),
+
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -5625,7 +5640,15 @@ class _LoginPageState extends State<LoginPage> with AppVersionChecker {
                             bn: 'আপনার পাসওয়ার্ড লিখুন',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
+                          labelStyle: TextStyle(
+                            color: subTextColor,
+                          ),
+
+                          hintStyle: TextStyle(
+                            color: subTextColor,
+                          ),
+
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -10805,6 +10828,22 @@ class _SettingsPageState extends State<SettingsPage> {
                     onTap: _showTransferSubscriptionDialog,
                   ),
 
+
+                  if ((data['isAdmin'] ?? false) == true)
+                    ListTile(
+                      leading: const Icon(Icons.admin_panel_settings),
+                      title: const Text('Admin Grant Access'),
+                      subtitle: const Text('Grant Host Pro / Stats Pro'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const AdminGrantAccessPage(),
+                          ),
+                        );
+                      },
+                    ),
+
                   ListTile(
                     leading: const Icon(Icons.help_outline, color: Colors.green),
                     title: Text(
@@ -13916,6 +13955,14 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         (table.createdByUid.trim().isEmpty &&
             table.createdByName.trim() == currentName);
 
+    debugPrint('DELETE TABLE DEBUG');
+    debugPrint('isSuperAdmin: $isSuperAdmin');
+    debugPrint('currentUid: $currentUid');
+    debugPrint('table.createdByUid: ${table.createdByUid}');
+    debugPrint('currentName: $currentName');
+    debugPrint('table.createdByName: ${table.createdByName}');
+    debugPrint('canManageThisTable: $canManageThisTable');
+
     if (!canManageThisTable) {
       _showSnack(
         tr(
@@ -13943,8 +13990,43 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       return;
     }
 
-    await deleteNotificationsForTable(tableId);
-    await tablesRef.doc(tableId).delete();
+    try {
+      await tablesRef.doc(tableId).delete();
+
+      try {
+        await deleteNotificationsForTable(tableId);
+      } catch (e) {
+        debugPrint('deleteNotificationsForTable failed: $e');
+      }
+
+      _showSnack(
+        tr(
+          context,
+          'Table deleted',
+          zhTw: '牌桌已刪除',
+          zhCn: '牌桌已删除',
+          ko: '테이블이 삭제되었습니다',
+          ja: 'テーブルが削除されました',
+          de: 'Tisch gelöscht',
+          fr: 'Table supprimée',
+          ar: 'تم حذف الطاولة',
+          ru: 'Стол удалён',
+          trk: 'Masa silindi',
+          es: 'Mesa eliminada',
+          it: 'Tavolo eliminato',
+          pl: 'Stół został usunięty',
+          pt: 'Mesa excluída',
+          th: 'ลบโต๊ะแล้ว',
+          id: 'Meja dihapus',
+          hi: 'टेबल हटा दी गई',
+          bn: 'টেবিল মুছে ফেলা হয়েছে',
+        ),
+      );
+    } catch (e) {
+      _showSnack(
+        e.toString().replaceFirst('Exception: ', ''),
+      );
+    }
 
     _showSnack(
       tr(
@@ -48831,6 +48913,199 @@ class _OverallStatsPageBodyState
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class AdminGrantAccessPage extends StatefulWidget {
+  const AdminGrantAccessPage({super.key});
+
+  @override
+  State<AdminGrantAccessPage> createState() => _AdminGrantAccessPageState();
+}
+
+class _AdminGrantAccessPageState extends State<AdminGrantAccessPage> {
+  final playerIdController = TextEditingController();
+
+  String selectedPlan = 'host_pro';
+  int? selectedDays = 30;
+  bool loading = false;
+
+  Future<void> grantAccess() async {
+    final adminUid = FirebaseAuth.instance.currentUser?.uid;
+    if (adminUid == null) return;
+
+    final playerId = playerIdController.text.trim().toLowerCase();
+
+    if (playerId.isEmpty) return;
+
+    setState(() => loading = true);
+
+    try {
+      final query = await FirebaseFirestore.instance
+          .collection('users')
+          .where('playerIdLower', isEqualTo: playerId)
+          .limit(1)
+          .get();
+
+      if (query.docs.isEmpty) {
+        throw Exception('Player ID not found');
+      }
+
+      final userDoc = query.docs.first;
+      final now = Timestamp.now();
+
+      Timestamp? expiresAt;
+      if (selectedDays != null) {
+        expiresAt = Timestamp.fromDate(
+          DateTime.now().add(Duration(days: selectedDays!)),
+        );
+      }
+
+      final data = <String, dynamic>{
+        'manualGrant': true,
+        'manualGrantBy': adminUid,
+        'manualGrantAt': now,
+        'manualGrantDays': selectedDays,
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (selectedPlan == 'host_pro') {
+        data.addAll({
+          'role': 'host',
+          'plan': 'host_pro',
+          'hostPaid': true,
+          'hostProActive': true,
+          'hostExpiresAt': expiresAt,
+        });
+      }
+
+      if (selectedPlan == 'stats_pro') {
+        data.addAll({
+          'plan': 'stats_pro',
+          'statsPaid': true,
+          'statsProActive': true,
+          'statsExpiresAt': expiresAt,
+        });
+      }
+
+      if (selectedPlan == 'bundle') {
+        data.addAll({
+          'role': 'host',
+          'plan': 'bundle',
+          'hostPaid': true,
+          'statsPaid': true,
+          'hostProActive': true,
+          'statsProActive': true,
+          'bundleActive': true,
+          'hostExpiresAt': expiresAt,
+          'statsExpiresAt': expiresAt,
+          'bundleExpiresAt': expiresAt,
+        });
+      }
+
+      await userDoc.reference.update(data);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Access granted')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Grant Access'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            TextField(
+              controller: playerIdController,
+              decoration: const InputDecoration(
+                labelText: 'Player ID',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            DropdownButtonFormField<String>(
+              initialValue: selectedPlan,
+              decoration: const InputDecoration(
+                labelText: 'Plan',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'host_pro',
+                  child: Text('Host Pro'),
+                ),
+                DropdownMenuItem(
+                  value: 'stats_pro',
+                  child: Text('Stats Pro'),
+                ),
+                DropdownMenuItem(
+                  value: 'bundle',
+                  child: Text('Bundle'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => selectedPlan = value);
+              },
+            ),
+
+            const SizedBox(height: 16),
+
+            DropdownButtonFormField<int?>(
+              initialValue: selectedDays,
+              decoration: const InputDecoration(
+                labelText: 'Duration',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 7,
+                  child: Text('7 days'),
+                ),
+                DropdownMenuItem(
+                  value: 30,
+                  child: Text('30 days'),
+                ),
+                DropdownMenuItem(
+                  value: null,
+                  child: Text('Forever'),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() => selectedDays = value);
+              },
+            ),
+
+            const SizedBox(height: 24),
+
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: loading ? null : grantAccess,
+                child: loading
+                    ? const CircularProgressIndicator()
+                    : const Text('Grant Access'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
