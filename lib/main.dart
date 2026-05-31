@@ -6580,10 +6580,20 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final bgColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final cardColor = isDark ? const Color(0xFF111827) : Colors.white;
+    final inputColor = isDark ? const Color(0xFF1F2937) : const Color(0xFFF9FAFB);
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final subTextColor = isDark ? Colors.white70 : Colors.black54;    
+    
     return Scaffold(
+      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        surfaceTintColor: Colors.white,
+        backgroundColor: bgColor,
+        surfaceTintColor: bgColor,
+        foregroundColor: textColor,
         title: Text(
           tr(
             context,
@@ -6617,7 +6627,7 @@ class _RegisterPageState extends State<RegisterPage> {
               constraints: const BoxConstraints(maxWidth: 460),
               child: Card(
                 elevation: 1,
-                color: Colors.white,
+                color: cardColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(24),
                 ),
@@ -6651,9 +6661,10 @@ class _RegisterPageState extends State<RegisterPage> {
                           hi: 'खाता बनाएँ',
                           bn: 'অ্যাকাউন্ট তৈরি করুন',
                         ),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
+                          color: textColor,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -6683,8 +6694,8 @@ class _RegisterPageState extends State<RegisterPage> {
                           bn: 'আপনার প্লেয়ার অ্যাকাউন্ট তৈরি করুন',
                         ),
                         textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Colors.black54,
+                        style: TextStyle(
+                          color: subTextColor,
                           height: 1.4,
                         ),
                       ),
@@ -6694,6 +6705,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextField(
                         controller: displayNameController,
                         decoration: InputDecoration(
+                          labelStyle: TextStyle(color: subTextColor),
+                          hintStyle: TextStyle(color: subTextColor),                          
                           labelText: tr(
                             context,
                             'Display Name',
@@ -6737,7 +6750,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bn: 'আপনার প্রদর্শন নাম লিখুন',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -6749,6 +6762,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextField(
                         controller: lastNameController,
                         decoration: InputDecoration(
+                          labelStyle: TextStyle(color: subTextColor),
+                          hintStyle: TextStyle(color: subTextColor),                          
                           labelText: tr(
                             context,
                             'Last Name',
@@ -6792,7 +6807,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bn: 'আপনার শেষ নাম লিখুন (ঐচ্ছিক)',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -6804,6 +6819,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       TextField(
                         controller: emailController,
                         decoration: InputDecoration(
+                          labelStyle: TextStyle(color: subTextColor),
+                          hintStyle: TextStyle(color: subTextColor),
                           labelText: tr(
                             context,
                             'Email',
@@ -6847,7 +6864,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bn: 'আপনার ইমেইল লিখুন',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -6860,6 +6877,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: passwordController,
                         obscureText: true,
                         decoration: InputDecoration(
+                          labelStyle: TextStyle(color: subTextColor),
+                          hintStyle: TextStyle(color: subTextColor),
                           labelText: tr(
                             context,
                             'Password',
@@ -6903,7 +6922,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bn: 'আপনার পাসওয়ার্ড লিখুন',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -6916,6 +6935,8 @@ class _RegisterPageState extends State<RegisterPage> {
                         controller: confirmPasswordController,
                         obscureText: true,
                         decoration: InputDecoration(
+                          labelStyle: TextStyle(color: subTextColor),
+                          hintStyle: TextStyle(color: subTextColor),
                           labelText: tr(
                             context,
                             'Confirm Password',
@@ -6959,7 +6980,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bn: 'আবার আপনার পাসওয়ার্ড লিখুন',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -6971,6 +6992,8 @@ class _RegisterPageState extends State<RegisterPage> {
                       DropdownButtonFormField<String>(
                         initialValue: selectedLanguageCode,
                         decoration: InputDecoration(
+                          labelStyle: TextStyle(color: subTextColor),
+                          hintStyle: TextStyle(color: subTextColor),
                           labelText: tr(
                             context,
                             'Language',
@@ -6993,7 +7016,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             bn: 'ভাষা',
                           ),
                           filled: true,
-                          fillColor: const Color(0xFFF9FAFB),
+                          fillColor: inputColor,
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -10048,16 +10071,29 @@ class _SettingsPageState extends State<SettingsPage> {
     try {
       final uid = user.uid;
 
+    try {
+      debugPrint('STEP 1 deleteAllUserFriendData');
       await deleteAllUserFriendData(uid);
+
+      debugPrint('STEP 2 deleteFriendRequestsForUser');
       await deleteFriendRequestsForUser(uid);
+
+      debugPrint('STEP 3 deleteTablesCreatedByUser');
       await deleteTablesCreatedByUser(uid);
 
+      await deleteUserSubcollections(uid);
+      debugPrint('STEP 4 delete user firestore doc');
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
           .delete();
 
+      debugPrint('STEP 5 delete auth user');
       await user.delete();
+    } catch (e) {
+      debugPrint('DELETE ACCOUNT FAILED AT STEP: $e');
+      rethrow;
+    }
 
       if (!mounted) return;
 
@@ -10124,33 +10160,14 @@ class _SettingsPageState extends State<SettingsPage> {
       );
 
     } catch (e) {
+      debugPrint('DELETE ACCOUNT ERROR: $e');
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            tr(
-              context,
-              'Failed to delete account',
-              zhTw: '刪除帳號失敗',
-              zhCn: '删除账号失败',
-              ko: '계정 삭제 실패',
-              ja: 'アカウント削除失敗',
-              de: 'Konto konnte nicht gelöscht werden',
-              fr: 'Échec de la suppression du compte',
-              ar: 'فشل حذف الحساب',
-              ru: 'Не удалось удалить аккаунт',
-              trk: 'Hesap silinemedi',
-              es: 'No se pudo eliminar la cuenta',
-              it: 'Impossibile eliminare l’account',
-              pl: 'Nie udało się usunąć konta',
-              pt: 'Falha ao excluir conta',
-              th: 'ลบบัญชีไม่สำเร็จ',
-              id: 'Gagal menghapus akun',
-              hi: 'अकाउंट हटाना विफल',
-              bn: 'অ্যাকাউন্ট মুছতে ব্যর্থ হয়েছে',
-            ),
+            e.toString(),
           ),
         ),
       );
@@ -47279,15 +47296,27 @@ Future<void> deleteAllUserFriendData(String uid) async {
 
   final firestore = FirebaseFirestore.instance;
 
-  final friendshipsSnap = await firestore
+  // friendships: userA == uid
+  final friendshipsA = await firestore
       .collection('friendships')
-      .where('memberUids', arrayContains: cleanUid)
+      .where('userA', isEqualTo: cleanUid)
       .get();
 
-  for (final doc in friendshipsSnap.docs) {
+  for (final doc in friendshipsA.docs) {
     await doc.reference.delete();
   }
 
+  // friendships: userB == uid
+  final friendshipsB = await firestore
+      .collection('friendships')
+      .where('userB', isEqualTo: cleanUid)
+      .get();
+
+  for (final doc in friendshipsB.docs) {
+    await doc.reference.delete();
+  }
+
+  // direct chats: memberUids contains uid
   final chatsSnap = await firestore
       .collection('direct_chats')
       .where('memberUids', arrayContains: cleanUid)
@@ -47341,8 +47370,35 @@ Future<void> deleteTablesCreatedByUser(String uid) async {
       .get();
 
   for (final doc in tablesSnap.docs) {
-    await deleteNotificationsForTable(doc.id);
     await doc.reference.delete();
+
+    try {
+      await deleteNotificationsForTable(doc.id);
+    } catch (e) {
+      debugPrint('deleteNotificationsForTable failed: $e');
+    }
+  }
+}
+
+Future<void> deleteUserSubcollections(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+  final userRef = firestore.collection('users').doc(cleanUid);
+
+  final subcollections = [
+    'stat_players',
+    'cash_game_sessions',
+    'tournament_sessions',
+  ];
+
+  for (final name in subcollections) {
+    final snap = await userRef.collection(name).get();
+
+    for (final doc in snap.docs) {
+      await doc.reference.delete();
+    }
   }
 }
 
