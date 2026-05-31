@@ -10082,6 +10082,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await deleteTablesCreatedByUser(uid);
 
       await deleteUserSubcollections(uid);
+      await deleteNotificationsForUser(uid);
       debugPrint('STEP 4 delete user firestore doc');
       await FirebaseFirestore.instance
           .collection('users')
@@ -47399,6 +47400,36 @@ Future<void> deleteUserSubcollections(String uid) async {
     for (final doc in snap.docs) {
       await doc.reference.delete();
     }
+  }
+}
+
+Future<void> deleteNotificationsForUser(String uid) async {
+  final cleanUid = uid.trim();
+  if (cleanUid.isEmpty) return;
+
+  final firestore = FirebaseFirestore.instance;
+
+  final snap = await firestore
+      .collection('notifications')
+      .where('targetUid', isEqualTo: cleanUid)
+      .get();
+
+  var batch = firestore.batch();
+  var count = 0;
+
+  for (final doc in snap.docs) {
+    batch.delete(doc.reference);
+    count++;
+
+    if (count >= 450) {
+      await batch.commit();
+      batch = firestore.batch();
+      count = 0;
+    }
+  }
+
+  if (count > 0) {
+    await batch.commit();
   }
 }
 
