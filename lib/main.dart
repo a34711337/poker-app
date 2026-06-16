@@ -12685,9 +12685,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
     if (isSuperAdmin) {
       return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: tablesRef
-            .orderBy('createdAt', descending: false)
-            .snapshots(),
+        stream: tablesRef.orderBy('createdAt', descending: false).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -12790,64 +12788,270 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           );
         }
 
-        final userData = userSnapshot.data?.data() ?? {};
-        final grantedHostIds = <String>[];
+        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+          stream: FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUid)
+              .collection('visibleHosts')
+              .snapshots(),
+          builder: (context, visibleHostsSnapshot) {
+            if (visibleHostsSnapshot.connectionState ==
+                ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
 
-        if (isHost) {
-          final createdByMeStream = tablesRef
-              .where('createdByUid', isEqualTo: currentUid)
-              .snapshots();
-
-          Stream<QuerySnapshot<Map<String, dynamic>>>? grantedTablesStream;
-
-          if (grantedHostIds.isNotEmpty) {
-            grantedTablesStream = tablesRef
-                .where(
-                  'createdByUid',
-                  whereIn: grantedHostIds.take(10).toList(),
-                )
-                .snapshots();
-          }
-
-          return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: createdByMeStream,
-            builder: (context, mySnapshot) {
-              if (mySnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(),
-                );
-              }
-
-              if (mySnapshot.hasError) {
-                return Center(
-                  child: Text(
-                    tr(
-                      context,
-                      'Failed to load your tables',
-                      zhTw: '載入你的桌子失敗',
-                      zhCn: '加载你的桌子失败',
-                      ko: '내 테이블을 불러오지 못했습니다',
-                      ja: '自分のテーブルの読み込みに失敗しました',
-                      de: 'Deine Tische konnten nicht geladen werden',
-                      fr: 'Impossible de charger vos tables',
-                      ar: 'فشل تحميل طاولاتك',
-                      ru: 'Не удалось загрузить ваши столы',
-                      trk: 'Masaların yüklenemedi',
-                      es: 'No se pudieron cargar tus mesas',
-                      it: 'Impossibile caricare i tuoi tavoli',
-                      pl: 'Nie udało się załadować twoich stołów',
-                      pt: 'Falha ao carregar suas mesas',
-                      th: 'โหลดโต๊ะของคุณไม่สำเร็จ',
-                      id: 'Gagal memuat meja Anda',
-                      hi: 'आपकी टेबल लोड नहीं हो सकीं',
-                      bn: 'আপনার টেবিল লোড করা যায়নি',
-                    ),
+            if (visibleHostsSnapshot.hasError) {
+              return Center(
+                child: Text(
+                  tr(
+                    context,
+                    'Failed to load access',
+                    zhTw: '載入權限失敗',
+                    zhCn: '加载权限失败',
+                    ko: '권한을 불러오지 못했습니다',
+                    ja: 'アクセス権の読み込みに失敗しました',
+                    de: 'Zugriff konnte nicht geladen werden',
+                    fr: 'Impossible de charger les accès',
+                    ar: 'فشل تحميل صلاحيات الوصول',
+                    ru: 'Не удалось загрузить доступ',
+                    trk: 'Erişim yüklenemedi',
+                    es: 'No se pudo cargar el acceso',
+                    it: 'Impossibile caricare l’accesso',
+                    pl: 'Nie udało się załadować dostępu',
+                    pt: 'Falha ao carregar acesso',
+                    th: 'โหลดสิทธิ์การเข้าถึงไม่สำเร็จ',
+                    id: 'Gagal memuat akses',
+                    hi: 'एक्सेस लोड नहीं हो सका',
+                    bn: 'অ্যাক্সেস লোড করা যায়নি',
                   ),
-                );
+                ),
+              );
+            }
+
+            final grantedHostIds = visibleHostsSnapshot.data?.docs
+                    .map((doc) => doc.id.trim())
+                    .where((id) => id.isNotEmpty)
+                    .toList() ??
+                [];
+
+            if (isHost) {
+              final createdByMeStream = tablesRef
+                  .where('createdByUid', isEqualTo: currentUid)
+                  .snapshots();
+
+              Stream<QuerySnapshot<Map<String, dynamic>>>?
+                  grantedTablesStream;
+
+              if (grantedHostIds.isNotEmpty) {
+                grantedTablesStream = tablesRef
+                    .where(
+                      'createdByUid',
+                      whereIn: grantedHostIds.take(10).toList(),
+                    )
+                    .snapshots();
               }
 
-              if (grantedTablesStream == null) {
-                final docs = mySnapshot.data?.docs ?? [];
+              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: createdByMeStream,
+                builder: (context, mySnapshot) {
+                  if (mySnapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  if (mySnapshot.hasError) {
+                    return Center(
+                      child: Text(
+                        tr(
+                          context,
+                          'Failed to load your tables',
+                          zhTw: '載入你的桌子失敗',
+                          zhCn: '加载你的桌子失败',
+                          ko: '내 테이블을 불러오지 못했습니다',
+                          ja: '自分のテーブルの読み込みに失敗しました',
+                          de: 'Deine Tische konnten nicht geladen werden',
+                          fr: 'Impossible de charger vos tables',
+                          ar: 'فشل تحميل طاولاتك',
+                          ru: 'Не удалось загрузить ваши столы',
+                          trk: 'Masaların yüklenemedi',
+                          es: 'No se pudieron cargar tus mesas',
+                          it: 'Impossibile caricare i tuoi tavoli',
+                          pl: 'Nie udało się załadować twoich stołów',
+                          pt: 'Falha ao carregar suas mesas',
+                          th: 'โหลดโต๊ะของคุณไม่สำเร็จ',
+                          id: 'Gagal memuat meja Anda',
+                          hi: 'आपकी टेबल लोड नहीं हो सकीं',
+                          bn: 'আপনার টেবিল লোড করা যায়নি',
+                        ),
+                      ),
+                    );
+                  }
+
+                  if (grantedTablesStream == null) {
+                    final docs = mySnapshot.data?.docs ?? [];
+
+                    if (docs.isEmpty) {
+                      return _buildEmptyState();
+                    }
+
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: docs.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final doc = docs[index];
+                        final table = TableData.fromMap(doc.data());
+
+                        return _buildTableCard(
+                          context: context,
+                          tableId: doc.id,
+                          table: table,
+                          index: index,
+                        );
+                      },
+                    );
+                  }
+
+                  return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: grantedTablesStream,
+                    builder: (context, grantedSnapshot) {
+                      if (grantedSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+
+                      if (grantedSnapshot.hasError) {
+                        return Center(
+                          child: Text(
+                            tr(
+                              context,
+                              'Failed to load granted tables',
+                              zhTw: '載入授權桌子失敗',
+                              zhCn: '加载授权桌子失败',
+                              ko: '공유된 테이블을 불러오지 못했습니다',
+                              ja: '共有テーブルの読み込みに失敗しました',
+                              de: 'Freigegebene Tische konnten nicht geladen werden',
+                              fr: 'Impossible de charger les tables autorisées',
+                              ar: 'فشل تحميل الطاولات المصرح بها',
+                              ru: 'Не удалось загрузить разрешённые столы',
+                              trk: 'İzin verilen masalar yüklenemedi',
+                              es: 'No se pudieron cargar las mesas autorizadas',
+                              it: 'Impossibile caricare i tavoli autorizzati',
+                              pl: 'Nie udało się załadować udostępnionych stołów',
+                              pt: 'Falha ao carregar mesas autorizadas',
+                              th: 'โหลดโต๊ะที่ได้รับสิทธิ์ไม่สำเร็จ',
+                              id: 'Gagal memuat meja yang diizinkan',
+                              hi: 'अनुमत टेबल लोड नहीं हो सकीं',
+                              bn: 'অনুমোদিত টেবিল লোড করা যায়নি',
+                            ),
+                          ),
+                        );
+                      }
+
+                      final merged =
+                          <String, QueryDocumentSnapshot<Map<String, dynamic>>>{};
+
+                      for (final doc in mySnapshot.data?.docs ?? []) {
+                        merged[doc.id] = doc;
+                      }
+
+                      for (final doc in grantedSnapshot.data?.docs ?? []) {
+                        merged[doc.id] = doc;
+                      }
+
+                      final docs = merged.values.toList()
+                        ..sort((a, b) {
+                          final aCreated = a.data()['createdAt'];
+                          final bCreated = b.data()['createdAt'];
+
+                          if (aCreated is Timestamp && bCreated is Timestamp) {
+                            return aCreated.compareTo(bCreated);
+                          }
+
+                          return 0;
+                        });
+
+                      if (docs.isEmpty) {
+                        return _buildEmptyState();
+                      }
+
+                      return ListView.separated(
+                        shrinkWrap: true,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        itemCount: docs.length,
+                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final doc = docs[index];
+                          final table = TableData.fromMap(doc.data());
+
+                          return _buildTableCard(
+                            context: context,
+                            tableId: doc.id,
+                            table: table,
+                            index: index,
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              );
+            }
+
+            if (grantedHostIds.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+              stream: tablesRef
+                  .where(
+                    'createdByUid',
+                    whereIn: grantedHostIds.take(10).toList(),
+                  )
+                  .snapshots(),
+              builder: (context, tableSnapshot) {
+                if (tableSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                if (tableSnapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      tr(
+                        context,
+                        'Failed to load tables',
+                        zhTw: '載入桌子失敗',
+                        zhCn: '加载桌子失败',
+                        ko: '테이블을 불러오지 못했습니다',
+                        ja: 'テーブルの読み込みに失敗しました',
+                        de: 'Tische konnten nicht geladen werden',
+                        fr: 'Impossible de charger les tables',
+                        ar: 'فشل تحميل الطاولات',
+                        ru: 'Не удалось загрузить столы',
+                        trk: 'Masalar yüklenemedi',
+                        es: 'No se pudieron cargar las mesas',
+                        it: 'Impossibile caricare i tavoli',
+                        pl: 'Nie udało się załadować stołów',
+                        pt: 'Falha ao carregar as mesas',
+                        th: 'โหลดโต๊ะไม่สำเร็จ',
+                        id: 'Gagal memuat meja',
+                        hi: 'टेबल लोड नहीं हो सकीं',
+                        bn: 'টেবিল লোড করা যায়নি',
+                      ),
+                    ),
+                  );
+                }
+
+                final docs = tableSnapshot.data?.docs ?? [];
 
                 if (docs.isEmpty) {
                   return _buildEmptyState();
@@ -12870,164 +13074,6 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                     );
                   },
                 );
-              }
-
-              return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                stream: grantedTablesStream,
-                builder: (context, grantedSnapshot) {
-                  if (grantedSnapshot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-
-                  if (grantedSnapshot.hasError) {
-                    return Center(
-                      child: Text(
-                        tr(
-                          context,
-                          'Failed to load granted tables',
-                          zhTw: '載入授權桌子失敗',
-                          zhCn: '加载授权桌子失败',
-                          ko: '공유된 테이블을 불러오지 못했습니다',
-                          ja: '共有テーブルの読み込みに失敗しました',
-                          de: 'Freigegebene Tische konnten nicht geladen werden',
-                          fr: 'Impossible de charger les tables autorisées',
-                          ar: 'فشل تحميل الطاولات المصرح بها',
-                          ru: 'Не удалось загрузить разрешённые столы',
-                          trk: 'İzin verilen masalar yüklenemedi',
-                          es: 'No se pudieron cargar las mesas autorizadas',
-                          it: 'Impossibile caricare i tavoli autorizzati',
-                          pl: 'Nie udało się załadować udostępnionych stołów',
-                          pt: 'Falha ao carregar mesas autorizadas',
-                          th: 'โหลดโต๊ะที่ได้รับสิทธิ์ไม่สำเร็จ',
-                          id: 'Gagal memuat meja yang diizinkan',
-                          hi: 'अनुमत टेबल लोड नहीं हो सकीं',
-                          bn: 'অনুমোদিত টেবিল লোড করা যায়নি',
-                        ),
-                      ),
-                    );
-                  }
-
-                  final merged =
-                      <String, QueryDocumentSnapshot<Map<String, dynamic>>>{};
-
-                  for (final doc in mySnapshot.data?.docs ?? []) {
-                    merged[doc.id] = doc;
-                  }
-
-                  for (final doc in grantedSnapshot.data?.docs ?? []) {
-                    merged[doc.id] = doc;
-                  }
-
-                  final docs = merged.values.toList()
-                    ..sort((a, b) {
-                      final aCreated = a.data()['createdAt'];
-                      final bCreated = b.data()['createdAt'];
-
-                      if (aCreated is Timestamp &&
-                          bCreated is Timestamp) {
-                        return aCreated.compareTo(bCreated);
-                      }
-
-                      return 0;
-                    });
-
-                  if (docs.isEmpty) {
-                    return _buildEmptyState();
-                  }
-
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 16),
-                    itemBuilder: (context, index) {
-                      final doc = docs[index];
-                      final table = TableData.fromMap(doc.data());
-
-                      return _buildTableCard(
-                        context: context,
-                        tableId: doc.id,
-                        table: table,
-                        index: index,
-                      );
-                    },
-                  );
-                },
-              );
-            },
-          );
-        }
-
-        if (grantedHostIds.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-          stream: tablesRef
-              .where(
-                'createdByUid',
-                whereIn: grantedHostIds.take(10).toList(),
-              )
-              .snapshots(),
-          builder: (context, tableSnapshot) {
-            if (tableSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(
-                child: CircularProgressIndicator(),
-              );
-            }
-
-            if (tableSnapshot.hasError) {
-              return Center(
-                child: Text(
-                  tr(
-                    context,
-                    'Failed to load tables',
-                    zhTw: '載入桌子失敗',
-                    zhCn: '加载桌子失败',
-                    ko: '테이블을 불러오지 못했습니다',
-                    ja: 'テーブルの読み込みに失敗しました',
-                    de: 'Tische konnten nicht geladen werden',
-                    fr: 'Impossible de charger les tables',
-                    ar: 'فشل تحميل الطاولات',
-                    ru: 'Не удалось загрузить столы',
-                    trk: 'Masalar yüklenemedi',
-                    es: 'No se pudieron cargar las mesas',
-                    it: 'Impossibile caricare i tavoli',
-                    pl: 'Nie udało się załadować stołów',
-                    pt: 'Falha ao carregar as mesas',
-                    th: 'โหลดโต๊ะไม่สำเร็จ',
-                    id: 'Gagal memuat meja',
-                    hi: 'टेबल लोड नहीं हो सकीं',
-                    bn: 'টেবিল লোড করা যায়নি',
-                  ),
-                ),
-              );
-            }
-
-            final docs = tableSnapshot.data?.docs ?? [];
-
-            if (docs.isEmpty) {
-              return _buildEmptyState();
-            }
-
-            return ListView.separated(
-              shrinkWrap: true,
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: docs.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final doc = docs[index];
-                final table = TableData.fromMap(doc.data());
-
-                return _buildTableCard(
-                  context: context,
-                  tableId: doc.id,
-                  table: table,
-                  index: index,
-                );
               },
             );
           },
@@ -13035,6 +13081,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       },
     );
   }
+
 
   Future<void> _showGrantPlayerAccessDialog() async {
     if (!isHost) return;
@@ -13326,7 +13373,37 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                                   color: Colors.redAccent,
                                 ),
                                 onPressed: () async {
-                                  await doc.reference.delete();
+                                  final playerUid = doc.id.trim();
+                                  final hostUid = hostUser.uid.trim();
+
+                                  try {
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(playerUid)
+                                        .collection('visibleHosts')
+                                        .doc(hostUid)
+                                        .delete();
+                                  } catch (e) {
+                                    debugPrint('delete visibleHosts failed: $e');
+                                  }
+
+                                  try {
+                                    await FirebaseFirestore.instance
+                                        .collection('users')
+                                        .doc(playerUid)
+                                        .update({
+                                      'grantedHostIds': FieldValue.arrayRemove([hostUid]),
+                                      'updatedAt': FieldValue.serverTimestamp(),
+                                    });
+                                  } catch (e) {
+                                    debugPrint('remove grantedHostIds failed: $e');
+                                  }
+
+                                  try {
+                                    await doc.reference.delete();
+                                  } catch (e) {
+                                    debugPrint('delete addedPlayer failed: $e');
+                                  }
                                 },
                               ),
                             ),
@@ -13584,6 +13661,18 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         'avatarType': playerData['avatarType'],
         'avatarIcon': playerData['avatarIcon'],
         'avatarBgColor': playerData['avatarBgColor'],
+        'addedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(playerDoc.id)
+          .collection('visibleHosts')
+          .doc(hostUser.uid)
+          .set({
+        'hostUid': hostUser.uid,
+        'hostName': hostUser.displayName ?? '',
         'addedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -38632,6 +38721,8 @@ class HandChartPage extends StatelessWidget {
     final turnPot = flopPot + _streetPot(data['turnActions'] ?? []);
     final riverPot = turnPot + _streetPot(data['riverActions'] ?? []);
 
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
@@ -38891,123 +38982,252 @@ class HandChartPage extends StatelessWidget {
             ),
 
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _streetColumn(
-                    tr(
-                      context,
-                      'Preflop',
-                      zhTw: '翻牌前',
-                      zhCn: '翻牌前',
-                      ko: '프리플랍',
-                      ja: 'プリフロップ',
-                      de: 'Preflop',
-                      fr: 'Préflop',
-                      ar: 'قبل الفلوب',
-                      ru: 'Префлоп',
-                      trk: 'Preflop',
-                      es: 'Preflop',
-                      it: 'Preflop',
-                      pl: 'Preflop',
-                      pt: 'Pré-flop',
-                      th: 'พรีฟล็อป',
-                      id: 'Preflop',
-                      hi: 'प्रीफ्लॉप',
-                      bn: 'প্রিফ্লপ',
-                    ),
-                    data['preflopActions'] ?? [],
-                    '',
-                    preflopPot,
-                  ),
+            child: isMobile
+                ? ListView(
+                    children: [
+                      _streetColumn(
+                        context,
+                        tr(
+                          context,
+                          'Preflop',
+                          zhTw: '翻牌前',
+                          zhCn: '翻牌前',
+                          ko: '프리플랍',
+                          ja: 'プリフロップ',
+                          de: 'Preflop',
+                          fr: 'Préflop',
+                          ar: 'قبل الفلوب',
+                          ru: 'Префлоп',
+                          trk: 'Preflop',
+                          es: 'Preflop',
+                          it: 'Preflop',
+                          pl: 'Preflop',
+                          pt: 'Pré-flop',
+                          th: 'พรีฟลอป',
+                          id: 'Preflop',
+                          hi: 'प्रीफ्लॉप',
+                          bn: 'প্রিফ্লপ',
+                        ),
+                        data['preflopActions'] ?? [],
+                        '',
+                        preflopPot,
+                      ),
 
-                  _streetColumn(
-                    tr(
-                      context,
-                      'Flop',
-                      zhTw: '翻牌',
-                      zhCn: '翻牌',
-                      ko: '플랍',
-                      ja: 'フロップ',
-                      de: 'Flop',
-                      fr: 'Flop',
-                      ar: 'الفلوب',
-                      ru: 'Флоп',
-                      trk: 'Flop',
-                      es: 'Flop',
-                      it: 'Flop',
-                      pl: 'Flop',
-                      pt: 'Flop',
-                      th: 'ฟล็อป',
-                      id: 'Flop',
-                      hi: 'फ्लॉप',
-                      bn: 'ফ্লপ',
-                    ),
-                    data['flopActions'] ?? [],
-                    (data['flopCards'] ?? []).join(' '),
-                    flopPot,
-                  ),
+                      _streetColumn(
+                        context,
+                        tr(
+                          context,
+                          'Flop',
+                          zhTw: '翻牌',
+                          zhCn: '翻牌',
+                          ko: '플랍',
+                          ja: 'フロップ',
+                          de: 'Flop',
+                          fr: 'Flop',
+                          ar: 'الفلوب',
+                          ru: 'Флоп',
+                          trk: 'Flop',
+                          es: 'Flop',
+                          it: 'Flop',
+                          pl: 'Flop',
+                          pt: 'Flop',
+                          th: 'ฟลอป',
+                          id: 'Flop',
+                          hi: 'फ्लॉप',
+                          bn: 'ফ্লপ',
+                        ),
+                        data['flopActions'] ?? [],
+                        (data['flopCards'] ?? []).join(' '),
+                        flopPot,
+                      ),
 
-                  _streetColumn(
-                    tr(
-                      context,
-                      'Turn',
-                      zhTw: '轉牌',
-                      zhCn: '转牌',
-                      ko: '턴',
-                      ja: 'ターン',
-                      de: 'Turn',
-                      fr: 'Turn',
-                      ar: 'التيرن',
-                      ru: 'Тёрн',
-                      trk: 'Turn',
-                      es: 'Turn',
-                      it: 'Turn',
-                      pl: 'Turn',
-                      pt: 'Turn',
-                      th: 'เทิร์น',
-                      id: 'Turn',
-                      hi: 'टर्न',
-                      bn: 'টার্ন',
-                    ),
-                    data['turnActions'] ?? [],
-                    data['turnCard'] ?? '',
-                    turnPot,
-                  ),
+                      _streetColumn(
+                        context,
+                        tr(
+                          context,
+                          'Turn',
+                          zhTw: '轉牌',
+                          zhCn: '转牌',
+                          ko: '턴',
+                          ja: 'ターン',
+                          de: 'Turn',
+                          fr: 'Turn',
+                          ar: 'التيرن',
+                          ru: 'Тёрн',
+                          trk: 'Turn',
+                          es: 'Turn',
+                          it: 'Turn',
+                          pl: 'Turn',
+                          pt: 'Turn',
+                          th: 'เทิร์น',
+                          id: 'Turn',
+                          hi: 'टर्न',
+                          bn: 'টার্ন',
+                        ),
+                        data['turnActions'] ?? [],
+                        data['turnCard'] ?? '',
+                        turnPot,
+                      ),
 
-                  _streetColumn(
-                    tr(
-                      context,
-                      'River',
-                      zhTw: '河牌',
-                      zhCn: '河牌',
-                      ko: '리버',
-                      ja: 'リバー',
-                      de: 'River',
-                      fr: 'River',
-                      ar: 'الريفر',
-                      ru: 'Ривер',
-                      trk: 'River',
-                      es: 'River',
-                      it: 'River',
-                      pl: 'River',
-                      pt: 'River',
-                      th: 'ริเวอร์',
-                      id: 'River',
-                      hi: 'रिवर',
-                      bn: 'রিভার',
-                    ),
-                    data['riverActions'] ?? [],
-                    data['riverCard'] ?? '',
-                    riverPot,
-                  ),
+                      _streetColumn(
+                        context,
+                        tr(
+                          context,
+                          'River',
+                          zhTw: '河牌',
+                          zhCn: '河牌',
+                          ko: '리버',
+                          ja: 'リバー',
+                          de: 'River',
+                          fr: 'River',
+                          ar: 'الريفر',
+                          ru: 'Ривер',
+                          trk: 'River',
+                          es: 'River',
+                          it: 'River',
+                          pl: 'River',
+                          pt: 'River',
+                          th: 'ริเวอร์',
+                          id: 'River',
+                          hi: 'रिवर',
+                          bn: 'রিভার',
+                        ),
+                        data['riverActions'] ?? [],
+                        data['riverCard'] ?? '',
+                        riverPot,
+                      ),
 
-                  _showdownColumn(data['showdownCards'] ?? {}),
-                ],
-              ),
-            ),
+                      _showdownColumn(
+                        context,
+                        data['showdownCards'] ?? {},
+                      ),
+                    ],
+                  )
+                : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        _streetColumn(
+                          context,
+                          tr(
+                            context,
+                            'Preflop',
+                            zhTw: '翻牌前',
+                            zhCn: '翻牌前',
+                            ko: '프리플랍',
+                            ja: 'プリフロップ',
+                            de: 'Preflop',
+                            fr: 'Préflop',
+                            ar: 'قبل الفلوب',
+                            ru: 'Префлоп',
+                            trk: 'Preflop',
+                            es: 'Preflop',
+                            it: 'Preflop',
+                            pl: 'Preflop',
+                            pt: 'Pré-flop',
+                            th: 'พรีฟลอป',
+                            id: 'Preflop',
+                            hi: 'प्रीफ्लॉप',
+                            bn: 'প্রিফ্লপ',
+                          ),
+                          data['preflopActions'] ?? [],
+                          '',
+                          preflopPot,
+                        ),
+
+                        _streetColumn(
+                          context,
+                          tr(
+                            context,
+                            'Flop',
+                            zhTw: '翻牌',
+                            zhCn: '翻牌',
+                            ko: '플랍',
+                            ja: 'フロップ',
+                            de: 'Flop',
+                            fr: 'Flop',
+                            ar: 'الفلوب',
+                            ru: 'Флоп',
+                            trk: 'Flop',
+                            es: 'Flop',
+                            it: 'Flop',
+                            pl: 'Flop',
+                            pt: 'Flop',
+                            th: 'ฟลอป',
+                            id: 'Flop',
+                            hi: 'फ्लॉप',
+                            bn: 'ফ্লপ',
+                          ),
+                          data['flopActions'] ?? [],
+                          (data['flopCards'] ?? []).join(' '),
+                          flopPot,
+                        ),
+
+                        _streetColumn(
+                          context,
+                          tr(
+                            context,
+                            'Turn',
+                            zhTw: '轉牌',
+                            zhCn: '转牌',
+                            ko: '턴',
+                            ja: 'ターン',
+                            de: 'Turn',
+                            fr: 'Turn',
+                            ar: 'التيرن',
+                            ru: 'Тёрн',
+                            trk: 'Turn',
+                            es: 'Turn',
+                            it: 'Turn',
+                            pl: 'Turn',
+                            pt: 'Turn',
+                            th: 'เทิร์น',
+                            id: 'Turn',
+                            hi: 'टर्न',
+                            bn: 'টার্ন',
+                          ),
+                          data['turnActions'] ?? [],
+                          data['turnCard'] ?? '',
+                          turnPot,
+                        ),
+
+                        _streetColumn(
+                          context,
+                          tr(
+                            context,
+                            'River',
+                            zhTw: '河牌',
+                            zhCn: '河牌',
+                            ko: '리버',
+                            ja: 'リバー',
+                            de: 'River',
+                            fr: 'River',
+                            ar: 'الريفر',
+                            ru: 'Ривер',
+                            trk: 'River',
+                            es: 'River',
+                            it: 'River',
+                            pl: 'River',
+                            pt: 'River',
+                            th: 'ริเวอร์',
+                            id: 'River',
+                            hi: 'रिवर',
+                            bn: 'রিভার',
+                          ),
+                          data['riverActions'] ?? [],
+                          data['riverCard'] ?? '',
+                          riverPot,
+                        ),
+
+                        _showdownColumn(
+                          context,
+                          data['showdownCards'] ?? {},
+                        ),
+                      ],
+                    ),
+                  ),
           ),
         ],
       ),
@@ -39524,6 +39744,7 @@ class HandChartPage extends StatelessWidget {
   }
 
   Widget _streetColumn(
+    BuildContext context,
     String title,
     dynamic actions,
     String cards,
@@ -39534,7 +39755,9 @@ class HandChartPage extends StatelessWidget {
     );
 
     return Container(
-      width: 260,
+      width: MediaQuery.of(context).size.width < 600
+          ? double.infinity
+          : 260,
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(12),
       color: const Color(0xFF3A3A40),
@@ -39625,7 +39848,10 @@ class HandChartPage extends StatelessWidget {
     );
   }
 
-  Widget _showdownColumn(dynamic showdown) {
+  Widget _showdownColumn(
+    BuildContext context,
+    dynamic showdown,
+  ) {
     final map = Map<String, dynamic>.from(showdown);
 
     final resultText = _autoShowdownResultText();
@@ -39640,7 +39866,9 @@ class HandChartPage extends StatelessWidget {
     }).toList();
 
     return Container(
-      width: 260,
+      width: MediaQuery.of(context).size.width < 600
+          ? double.infinity
+          : 260,
       margin: const EdgeInsets.all(8),
       padding: const EdgeInsets.all(12),
       color: const Color(0xFF3A3A40),
@@ -40998,17 +41226,6 @@ class _AddHandPageState extends State<AddHandPage> {
 
   void _addFlopAction() {
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final cardColor =
-        isDark ? const Color(0xFF1F2937) : Colors.white;
-
-    final textColor =
-        isDark ? Colors.white : Colors.black87;
-
-    final subTextColor =
-        isDark ? Colors.white70 : Colors.black54;
-
     final positions = _positionsForSize(_tableSize);
 
     final foldedPreflop = _preflopActions
@@ -41054,6 +41271,7 @@ class _AddHandPageState extends State<AddHandPage> {
             p != lastAggressivePosition)
         .toList();
 
+
     if (availablePositions.isEmpty) return;
 
     String selectedPosition = availablePositions.first;
@@ -41077,6 +41295,17 @@ class _AddHandPageState extends State<AddHandPage> {
               selectedAction = availableActions.first;
             }
 
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            final cardColor =
+                isDark ? const Color(0xFF1F2937) : Colors.white;
+
+            final textColor =
+                isDark ? Colors.white : Colors.black87;
+
+            final subTextColor =
+                isDark ? Colors.white70 : Colors.black54;
+
             return SafeArea(
               child: Container(
                 color: cardColor,
@@ -41090,9 +41319,27 @@ class _AddHandPageState extends State<AddHandPage> {
                         dropdownColor: cardColor,
                         iconEnabledColor: textColor,
                         initialValue: selectedPosition,
+                        items: availablePositions.map((p) {
+                          return DropdownMenuItem(
+                            value: p,
+                            child: Text(
+                              p,
+                              style: TextStyle(color: textColor),
+                            ),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value == null) return;
+
+                          setModalState(() {
+                            selectedPosition = value;
+                          });
+                        },
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: const Color(0xFF111827),
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
                           labelText: tr(
                             context,
                             'Position',
@@ -41116,22 +41363,6 @@ class _AddHandPageState extends State<AddHandPage> {
                           ),
                           labelStyle: TextStyle(color: subTextColor),
                         ),
-                        items: availablePositions.map((p) {
-                          return DropdownMenuItem(
-                            value: p,
-                            child: Text(
-                              p,
-                              style: TextStyle(color: textColor),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setModalState(() {
-                            selectedPosition = value;
-                          });
-                        },
                       ),
 
                       const SizedBox(height: 16),
@@ -41143,7 +41374,9 @@ class _AddHandPageState extends State<AddHandPage> {
                         initialValue: selectedAction,
                         decoration: InputDecoration(
                           filled: true,
-                          fillColor: const Color(0xFF111827),
+                          fillColor: isDark
+                              ? const Color(0xFF111827)
+                              : Colors.white,
                           labelText: tr(
                             context,
                             'Action',
@@ -41195,7 +41428,9 @@ class _AddHandPageState extends State<AddHandPage> {
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
                             filled: true,
-                            fillColor: const Color(0xFF111827),
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
                             labelText: tr(
                               context,
                               'Bet Amount',
@@ -43782,18 +44017,16 @@ class _AddHandPageState extends State<AddHandPage> {
                     ),
                   ),
 
-                FilledButton.icon(
-                  onPressed:
-                      _flopCards.length == 3
-                          ? _addFlopAction
-                          : null,
-
-                  icon: const Icon(Icons.add),
-
-                  label: Text(
-                    tr(
-                      context,
-                      'Add Flop Action',
+                  FilledButton.icon(
+                    onPressed:
+                        _flopCards.length == 3
+                            ? _addFlopAction
+                            : null,
+                    icon: const Icon(Icons.add),
+                    label: Text(
+                      tr(
+                        context,
+                        'Add Flop Action',
                       zhTw: '新增翻牌動作',
                       zhCn: '新增翻牌动作',
                       ko: '플랍 액션 추가',
