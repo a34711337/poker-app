@@ -7324,8 +7324,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     required String avatarIcon,
     required int avatarBgColor,
   }) async {
-    final tablesSnap =
-        await FirebaseFirestore.instance.collection('tables').get();
+    final tablesSnap = await FirebaseFirestore.instance
+        .collection('tables')
+        .where('endGame', isEqualTo: false)
+        .get();
 
     final batch = FirebaseFirestore.instance.batch();
     int writeCount = 0;
@@ -7393,13 +7395,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       overrideAvatarBgColor: avatar.avatarBgColor,
     );
 
-    await _syncMyAvatarToAllSeatedTables(
-      uid: user.uid,
-      photoUrl: avatar.photoUrl,
-      avatarType: avatar.avatarType,
-      avatarIcon: avatar.avatarIcon,
-      avatarBgColor: avatar.avatarBgColor,
-    );
+    //await _syncMyAvatarToAllSeatedTables(
+    //  uid: user.uid,
+    //  photoUrl: avatar.photoUrl,
+    //  avatarType: avatar.avatarType,
+    //  avatarIcon: avatar.avatarIcon,
+    //  avatarBgColor: avatar.avatarBgColor,
+    //);
 
     if (!mounted) return;
 
@@ -7482,7 +7484,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         overrideAvatarBgColor: avatarBgColor,
       );
 
-      final tables = await FirebaseFirestore.instance.collection('tables').get();
+      final tables = await FirebaseFirestore.instance
+          .collection('tables')
+          .where('endGame', isEqualTo: false)
+          .get();
       
       for (final doc in tables.docs) {
         final data = doc.data();
@@ -8272,13 +8277,13 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
         overrideAvatarBgColor: nextAvatarBgColor,
       );
 
-      await _syncMyAvatarToAllSeatedTables(
-        uid: user.uid,
-        photoUrl: null,
-        avatarType: 'virtual',
-        avatarIcon: nextAvatarIcon,
-        avatarBgColor: nextAvatarBgColor,
-      );
+      //await _syncMyAvatarToAllSeatedTables(
+      //  uid: user.uid,
+      //  photoUrl: null,
+      //  avatarType: 'virtual',
+      //  avatarIcon: nextAvatarIcon,
+      //  avatarBgColor: nextAvatarBgColor,
+      //);
 
       if (!mounted) return;
 

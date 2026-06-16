@@ -1388,3 +1388,94 @@ exports.verifyAppleSubscription = functions.https.onRequest(async (req, res) => 
     });
   }
 });
+
+exports.syncUserAvatarToTables = functionsV1.firestore
+  .document("users/{uid}")
+  .onUpdate(async (change, context) => {
+
+    const uid = context.params.uid;
+
+    const before = change.before.data() || {};
+    const after = change.after.data() || {};
+
+    const beforeAvatar = JSON.stringify({
+      photoUrl: before.photoUrl || null,
+      avatarType: before.avatarType || "photo",
+      avatarIcon: before.avatarIcon || "",
+      avatarBgColor: before.avatarBgColor || 0,
+    });
+
+    const afterAvatar = JSON.stringify({
+      photoUrl: after.photoUrl || null,
+      avatarType: after.avatarType || "photo",
+      avatarIcon: after.avatarIcon || "",
+      avatarBgColor: after.avatarBgColor || 0,
+    });
+
+    if (beforeAvatar === afterAvatar) {
+      return null;
+    }
+
+    const tablesSnap = await db
+      .collection("tables")
+      .get();
+
+    let batch = db.batch();
+    let count = 0;
+
+    for (const doc of tablesSnap.docs) {
+      const data = doc.data() || {};
+      
+      if (data.endGame === true) {
+        continue;
+      }
+
+      const seats = Array.isArray(data.seats) ? data.seats : [];
+
+      let changed = false;
+
+      const updatedSeats = seats.map((seat) => {
+        if (!seat || typeof seat !== "object") {
+          return seat;
+        }
+
+        if ((seat.playerUid || "").trim() !== uid) {
+          return seat;
+        }
+
+        changed = true;
+
+        return {
+          ...seat,
+          playerAvatarType: after.avatarType || "photo",
+          playerAvatarIcon: after.avatarIcon || "",
+          playerAvatarBgColor: after.avatarBgColor || 0,
+          playerPhotoUrl:
+            after.avatarType === "virtual"
+              ? null
+              : ((after.photoUrl || "").trim() || null),
+        };
+      });
+
+      if (changed) {
+        batch.update(doc.ref, {
+          seats: updatedSeats,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        count++;
+      }
+
+      if (count >= 450) {
+        await batch.commit();
+        batch = db.batch();
+        count = 0;
+      }
+    }
+
+    if (count > 0) {
+      await batch.commit();
+    }
+
+    return null;
+  });
