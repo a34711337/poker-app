@@ -12791,8 +12791,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         }
 
         final userData = userSnapshot.data?.data() ?? {};
-        final grantedHostIds =
-            List<String>.from(userData['grantedHostIds'] ?? []);
+        final grantedHostIds = <String>[];
 
         if (isHost) {
           final createdByMeStream = tablesRef
@@ -13043,189 +13042,379 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final subTextColor = isDark ? Colors.white70 : Colors.black54;
-    final fieldColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
+    final fieldColor =
+        isDark ? const Color(0xFF0F172A) : const Color(0xFFF9FAFB);
     const primaryGreen = Color(0xFF22C55E);
 
     final controller = TextEditingController();
+    final hostUser = FirebaseAuth.instance.currentUser;
+    if (hostUser == null) return;
 
     final playerId = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(28),
-        ),
-
-        title: Text(
-          tr(
-            context,
-            'Add Player by ID',
-            zhTw: '用玩家 ID 新增玩家',
-            zhCn: '用玩家 ID 添加玩家',
-            ko: '플레이어 ID로 추가',
-            ja: 'プレイヤーIDで追加',
-            de: 'Spieler per ID hinzufügen',
-            fr: 'Ajouter un joueur par ID',
-            ar: 'إضافة لاعب باستخدام المعرّف',
-            ru: 'Добавить игрока по ID',
-            trk: 'Oyuncu ID ile ekle',
-            es: 'Agregar jugador por ID',
-            it: 'Aggiungi giocatore tramite ID',
-            pl: 'Dodaj gracza przez ID',
-            pt: 'Adicionar jogador por ID',
-            th: 'เพิ่มผู้เล่นด้วย ID',
-            id: 'Tambah pemain dengan ID',
-            hi: 'Player ID से खिलाड़ी जोड़ें',
-            bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          surfaceTintColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
           ),
-          style: TextStyle(
-            color: textColor,
-            fontWeight: FontWeight.w800,
+          title: Text(
+            tr(
+              dialogContext,
+              'Add Player by ID',
+              zhTw: '用玩家 ID 新增玩家',
+              zhCn: '用玩家 ID 添加玩家',
+              ko: '플레이어 ID로 추가',
+              ja: 'プレイヤーIDで追加',
+              de: 'Spieler per ID hinzufügen',
+              fr: 'Ajouter un joueur par ID',
+              ar: 'إضافة لاعب باستخدام المعرّف',
+              ru: 'Добавить игрока по ID',
+              trk: 'Oyuncu ID ile ekle',
+              es: 'Agregar jugador por ID',
+              it: 'Aggiungi giocatore tramite ID',
+              pl: 'Dodaj gracza przez ID',
+              pt: 'Adicionar jogador por ID',
+              th: 'เพิ่มผู้เล่นด้วย ID',
+              id: 'Tambah pemain dengan ID',
+              hi: 'Player ID से खिलाड़ी जोड़ें',
+              bn: 'Player ID দিয়ে খেলোয়াড় যোগ করুন',
+            ),
+            style: TextStyle(
+              color: textColor,
+              fontWeight: FontWeight.w800,
+            ),
           ),
-        ),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: controller,
+                    style: TextStyle(color: textColor),
+                    textCapitalization: TextCapitalization.characters,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(
+                        RegExp(r'[A-Za-z0-9]'),
+                      ),
+                      LengthLimitingTextInputFormatter(8),
+                      UpperCaseTextFormatter(),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: tr(
+                        dialogContext,
+                        'Player ID',
+                        zhTw: '玩家 ID',
+                        zhCn: '玩家 ID',
+                        ko: '플레이어 ID',
+                        ja: 'プレイヤーID',
+                        de: 'Spieler-ID',
+                        fr: 'ID joueur',
+                        ar: 'معرّف اللاعب',
+                        ru: 'ID игрока',
+                        trk: 'Oyuncu ID',
+                        es: 'ID de jugador',
+                        it: 'ID giocatore',
+                        pl: 'ID gracza',
+                        pt: 'ID do jogador',
+                        th: 'ID ผู้เล่น',
+                        id: 'ID pemain',
+                        hi: 'Player ID',
+                        bn: 'Player ID',
+                      ),
+                      hintText: tr(
+                        dialogContext,
+                        'Enter 8-character Player ID',
+                        zhTw: '輸入 8 碼玩家 ID',
+                        zhCn: '输入 8 位玩家 ID',
+                        ko: '8자리 플레이어 ID를 입력하세요',
+                        ja: '8文字のプレイヤーIDを入力してください',
+                        de: '8-stellige Spieler-ID eingeben',
+                        fr: 'Entrez l’ID joueur à 8 caractères',
+                        ar: 'أدخل معرّف اللاعب المكوّن من 8 أحرف',
+                        ru: 'Введите ID игрока из 8 символов',
+                        trk: '8 karakterli Oyuncu ID girin',
+                        es: 'Ingresa el ID de jugador de 8 caracteres',
+                        it: 'Inserisci l’ID giocatore di 8 caratteri',
+                        pl: 'Wpisz 8-znakowe ID gracza',
+                        pt: 'Insira o ID do jogador com 8 caracteres',
+                        th: 'กรอก ID ผู้เล่น 8 ตัวอักษร',
+                        id: 'Masukkan ID pemain 8 karakter',
+                        hi: '8 अक्षरों वाला Player ID दर्ज करें',
+                        bn: '৮ অক্ষরের Player ID লিখুন',
+                      ),
+                      labelStyle: TextStyle(color: subTextColor),
+                      hintStyle: TextStyle(color: subTextColor),
+                      filled: true,
+                      fillColor: fieldColor,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide(
+                          color: isDark ? Colors.white12 : Colors.black12,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: const BorderSide(
+                          color: primaryGreen,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    tr(
+                      dialogContext,
+                      'Added Players',
+                      zhTw: '已新增玩家',
+                      zhCn: '已添加玩家',
+                      ko: '추가된 플레이어',
+                      ja: '追加済みプレイヤー',
+                      de: 'Hinzugefügte Spieler',
+                      fr: 'Joueurs ajoutés',
+                      ar: 'اللاعبون المضافون',
+                      ru: 'Добавленные игроки',
+                      trk: 'Eklenen Oyuncular',
+                      es: 'Jugadores agregados',
+                      it: 'Giocatori aggiunti',
+                      pl: 'Dodani gracze',
+                      pt: 'Jogadores adicionados',
+                      th: 'ผู้เล่นที่เพิ่มแล้ว',
+                      id: 'Pemain yang ditambahkan',
+                      hi: 'जोड़े गए खिलाड़ी',
+                      bn: 'যোগ করা খেলোয়াড়',
+                    ),
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(hostUser.uid)
+                        .collection('addedPlayers')
+                        .orderBy('addedAt', descending: true)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 16),
+                          child: Center(
+                            child: SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
 
-        content: TextField(
-          controller: controller,
-          style: TextStyle(color: textColor),
-          textCapitalization: TextCapitalization.characters,
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z0-9]')),
-            LengthLimitingTextInputFormatter(8),
-            UpperCaseTextFormatter(),
+                      final players = snapshot.data?.docs ?? [];
+
+                      if (players.isEmpty) {
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: Text(
+                            tr(
+                              dialogContext,
+                              'No added players yet',
+                              zhTw: '尚未新增玩家',
+                              zhCn: '尚未添加玩家',
+                              ko: '아직 추가된 플레이어가 없습니다',
+                              ja: '追加済みプレイヤーはまだいません',
+                              de: 'Noch keine Spieler hinzugefügt',
+                              fr: 'Aucun joueur ajouté pour le moment',
+                              ar: 'لم تتم إضافة أي لاعبين بعد',
+                              ru: 'Пока нет добавленных игроков',
+                              trk: 'Henüz oyuncu eklenmedi',
+                              es: 'Aún no hay jugadores agregados',
+                              it: 'Nessun giocatore aggiunto',
+                              pl: 'Nie dodano jeszcze graczy',
+                              pt: 'Nenhum jogador adicionado ainda',
+                              th: 'ยังไม่มีผู้เล่นที่เพิ่ม',
+                              id: 'Belum ada pemain yang ditambahkan',
+                              hi: 'अभी तक कोई खिलाड़ी नहीं जोड़ा गया',
+                              bn: 'এখনও কোনো খেলোয়াড় যোগ করা হয়নি',
+                            ),
+                            style: TextStyle(color: subTextColor),
+                          ),
+                        );
+                      }
+
+                      return Column(
+                        children: players.map((doc) {
+                          final data = doc.data();
+
+                          final name =
+                              (data['shortName'] ??
+                                      data['displayName'] ??
+                                      'Player')
+                                  .toString()
+                                  .trim();
+
+                          final subtitle =
+                              (data['email'] ?? data['playerId'] ?? '')
+                                  .toString()
+                                  .trim();
+
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            decoration: BoxDecoration(
+                              color: fieldColor,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color:
+                                    isDark ? Colors.white12 : Colors.black12,
+                              ),
+                            ),
+                            child: ListTile(
+                              dense: true,
+                              contentPadding: const EdgeInsets.only(
+                                left: 12,
+                                right: 4,
+                              ),
+                              title: Text(
+                                name.isEmpty ? 'Player' : name,
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              subtitle: subtitle.isEmpty
+                                  ? null
+                                  : Text(
+                                      subtitle,
+                                      style: TextStyle(
+                                        color: subTextColor,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                              trailing: IconButton(
+                                tooltip: tr(
+                                  dialogContext,
+                                  'Delete',
+                                  zhTw: '刪除',
+                                  zhCn: '删除',
+                                  ko: '삭제',
+                                  ja: '削除',
+                                  de: 'Löschen',
+                                  fr: 'Supprimer',
+                                  ar: 'حذف',
+                                  ru: 'Удалить',
+                                  trk: 'Sil',
+                                  es: 'Eliminar',
+                                  it: 'Elimina',
+                                  pl: 'Usuń',
+                                  pt: 'Excluir',
+                                  th: 'ลบ',
+                                  id: 'Hapus',
+                                  hi: 'हटाएं',
+                                  bn: 'মুছুন',
+                                ),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: () async {
+                                  await doc.reference.delete();
+                                },
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor:
+                    isDark ? Colors.white70 : const Color(0xFF2E7D32),
+              ),
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(
+                tr(
+                  dialogContext,
+                  'Cancel',
+                  zhTw: '取消',
+                  zhCn: '取消',
+                  ko: '취소',
+                  ja: 'キャンセル',
+                  de: 'Abbrechen',
+                  fr: 'Annuler',
+                  ar: 'إلغاء',
+                  ru: 'Отмена',
+                  trk: 'İptal',
+                  es: 'Cancelar',
+                  it: 'Annulla',
+                  pl: 'Anuluj',
+                  pt: 'Cancelar',
+                  th: 'ยกเลิก',
+                  id: 'Batal',
+                  hi: 'रद्द करें',
+                  bn: 'বাতিল',
+                ),
+              ),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: primaryGreen,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  controller.text.trim().toUpperCase(),
+                );
+              },
+              child: Text(
+                tr(
+                  dialogContext,
+                  'Add',
+                  zhTw: '新增',
+                  zhCn: '添加',
+                  ko: '추가',
+                  ja: '追加',
+                  de: 'Hinzufügen',
+                  fr: 'Ajouter',
+                  ar: 'إضافة',
+                  ru: 'Добавить',
+                  trk: 'Ekle',
+                  es: 'Agregar',
+                  it: 'Aggiungi',
+                  pl: 'Dodaj',
+                  pt: 'Adicionar',
+                  th: 'เพิ่ม',
+                  id: 'Tambah',
+                  hi: 'जोड़ें',
+                  bn: 'যোগ করুন',
+                ),
+              ),
+            ),
           ],
-          decoration: InputDecoration(
-            labelText: tr(
-              context,
-              'Player ID',
-              zhTw: '玩家 ID',
-              zhCn: '玩家 ID',
-              ko: '플레이어 ID',
-              ja: 'プレイヤーID',
-              de: 'Spieler-ID',
-              fr: 'ID joueur',
-              ar: 'معرّف اللاعب',
-              ru: 'ID игрока',
-              trk: 'Oyuncu ID',
-              es: 'ID de jugador',
-              it: 'ID giocatore',
-              pl: 'ID gracza',
-              pt: 'ID do jogador',
-              th: 'ID ผู้เล่น',
-              id: 'ID pemain',
-              hi: 'Player ID',
-              bn: 'Player ID',
-            ),
-            hintText: tr(
-              context,
-              'Enter 8-character Player ID',
-              zhTw: '輸入 8 碼玩家 ID',
-              zhCn: '输入 8 位玩家 ID',
-              ko: '8자리 플레이어 ID를 입력하세요',
-              ja: '8文字のプレイヤーIDを入力してください',
-              de: '8-stellige Spieler-ID eingeben',
-              fr: 'Entrez l’ID joueur à 8 caractères',
-              ar: 'أدخل معرّف اللاعب المكوّن من 8 أحرف',
-              ru: 'Введите ID игрока из 8 символов',
-              trk: '8 karakterli Oyuncu ID girin',
-              es: 'Ingresa el ID de jugador de 8 caracteres',
-              it: 'Inserisci l’ID giocatore di 8 caratteri',
-              pl: 'Wpisz 8-znakowe ID gracza',
-              pt: 'Insira o ID do jogador com 8 caracteres',
-              th: 'กรอก ID ผู้เล่น 8 ตัวอักษร',
-              id: 'Masukkan ID pemain 8 karakter',
-              hi: '8 अक्षरों वाला Player ID दर्ज करें',
-              bn: '৮ অক্ষরের Player ID লিখুন',
-            ),
-            labelStyle: TextStyle(color: subTextColor),
-            hintStyle: TextStyle(color: subTextColor),
-            filled: true,
-            fillColor: fieldColor,
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(
-                color: isDark ? Colors.white12 : Colors.black12,
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(
-                color: primaryGreen,
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-
-        actions: [
-          TextButton(
-            style: TextButton.styleFrom(
-              foregroundColor: isDark ? Colors.white70 : const Color(0xFF2E7D32),
-            ),
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              tr(
-                context,
-                'Cancel',
-                zhTw: '取消',
-                zhCn: '取消',
-                ko: '취소',
-                ja: 'キャンセル',
-                de: 'Abbrechen',
-                fr: 'Annuler',
-                ar: 'إلغاء',
-                ru: 'Отмена',
-                trk: 'İptal',
-                es: 'Cancelar',
-                it: 'Annulla',
-                pl: 'Anuluj',
-                pt: 'Cancelar',
-                th: 'ยกเลิก',
-                id: 'Batal',
-                hi: 'रद्द करें',
-                bn: 'বাতিল',
-              ),
-            ),
-          ),
-
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: primaryGreen,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            onPressed: () =>
-                Navigator.pop(context, controller.text.trim().toUpperCase()),
-            child: Text(
-              tr(
-                context,
-                'Add',
-                zhTw: '新增',
-                zhCn: '添加',
-                ko: '추가',
-                ja: '追加',
-                de: 'Hinzufügen',
-                fr: 'Ajouter',
-                ar: 'إضافة',
-                ru: 'Добавить',
-                trk: 'Ekle',
-                es: 'Agregar',
-                it: 'Aggiungi',
-                pl: 'Dodaj',
-                pt: 'Adicionar',
-                th: 'เพิ่ม',
-                id: 'Tambah',
-                hi: 'जोड़ें',
-                bn: 'যোগ করুন',
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
+
+    controller.dispose();
 
     if (playerId == null || playerId.isEmpty) return;
 
@@ -13266,11 +13455,12 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     }
 
     try {
-      QuerySnapshot<Map<String, dynamic>> query = await FirebaseFirestore.instance
-          .collection('users')
-          .where('playerId', isEqualTo: cleanPlayerId)
-          .limit(1)
-          .get();
+      QuerySnapshot<Map<String, dynamic>> query =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .where('playerId', isEqualTo: cleanPlayerId)
+              .limit(1)
+              .get();
 
       if (query.docs.isEmpty) {
         query = await FirebaseFirestore.instance
@@ -13337,10 +13527,15 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         return;
       }
 
-      final grantedHostIds =
-          List<String>.from(playerData['grantedHostIds'] ?? []);
+      final addedPlayerRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(hostUser.uid)
+          .collection('addedPlayers')
+          .doc(playerDoc.id);
 
-      if (grantedHostIds.contains(hostUser.uid)) {
+      final addedPlayerSnap = await addedPlayerRef.get();
+
+      if (addedPlayerSnap.exists) {
         _showSnack(
           tr(
             context,
@@ -13367,15 +13562,29 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
         return;
       }
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(playerDoc.id)
-          .update({
-        'grantedHostIds': FieldValue.arrayUnion([hostUser.uid]),
+      await addedPlayerRef.set({
+        'uid': playerDoc.id,
+        'playerId': (playerData['playerId'] ?? cleanPlayerId)
+            .toString()
+            .trim(),
         'playerIdLower': (playerData['playerId'] ?? cleanPlayerId)
             .toString()
             .trim()
             .toLowerCase(),
+        'displayName': (playerData['displayName'] ?? '')
+            .toString()
+            .trim(),
+        'shortName': (playerData['shortName'] ?? '')
+            .toString()
+            .trim(),
+        'email': (playerData['email'] ?? '')
+            .toString()
+            .trim(),
+        'photoUrl': playerData['photoUrl'],
+        'avatarType': playerData['avatarType'],
+        'avatarIcon': playerData['avatarIcon'],
+        'avatarBgColor': playerData['avatarBgColor'],
+        'addedAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
@@ -13507,7 +13716,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
 
     final visiblePlayersSnapshot = await FirebaseFirestore.instance
         .collection('users')
-        .where('grantedHostIds', arrayContains: currentUid)
+        .where(FieldPath.documentId, isEqualTo: '__none__')
         .get();
 
     final targetUserIds = visiblePlayersSnapshot.docs
@@ -17051,10 +17260,9 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
 
         if (targetBlocked.contains(currentUser.uid)) continue;
 
-        final matched = displayName.contains(keyword) ||
-            shortName.contains(keyword) ||
-            email.contains(keyword) ||
-            playerId.contains(keyword);
+        final matched =
+            email == keyword ||
+            playerId == keyword;
 
         if (!matched) continue;
 
@@ -17070,7 +17278,10 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
         searchResults = results;
         isSearching = false;
       });
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('SEARCH ERROR: $e');
+      debugPrint('SEARCH STACK: $stack');
+
       if (!mounted) return;
 
       setState(() {
@@ -17083,24 +17294,24 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
           content: Text(
             tr(
               context,
-              'Search failed',
-              zhTw: '搜尋失敗',
-              zhCn: '搜索失败',
-              ko: '검색에 실패했습니다',
-              ja: '検索に失敗しました',
-              de: 'Suche fehlgeschlagen',
-              fr: 'Échec de la recherche',
-              ar: 'فشل البحث',
-              ru: 'Поиск не удался',
-              trk: 'Arama başarısız oldu',
-              es: 'La búsqueda falló',
-              it: 'Ricerca non riuscita',
-              pl: 'Wyszukiwanie nie powiodło się',
-              pt: 'Falha na pesquisa',
-              th: 'ค้นหาไม่สำเร็จ',
-              id: 'Pencarian gagal',
-              hi: 'खोज विफल रही',
-              bn: 'সার্চ ব্যর্থ হয়েছে',
+              'Search failed: $e',
+              zhTw: '搜尋失敗：$e',
+              zhCn: '搜索失败：$e',
+              ko: '검색 실패: $e',
+              ja: '検索に失敗しました: $e',
+              de: 'Suche fehlgeschlagen: $e',
+              fr: 'Échec de la recherche : $e',
+              ar: 'فشل البحث: $e',
+              ru: 'Ошибка поиска: $e',
+              trk: 'Arama başarısız: $e',
+              es: 'Búsqueda fallida: $e',
+              it: 'Ricerca non riuscita: $e',
+              pl: 'Wyszukiwanie nie powiodło się: $e',
+              pt: 'Falha na pesquisa: $e',
+              th: 'ค้นหาล้มเหลว: $e',
+              id: 'Pencarian gagal: $e',
+              hi: 'खोज विफल: $e',
+              bn: 'অনুসন্ধান ব্যর্থ হয়েছে: $e',
             ),
           ),
         ),
@@ -18116,24 +18327,24 @@ class _FriendsHubPageState extends State<FriendsHubPage> {
                 ),
                 hintText: tr(
                   context,
-                  'Name / email / player ID',
-                  zhTw: '名稱 / Email / 玩家 ID',
-                  zhCn: '名称 / Email / 玩家 ID',
-                  ko: '이름 / 이메일 / 플레이어 ID',
-                  ja: '名前 / メール / プレイヤーID',
-                  de: 'Name / E-Mail / Spieler-ID',
-                  fr: 'Nom / e-mail / ID joueur',
-                  ar: 'الاسم / البريد الإلكتروني / معرف اللاعب',
-                  ru: 'Имя / email / ID игрока',
-                  trk: 'İsim / E-posta / Oyuncu Kimliği',
-                  es: 'Nombre / correo / ID del jugador',
-                  it: 'Nome / email / ID giocatore',
-                  pl: 'Nazwa / e-mail / ID gracza',
-                  pt: 'Nome / e-mail / ID do jogador',
-                  th: 'ชื่อ / อีเมล / รหัสผู้เล่น',
-                  id: 'Nama / email / ID pemain',
-                  hi: 'नाम / ईमेल / प्लेयर आईडी',
-                  bn: 'নাম / ইমেইল / প্লেয়ার আইডি',
+                  'Email / Player ID',
+                  zhTw: 'Email / 玩家 ID',
+                  zhCn: 'Email / 玩家 ID',
+                  ko: '이메일 / 플레이어 ID',
+                  ja: 'メール / プレイヤーID',
+                  de: 'E-Mail / Spieler-ID',
+                  fr: 'E-mail / ID joueur',
+                  ar: 'البريد الإلكتروني / معرف اللاعب',
+                  ru: 'Email / ID игрока',
+                  trk: 'E-posta / Oyuncu Kimliği',
+                  es: 'Correo electrónico / ID del jugador',
+                  it: 'Email / ID giocatore',
+                  pl: 'E-mail / ID gracza',
+                  pt: 'E-mail / ID do jogador',
+                  th: 'อีเมล / รหัสผู้เล่น',
+                  id: 'Email / ID pemain',
+                  hi: 'ईमेल / प्लेयर आईडी',
+                  bn: 'ইমেইল / প্লেয়ার আইডি',
                 ),
                 labelStyle: TextStyle(color: subTextColor),
                 hintStyle: TextStyle(color: subTextColor),
@@ -21067,18 +21278,30 @@ class _TableDetailPageState extends State<TableDetailPage> {
           .where((e) => e.isNotEmpty)
           .toSet();
 
-      Query<Map<String, dynamic>> query = FirebaseFirestore.instance
+      final addedPlayersSnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .where('isActive', isEqualTo: true);
+          .doc(currentUid)
+          .collection('addedPlayers')
+          .get();
 
-      if (currentUid.isNotEmpty) {
-        query = query.where(
-          'grantedHostIds',
-          arrayContains: currentUid,
-        );
+      final addedPlayerIds = addedPlayersSnapshot.docs
+          .map((doc) => doc.id.trim())
+          .where((id) => id.isNotEmpty)
+          .toSet()
+          .toList();
+
+      final playerDocs = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+
+      for (var i = 0; i < addedPlayerIds.length; i += 30) {
+        final chunk = addedPlayerIds.skip(i).take(30).toList();
+
+        final chunkSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .where(FieldPath.documentId, whereIn: chunk)
+            .get();
+
+        playerDocs.addAll(chunkSnapshot.docs);
       }
-
-      final snapshot = await query.limit(200).get();
 
       int sortScore(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
         final data = doc.data();
@@ -21093,7 +21316,7 @@ class _TableDetailPageState extends State<TableDetailPage> {
         return selectedCount;
       }
 
-      allPlayers = snapshot.docs.where((doc) {
+      allPlayers = playerDocs.where((doc) {
         final data = doc.data();
 
         final uid = doc.id.trim();
