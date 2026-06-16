@@ -4029,6 +4029,20 @@ Future<void> sendFriendRequest({
 
   final requestId = buildDirectChatId(currentUser.uid, targetUser.uid);
 
+  final friendshipQuery = await FirebaseFirestore.instance
+      .collection('friendships')
+      .where('memberUids', arrayContains: currentUser.uid)
+      .get();
+
+  final alreadyFriends = friendshipQuery.docs.any((doc) {
+    final members = List<String>.from(doc.data()['memberUids'] ?? []);
+    return members.contains(targetUser.uid);
+  });
+
+  if (alreadyFriends) {
+    throw Exception('Already friends');
+  }
+
   final requestRef = FirebaseFirestore.instance
       .collection('friend_requests')
       .doc(requestId);
@@ -4041,20 +4055,7 @@ Future<void> sendFriendRequest({
       .get();
 
   if (duplicateQuery.docs.isNotEmpty) {
-    final data = duplicateQuery.docs.first.data();
-    final status = (data['status'] ?? '').toString().trim();
-
-    if (status == 'pending') {
-      throw Exception('Friend request already sent');
-    }
-
-    if (status == 'accepted') {
-      throw Exception('Already friends');
-    }
-
-    if (status == 'ignored') {
-      throw Exception('Friend request already sent');
-    }
+    throw Exception('Friend request already sent');
   }
 
   await requestRef.set({
@@ -4082,19 +4083,33 @@ Future<void> acceptFriendRequest(Map<String, dynamic> requestData) async {
   final fromUid = (requestData['fromUid'] ?? '').toString().trim();
   final toUid = (requestData['toUid'] ?? '').toString().trim();
 
+  if (fromUid.isEmpty || toUid.isEmpty) {
+    throw Exception('Invalid request');
+  }
+
   if (toUid != currentUser.uid) {
     throw Exception('Invalid request');
   }
 
   final chatId = buildDirectChatId(fromUid, toUid);
+  final requestId = (requestData['requestId'] ?? chatId).toString().trim();
+
+  debugPrint('fromUid=$fromUid');
+  debugPrint('toUid=$toUid');
+  debugPrint('chatId=$chatId');
+  debugPrint('requestId=$requestId');
+  debugPrint('requestData=$requestData');
 
   final usersRef = FirebaseFirestore.instance.collection('users');
+
   final requestRef = FirebaseFirestore.instance
       .collection('friend_requests')
-      .doc(chatId);
+      .doc(requestId);
+
   final friendshipRef = FirebaseFirestore.instance
       .collection('friendships')
       .doc(chatId);
+
   final chatRef = FirebaseFirestore.instance
       .collection('direct_chats')
       .doc(chatId);
@@ -4105,96 +4120,80 @@ Future<void> acceptFriendRequest(Map<String, dynamic> requestData) async {
   final fromData = fromUserDoc.data() ?? {};
   final toData = toUserDoc.data() ?? {};
 
-  await FirebaseFirestore.instance.runTransaction((tx) async {
-    tx.set(friendshipRef, {
-      'chatId': chatId,
-      'memberUids': [fromUid, toUid],
-      'userA': {
-        'uid': fromUid,
-        'displayName': (fromData['displayName'] ?? '').toString(),
-        'shortName': (fromData['shortName'] ?? '').toString(),
-        'photoUrl': (fromData['photoUrl'] ?? '').toString(),
-        'avatarType': (fromData['avatarType'] ?? 'photo').toString(),
-        'avatarIcon': (fromData['avatarIcon'] ?? 'person').toString(),
-        'avatarBgColor': fromData['avatarBgColor'] is int
-            ? fromData['avatarBgColor'] as int
-            : 0xFF2563EB,
-        'playerId': (fromData['playerId'] ?? '').toString(),
-      },
-      'userB': {
-        'uid': toUid,
-        'displayName': (toData['displayName'] ?? '').toString(),
-        'shortName': (toData['shortName'] ?? '').toString(),
-        'photoUrl': (toData['photoUrl'] ?? '').toString(),
-        'avatarType': (toData['avatarType'] ?? 'photo').toString(),
-        'avatarIcon': (toData['avatarIcon'] ?? 'person').toString(),
-        'avatarBgColor': toData['avatarBgColor'] is int
-            ? toData['avatarBgColor'] as int
-            : 0xFF2563EB,
-        'playerId': (toData['playerId'] ?? '').toString(),
-      },
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-
-    tx.set(chatRef, {
-      'chatId': chatId,
-      'type': 'direct',
-      'memberUids': [fromUid, toUid],
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-      'lastMessage': '',
-      'lastMessageAt': FieldValue.serverTimestamp(),
-      'lastMessageSenderUid': '',
-      'unreadCounts': {
-        toUid: 0,
-        fromUid: 0,
-      },
-    }, SetOptions(merge: true));
-
-    tx.set(requestRef, {
-      'status': 'accepted',
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  });
-}
-
-Future<void> _setFriendRequestStatus({
-  required String fromUid,
-  required String toUid,
-  required String status,
-}) async {
-  final requestId = buildDirectChatId(fromUid, toUid);
-
-  await FirebaseFirestore.instance
-      .collection('friend_requests')
-      .doc(requestId)
-      .set({
-    'status': status,
+  await friendshipRef.set({
+    'chatId': chatId,
+    'memberUids': [fromUid, toUid],
+    'userA': {
+      'uid': fromUid,
+      'displayName': (fromData['displayName'] ?? '').toString(),
+      'shortName': (fromData['shortName'] ?? '').toString(),
+      'photoUrl': (fromData['photoUrl'] ?? '').toString(),
+      'avatarType': (fromData['avatarType'] ?? 'photo').toString(),
+      'avatarIcon': (fromData['avatarIcon'] ?? 'person').toString(),
+      'avatarBgColor': fromData['avatarBgColor'] is int
+          ? fromData['avatarBgColor'] as int
+          : 0xFF2563EB,
+      'playerId': (fromData['playerId'] ?? '').toString(),
+    },
+    'userB': {
+      'uid': toUid,
+      'displayName': (toData['displayName'] ?? '').toString(),
+      'shortName': (toData['shortName'] ?? '').toString(),
+      'photoUrl': (toData['photoUrl'] ?? '').toString(),
+      'avatarType': (toData['avatarType'] ?? 'photo').toString(),
+      'avatarIcon': (toData['avatarIcon'] ?? 'person').toString(),
+      'avatarBgColor': toData['avatarBgColor'] is int
+          ? toData['avatarBgColor'] as int
+          : 0xFF2563EB,
+      'playerId': (toData['playerId'] ?? '').toString(),
+    },
+    'createdAt': FieldValue.serverTimestamp(),
     'updatedAt': FieldValue.serverTimestamp(),
   }, SetOptions(merge: true));
+
+  await chatRef.set({
+    'chatId': chatId,
+    'type': 'direct',
+    'memberUids': [fromUid, toUid],
+    'createdAt': FieldValue.serverTimestamp(),
+    'updatedAt': FieldValue.serverTimestamp(),
+    'lastMessage': '',
+    'lastMessageAt': FieldValue.serverTimestamp(),
+    'lastMessageSenderUid': '',
+    'unreadCounts': {
+      toUid: 0,
+      fromUid: 0,
+    },
+  }, SetOptions(merge: true));
+
+  debugPrint('DELETE FRIEND REQUEST');
+  debugPrint('requestId=$requestId');
+
+  await requestRef.delete();
 }
 
 Future<void> rejectFriendRequest(Map<String, dynamic> requestData) async {
   final fromUid = (requestData['fromUid'] ?? '').toString().trim();
   final toUid = (requestData['toUid'] ?? '').toString().trim();
 
-  await _setFriendRequestStatus(
-    fromUid: fromUid,
-    toUid: toUid,
-    status: 'rejected',
-  );
+  final requestId = buildDirectChatId(fromUid, toUid);
+
+  await FirebaseFirestore.instance
+      .collection('friend_requests')
+      .doc(requestId)
+      .delete();
 }
 
 Future<void> ignoreFriendRequest(Map<String, dynamic> requestData) async {
   final fromUid = (requestData['fromUid'] ?? '').toString().trim();
   final toUid = (requestData['toUid'] ?? '').toString().trim();
 
-  await _setFriendRequestStatus(
-    fromUid: fromUid,
-    toUid: toUid,
-    status: 'ignored',
-  );
+  final requestId = buildDirectChatId(fromUid, toUid);
+
+  await FirebaseFirestore.instance
+      .collection('friend_requests')
+      .doc(requestId)
+      .delete();
 }
 
 Future<void> deleteFriend({
@@ -4225,6 +4224,7 @@ Future<void> deleteFriend({
 
   batch.delete(chatRef);
   batch.delete(friendshipRef);
+
   batch.delete(requestRef);
 
   await batch.commit();
@@ -12839,6 +12839,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
             if (isHost) {
               final createdByMeStream = tablesRef
                   .where('createdByUid', isEqualTo: currentUid)
+                  .where('endGame', isEqualTo: false)
                   .snapshots();
 
               Stream<QuerySnapshot<Map<String, dynamic>>>?
@@ -12850,6 +12851,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                       'createdByUid',
                       whereIn: grantedHostIds.take(10).toList(),
                     )
+                    .where('endGame', isEqualTo: false)
                     .snapshots();
               }
 
@@ -13014,6 +13016,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
                     'createdByUid',
                     whereIn: grantedHostIds.take(10).toList(),
                   )
+                  .where('endGame', isEqualTo: false)
                   .snapshots(),
               builder: (context, tableSnapshot) {
                 if (tableSnapshot.connectionState ==
@@ -13803,39 +13806,43 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
           )
         : widget.session.name.trim();
 
-    final visiblePlayersSnapshot = await FirebaseFirestore.instance
+    final addedPlayersSnapshot = await FirebaseFirestore.instance
         .collection('users')
-        .where(FieldPath.documentId, isEqualTo: '__none__')
+        .doc(currentUid)
+        .collection('addedPlayers')
+        .limit(500)
         .get();
 
-    final targetUserIds = visiblePlayersSnapshot.docs
-        .map((doc) => doc.id)
-        .where((uid) => uid != currentUid)
+    final targetUserIds = addedPlayersSnapshot.docs
+        .map((doc) => doc.id.trim())
+        .where((uid) => uid.isNotEmpty && uid != currentUid)
         .toList();
 
     if (targetUserIds.isEmpty) return;
 
-    final tableName = (tableData['name'] ?? tr(
-      context,
-      'New Table',
-      zhTw: '新牌桌',
-      zhCn: '新牌桌',
-      ko: '새 테이블',
-      ja: '新しいテーブル',
-      de: 'Neuer Tisch',
-      fr: 'Nouvelle table',
-      ar: 'طاولة جديدة',
-      ru: 'Новый стол',
-      trk: 'Yeni Masa',
-      es: 'Nueva mesa',
-      it: 'Nuovo tavolo',
-      pl: 'Nowy stół',
-      pt: 'Nova mesa',
-      th: 'โต๊ะใหม่',
-      id: 'Meja Baru',
-      hi: 'नई टेबल',
-      bn: 'নতুন টেবিল',
-    )).toString();
+    final tableName = (tableData['name'] ??
+            tr(
+              context,
+              'New Table',
+              zhTw: '新牌桌',
+              zhCn: '新牌桌',
+              ko: '새 테이블',
+              ja: '新しいテーブル',
+              de: 'Neuer Tisch',
+              fr: 'Nouvelle table',
+              ar: 'طاولة جديدة',
+              ru: 'Новый стол',
+              trk: 'Yeni Masa',
+              es: 'Nueva Mesa',
+              it: 'Nuovo Tavolo',
+              pl: 'Nowy Stół',
+              pt: 'Nova Mesa',
+              th: 'โต๊ะใหม่',
+              id: 'Meja Baru',
+              hi: 'नई टेबल',
+              bn: 'নতুন টেবিল',
+            ))
+        .toString();
 
     final stakes = (tableData['stakes'] ?? '').toString().trim();
     final location = (tableData['location'] ?? '').toString().trim();
@@ -13851,27 +13858,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       'tableId': tableId,
       'hostUid': currentUid,
       'hostName': currentName,
-      'title': tr(
-        context,
-        '$currentName created a new table',
-        zhTw: '$currentName 建立了一個新牌桌',
-        zhCn: '$currentName 创建了一个新牌桌',
-        ko: '$currentName 님이 새 테이블을 만들었습니다',
-        ja: '$currentName さんが新しいテーブルを作成しました',
-        de: '$currentName hat einen neuen Tisch erstellt',
-        fr: '$currentName a créé une nouvelle table',
-        ar: '$currentName أنشأ طاولة جديدة',
-        ru: '$currentName создал новый стол',
-        trk: '$currentName yeni bir masa oluşturdu',
-        es: '$currentName creó una nueva mesa',
-        it: '$currentName ha creato un nuovo tavolo',
-        pl: '$currentName utworzył nowy stół',
-        pt: '$currentName criou uma nova mesa',
-        th: '$currentName ได้สร้างโต๊ะใหม่',
-        id: '$currentName membuat meja baru',
-        hi: '$currentName ने नई टेबल बनाई',
-        bn: '$currentName একটি নতুন টেবিল তৈরি করেছে',
-      ),
+      'title': '$currentName created a new table',
       'body': bodyParts.join(' · '),
       'targetUserIds': targetUserIds,
       'readBy': <String>[],
@@ -16884,6 +16871,7 @@ class NewTableNotificationsPage extends StatelessWidget {
             .collection('notifications')
             .where('targetUserIds', arrayContains: uid)
             .orderBy('createdAt', descending: true)
+            .limit(50)
             .snapshots(),
         builder: (context, snapshot) {
           final docs = snapshot.data?.docs ?? [];
@@ -16945,13 +16933,12 @@ class NewTableNotificationsPage extends StatelessWidget {
                       ))
                   .toString();
 
-              final message = (data['message'] ?? '').toString();
+              final message = (data['body'] ?? data['message'] ?? '').toString();
 
               return ListTile(
                 title: Text(title),
                 subtitle: Text(message),
 
-                // ⭐ 這行是關鍵
                 onTap: () async {
                   await handleNotificationTap(data);
                 },
@@ -47906,7 +47893,8 @@ Future<void> deleteNotificationsForUser(String uid) async {
 
   final snap = await firestore
       .collection('notifications')
-      .where('targetUid', isEqualTo: cleanUid)
+      .where('targetUserIds', arrayContains: cleanUid)
+      .limit(500)
       .get();
 
   var batch = firestore.batch();
