@@ -41058,7 +41058,13 @@ class _AddHandPageState extends State<AddHandPage> {
                         TextField(
                           controller: amountController,
 
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+
+                          onTapOutside: (_) {
+                            FocusManager.instance.primaryFocus?.unfocus();
+                          },
 
                           style: TextStyle(color: textColor),
 
@@ -41283,6 +41289,8 @@ class _AddHandPageState extends State<AddHandPage> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      requestFocus: false,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -41309,126 +41317,46 @@ class _AddHandPageState extends State<AddHandPage> {
             final subTextColor =
                 isDark ? Colors.white70 : Colors.black54;
 
-            return SafeArea(
-              child: Container(
-                color: cardColor,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        style: TextStyle(color: textColor),
-                        dropdownColor: cardColor,
-                        iconEnabledColor: textColor,
-                        initialValue: selectedPosition,
-                        items: availablePositions.map((p) {
-                          return DropdownMenuItem(
-                            value: p,
-                            child: Text(
-                              p,
-                              style: TextStyle(color: textColor),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setModalState(() {
-                            selectedPosition = value;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: isDark
-                              ? const Color(0xFF111827)
-                              : Colors.white,
-                          labelText: tr(
-                            context,
-                            'Position',
-                            zhTw: '位置',
-                            zhCn: '位置',
-                            ko: '포지션',
-                            ja: 'ポジション',
-                            de: 'Position',
-                            fr: 'Position',
-                            ar: 'الموضع',
-                            ru: 'Позиция',
-                            trk: 'Pozisyon',
-                            es: 'Posición',
-                            it: 'Posizione',
-                            pl: 'Pozycja',
-                            pt: 'Posição',
-                            th: 'ตำแหน่ง',
-                            id: 'Posisi',
-                            hi: 'पोजीशन',
-                            bn: 'পজিশন',
-                          ),
-                          labelStyle: TextStyle(color: subTextColor),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      DropdownButtonFormField<String>(
-                        style: TextStyle(color: textColor),
-                        dropdownColor: cardColor,
-                        iconEnabledColor: textColor,
-                        initialValue: selectedAction,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: isDark
-                              ? const Color(0xFF111827)
-                              : Colors.white,
-                          labelText: tr(
-                            context,
-                            'Action',
-                            zhTw: '動作',
-                            zhCn: '动作',
-                            ko: '액션',
-                            ja: 'アクション',
-                            de: 'Aktion',
-                            fr: 'Action',
-                            ar: 'الإجراء',
-                            ru: 'Действие',
-                            trk: 'Aksiyon',
-                            es: 'Acción',
-                            it: 'Azione',
-                            pl: 'Akcja',
-                            pt: 'Ação',
-                            th: 'แอ็กชัน',
-                            id: 'Aksi',
-                            hi: 'एक्शन',
-                            bn: 'অ্যাকশন',
-                          ),
-                          labelStyle: TextStyle(color: subTextColor),
-                        ),
-                        items: availableActions.map((action) {
-                          return DropdownMenuItem(
-                            value: action,
-                            child: Text(
-                              action.toUpperCase(),
-                              style: TextStyle(color: textColor),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setModalState(() {
-                            selectedAction = value;
-                          });
-                        },
-                      ),
-
-                      if (selectedAction == 'bet' ||
-                          selectedAction == 'raise') ...[
-                        const SizedBox(height: 16),
-
-                        TextField(
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SafeArea(
+                child: Container(
+                  color: cardColor,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+                  ),
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
                           style: TextStyle(color: textColor),
-                          controller: amountController,
-                          keyboardType: TextInputType.number,
+                          dropdownColor: cardColor,
+                          iconEnabledColor: textColor,
+                          initialValue: selectedPosition,
+                          items: availablePositions.map((p) {
+                            return DropdownMenuItem(
+                              value: p,
+                              child: Text(
+                                p,
+                                style: TextStyle(color: textColor),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+
+                            setModalState(() {
+                              selectedPosition = value;
+                            });
+                          },
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: isDark
@@ -41436,77 +41364,180 @@ class _AddHandPageState extends State<AddHandPage> {
                                 : Colors.white,
                             labelText: tr(
                               context,
-                              'Bet Amount',
-                              zhTw: '下注金額',
-                              zhCn: '下注金额',
-                              ko: '베팅 금액',
-                              ja: 'ベット額',
-                              de: 'Einsatzbetrag',
-                              fr: 'Montant de la mise',
-                              ar: 'مبلغ الرهان',
-                              ru: 'Сумма ставки',
-                              trk: 'Bahis Miktarı',
-                              es: 'Cantidad de apuesta',
-                              it: 'Importo puntata',
-                              pl: 'Kwota zakładu',
-                              pt: 'Valor da aposta',
-                              th: 'จำนวนเงินเดิมพัน',
-                              id: 'Jumlah Bet',
-                              hi: 'बेट राशि',
-                              bn: 'বেটের পরিমাণ',
+                              'Position',
+                              zhTw: '位置',
+                              zhCn: '位置',
+                              ko: '포지션',
+                              ja: 'ポジション',
+                              de: 'Position',
+                              fr: 'Position',
+                              ar: 'الموضع',
+                              ru: 'Позиция',
+                              trk: 'Pozisyon',
+                              es: 'Posición',
+                              it: 'Posizione',
+                              pl: 'Pozycja',
+                              pt: 'Posição',
+                              th: 'ตำแหน่ง',
+                              id: 'Posisi',
+                              hi: 'पोजीशन',
+                              bn: 'পজিশন',
                             ),
                             labelStyle: TextStyle(color: subTextColor),
                           ),
                         ),
-                      ],
 
-                      const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
-                      FilledButton(
-                        onPressed: () {
-                          setState(() {
-                            _flopActions.add({
-                              'position': selectedPosition,
-                              'action': selectedAction,
-                              'amount': selectedAction == 'bet' ||
-                                      selectedAction == 'raise'
-                                  ? (double.tryParse(amountController.text) ?? 0)
-                                  : selectedAction == 'call'
-                                      ? _callAmountOnStreet(
-                                          _flopActions,
-                                          selectedPosition,
-                                        )
-                                      : 0,
+                        DropdownButtonFormField<String>(
+                          style: TextStyle(color: textColor),
+                          dropdownColor: cardColor,
+                          iconEnabledColor: textColor,
+                          initialValue: selectedAction,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
+                            labelText: tr(
+                              context,
+                              'Action',
+                              zhTw: '動作',
+                              zhCn: '动作',
+                              ko: '액션',
+                              ja: 'アクション',
+                              de: 'Aktion',
+                              fr: 'Action',
+                              ar: 'الإجراء',
+                              ru: 'Действие',
+                              trk: 'Aksiyon',
+                              es: 'Acción',
+                              it: 'Azione',
+                              pl: 'Akcja',
+                              pt: 'Ação',
+                              th: 'แอ็กชัน',
+                              id: 'Aksi',
+                              hi: 'एक्शन',
+                              bn: 'অ্যাকশন',
+                            ),
+                            labelStyle: TextStyle(color: subTextColor),
+                          ),
+                          items: availableActions.map((action) {
+                            return DropdownMenuItem(
+                              value: action,
+                              child: Text(
+                                action.toUpperCase(),
+                                style: TextStyle(color: textColor),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+
+                            setModalState(() {
+                              selectedAction = value;
                             });
-                          });
+                          },
+                        ),
 
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          tr(
-                            context,
-                            'Add Action',
-                            zhTw: '新增動作',
-                            zhCn: '新增动作',
-                            ko: '액션 추가',
-                            ja: 'アクション追加',
-                            de: 'Aktion hinzufügen',
-                            fr: 'Ajouter une action',
-                            ar: 'إضافة إجراء',
-                            ru: 'Добавить действие',
-                            trk: 'Aksiyon Ekle',
-                            es: 'Agregar acción',
-                            it: 'Aggiungi azione',
-                            pl: 'Dodaj akcję',
-                            pt: 'Adicionar ação',
-                            th: 'เพิ่มแอ็กชัน',
-                            id: 'Tambah Aksi',
-                            hi: 'एक्शन जोड़ें',
-                            bn: 'অ্যাকশন যোগ করুন',
+                        if (selectedAction == 'bet' ||
+                            selectedAction == 'raise') ...[
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            style: TextStyle(color: textColor),
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              filled: true,
+
+                              suffixIcon: IconButton(
+                                tooltip: 'Done',
+                                icon: const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF22C55E),
+                                ),
+                                onPressed: () {
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                },
+                              ),
+                              fillColor: isDark
+                                  ? const Color(0xFF111827)
+                                  : Colors.white,
+                              labelText: tr(
+                                context,
+                                'Bet Amount',
+                                zhTw: '下注金額',
+                                zhCn: '下注金额',
+                                ko: '베팅 금액',
+                                ja: 'ベット額',
+                                de: 'Einsatzbetrag',
+                                fr: 'Montant de la mise',
+                                ar: 'مبلغ الرهان',
+                                ru: 'Сумма ставки',
+                                trk: 'Bahis Miktarı',
+                                es: 'Cantidad de apuesta',
+                                it: 'Importo puntata',
+                                pl: 'Kwota zakładu',
+                                pt: 'Valor da aposta',
+                                th: 'จำนวนเงินเดิมพัน',
+                                id: 'Jumlah Bet',
+                                hi: 'बेट राशि',
+                                bn: 'বেটের পরিমাণ',
+                              ),
+                              labelStyle: TextStyle(color: subTextColor),
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 20),
+
+                        FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _flopActions.add({
+                                'position': selectedPosition,
+                                'action': selectedAction,
+                                'amount': selectedAction == 'bet' ||
+                                        selectedAction == 'raise'
+                                    ? (double.tryParse(amountController.text) ?? 0)
+                                    : selectedAction == 'call'
+                                        ? _callAmountOnStreet(
+                                            _flopActions,
+                                            selectedPosition,
+                                          )
+                                        : 0,
+                              });
+                            });
+
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            tr(
+                              context,
+                              'Add Action',
+                              zhTw: '新增動作',
+                              zhCn: '新增动作',
+                              ko: '액션 추가',
+                              ja: 'アクション追加',
+                              de: 'Aktion hinzufügen',
+                              fr: 'Ajouter une action',
+                              ar: 'إضافة إجراء',
+                              ru: 'Добавить действие',
+                              trk: 'Aksiyon Ekle',
+                              es: 'Agregar acción',
+                              it: 'Aggiungi azione',
+                              pl: 'Dodaj akcję',
+                              pt: 'Adicionar ação',
+                              th: 'เพิ่มแอ็กชัน',
+                              id: 'Tambah Aksi',
+                              hi: 'एक्शन जोड़ें',
+                              bn: 'অ্যাকশন যোগ করুন',
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -41606,6 +41637,8 @@ class _AddHandPageState extends State<AddHandPage> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      requestFocus: false,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -41629,201 +41662,224 @@ class _AddHandPageState extends State<AddHandPage> {
             final textColor = isDark ? Colors.white : Colors.black87;
             final subTextColor = isDark ? Colors.white70 : Colors.black54;
 
-            return SafeArea(
-              child: Container(
-                color: cardColor,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        style: TextStyle(color: textColor),
-                        dropdownColor: cardColor,
-                        iconEnabledColor: textColor,
-                        initialValue: selectedPosition,
-                        items: availablePositions.map((p) {
-                          return DropdownMenuItem(
-                            value: p,
-                            child: Text(p, style: TextStyle(color: textColor)),
-                          );
-                        }).toList(),
-                        onChanged: (v) {
-                          if (v == null) return;
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SafeArea(
+                child: Container(
+                  color: cardColor,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+                  ),
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
+                          style: TextStyle(color: textColor),
+                          dropdownColor: cardColor,
+                          iconEnabledColor: textColor,
+                          initialValue: selectedPosition,
+                          items: availablePositions.map((p) {
+                            return DropdownMenuItem(
+                              value: p,
+                              child: Text(p, style: TextStyle(color: textColor)),
+                            );
+                          }).toList(),
+                          onChanged: (v) {
+                            if (v == null) return;
 
-                          setModalState(() {
-                            selectedPosition = v;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: isDark
-                              ? const Color(0xFF111827)
-                              : Colors.white,
-                          labelText: tr(
-                            context,
-                            'Position',
-                            zhTw: '位置',
-                            zhCn: '位置',
-                            ko: '포지션',
-                            ja: 'ポジション',
-                            de: 'Position',
-                            fr: 'Position',
-                            ar: 'الموضع',
-                            ru: 'Позиция',
-                            trk: 'Pozisyon',
-                            es: 'Posición',
-                            it: 'Posizione',
-                            pl: 'Pozycja',
-                            pt: 'Posição',
-                            th: 'ตำแหน่ง',
-                            id: 'Posisi',
-                            hi: 'पोजीशन',
-                            bn: 'পজিশন',
-                          ),
-                          labelStyle: TextStyle(color: subTextColor),
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      DropdownButtonFormField<String>(
-                        style: TextStyle(color: textColor),
-                        dropdownColor: cardColor,
-                        iconEnabledColor: textColor,
-                        initialValue: selectedAction,
-                        items: availableActions.map((a) {
-                          return DropdownMenuItem(
-                            value: a,
-                            child: Text(
-                              a.toUpperCase(),
-                              style: TextStyle(color: textColor),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (v) {
-                          if (v == null) return;
-
-                          setModalState(() {
-                            selectedAction = v;
-                          });
-                        },
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: isDark
-                              ? const Color(0xFF111827)
-                              : Colors.white,
-                          labelText: tr(
-                            context,
-                            'Action',
-                            zhTw: '動作',
-                            zhCn: '动作',
-                            ko: '액션',
-                            ja: 'アクション',
-                            de: 'Aktion',
-                            fr: 'Action',
-                            ar: 'الإجراء',
-                            ru: 'Действие',
-                            trk: 'Aksiyon',
-                            es: 'Acción',
-                            it: 'Azione',
-                            pl: 'Akcja',
-                            pt: 'Ação',
-                            th: 'แอ็กชัน',
-                            id: 'Aksi',
-                            hi: 'एक्शन',
-                            bn: 'অ্যাকশন',
-                          ),
-                          labelStyle: TextStyle(color: subTextColor),
-                        ),
-                      ),
-
-                      if (selectedAction == 'bet' ||
-                          selectedAction == 'raise')
-                        Padding(
-                          padding: const EdgeInsets.only(top: 16),
-                          child: TextField(
-                            style: TextStyle(color: textColor),
-                            controller: amountController,
-                            keyboardType: TextInputType.number,
-                            decoration: InputDecoration(
-                              filled: true,
-                              fillColor: isDark
-                                  ? const Color(0xFF111827)
-                                  : Colors.white,
-                              labelText: tr(
-                                context,
-                                'Amount',
-                                zhTw: '金額',
-                                zhCn: '金额',
-                                ko: '금액',
-                                ja: '金額',
-                                de: 'Betrag',
-                                fr: 'Montant',
-                                ar: 'المبلغ',
-                                ru: 'Сумма',
-                                trk: 'Tutar',
-                                es: 'Cantidad',
-                                it: 'Importo',
-                                pl: 'Kwota',
-                                pt: 'Valor',
-                                th: 'จำนวนเงิน',
-                                id: 'Jumlah',
-                                hi: 'राशि',
-                                bn: 'পরিমাণ',
-                              ),
-                              labelStyle: TextStyle(color: subTextColor),
-                            ),
-                          ),
-                        ),
-
-                      const SizedBox(height: 20),
-
-                      FilledButton(
-                        onPressed: () {
-                          setState(() {
-                            _turnActions.add({
-                              'position': selectedPosition,
-                              'action': selectedAction,
-                              'amount': selectedAction == 'bet' ||
-                                      selectedAction == 'raise'
-                                  ? (double.tryParse(amountController.text) ?? 0)
-                                  : selectedAction == 'call'
-                                      ? _callAmountOnStreet(
-                                          _turnActions,
-                                          selectedPosition,
-                                        )
-                                      : 0,
+                            setModalState(() {
+                              selectedPosition = v;
                             });
-                          });
-
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          tr(
-                            context,
-                            'Add Action',
-                            zhTw: '新增動作',
-                            zhCn: '新增动作',
-                            ko: '액션 추가',
-                            ja: 'アクション追加',
-                            de: 'Aktion hinzufügen',
-                            fr: 'Ajouter une action',
-                            ar: 'إضافة إجراء',
-                            ru: 'Добавить действие',
-                            trk: 'Aksiyon Ekle',
-                            es: 'Agregar acción',
-                            it: 'Aggiungi azione',
-                            pl: 'Dodaj akcję',
-                            pt: 'Adicionar ação',
-                            th: 'เพิ่มแอ็กชัน',
-                            id: 'Tambah Aksi',
-                            hi: 'एक्शन जोड़ें',
-                            bn: 'অ্যাকশন যোগ করুন',
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
+                            labelText: tr(
+                              context,
+                              'Position',
+                              zhTw: '位置',
+                              zhCn: '位置',
+                              ko: '포지션',
+                              ja: 'ポジション',
+                              de: 'Position',
+                              fr: 'Position',
+                              ar: 'الموضع',
+                              ru: 'Позиция',
+                              trk: 'Pozisyon',
+                              es: 'Posición',
+                              it: 'Posizione',
+                              pl: 'Pozycja',
+                              pt: 'Posição',
+                              th: 'ตำแหน่ง',
+                              id: 'Posisi',
+                              hi: 'पोजीशन',
+                              bn: 'পজিশন',
+                            ),
+                            labelStyle: TextStyle(color: subTextColor),
                           ),
                         ),
-                      ),
-                    ],
+
+                        const SizedBox(height: 16),
+
+                        DropdownButtonFormField<String>(
+                          style: TextStyle(color: textColor),
+                          dropdownColor: cardColor,
+                          iconEnabledColor: textColor,
+                          initialValue: selectedAction,
+                          items: availableActions.map((a) {
+                            return DropdownMenuItem(
+                              value: a,
+                              child: Text(
+                                a.toUpperCase(),
+                                style: TextStyle(color: textColor),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (v) {
+                            if (v == null) return;
+
+                            setModalState(() {
+                              selectedAction = v;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
+                            labelText: tr(
+                              context,
+                              'Action',
+                              zhTw: '動作',
+                              zhCn: '动作',
+                              ko: '액션',
+                              ja: 'アクション',
+                              de: 'Aktion',
+                              fr: 'Action',
+                              ar: 'الإجراء',
+                              ru: 'Действие',
+                              trk: 'Aksiyon',
+                              es: 'Acción',
+                              it: 'Azione',
+                              pl: 'Akcja',
+                              pt: 'Ação',
+                              th: 'แอ็กชัน',
+                              id: 'Aksi',
+                              hi: 'एक्शन',
+                              bn: 'অ্যাকশন',
+                            ),
+                            labelStyle: TextStyle(color: subTextColor),
+                          ),
+                        ),
+
+                        if (selectedAction == 'bet' ||
+                            selectedAction == 'raise')
+                          Padding(
+                            padding: const EdgeInsets.only(top: 16),
+                            child: TextField(
+                              style: TextStyle(color: textColor),
+                              controller: amountController,
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                filled: true,
+
+                                suffixIcon: IconButton(
+                                  tooltip: 'Done',
+                                  icon: const Icon(
+                                    Icons.check_circle,
+                                    color: Color(0xFF22C55E),
+                                  ),
+                                  onPressed: () {
+                                    FocusManager.instance.primaryFocus?.unfocus();
+                                  },
+                                ),
+                                fillColor: isDark
+                                    ? const Color(0xFF111827)
+                                    : Colors.white,
+                                labelText: tr(
+                                  context,
+                                  'Amount',
+                                  zhTw: '金額',
+                                  zhCn: '金额',
+                                  ko: '금액',
+                                  ja: '金額',
+                                  de: 'Betrag',
+                                  fr: 'Montant',
+                                  ar: 'المبلغ',
+                                  ru: 'Сумма',
+                                  trk: 'Tutar',
+                                  es: 'Cantidad',
+                                  it: 'Importo',
+                                  pl: 'Kwota',
+                                  pt: 'Valor',
+                                  th: 'จำนวนเงิน',
+                                  id: 'Jumlah',
+                                  hi: 'राशि',
+                                  bn: 'পরিমাণ',
+                                ),
+                                labelStyle: TextStyle(color: subTextColor),
+                              ),
+                            ),
+                          ),
+
+                        const SizedBox(height: 20),
+
+                        FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _turnActions.add({
+                                'position': selectedPosition,
+                                'action': selectedAction,
+                                'amount': selectedAction == 'bet' ||
+                                        selectedAction == 'raise'
+                                    ? (double.tryParse(amountController.text) ?? 0)
+                                    : selectedAction == 'call'
+                                        ? _callAmountOnStreet(
+                                            _turnActions,
+                                            selectedPosition,
+                                          )
+                                        : 0,
+                              });
+                            });
+
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            tr(
+                              context,
+                              'Add Action',
+                              zhTw: '新增動作',
+                              zhCn: '新增动作',
+                              ko: '액션 추가',
+                              ja: 'アクション追加',
+                              de: 'Aktion hinzufügen',
+                              fr: 'Ajouter une action',
+                              ar: 'إضافة إجراء',
+                              ru: 'Добавить действие',
+                              trk: 'Aksiyon Ekle',
+                              es: 'Agregar acción',
+                              it: 'Aggiungi azione',
+                              pl: 'Dodaj akcję',
+                              pt: 'Adicionar ação',
+                              th: 'เพิ่มแอ็กชัน',
+                              id: 'Tambah Aksi',
+                              hi: 'एक्शन जोड़ें',
+                              bn: 'অ্যাকশন যোগ করুন',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -41915,6 +41971,8 @@ class _AddHandPageState extends State<AddHandPage> {
 
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      requestFocus: false,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -41936,123 +41994,30 @@ class _AddHandPageState extends State<AddHandPage> {
             final textColor = isDark ? Colors.white : Colors.black87;
             final subTextColor = isDark ? Colors.white70 : Colors.black54;
 
-            return SafeArea(
-              child: Container(
-                color: cardColor,
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      DropdownButtonFormField<String>(
-                        style: TextStyle(color: textColor),
-                        dropdownColor: cardColor,
-                        iconEnabledColor: textColor,
-                        initialValue: selectedPosition,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: isDark
-                              ? const Color(0xFF111827)
-                              : Colors.white,
-                          labelText: tr(
-                            context,
-                            'Position',
-                            zhTw: '位置',
-                            zhCn: '位置',
-                            ko: '포지션',
-                            ja: 'ポジション',
-                            de: 'Position',
-                            fr: 'Position',
-                            ar: 'الموضع',
-                            ru: 'Позиция',
-                            trk: 'Pozisyon',
-                            es: 'Posición',
-                            it: 'Posizione',
-                            pl: 'Pozycja',
-                            pt: 'Posição',
-                            th: 'ตำแหน่ง',
-                            id: 'Posisi',
-                            hi: 'पोजीशन',
-                            bn: 'পজিশন',
-                          ),
-                          labelStyle: TextStyle(color: subTextColor),
-                        ),
-                        items: availablePositions.map((p) {
-                          return DropdownMenuItem(
-                            value: p,
-                            child: Text(p, style: TextStyle(color: textColor)),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setModalState(() {
-                            selectedPosition = value;
-                          });
-                        },
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      DropdownButtonFormField<String>(
-                        style: TextStyle(color: textColor),
-                        dropdownColor: cardColor,
-                        iconEnabledColor: textColor,
-                        initialValue: selectedAction,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: isDark
-                              ? const Color(0xFF111827)
-                              : Colors.white,
-                          labelText: tr(
-                            context,
-                            'Action',
-                            zhTw: '動作',
-                            zhCn: '动作',
-                            ko: '액션',
-                            ja: 'アクション',
-                            de: 'Aktion',
-                            fr: 'Action',
-                            ar: 'الإجراء',
-                            ru: 'Действие',
-                            trk: 'Aksiyon',
-                            es: 'Acción',
-                            it: 'Azione',
-                            pl: 'Akcja',
-                            pt: 'Ação',
-                            th: 'แอ็กชัน',
-                            id: 'Aksi',
-                            hi: 'एक्शन',
-                            bn: 'অ্যাকশন',
-                          ),
-                          labelStyle: TextStyle(color: subTextColor),
-                        ),
-                        items: availableActions.map((action) {
-                          return DropdownMenuItem(
-                            value: action,
-                            child: Text(
-                              action.toUpperCase(),
-                              style: TextStyle(color: textColor),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setModalState(() {
-                            selectedAction = value;
-                          });
-                        },
-                      ),
-
-                      if (selectedAction == 'bet' ||
-                          selectedAction == 'raise') ...[
-                        const SizedBox(height: 16),
-
-                        TextField(
+            return AnimatedPadding(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOut,
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: SafeArea(
+                child: Container(
+                  color: cardColor,
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.9,
+                  ),
+                  child: SingleChildScrollView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DropdownButtonFormField<String>(
                           style: TextStyle(color: textColor),
-                          controller: amountController,
-                          keyboardType: TextInputType.number,
+                          dropdownColor: cardColor,
+                          iconEnabledColor: textColor,
+                          initialValue: selectedPosition,
                           decoration: InputDecoration(
                             filled: true,
                             fillColor: isDark
@@ -42060,77 +42025,193 @@ class _AddHandPageState extends State<AddHandPage> {
                                 : Colors.white,
                             labelText: tr(
                               context,
-                              'Amount',
-                              zhTw: '金額',
-                              zhCn: '金额',
-                              ko: '금액',
-                              ja: '金額',
-                              de: 'Betrag',
-                              fr: 'Montant',
-                              ar: 'المبلغ',
-                              ru: 'Сумма',
-                              trk: 'Tutar',
-                              es: 'Cantidad',
-                              it: 'Importo',
-                              pl: 'Kwota',
-                              pt: 'Valor',
-                              th: 'จำนวนเงิน',
-                              id: 'Jumlah',
-                              hi: 'राशि',
-                              bn: 'পরিমাণ',
+                              'Position',
+                              zhTw: '位置',
+                              zhCn: '位置',
+                              ko: '포지션',
+                              ja: 'ポジション',
+                              de: 'Position',
+                              fr: 'Position',
+                              ar: 'الموضع',
+                              ru: 'Позиция',
+                              trk: 'Pozisyon',
+                              es: 'Posición',
+                              it: 'Posizione',
+                              pl: 'Pozycja',
+                              pt: 'Posição',
+                              th: 'ตำแหน่ง',
+                              id: 'Posisi',
+                              hi: 'पोजीशन',
+                              bn: 'পজিশন',
                             ),
                             labelStyle: TextStyle(color: subTextColor),
                           ),
-                        ),
-                      ],
+                          items: availablePositions.map((p) {
+                            return DropdownMenuItem(
+                              value: p,
+                              child: Text(p, style: TextStyle(color: textColor)),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
 
-                      const SizedBox(height: 20),
-
-                      FilledButton(
-                        onPressed: () {
-                          setState(() {
-                            _riverActions.add({
-                              'position': selectedPosition,
-                              'action': selectedAction,
-                              'amount': selectedAction == 'bet' ||
-                                      selectedAction == 'raise'
-                                  ? (double.tryParse(amountController.text) ?? 0)
-                                  : selectedAction == 'call'
-                                      ? _callAmountOnStreet(
-                                          _riverActions,
-                                          selectedPosition,
-                                        )
-                                      : 0,
+                            setModalState(() {
+                              selectedPosition = value;
                             });
-                          });
+                          },
+                        ),
 
-                          Navigator.pop(context);
-                        },
-                        child: Text(
-                          tr(
-                            context,
-                            'Add Action',
-                            zhTw: '新增動作',
-                            zhCn: '新增动作',
-                            ko: '액션 추가',
-                            ja: 'アクション追加',
-                            de: 'Aktion hinzufügen',
-                            fr: 'Ajouter une action',
-                            ar: 'إضافة إجراء',
-                            ru: 'Добавить действие',
-                            trk: 'Aksiyon Ekle',
-                            es: 'Agregar acción',
-                            it: 'Aggiungi azione',
-                            pl: 'Dodaj akcję',
-                            pt: 'Adicionar ação',
-                            th: 'เพิ่มแอ็กชัน',
-                            id: 'Tambah Aksi',
-                            hi: 'एक्शन जोड़ें',
-                            bn: 'অ্যাকশন যোগ করুন',
+                        const SizedBox(height: 16),
+
+                        DropdownButtonFormField<String>(
+                          style: TextStyle(color: textColor),
+                          dropdownColor: cardColor,
+                          iconEnabledColor: textColor,
+                          initialValue: selectedAction,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: isDark
+                                ? const Color(0xFF111827)
+                                : Colors.white,
+                            labelText: tr(
+                              context,
+                              'Action',
+                              zhTw: '動作',
+                              zhCn: '动作',
+                              ko: '액션',
+                              ja: 'アクション',
+                              de: 'Aktion',
+                              fr: 'Action',
+                              ar: 'الإجراء',
+                              ru: 'Действие',
+                              trk: 'Aksiyon',
+                              es: 'Acción',
+                              it: 'Azione',
+                              pl: 'Akcja',
+                              pt: 'Ação',
+                              th: 'แอ็กชัน',
+                              id: 'Aksi',
+                              hi: 'एक्शन',
+                              bn: 'অ্যাকশন',
+                            ),
+                            labelStyle: TextStyle(color: subTextColor),
+                          ),
+                          items: availableActions.map((action) {
+                            return DropdownMenuItem(
+                              value: action,
+                              child: Text(
+                                action.toUpperCase(),
+                                style: TextStyle(color: textColor),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            if (value == null) return;
+
+                            setModalState(() {
+                              selectedAction = value;
+                            });
+                          },
+                        ),
+
+                        if (selectedAction == 'bet' ||
+                            selectedAction == 'raise') ...[
+                          const SizedBox(height: 16),
+
+                          TextField(
+                            style: TextStyle(color: textColor),
+                            controller: amountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              filled: true,
+
+                              suffixIcon: IconButton(
+                                tooltip: 'Done',
+                                icon: const Icon(
+                                  Icons.check_circle,
+                                  color: Color(0xFF22C55E),
+                                ),
+                                onPressed: () {
+                                  FocusManager.instance.primaryFocus?.unfocus();
+                                },
+                              ),
+                              fillColor: isDark
+                                  ? const Color(0xFF111827)
+                                  : Colors.white,
+                              labelText: tr(
+                                context,
+                                'Amount',
+                                zhTw: '金額',
+                                zhCn: '金额',
+                                ko: '금액',
+                                ja: '金額',
+                                de: 'Betrag',
+                                fr: 'Montant',
+                                ar: 'المبلغ',
+                                ru: 'Сумма',
+                                trk: 'Tutar',
+                                es: 'Cantidad',
+                                it: 'Importo',
+                                pl: 'Kwota',
+                                pt: 'Valor',
+                                th: 'จำนวนเงิน',
+                                id: 'Jumlah',
+                                hi: 'राशि',
+                                bn: 'পরিমাণ',
+                              ),
+                              labelStyle: TextStyle(color: subTextColor),
+                            ),
+                          ),
+                        ],
+
+                        const SizedBox(height: 20),
+
+                        FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _riverActions.add({
+                                'position': selectedPosition,
+                                'action': selectedAction,
+                                'amount': selectedAction == 'bet' ||
+                                        selectedAction == 'raise'
+                                    ? (double.tryParse(amountController.text) ?? 0)
+                                    : selectedAction == 'call'
+                                        ? _callAmountOnStreet(
+                                            _riverActions,
+                                            selectedPosition,
+                                          )
+                                        : 0,
+                              });
+                            });
+
+                            Navigator.pop(context);
+                          },
+                          child: Text(
+                            tr(
+                              context,
+                              'Add Action',
+                              zhTw: '新增動作',
+                              zhCn: '新增动作',
+                              ko: '액션 추가',
+                              ja: 'アクション追加',
+                              de: 'Aktion hinzufügen',
+                              fr: 'Ajouter une action',
+                              ar: 'إضافة إجراء',
+                              ru: 'Добавить действие',
+                              trk: 'Aksiyon Ekle',
+                              es: 'Agregar acción',
+                              it: 'Aggiungi azione',
+                              pl: 'Dodaj akcję',
+                              pt: 'Adicionar ação',
+                              th: 'เพิ่มแอ็กชัน',
+                              id: 'Tambah Aksi',
+                              hi: 'एक्शन जोड़ें',
+                              bn: 'অ্যাকশন যোগ করুন',
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
