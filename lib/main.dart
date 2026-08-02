@@ -40830,6 +40830,10 @@ class _AddHandPageState extends State<AddHandPage> {
 
     final positions = _positionsForSize(_tableSize);
 
+    String selectedPosition = '';
+    String selectedAction = 'fold';
+    final amountController = TextEditingController();
+
     await showModalBottomSheet(
       context: context,
       requestFocus: false,
@@ -40892,9 +40896,10 @@ class _AddHandPageState extends State<AddHandPage> {
           return const SizedBox.shrink();
         }
 
-        String selectedPosition = actionPositions.first;
-        String selectedAction = 'fold';
-        final amountController = TextEditingController();
+        if (selectedPosition.isEmpty ||
+            !actionPositions.contains(selectedPosition)) {
+          selectedPosition = actionPositions.first;
+        }
 
         return StatefulBuilder(
           builder: (context, setModalState) {
@@ -41155,6 +41160,8 @@ class _AddHandPageState extends State<AddHandPage> {
         );
       },
     );
+
+    amountController.dispose();
 
     if (!mounted) return;
 
