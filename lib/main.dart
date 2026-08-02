@@ -40825,11 +40825,14 @@ class _AddHandPageState extends State<AddHandPage> {
     return '$rank$suit';
   }
 
-  void _addPreflopAction() {
+  Future<void> _addPreflopAction() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final positions = _positionsForSize(_tableSize);
 
-    showModalBottomSheet(
+    await showModalBottomSheet(
       context: context,
+      requestFocus: false,
       builder: (context) {
         final lastRaiseIndex = _preflopActions.lastIndexWhere(
           (a) => a['action'] == 'raise' || a['action'] == 'straddle',
@@ -41115,6 +41118,7 @@ class _AddHandPageState extends State<AddHandPage> {
                             });
                           });
 
+                          FocusManager.instance.primaryFocus?.unfocus();
                           Navigator.pop(context);
                         },
 
@@ -41151,6 +41155,10 @@ class _AddHandPageState extends State<AddHandPage> {
         );
       },
     );
+
+    if (!mounted) return;
+
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   double _currentFlopBet() {
