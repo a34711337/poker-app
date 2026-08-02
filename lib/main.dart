@@ -13881,6 +13881,7 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
     tableData['createdByName'] = currentName;
     tableData['createdAt'] = FieldValue.serverTimestamp();
     tableData['updatedAt'] = FieldValue.serverTimestamp();
+    tableData['endGame'] = false;
 
     final tableDoc = await tablesRef.add(tableData);
 
