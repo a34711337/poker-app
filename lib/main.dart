@@ -48055,7 +48055,7 @@ Future<void> deleteNotificationsForTable(String tableId) async {
   }
 }
 
-class PlayerHandsPage extends StatelessWidget {
+class PlayerHandsPage extends StatefulWidget {
   final String playerId;
   final String playerName;
   final bool isTournament;
@@ -48067,233 +48067,616 @@ class PlayerHandsPage extends StatelessWidget {
     required this.isTournament,
   });
 
-  Timestamp? _handTime(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
-    final data = doc.data();
-    return (data['updatedAt'] ?? data['createdAt']) as Timestamp?;
+  @override
+  State<PlayerHandsPage> createState() => _PlayerHandsPageState();
+}
+
+class _PlayerHandsPageState extends State<PlayerHandsPage> {
+  final Set<String> _selectedLocations = {};
+  final Set<String> _selectedPositions = {};
+
+  String _readText(
+    Map<String, dynamic> data,
+    List<String> fieldNames,
+    String fallback,
+  ) {
+    for (final fieldName in fieldNames) {
+      final value = data[fieldName]?.toString().trim() ?? '';
+
+      if (value.isNotEmpty) {
+        return value;
+      }
+    }
+
+    return fallback;
+  }
+
+  String _getSessionLocation(Map<String, dynamic> sessionData) {
+    if (widget.isTournament) {
+      return _readText(
+        sessionData,
+        [
+          'location',
+          'name',
+          'title',
+          'sessionName',
+        ],
+        'Unknown Tournament',
+      );
+    }
+
+    return _readText(
+      sessionData,
+      [
+        'location',
+        'sessionName',
+        'title',
+        'game',
+        'name',
+      ],
+      'Unknown Game',
+    );
+  }
+
+  String _getPlayerPosition(
+    QueryDocumentSnapshot<Map<String, dynamic>> handDoc,
+  ) {
+    final handData = handDoc.data();
+    final rawPositions = handData['positions'];
+
+    if (rawPositions is! Map) {
+      return '';
+    }
+
+    for (final entry in rawPositions.entries) {
+      final rawPlayer = entry.value;
+
+      if (rawPlayer is! Map) {
+        continue;
+      }
+
+      final playerData = Map<String, dynamic>.from(rawPlayer);
+      final savedPlayerId =
+          (playerData['playerId'] ?? '').toString().trim();
+
+      if (savedPlayerId == widget.playerId) {
+        return entry.key.toString().trim().toUpperCase();
+      }
+    }
+
+    return '';
+  }
+
+  int _positionSortIndex(String position) {
+    const positionOrder = [
+      'UTG',
+      'UTG+1',
+      'UTG+2',
+      'LJ',
+      'HJ',
+      'CO',
+      'BTN',
+      'SB',
+      'BB',
+    ];
+
+    final index = positionOrder.indexOf(position.toUpperCase());
+
+    if (index == -1) {
+      return positionOrder.length;
+    }
+
+    return index;
+  }
+
+  Future<void> _showMultiSelectDialog({
+    required String title,
+    required List<String> options,
+    required Set<String> selectedValues,
+  }) async {
+    final temporarySelected = Set<String>.from(selectedValues);
+
+    final result = await showDialog<Set<String>>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: Text(title),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: options.isEmpty
+                    ? const Center(
+                        child: Text('No options available'),
+                      )
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (context, index) {
+                          final option = options[index];
+                          final isSelected =
+                              temporarySelected.contains(option);
+
+                          return CheckboxListTile(
+                            value: isSelected,
+                            title: Text(option),
+                            controlAffinity:
+                                ListTileControlAffinity.leading,
+                            contentPadding: EdgeInsets.zero,
+                            onChanged: (checked) {
+                              setDialogState(() {
+                                if (checked == true) {
+                                  temporarySelected.add(option);
+                                } else {
+                                  temporarySelected.remove(option);
+                                }
+                              });
+                            },
+                          );
+                        },
+                      ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setDialogState(() {
+                      temporarySelected.clear();
+                    });
+                  },
+                  child: const Text('Clear All'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    Navigator.pop(
+                      dialogContext,
+                      temporarySelected,
+                    );
+                  },
+                  child: const Text('Apply'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    setState(() {
+      selectedValues
+        ..clear()
+        ..addAll(result);
+    });
+  }
+
+  Widget _buildFilterButton({
+    required String label,
+    required IconData icon,
+    required Set<String> selectedValues,
+    required List<String> options,
+  }) {
+    final hasSelection = selectedValues.isNotEmpty;
+
+    return OutlinedButton.icon(
+      onPressed: () {
+        _showMultiSelectDialog(
+          title: 'Select $label',
+          options: options,
+          selectedValues: selectedValues,
+        );
+      },
+      icon: Icon(
+        hasSelection ? Icons.check_circle : icon,
+        color: hasSelection ? Colors.green : null,
+      ),
+      label: Text(
+        hasSelection
+            ? '$label (${selectedValues.length})'
+            : label,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+    final currentUid =
+        FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0F172A) : const Color(0xFFF2F2F7);
-    final cardColor = isDark ? const Color(0xFF1E293B) : Colors.white;
-    final textColor = isDark ? Colors.white : Colors.black87;
-    final subTextColor = isDark ? Colors.white70 : Colors.black54;
+    final pageTitle = widget.isTournament
+        ? '${widget.playerName} Tournament Hands'
+        : '${widget.playerName} Cash Hands';
+
+    if (currentUid.isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(pageTitle),
+        ),
+        body: const Center(
+          child: Text('Please login again'),
+        ),
+      );
+    }
 
     return Scaffold(
-      backgroundColor: bgColor,
       appBar: AppBar(
-        backgroundColor: bgColor,
-        surfaceTintColor: bgColor,
-        foregroundColor: textColor,
-        elevation: 0,
-        title: Text(
-          isTournament
-              ? '$playerName ${tr(
-                  context,
-                  'Tournament Hands',
-                  zhTw: '錦標賽手牌',
-                  zhCn: '锦标赛手牌',
-                  ko: '토너먼트 핸드',
-                  ja: 'トーナメントハンド',
-                  de: 'Turnierhände',
-                  fr: 'Mains de tournoi',
-                  ar: 'أيدي البطولة',
-                  ru: 'Турнирные раздачи',
-                  trk: 'Turnuva Elleri',
-                  es: 'Manos de torneo',
-                  it: 'Mani torneo',
-                  pl: 'Rozdania turniejowe',
-                  pt: 'Mãos de torneio',
-                  th: 'มือทัวร์นาเมนต์',
-                  id: 'Hand Turnamen',
-                  hi: 'टूर्नामेंट हैंड्स',
-                  bn: 'টুর্নামেন্ট হ্যান্ড',
-                )}'
-              : '$playerName ${tr(
-                  context,
-                  'Cash Hands',
-                  zhTw: '現金桌手牌',
-                  zhCn: '现金桌手牌',
-                  ko: '캐시 핸드',
-                  ja: 'キャッシュハンド',
-                  de: 'Cashgame-Hände',
-                  fr: 'Mains cash game',
-                  ar: 'أيدي الكاش',
-                  ru: 'Кэш-раздачи',
-                  trk: 'Cash Elleri',
-                  es: 'Manos cash',
-                  it: 'Mani cash',
-                  pl: 'Rozdania cash',
-                  pt: 'Mãos cash',
-                  th: 'มือแคชเกม',
-                  id: 'Hand Cash',
-                  hi: 'कैश हैंड्स',
-                  bn: 'ক্যাশ হ্যান্ড',
-                )}',
-
-          style: const TextStyle(
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        title: Text(pageTitle),
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: FirebaseFirestore.instance
             .collectionGroup('hands')
-            .where('playerIds', arrayContains: playerId)
-            .where('ownerUid', isEqualTo: currentUid)
-            .where('isTournament', isEqualTo: isTournament)
+            .where(
+              'playerIds',
+              arrayContains: widget.playerId,
+            )
+            .where(
+              'ownerUid',
+              isEqualTo: currentUid,
+            )
+            .where(
+              'isTournament',
+              isEqualTo: widget.isTournament,
+            )
             .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
+        builder: (context, handsSnapshot) {
+          if (handsSnapshot.hasError) {
             return Center(
               child: Text(
-                snapshot.error.toString(),
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          }
-
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final docs = snapshot.data!.docs;
-
-          if (docs.isEmpty) {
-            return Center(
-              child: Text(
-                'No hands yet',
-                style: TextStyle(
-                  color: subTextColor,
-                  fontWeight: FontWeight.w700,
+                handsSnapshot.error.toString(),
+                style: const TextStyle(
+                  color: Colors.red,
                 ),
               ),
             );
           }
 
-          final groupedHands =
-              <String, List<QueryDocumentSnapshot<Map<String, dynamic>>>>{};
-
-          for (final doc in docs) {
-            final sessionId = doc.reference.parent.parent?.id ?? '';
-            if (sessionId.isEmpty) continue;
-
-            groupedHands.putIfAbsent(sessionId, () => []);
-            groupedHands[sessionId]!.add(doc);
+          if (!handsSnapshot.hasData) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
           }
 
-          return FutureBuilder<List<DocumentSnapshot<Map<String, dynamic>>>>(
+          final handDocs = handsSnapshot.data!.docs;
+
+          if (handDocs.isEmpty) {
+            return const Center(
+              child: Text('No hands found'),
+            );
+          }
+
+          final groupedHands = <
+              String,
+              List<
+                  QueryDocumentSnapshot<
+                      Map<String, dynamic>>>>{};
+
+          for (final handDoc in handDocs) {
+            final handData = handDoc.data();
+
+            final sessionId =
+                (handData['sessionId'] ?? '')
+                    .toString()
+                    .trim();
+
+            if (sessionId.isEmpty) {
+              continue;
+            }
+
+            groupedHands.putIfAbsent(
+              sessionId,
+              () => [],
+            );
+
+            groupedHands[sessionId]!.add(handDoc);
+          }
+
+          final sessionIds = groupedHands.keys.toList();
+
+          return FutureBuilder<
+              List<
+                  DocumentSnapshot<
+                      Map<String, dynamic>>>>(
             future: Future.wait(
-              groupedHands.keys.map((sessionId) {
+              sessionIds.map((sessionId) {
+                final collectionName = widget.isTournament
+                    ? 'tournament_sessions'
+                    : 'cash_game_sessions';
+
                 return FirebaseFirestore.instance
                     .collection('users')
                     .doc(currentUid)
-                    .collection(
-                      isTournament
-                          ? 'tournament_sessions'
-                          : 'cash_game_sessions',
-                    )
+                    .collection(collectionName)
                     .doc(sessionId)
                     .get();
               }),
             ),
             builder: (context, sessionsSnapshot) {
+              if (sessionsSnapshot.hasError) {
+                return Center(
+                  child: Text(
+                    sessionsSnapshot.error.toString(),
+                    style: const TextStyle(
+                      color: Colors.red,
+                    ),
+                  ),
+                );
+              }
+
               if (!sessionsSnapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
               }
 
-              final sessionDocs = sessionsSnapshot.data!;
-              final sessionDataById = <String, Map<String, dynamic>>{};
+              final sessionDataById =
+                  <String, Map<String, dynamic>>{};
 
-              for (final sessionDoc in sessionDocs) {
-                sessionDataById[sessionDoc.id] = sessionDoc.data() ?? {};
+              final sessionDocuments =
+                  sessionsSnapshot.data!;
+
+              for (var index = 0;
+                  index < sessionIds.length;
+                  index++) {
+                final sessionId = sessionIds[index];
+                final sessionDocument =
+                    sessionDocuments[index];
+
+                sessionDataById[sessionId] =
+                    sessionDocument.data() ?? {};
               }
 
-              final sortedEntries = groupedHands.entries.toList()
+              final availableLocations = sessionIds
+                  .map((sessionId) {
+                    final sessionData =
+                        sessionDataById[sessionId] ?? {};
+
+                    return _getSessionLocation(
+                      sessionData,
+                    );
+                  })
+                  .where((location) => location.isNotEmpty)
+                  .toSet()
+                  .toList()
+                ..sort(
+                  (a, b) => a.toLowerCase().compareTo(
+                        b.toLowerCase(),
+                      ),
+                );
+
+              final availablePositions = handDocs
+                  .map(_getPlayerPosition)
+                  .where((position) => position.isNotEmpty)
+                  .toSet()
+                  .toList()
                 ..sort((a, b) {
-                  final aData = sessionDataById[a.key] ?? {};
-                  final bData = sessionDataById[b.key] ?? {};
+                  final aIndex = _positionSortIndex(a);
+                  final bIndex = _positionSortIndex(b);
 
-                  final aTime = aData['startedAt'] as Timestamp?;
-                  final bTime = bData['startedAt'] as Timestamp?;
+                  if (aIndex != bIndex) {
+                    return aIndex.compareTo(bIndex);
+                  }
 
-                  if (aTime == null || bTime == null) return 0;
-
-                  return bTime.toDate().compareTo(aTime.toDate());
+                  return a.compareTo(b);
                 });
 
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: sortedEntries.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final entry = sortedEntries[index];
-                  final sessionId = entry.key;
-                  final hands = entry.value;
+              final filteredGroups = <
+                  String,
+                  List<
+                      QueryDocumentSnapshot<
+                          Map<String, dynamic>>>>{};
 
-                  final sessionData = sessionDataById[sessionId] ?? {};
+              for (final sessionEntry
+                  in groupedHands.entries) {
+                final sessionId = sessionEntry.key;
+                final sessionData =
+                    sessionDataById[sessionId] ?? {};
 
-                  final sessionName = isTournament
-                      ? (sessionData['name'] ??
-                              sessionData['title'] ??
-                              'Unknown Tournament')
-                          .toString()
-                      : (sessionData['location'] ??
-                              sessionData['sessionName'] ??
-                              sessionData['title'] ??
-                              sessionData['game'] ??
-                              'Unknown Game')
-                          .toString();
+                final location =
+                    _getSessionLocation(sessionData);
 
-                  final sessionTime = sessionData['startedAt'] as Timestamp?;
+                if (_selectedLocations.isNotEmpty &&
+                    !_selectedLocations.contains(
+                      location,
+                    )) {
+                  continue;
+                }
 
-                  final sessionDate = sessionTime == null
-                      ? ''
-                      : DateFormat('yyyy-MM-dd').format(sessionTime.toDate());
+                final filteredHands =
+                    sessionEntry.value.where((handDoc) {
+                  if (_selectedPositions.isEmpty) {
+                    return true;
+                  }
 
-                  return Container(
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: isDark ? Colors.white12 : Colors.black12,
-                      ),
-                    ),
-                    child: ListTile(
-                      leading: Icon(Icons.style, color: subTextColor),
-                      title: Text(
-                        sessionName,
-                        style: TextStyle(
-                          color: textColor,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '${hands.length} hands • $sessionDate',
-                        style: TextStyle(
-                          color: subTextColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      trailing: Icon(Icons.chevron_right, color: subTextColor),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PlayerSessionHandsPage(
-                              sessionName: sessionName,
-                              hands: hands,
-                              isTournament: isTournament,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+                  final position =
+                      _getPlayerPosition(handDoc);
+
+                  return _selectedPositions.contains(
+                    position,
                   );
-                },
+                }).toList();
+
+                if (filteredHands.isNotEmpty) {
+                  filteredGroups[sessionId] =
+                      filteredHands;
+                }
+              }
+
+              final sortedSessions =
+                  filteredGroups.entries.toList();
+
+              sortedSessions.sort((a, b) {
+                final aData =
+                    sessionDataById[a.key] ?? {};
+                final bData =
+                    sessionDataById[b.key] ?? {};
+
+                final aTime =
+                    aData['startedAt'] is Timestamp
+                        ? aData['startedAt'] as Timestamp
+                        : null;
+
+                final bTime =
+                    bData['startedAt'] is Timestamp
+                        ? bData['startedAt'] as Timestamp
+                        : null;
+
+                if (aTime == null && bTime == null) {
+                  return 0;
+                }
+
+                if (aTime == null) {
+                  return 1;
+                }
+
+                if (bTime == null) {
+                  return -1;
+                }
+
+                return bTime.compareTo(aTime);
+              });
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      16,
+                      12,
+                      16,
+                      8,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: 10,
+                        runSpacing: 10,
+                        children: [
+                          _buildFilterButton(
+                            label: 'Location',
+                            icon: Icons.location_on_outlined,
+                            selectedValues:
+                                _selectedLocations,
+                            options: availableLocations,
+                          ),
+                          _buildFilterButton(
+                            label: 'Position',
+                            icon: Icons.event_seat_outlined,
+                            selectedValues:
+                                _selectedPositions,
+                            options: availablePositions,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: sortedSessions.isEmpty
+                        ? const Center(
+                            child: Text(
+                              'No hands match the selected filters',
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(
+                              16,
+                              8,
+                              16,
+                              24,
+                            ),
+                            itemCount:
+                                sortedSessions.length,
+                            separatorBuilder:
+                                (context, index) {
+                              return const SizedBox(
+                                height: 12,
+                              );
+                            },
+                            itemBuilder: (context, index) {
+                              final sessionEntry =
+                                  sortedSessions[index];
+
+                              final sessionId =
+                                  sessionEntry.key;
+
+                              final hands =
+                                  sessionEntry.value;
+
+                              final sessionData =
+                                  sessionDataById[
+                                          sessionId] ??
+                                      {};
+
+                              final location =
+                                  _getSessionLocation(
+                                sessionData,
+                              );
+
+                              final rawStartedAt =
+                                  sessionData[
+                                      'startedAt'];
+
+                              final startedAt =
+                                  rawStartedAt
+                                          is Timestamp
+                                      ? rawStartedAt
+                                          .toDate()
+                                      : null;
+
+                              final dateText =
+                                  startedAt == null
+                                      ? ''
+                                      : '${startedAt.year.toString().padLeft(4, '0')}-'
+                                          '${startedAt.month.toString().padLeft(2, '0')}-'
+                                          '${startedAt.day.toString().padLeft(2, '0')}';
+
+                              return Card(
+                                child: ListTile(
+                                  leading: Icon(
+                                    widget.isTournament
+                                        ? Icons.emoji_events
+                                        : Icons.casino,
+                                  ),
+                                  title: Text(
+                                    location,
+                                    style: const TextStyle(
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${hands.length} hands'
+                                    '${dateText.isEmpty ? '' : ' • $dateText'}',
+                                  ),
+                                  trailing: const Icon(
+                                    Icons.chevron_right,
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) {
+                                          return PlayerSessionHandsPage(
+                                            sessionName: location,
+                                            hands: hands,
+                                            isTournament: widget.isTournament,
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                  ),
+                ],
               );
             },
           );
