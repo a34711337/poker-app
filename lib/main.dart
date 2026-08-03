@@ -48798,7 +48798,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                           if (widget.isTournament)
                             _buildFilterButton(
                               label: 'Bubble',
-                              icon: Icons.bubble_chart,
+                              icon: Icons.circle,
                               selectedValues:
                                   _selectedBubbleStatuses,
                               options: availableBubbleStatuses,
