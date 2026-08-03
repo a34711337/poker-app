@@ -48074,6 +48074,7 @@ class PlayerHandsPage extends StatefulWidget {
 class _PlayerHandsPageState extends State<PlayerHandsPage> {
   final Set<String> _selectedLocations = {};
   final Set<String> _selectedPositions = {};
+  final Set<String> _selectedTableSizes = {};
 
   String _readText(
     Map<String, dynamic> data,
@@ -48199,7 +48200,11 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
 
                           return CheckboxListTile(
                             value: isSelected,
-                            title: Text(option),
+                            title: Text(
+                              title == 'Select Players'
+                                  ? '$option Players'
+                                  : option,
+                            ),
                             controlAffinity:
                                 ListTileControlAffinity.leading,
                             contentPadding: EdgeInsets.zero,
@@ -48525,6 +48530,35 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                   return a.compareTo(b);
                 });
 
+              final availableTableSizes = handDocs
+                  .map((handDoc) {
+                    final value =
+                        handDoc.data()['tableSize'];
+
+                    if (value == null) {
+                      return '';
+                    }
+
+                    final tableSize =
+                        int.tryParse(value.toString());
+
+                    if (tableSize == null ||
+                        tableSize <= 0) {
+                      return '';
+                    }
+
+                    return tableSize.toString();
+                  })
+                  .where((tableSize) => tableSize.isNotEmpty)
+                  .toSet()
+                  .toList()
+                ..sort((a, b) {
+                  final aNumber = int.tryParse(a) ?? 0;
+                  final bNumber = int.tryParse(b) ?? 0;
+
+                  return aNumber.compareTo(bNumber);
+                });
+
               final filteredGroups = <
                   String,
                   List<
@@ -48549,16 +48583,31 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
 
                 final filteredHands =
                     sessionEntry.value.where((handDoc) {
-                  if (_selectedPositions.isEmpty) {
-                    return true;
+                  final handData = handDoc.data();
+
+                  // Position 篩選
+                  if (_selectedPositions.isNotEmpty) {
+                    final position =
+                        _getPlayerPosition(handDoc);
+
+                    if (!_selectedPositions.contains(position)) {
+                      return false;
+                    }
                   }
 
-                  final position =
-                      _getPlayerPosition(handDoc);
+                  // 幾人桌篩選
+                  if (_selectedTableSizes.isNotEmpty) {
+                    final tableSize =
+                        (handData['tableSize'] ?? '')
+                            .toString()
+                            .trim();
 
-                  return _selectedPositions.contains(
-                    position,
-                  );
+                    if (!_selectedTableSizes.contains(tableSize)) {
+                      return false;
+                    }
+                  }
+
+                  return true;
                 }).toList();
 
                 if (filteredHands.isNotEmpty) {
@@ -48639,6 +48688,13 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                             selectedValues:
                                 _selectedPositions,
                             options: availablePositions,
+                          ),
+                          _buildFilterButton(
+                            label: 'Players',
+                            icon: Icons.groups_outlined,
+                            selectedValues:
+                                _selectedTableSizes,
+                            options: availableTableSizes,
                           ),
                         ],
                       ),
