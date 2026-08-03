@@ -48094,7 +48094,10 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     return fallback;
   }
 
-  String _getSessionLocation(Map<String, dynamic> sessionData) {
+  String _getSessionLocation(
+    BuildContext context,
+    Map<String, dynamic> sessionData,
+  ) {
     if (widget.isTournament) {
       return _readText(
         sessionData,
@@ -48104,7 +48107,27 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
           'title',
           'sessionName',
         ],
-        'Unknown Tournament',
+        tr(
+          context,
+          'Unknown Tournament',
+          zhTw: '未知錦標賽',
+          zhCn: '未知锦标赛',
+          ko: '알 수 없는 토너먼트',
+          ja: '不明なトーナメント',
+          de: 'Unbekanntes Turnier',
+          fr: 'Tournoi inconnu',
+          ar: 'بطولة غير معروفة',
+          ru: 'Неизвестный турнир',
+          trk: 'Bilinmeyen Turnuva',
+          es: 'Torneo desconocido',
+          it: 'Torneo sconosciuto',
+          pl: 'Nieznany turniej',
+          pt: 'Torneio desconhecido',
+          th: 'ทัวร์นาเมนต์ที่ไม่รู้จัก',
+          id: 'Turnamen tidak dikenal',
+          hi: 'अज्ञात टूर्नामेंट',
+          bn: 'অজানা টুর্নামেন্ট',
+        ),
       );
     }
 
@@ -48117,7 +48140,27 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
         'game',
         'name',
       ],
-      'Unknown Game',
+      tr(
+        context,
+        'Unknown Game',
+        zhTw: '未知牌局',
+        zhCn: '未知牌局',
+        ko: '알 수 없는 게임',
+        ja: '不明なゲーム',
+        de: 'Unbekanntes Spiel',
+        fr: 'Partie inconnue',
+        ar: 'لعبة غير معروفة',
+        ru: 'Неизвестная игра',
+        trk: 'Bilinmeyen Oyun',
+        es: 'Partida desconocida',
+        it: 'Partita sconosciuta',
+        pl: 'Nieznana gra',
+        pt: 'Jogo desconhecido',
+        th: 'เกมที่ไม่รู้จัก',
+        id: 'Permainan tidak dikenal',
+        hi: 'अज्ञात गेम',
+        bn: 'অজানা গেম',
+      ),
     );
   }
 
@@ -48172,6 +48215,131 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     return index;
   }
 
+  String _filterDialogTitle(
+    BuildContext context,
+    String title,
+  ) {
+    switch (title) {
+      case 'Select Location':
+        return tr(
+          context,
+          'Select Location',
+          zhTw: '選擇地點',
+          zhCn: '选择地点',
+          ko: '장소 선택',
+          ja: '場所を選択',
+          de: 'Ort auswählen',
+          fr: 'Sélectionner un lieu',
+          ar: 'اختر الموقع',
+          ru: 'Выберите место',
+          trk: 'Konum Seç',
+          es: 'Seleccionar ubicación',
+          it: 'Seleziona luogo',
+          pl: 'Wybierz lokalizację',
+          pt: 'Selecionar local',
+          th: 'เลือกสถานที่',
+          id: 'Pilih Lokasi',
+          hi: 'स्थान चुनें',
+          bn: 'স্থান নির্বাচন করুন',
+        );
+
+      case 'Select Position':
+        return tr(
+          context,
+          'Select Position',
+          zhTw: '選擇位置',
+          zhCn: '选择位置',
+          ko: '포지션 선택',
+          ja: 'ポジションを選択',
+          de: 'Position auswählen',
+          fr: 'Sélectionner une position',
+          ar: 'اختر المركز',
+          ru: 'Выберите позицию',
+          trk: 'Pozisyon Seç',
+          es: 'Seleccionar posición',
+          it: 'Seleziona posizione',
+          pl: 'Wybierz pozycję',
+          pt: 'Selecionar posição',
+          th: 'เลือกตำแหน่ง',
+          id: 'Pilih Posisi',
+          hi: 'पोज़िशन चुनें',
+          bn: 'পজিশন নির্বাচন করুন',
+        );
+
+      case 'Select Players':
+        return tr(
+          context,
+          'Select Players',
+          zhTw: '選擇玩家人數',
+          zhCn: '选择玩家人数',
+          ko: '플레이어 수 선택',
+          ja: 'プレイヤー人数を選択',
+          de: 'Spieleranzahl auswählen',
+          fr: 'Sélectionner le nombre de joueurs',
+          ar: 'اختر عدد اللاعبين',
+          ru: 'Выберите количество игроков',
+          trk: 'Oyuncu Sayısını Seç',
+          es: 'Seleccionar número de jugadores',
+          it: 'Seleziona numero di giocatori',
+          pl: 'Wybierz liczbę graczy',
+          pt: 'Selecionar número de jogadores',
+          th: 'เลือกจำนวนผู้เล่น',
+          id: 'Pilih Jumlah Pemain',
+          hi: 'खिलाड़ियों की संख्या चुनें',
+          bn: 'খেলোয়াড়ের সংখ্যা নির্বাচন করুন',
+        );
+
+      case 'Select Game Type':
+        return tr(
+          context,
+          'Select Game Type',
+          zhTw: '選擇遊戲類型',
+          zhCn: '选择游戏类型',
+          ko: '게임 유형 선택',
+          ja: 'ゲームタイプを選択',
+          de: 'Spieltyp auswählen',
+          fr: 'Sélectionner le type de jeu',
+          ar: 'اختر نوع اللعبة',
+          ru: 'Выберите тип игры',
+          trk: 'Oyun Türünü Seç',
+          es: 'Seleccionar tipo de juego',
+          it: 'Seleziona tipo di gioco',
+          pl: 'Wybierz typ gry',
+          pt: 'Selecionar tipo de jogo',
+          th: 'เลือกประเภทเกม',
+          id: 'Pilih Jenis Permainan',
+          hi: 'गेम का प्रकार चुनें',
+          bn: 'গেমের ধরন নির্বাচন করুন',
+        );
+
+      case 'Select Bubble':
+        return tr(
+          context,
+          'Select Bubble',
+          zhTw: '選擇泡沫期狀態',
+          zhCn: '选择泡沫期状态',
+          ko: '버블 상태 선택',
+          ja: 'バブル状態を選択',
+          de: 'Bubble-Status auswählen',
+          fr: 'Sélectionner le statut de bulle',
+          ar: 'اختر حالة الفقاعة',
+          ru: 'Выберите статус баббла',
+          trk: 'Bubble Durumunu Seç',
+          es: 'Seleccionar estado de burbuja',
+          it: 'Seleziona stato bolla',
+          pl: 'Wybierz status bubble',
+          pt: 'Selecionar status da bolha',
+          th: 'เลือกสถานะบับเบิล',
+          id: 'Pilih Status Bubble',
+          hi: 'बबल स्थिति चुनें',
+          bn: 'বাবল অবস্থা নির্বাচন করুন',
+        );
+
+      default:
+        return title;
+    }
+  }
+
   Future<void> _showMultiSelectDialog({
     required String title,
     required List<String> options,
@@ -48185,12 +48353,39 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
         return StatefulBuilder(
           builder: (dialogContext, setDialogState) {
             return AlertDialog(
-              title: Text(title),
+              title: Text(
+                _filterDialogTitle(
+                  dialogContext,
+                  title,
+                ),
+              ),
               content: SizedBox(
                 width: double.maxFinite,
                 child: options.isEmpty
-                    ? const Center(
-                        child: Text('No options available'),
+                    ? Center(
+                        child: Text(
+                          tr(
+                            context,
+                            'No options available',
+                            zhTw: '沒有可用選項',
+                            zhCn: '没有可用选项',
+                            ko: '사용 가능한 옵션이 없습니다',
+                            ja: '利用可能な選択肢がありません',
+                            de: 'Keine Optionen verfügbar',
+                            fr: 'Aucune option disponible',
+                            ar: 'لا توجد خيارات متاحة',
+                            ru: 'Нет доступных вариантов',
+                            trk: 'Kullanılabilir seçenek yok',
+                            es: 'No hay opciones disponibles',
+                            it: 'Nessuna opzione disponibile',
+                            pl: 'Brak dostępnych opcji',
+                            pt: 'Nenhuma opção disponível',
+                            th: 'ไม่มีตัวเลือก',
+                            id: 'Tidak ada pilihan tersedia',
+                            hi: 'कोई विकल्प उपलब्ध नहीं है',
+                            bn: 'কোনো বিকল্প নেই',
+                          ),
+                        ),
                       )
                     : ListView.builder(
                         shrinkWrap: true,
@@ -48526,6 +48721,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                         sessionDataById[sessionId] ?? {};
 
                     return _getSessionLocation(
+                      context,
                       sessionData,
                     );
                   })
@@ -48635,7 +48831,10 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                     sessionDataById[sessionId] ?? {};
 
                 final location =
-                    _getSessionLocation(sessionData);
+                    _getSessionLocation(
+                      context,
+                      sessionData,
+                    );
 
                 if (_selectedLocations.isNotEmpty &&
                     !_selectedLocations.contains(
@@ -48715,7 +48914,10 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                     sessionDataById[sessionId] ?? {};
 
                 final location =
-                    _getSessionLocation(sessionData);
+                    _getSessionLocation(
+                      context,
+                      sessionData,
+                    );
 
                 for (final handDoc in sessionEntry.value) {
                   filteredHandItems.add({
