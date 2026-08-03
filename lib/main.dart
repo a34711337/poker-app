@@ -48298,6 +48298,47 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     return value is Timestamp ? value : null;
   }
 
+  List<String> _getPlayerCards(
+    QueryDocumentSnapshot<Map<String, dynamic>> handDoc,
+  ) {
+    final handData = handDoc.data();
+    final playerPosition = _getPlayerPosition(handDoc);
+
+    if (playerPosition.isEmpty) {
+      return [];
+    }
+
+    final rawShowdownCards = handData['showdownCards'];
+
+    if (rawShowdownCards is! Map) {
+      return [];
+    }
+
+    final showdownCards =
+        Map<String, dynamic>.from(rawShowdownCards);
+
+    final rawPlayerShowdown =
+        showdownCards[playerPosition];
+
+    if (rawPlayerShowdown is! Map) {
+      return [];
+    }
+
+    final playerShowdown =
+        Map<String, dynamic>.from(rawPlayerShowdown);
+
+    final rawCards = playerShowdown['cards'];
+
+    if (rawCards is! List) {
+      return [];
+    }
+
+    return rawCards
+        .map((card) => card.toString().trim())
+        .where((card) => card.isNotEmpty)
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUid =
@@ -48640,6 +48681,14 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                                   (handData['title'] ?? 'Hand')
                                       .toString();
 
+                              final playerCards =
+                                  _getPlayerCards(handDoc);
+
+                              final handTitleWithCards =
+                                  playerCards.isEmpty
+                                      ? handTitle
+                                      : '$handTitle with ${playerCards.join(' ')}';
+
                               final position =
                                   _getPlayerPosition(handDoc);
 
@@ -48664,7 +48713,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                                     Icons.style,
                                   ),
                                   title: Text(
-                                    handTitle,
+                                    handTitleWithCards,
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
