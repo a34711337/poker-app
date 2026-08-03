@@ -48340,6 +48340,106 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     }
   }
 
+  String _filterOptionLabel(
+    BuildContext context,
+    String title,
+    String option,
+  ) {
+    if (title == 'Select Players') {
+      final playersText = tr(
+        context,
+        'Players',
+        zhTw: '位玩家',
+        zhCn: '位玩家',
+        ko: '명',
+        ja: '人',
+        de: 'Spieler',
+        fr: 'joueurs',
+        ar: 'لاعبين',
+        ru: 'игроков',
+        trk: 'Oyuncu',
+        es: 'jugadores',
+        it: 'giocatori',
+        pl: 'graczy',
+        pt: 'jogadores',
+        th: 'ผู้เล่น',
+        id: 'Pemain',
+        hi: 'खिलाड़ी',
+        bn: 'খেলোয়াড়',
+      );
+
+      // 中文、韓文、日文、泰文的數字和單位之間不加空格
+      final languageCode =
+          Localizations.localeOf(context).languageCode;
+
+      const noSpaceLanguages = {
+        'zh',
+        'ko',
+        'ja',
+        'th',
+      };
+
+      return noSpaceLanguages.contains(languageCode)
+          ? '$option$playersText'
+          : '$option $playersText';
+    }
+
+    if (title == 'Select Game Type') {
+      return _gameTypeLabel(option);
+    }
+
+    if (title == 'Select Bubble') {
+      if (option == 'true') {
+        return tr(
+          context,
+          'Bubble',
+          zhTw: '泡沫期',
+          zhCn: '泡沫期',
+          ko: '버블',
+          ja: 'バブル',
+          de: 'Bubble',
+          fr: 'Bulle',
+          ar: 'مرحلة الفقاعة',
+          ru: 'Баббл',
+          trk: 'Bubble',
+          es: 'Burbuja',
+          it: 'Bolla',
+          pl: 'Bubble',
+          pt: 'Bolha',
+          th: 'บับเบิล',
+          id: 'Bubble',
+          hi: 'बबल',
+          bn: 'বাবল',
+        );
+      }
+
+      return tr(
+        context,
+        'Not Bubble',
+        zhTw: '非泡沫期',
+        zhCn: '非泡沫期',
+        ko: '버블 아님',
+        ja: 'バブルではない',
+        de: 'Nicht Bubble',
+        fr: 'Hors bulle',
+        ar: 'ليست مرحلة الفقاعة',
+        ru: 'Не баббл',
+        trk: 'Bubble Değil',
+        es: 'No es burbuja',
+        it: 'Non bolla',
+        pl: 'Poza bubble',
+        pt: 'Não é bolha',
+        th: 'ไม่ใช่ช่วงบับเบิล',
+        id: 'Bukan Bubble',
+        hi: 'बबल नहीं',
+        bn: 'বাবল নয়',
+      );
+    }
+
+    // Location 和 Position 是資料內容或撲克縮寫，不翻譯
+    return option;
+  }
+
   Future<void> _showMultiSelectDialog({
     required String title,
     required List<String> options,
@@ -48398,15 +48498,11 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                           return CheckboxListTile(
                             value: isSelected,
                             title: Text(
-                              title == 'Select Players'
-                                  ? '$option Players'
-                                  : title == 'Select Game Type'
-                                      ? _gameTypeLabel(option)
-                                      : title == 'Select Bubble'
-                                          ? option == 'true'
-                                              ? 'Bubble'
-                                              : 'Not Bubble'
-                                          : option,
+                              _filterOptionLabel(
+                                context,
+                                title,
+                                option,
+                              ),
                             ),
                             controlAffinity:
                                 ListTileControlAffinity.leading,
@@ -48431,13 +48527,57 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                       temporarySelected.clear();
                     });
                   },
-                  child: const Text('Clear All'),
+                  child: Text(
+                    tr(
+                      dialogContext,
+                      'Clear All',
+                      zhTw: '全部清除',
+                      zhCn: '全部清除',
+                      ko: '모두 지우기',
+                      ja: 'すべてクリア',
+                      de: 'Alle löschen',
+                      fr: 'Tout effacer',
+                      ar: 'مسح الكل',
+                      ru: 'Очистить всё',
+                      trk: 'Tümünü Temizle',
+                      es: 'Borrar todo',
+                      it: 'Cancella tutto',
+                      pl: 'Wyczyść wszystko',
+                      pt: 'Limpar tudo',
+                      th: 'ล้างทั้งหมด',
+                      id: 'Hapus Semua',
+                      hi: 'सभी साफ़ करें',
+                      bn: 'সব মুছুন',
+                    ),
+                  ),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(dialogContext);
                   },
-                  child: const Text('Cancel'),
+                  child: Text(
+                    tr(
+                      dialogContext,
+                      'Cancel',
+                      zhTw: '取消',
+                      zhCn: '取消',
+                      ko: '취소',
+                      ja: 'キャンセル',
+                      de: 'Abbrechen',
+                      fr: 'Annuler',
+                      ar: 'إلغاء',
+                      ru: 'Отмена',
+                      trk: 'İptal',
+                      es: 'Cancelar',
+                      it: 'Annulla',
+                      pl: 'Anuluj',
+                      pt: 'Cancelar',
+                      th: 'ยกเลิก',
+                      id: 'Batal',
+                      hi: 'रद्द करें',
+                      bn: 'বাতিল',
+                    ),
+                  ),
                 ),
                 FilledButton(
                   onPressed: () {
@@ -48446,7 +48586,29 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                       temporarySelected,
                     );
                   },
-                  child: const Text('Apply'),
+                  child: Text(
+                    tr(
+                      dialogContext,
+                      'Apply',
+                      zhTw: '套用',
+                      zhCn: '应用',
+                      ko: '적용',
+                      ja: '適用',
+                      de: 'Anwenden',
+                      fr: 'Appliquer',
+                      ar: 'تطبيق',
+                      ru: 'Применить',
+                      trk: 'Uygula',
+                      es: 'Aplicar',
+                      it: 'Applica',
+                      pl: 'Zastosuj',
+                      pt: 'Aplicar',
+                      th: 'นำไปใช้',
+                      id: 'Terapkan',
+                      hi: 'लागू करें',
+                      bn: 'প্রয়োগ করুন',
+                    ),
+                  ),
                 ),
               ],
             );
