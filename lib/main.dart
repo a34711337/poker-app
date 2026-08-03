@@ -48628,6 +48628,131 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     });
   }
 
+  String _filterButtonLabel(
+    BuildContext context,
+    String label,
+  ) {
+    switch (label) {
+      case 'Location':
+        return tr(
+          context,
+          'Location',
+          zhTw: '地點',
+          zhCn: '地点',
+          ko: '장소',
+          ja: '場所',
+          de: 'Ort',
+          fr: 'Lieu',
+          ar: 'الموقع',
+          ru: 'Место',
+          trk: 'Konum',
+          es: 'Ubicación',
+          it: 'Luogo',
+          pl: 'Lokalizacja',
+          pt: 'Local',
+          th: 'สถานที่',
+          id: 'Lokasi',
+          hi: 'स्थान',
+          bn: 'স্থান',
+        );
+
+      case 'Position':
+        return tr(
+          context,
+          'Position',
+          zhTw: '位置',
+          zhCn: '位置',
+          ko: '포지션',
+          ja: 'ポジション',
+          de: 'Position',
+          fr: 'Position',
+          ar: 'المركز',
+          ru: 'Позиция',
+          trk: 'Pozisyon',
+          es: 'Posición',
+          it: 'Posizione',
+          pl: 'Pozycja',
+          pt: 'Posição',
+          th: 'ตำแหน่ง',
+          id: 'Posisi',
+          hi: 'पोज़िशन',
+          bn: 'পজিশন',
+        );
+
+      case 'Players':
+        return tr(
+          context,
+          'Players',
+          zhTw: '玩家人數',
+          zhCn: '玩家人数',
+          ko: '플레이어 수',
+          ja: 'プレイヤー数',
+          de: 'Spieler',
+          fr: 'Joueurs',
+          ar: 'اللاعبون',
+          ru: 'Игроки',
+          trk: 'Oyuncular',
+          es: 'Jugadores',
+          it: 'Giocatori',
+          pl: 'Gracze',
+          pt: 'Jogadores',
+          th: 'ผู้เล่น',
+          id: 'Pemain',
+          hi: 'खिलाड़ी',
+          bn: 'খেলোয়াড়',
+        );
+
+      case 'Game Type':
+        return tr(
+          context,
+          'Game Type',
+          zhTw: '遊戲類型',
+          zhCn: '游戏类型',
+          ko: '게임 유형',
+          ja: 'ゲームタイプ',
+          de: 'Spieltyp',
+          fr: 'Type de jeu',
+          ar: 'نوع اللعبة',
+          ru: 'Тип игры',
+          trk: 'Oyun Türü',
+          es: 'Tipo de juego',
+          it: 'Tipo di gioco',
+          pl: 'Typ gry',
+          pt: 'Tipo de jogo',
+          th: 'ประเภทเกม',
+          id: 'Jenis Permainan',
+          hi: 'गेम का प्रकार',
+          bn: 'গেমের ধরন',
+        );
+
+      case 'Bubble':
+        return tr(
+          context,
+          'Bubble',
+          zhTw: '泡沫期',
+          zhCn: '泡沫期',
+          ko: '버블',
+          ja: 'バブル',
+          de: 'Bubble',
+          fr: 'Bulle',
+          ar: 'مرحلة الفقاعة',
+          ru: 'Баббл',
+          trk: 'Bubble',
+          es: 'Burbuja',
+          it: 'Bolla',
+          pl: 'Bubble',
+          pt: 'Bolha',
+          th: 'บับเบิล',
+          id: 'Bubble',
+          hi: 'बबल',
+          bn: 'বাবল',
+        );
+
+      default:
+        return label;
+    }
+  }
+
   Widget _buildFilterButton({
     required String label,
     required IconData icon,
@@ -48635,6 +48760,12 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     required List<String> options,
   }) {
     final hasSelection = selectedValues.isNotEmpty;
+
+    final displayLabel =
+        _filterButtonLabel(
+      context,
+      label,
+    );
 
     return OutlinedButton.icon(
       onPressed: () {
@@ -48650,8 +48781,8 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
       ),
       label: Text(
         hasSelection
-            ? '$label (${selectedValues.length})'
-            : label,
+            ? '$displayLabel (${selectedValues.length})'
+            : displayLabel,
       ),
     );
   }
@@ -48730,17 +48861,82 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     final currentUid =
         FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    final pageTitle = widget.isTournament
-        ? '${widget.playerName} Tournament Hands'
-        : '${widget.playerName} Cash Hands';
+    final handsTitle = widget.isTournament
+        ? tr(
+            context,
+            'Tournament Hands',
+            zhTw: '錦標賽手牌',
+            zhCn: '锦标赛手牌',
+            ko: '토너먼트 핸드',
+            ja: 'トーナメントハンド',
+            de: 'Turnierhände',
+            fr: 'Mains de tournoi',
+            ar: 'أيدي البطولة',
+            ru: 'Турнирные раздачи',
+            trk: 'Turnuva Elleri',
+            es: 'Manos de torneo',
+            it: 'Mani da torneo',
+            pl: 'Rozdania turniejowe',
+            pt: 'Mãos de torneio',
+            th: 'มือทัวร์นาเมนต์',
+            id: 'Hand Turnamen',
+            hi: 'टूर्नामेंट हैंड',
+            bn: 'টুর্নামেন্ট হ্যান্ড',
+          )
+        : tr(
+            context,
+            'Cash Hands',
+            zhTw: '現金桌手牌',
+            zhCn: '现金桌手牌',
+            ko: '캐시 게임 핸드',
+            ja: 'キャッシュゲームハンド',
+            de: 'Cashgame-Hände',
+            fr: 'Mains de cash game',
+            ar: 'أيدي الألعاب النقدية',
+            ru: 'Кэш-раздачи',
+            trk: 'Cash Elleri',
+            es: 'Manos de cash',
+            it: 'Mani cash',
+            pl: 'Rozdania cash',
+            pt: 'Mãos de cash game',
+            th: 'มือแคชเกม',
+            id: 'Hand Cash Game',
+            hi: 'कैश गेम हैंड',
+            bn: 'ক্যাশ গেম হ্যান্ড',
+          );
+
+    final pageTitle =
+        '${widget.playerName} $handsTitle';
 
     if (currentUid.isEmpty) {
       return Scaffold(
         appBar: AppBar(
           title: Text(pageTitle),
         ),
-        body: const Center(
-          child: Text('Please login again'),
+        body: Center(
+          child: Text(
+            tr(
+              context,
+              'Please login again',
+              zhTw: '請重新登入',
+              zhCn: '请重新登录',
+              ko: '다시 로그인해 주세요',
+              ja: 'もう一度ログインしてください',
+              de: 'Bitte melde dich erneut an',
+              fr: 'Veuillez vous reconnecter',
+              ar: 'يرجى تسجيل الدخول مرة أخرى',
+              ru: 'Пожалуйста, войдите снова',
+              trk: 'Lütfen tekrar giriş yapın',
+              es: 'Inicia sesión de nuevo',
+              it: 'Accedi di nuovo',
+              pl: 'Zaloguj się ponownie',
+              pt: 'Inicie sessão novamente',
+              th: 'กรุณาเข้าสู่ระบบอีกครั้ง',
+              id: 'Silakan masuk kembali',
+              hi: 'कृपया फिर से लॉग इन करें',
+              bn: 'অনুগ্রহ করে আবার লগইন করুন',
+            ),
+          ),
         ),
       );
     }
@@ -48786,8 +48982,30 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
           final handDocs = handsSnapshot.data!.docs;
 
           if (handDocs.isEmpty) {
-            return const Center(
-              child: Text('No hands found'),
+            return Center(
+              child: Text(
+                tr(
+                  context,
+                  'No hands found',
+                  zhTw: '找不到手牌',
+                  zhCn: '找不到手牌',
+                  ko: '핸드를 찾을 수 없습니다',
+                  ja: 'ハンドが見つかりません',
+                  de: 'Keine Hände gefunden',
+                  fr: 'Aucune main trouvée',
+                  ar: 'لم يتم العثور على أي يد',
+                  ru: 'Раздачи не найдены',
+                  trk: 'El bulunamadı',
+                  es: 'No se encontraron manos',
+                  it: 'Nessuna mano trovata',
+                  pl: 'Nie znaleziono rozdań',
+                  pt: 'Nenhuma mão encontrada',
+                  th: 'ไม่พบมือไพ่',
+                  id: 'Tidak ada hand ditemukan',
+                  hi: 'कोई हैंड नहीं मिला',
+                  bn: 'কোনো হ্যান্ড পাওয়া যায়নি',
+                ),
+              ),
             );
           }
 
@@ -49174,9 +49392,29 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                   ),
                   Expanded(
                     child: filteredHandItems.isEmpty
-                        ? const Center(
+                        ? Center(
                             child: Text(
-                              'No hands match the selected filters',
+                              tr(
+                                context,
+                                'No hands match the selected filters',
+                                zhTw: '沒有符合所選篩選條件的手牌',
+                                zhCn: '没有符合所选筛选条件的手牌',
+                                ko: '선택한 필터와 일치하는 핸드가 없습니다',
+                                ja: '選択したフィルターに一致するハンドがありません',
+                                de: 'Keine Hände entsprechen den ausgewählten Filtern',
+                                fr: 'Aucune main ne correspond aux filtres sélectionnés',
+                                ar: 'لا توجد أيدٍ تطابق عوامل التصفية المحددة',
+                                ru: 'Нет раздач, соответствующих выбранным фильтрам',
+                                trk: 'Seçilen filtrelerle eşleşen el yok',
+                                es: 'Ninguna mano coincide con los filtros seleccionados',
+                                it: 'Nessuna mano corrisponde ai filtri selezionati',
+                                pl: 'Żadne rozdania nie pasują do wybranych filtrów',
+                                pt: 'Nenhuma mão corresponde aos filtros selecionados',
+                                th: 'ไม่มีมือไพ่ที่ตรงกับตัวกรองที่เลือก',
+                                id: 'Tidak ada hand yang cocok dengan filter yang dipilih',
+                                hi: 'चुने गए फ़िल्टर से मेल खाने वाला कोई हैंड नहीं है',
+                                bn: 'নির্বাচিত ফিল্টারের সাথে মিলে এমন কোনো হ্যান্ড নেই',
+                              ),
                             ),
                           )
                         : ListView.separated(
@@ -49206,16 +49444,59 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                               final handData = handDoc.data();
 
                               final handTitle =
-                                  (handData['title'] ?? 'Hand')
+                                  (handData['title'] ??
+                                          tr(
+                                            context,
+                                            'Hand',
+                                            zhTw: '手牌',
+                                            zhCn: '手牌',
+                                            ko: '핸드',
+                                            ja: 'ハンド',
+                                            de: 'Hand',
+                                            fr: 'Main',
+                                            ar: 'يد',
+                                            ru: 'Раздача',
+                                            trk: 'El',
+                                            es: 'Mano',
+                                            it: 'Mano',
+                                            pl: 'Rozdanie',
+                                            pt: 'Mão',
+                                            th: 'มือไพ่',
+                                            id: 'Hand',
+                                            hi: 'हैंड',
+                                            bn: 'হ্যান্ড',
+                                          ))
                                       .toString();
 
                               final playerCards =
                                   _getPlayerCards(handDoc);
 
+                              final withText = tr(
+                                context,
+                                'with',
+                                zhTw: '手牌',
+                                zhCn: '手牌',
+                                ko: '핸드',
+                                ja: 'ハンド',
+                                de: 'mit',
+                                fr: 'avec',
+                                ar: 'مع',
+                                ru: 'с картами',
+                                trk: 'ile',
+                                es: 'con',
+                                it: 'con',
+                                pl: 'z kartami',
+                                pt: 'com',
+                                th: 'กับไพ่',
+                                id: 'dengan',
+                                hi: 'के साथ',
+                                bn: 'সঙ্গে',
+                              );
+
                               final handTitleWithCards =
                                   playerCards.isEmpty
                                       ? handTitle
-                                      : '$handTitle with ${playerCards.join(' ')}';
+                                      : '$handTitle $withText ${playerCards.join(' ')}';
 
                               final position =
                                   _getPlayerPosition(handDoc);
