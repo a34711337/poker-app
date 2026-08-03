@@ -1524,11 +1524,6 @@ Future<void> ensureUserProfile(User user) async {
     resolvedRole = 'player';
   }
 
-  final hostStatus = resolveHostSubscriptionStatusFromUserData(data);
-  if (hostStatus.shouldDowngradeToPlayer) {
-    resolvedRole = 'player';
-  }
-
   String resolvedPlayerId = (data['playerId'] ?? '').toString().trim();
   if (resolvedPlayerId.isEmpty) {
     resolvedPlayerId = await generateUniquePlayerId();
@@ -1579,13 +1574,6 @@ Future<void> ensureUserProfile(User user) async {
     ),
     SetOptions(merge: true),
   );
-
-  if (hostStatus.shouldDowngradeToPlayer) {
-    await userRef.set({
-      'hostDowngradedAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
 }
 
 Future<String> saveUserProfileData({
@@ -10994,17 +10982,15 @@ class _TableListPageState extends State<TableListPage> with AppVersionChecker {
       final status = resolveHostSubscriptionStatusFromUserData(data);
 
       if (status.shouldDowngradeToPlayer) {
-        await doc.reference.set({
-          'role': 'player',
-          'hostDowngradedAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        }, SetOptions(merge: true));
-
         if (!mounted) return;
 
+        // 只在 App 本機把使用者視為 Player。
+        // 不從客戶端修改受保護的 Firestore role。
         setState(() {
-          _hostSubscriptionStatus = const HostSubscriptionStatus.player();
+          _hostSubscriptionStatus =
+              const HostSubscriptionStatus.player();
         });
+
         return;
       }
 
