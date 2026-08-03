@@ -48359,12 +48359,17 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                       Map<String, dynamic>>>>{};
 
           for (final handDoc in handDocs) {
-            final handData = handDoc.data();
+            final pathSessionId =
+                handDoc.reference.parent.parent?.id ?? '';
 
-            final sessionId =
-                (handData['sessionId'] ?? '')
+            final savedSessionId =
+                (handDoc.data()['sessionId'] ?? '')
                     .toString()
                     .trim();
+
+            final sessionId = pathSessionId.isNotEmpty
+                ? pathSessionId
+                : savedSessionId;
 
             if (sessionId.isEmpty) {
               continue;
