@@ -48076,6 +48076,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
   final Set<String> _selectedPositions = {};
   final Set<String> _selectedTableSizes = {};
   final Set<String> _selectedGameTypes = {};
+  final Set<String> _selectedBubbleStatuses = {};
 
   String _readText(
     Map<String, dynamic> data,
@@ -48206,7 +48207,11 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                                   ? '$option Players'
                                   : title == 'Select Game Type'
                                       ? _gameTypeLabel(option)
-                                      : option,
+                                      : title == 'Select Bubble'
+                                          ? option == 'true'
+                                              ? 'Bubble'
+                                              : 'Not Bubble'
+                                          : option,
                             ),
                             controlAffinity:
                                 ListTileControlAffinity.leading,
@@ -48609,6 +48614,14 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                       );
                 });
 
+              final availableBubbleStatuses =
+                  widget.isTournament
+                      ? <String>[
+                          'true',
+                          'false',
+                        ]
+                      : <String>[];
+
               final filteredGroups = <
                   String,
                   List<
@@ -48666,6 +48679,21 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                             .toLowerCase();
 
                     if (!_selectedGameTypes.contains(gameType)) {
+                      return false;
+                    }
+                  }
+
+                  // Bubble 篩選，只對 Tournament 生效
+                  if (widget.isTournament &&
+                      _selectedBubbleStatuses.isNotEmpty) {
+                    final bubbleStatus =
+                        handData['isBubble'] == true
+                            ? 'true'
+                            : 'false';
+
+                    if (!_selectedBubbleStatuses.contains(
+                      bubbleStatus,
+                    )) {
                       return false;
                     }
                   }
@@ -48766,6 +48794,16 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                                 _selectedGameTypes,
                             options: availableGameTypes,
                           ),
+
+                          if (widget.isTournament)
+                            _buildFilterButton(
+                              label: 'Bubble',
+                              icon: Icons.bubble_chart,
+                              selectedValues:
+                                  _selectedBubbleStatuses,
+                              options: availableBubbleStatuses,
+                            ),
+
                         ],
                       ),
                     ),
