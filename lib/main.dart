@@ -40836,6 +40836,7 @@ class _AddHandPageState extends State<AddHandPage> {
 
     await showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       requestFocus: false,
       builder: (context) {
         final lastRaiseIndex = _preflopActions.lastIndexWhere(
@@ -41070,6 +41071,17 @@ class _AddHandPageState extends State<AddHandPage> {
 
                           decoration: InputDecoration(
                             filled: true,
+
+                            suffixIcon: IconButton(
+                              tooltip: 'Done',
+                              icon: const Icon(
+                                Icons.check_circle,
+                                color: Color(0xFF22C55E),
+                              ),
+                              onPressed: () {
+                                FocusManager.instance.primaryFocus?.unfocus();
+                              },
+                            ),
 
                             fillColor: isDark
                                 ? const Color(0xFF111827)
