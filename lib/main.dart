@@ -48754,7 +48754,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                           ),
                           _buildFilterButton(
                             label: 'Players',
-                            icon: Icons.people_outlined,
+                            icon: Icons.person_outlined,
                             selectedValues:
                                 _selectedTableSizes,
                             options: availableTableSizes,
