@@ -48075,6 +48075,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
   final Set<String> _selectedLocations = {};
   final Set<String> _selectedPositions = {};
   final Set<String> _selectedTableSizes = {};
+  final Set<String> _selectedGameTypes = {};
 
   String _readText(
     Map<String, dynamic> data,
@@ -48203,7 +48204,9 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                             title: Text(
                               title == 'Select Players'
                                   ? '$option Players'
-                                  : option,
+                                  : title == 'Select Game Type'
+                                      ? _gameTypeLabel(option)
+                                      : option,
                             ),
                             controlAffinity:
                                 ListTileControlAffinity.leading,
@@ -48342,6 +48345,22 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
         .map((card) => card.toString().trim())
         .where((card) => card.isNotEmpty)
         .toList();
+  }
+
+  String _gameTypeLabel(String gameType) {
+    switch (gameType.toLowerCase()) {
+      case 'holdem':
+        return 'NL';
+
+      case 'omaha4':
+        return '4 Card';
+
+      case 'omaha5':
+        return '5 Card';
+
+      default:
+        return gameType;
+    }
   }
 
   @override
@@ -48559,6 +48578,37 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                   return aNumber.compareTo(bNumber);
                 });
 
+              final availableGameTypes = handDocs
+                  .map((handDoc) {
+                    final gameType =
+                        (handDoc.data()['gameType'] ?? 'holdem')
+                            .toString()
+                            .trim()
+                            .toLowerCase();
+
+                    if (gameType == 'holdem' ||
+                        gameType == 'omaha4' ||
+                        gameType == 'omaha5') {
+                      return gameType;
+                    }
+
+                    return '';
+                  })
+                  .where((gameType) => gameType.isNotEmpty)
+                  .toSet()
+                  .toList()
+                ..sort((a, b) {
+                  const order = [
+                    'holdem',
+                    'omaha4',
+                    'omaha5',
+                  ];
+
+                  return order.indexOf(a).compareTo(
+                        order.indexOf(b),
+                      );
+                });
+
               final filteredGroups = <
                   String,
                   List<
@@ -48595,7 +48645,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                     }
                   }
 
-                  // 幾人桌篩選
+                  // Players 篩選
                   if (_selectedTableSizes.isNotEmpty) {
                     final tableSize =
                         (handData['tableSize'] ?? '')
@@ -48603,6 +48653,19 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                             .trim();
 
                     if (!_selectedTableSizes.contains(tableSize)) {
+                      return false;
+                    }
+                  }
+
+                  // Game Type 篩選
+                  if (_selectedGameTypes.isNotEmpty) {
+                    final gameType =
+                        (handData['gameType'] ?? 'holdem')
+                            .toString()
+                            .trim()
+                            .toLowerCase();
+
+                    if (!_selectedGameTypes.contains(gameType)) {
                       return false;
                     }
                   }
@@ -48695,6 +48758,13 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                             selectedValues:
                                 _selectedTableSizes,
                             options: availableTableSizes,
+                          ),
+                          _buildFilterButton(
+                            label: 'Game Type',
+                            icon: Icons.casino_outlined,
+                            selectedValues:
+                                _selectedGameTypes,
+                            options: availableGameTypes,
                           ),
                         ],
                       ),
