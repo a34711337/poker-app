@@ -48286,6 +48286,18 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
     );
   }
 
+  Timestamp? _handTime(
+    QueryDocumentSnapshot<Map<String, dynamic>> handDoc,
+  ) {
+    final data = handDoc.data();
+
+    final value =
+        data['updatedAt'] ??
+        data['createdAt'];
+
+    return value is Timestamp ? value : null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUid =
@@ -48514,24 +48526,34 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                 }
               }
 
-              final sortedSessions =
-                  filteredGroups.entries.toList();
+              final filteredHandItems = <Map<String, dynamic>>[];
 
-              sortedSessions.sort((a, b) {
-                final aData =
-                    sessionDataById[a.key] ?? {};
-                final bData =
-                    sessionDataById[b.key] ?? {};
+              for (final sessionEntry in filteredGroups.entries) {
+                final sessionId = sessionEntry.key;
+                final sessionData =
+                    sessionDataById[sessionId] ?? {};
 
-                final aTime =
-                    aData['startedAt'] is Timestamp
-                        ? aData['startedAt'] as Timestamp
-                        : null;
+                final location =
+                    _getSessionLocation(sessionData);
 
-                final bTime =
-                    bData['startedAt'] is Timestamp
-                        ? bData['startedAt'] as Timestamp
-                        : null;
+                for (final handDoc in sessionEntry.value) {
+                  filteredHandItems.add({
+                    'handDoc': handDoc,
+                    'sessionId': sessionId,
+                    'location': location,
+                  });
+                }
+              }
+
+              filteredHandItems.sort((a, b) {
+                final aDoc = a['handDoc']
+                    as QueryDocumentSnapshot<Map<String, dynamic>>;
+
+                final bDoc = b['handDoc']
+                    as QueryDocumentSnapshot<Map<String, dynamic>>;
+
+                final aTime = _handTime(aDoc);
+                final bTime = _handTime(bDoc);
 
                 if (aTime == null && bTime == null) {
                   return 0;
@@ -48582,7 +48604,7 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                     ),
                   ),
                   Expanded(
-                    child: sortedSessions.isEmpty
+                    child: filteredHandItems.isEmpty
                         ? const Center(
                             child: Text(
                               'No hands match the selected filters',
@@ -48595,69 +48617,60 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                               16,
                               24,
                             ),
-                            itemCount:
-                                sortedSessions.length,
-                            separatorBuilder:
-                                (context, index) {
-                              return const SizedBox(
-                                height: 12,
-                              );
+                            itemCount: filteredHandItems.length,
+                            separatorBuilder: (context, index) {
+                              return const SizedBox(height: 12);
                             },
                             itemBuilder: (context, index) {
-                              final sessionEntry =
-                                  sortedSessions[index];
+                              final item = filteredHandItems[index];
+
+                              final handDoc = item['handDoc']
+                                  as QueryDocumentSnapshot<
+                                      Map<String, dynamic>>;
 
                               final sessionId =
-                                  sessionEntry.key;
-
-                              final hands =
-                                  sessionEntry.value;
-
-                              final sessionData =
-                                  sessionDataById[
-                                          sessionId] ??
-                                      {};
+                                  item['sessionId'].toString();
 
                               final location =
-                                  _getSessionLocation(
-                                sessionData,
-                              );
+                                  item['location'].toString();
 
-                              final rawStartedAt =
-                                  sessionData[
-                                      'startedAt'];
+                              final handData = handDoc.data();
 
-                              final startedAt =
-                                  rawStartedAt
-                                          is Timestamp
-                                      ? rawStartedAt
-                                          .toDate()
-                                      : null;
+                              final handTitle =
+                                  (handData['title'] ?? 'Hand')
+                                      .toString();
 
-                              final dateText =
-                                  startedAt == null
-                                      ? ''
-                                      : '${startedAt.year.toString().padLeft(4, '0')}-'
-                                          '${startedAt.month.toString().padLeft(2, '0')}-'
-                                          '${startedAt.day.toString().padLeft(2, '0')}';
+                              final position =
+                                  _getPlayerPosition(handDoc);
+
+                              final handTimestamp =
+                                  _handTime(handDoc);
+
+                              final handDate = handTimestamp == null
+                                  ? ''
+                                  : '${handTimestamp.toDate().year.toString().padLeft(4, '0')}-'
+                                      '${handTimestamp.toDate().month.toString().padLeft(2, '0')}-'
+                                      '${handTimestamp.toDate().day.toString().padLeft(2, '0')}';
+
+                              final subtitleParts = <String>[
+                                location,
+                                if (position.isNotEmpty) position,
+                                if (handDate.isNotEmpty) handDate,
+                              ];
 
                               return Card(
                                 child: ListTile(
-                                  leading: Icon(
-                                    widget.isTournament
-                                        ? Icons.emoji_events
-                                        : Icons.casino,
+                                  leading: const Icon(
+                                    Icons.style,
                                   ),
                                   title: Text(
-                                    location,
+                                    handTitle,
                                     style: const TextStyle(
-                                      fontWeight:
-                                          FontWeight.bold,
+                                      fontWeight: FontWeight.bold,
                                     ),
                                   ),
                                   subtitle: Text(
-                                    '${hands.length} hands'
-                                    '${dateText.isEmpty ? '' : ' • $dateText'}',
+                                    subtitleParts.join(' • '),
                                   ),
                                   trailing: const Icon(
                                     Icons.chevron_right,
@@ -48667,10 +48680,14 @@ class _PlayerHandsPageState extends State<PlayerHandsPage> {
                                       context,
                                       MaterialPageRoute(
                                         builder: (context) {
-                                          return PlayerSessionHandsPage(
-                                            sessionName: location,
-                                            hands: hands,
-                                            isTournament: widget.isTournament,
+                                          return HandChartPage(
+                                            data: {
+                                              ...handData,
+                                              'isTournament':
+                                                  widget.isTournament,
+                                            },
+                                            sessionId: sessionId,
+                                            handId: handDoc.id,
                                           );
                                         },
                                       ),
